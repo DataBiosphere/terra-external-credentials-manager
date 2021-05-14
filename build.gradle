@@ -1,0 +1,53 @@
+plugins {
+	id 'idea'
+	id 'java'
+
+	id 'org.springframework.boot' version '2.4.5'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+
+	id 'com.github.ben-manes.versions' version '0.36.0'
+	id 'com.diffplug.spotless' version '5.12.4'
+}
+
+group = 'bio.terra'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+idea {
+	module {
+		downloadJavadoc = true
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+	useJUnitPlatform()
+}
+
+spotless {
+	java {
+		googleJavaFormat()
+		target 'src/*/java/**/*.java'
+	}
+}
+
+compileJava.dependsOn spotlessApply
