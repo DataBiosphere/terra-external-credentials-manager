@@ -14,8 +14,6 @@ spring:
     url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/kong
     username: ${DATABASE_USER:konguser}
 
-  jpa.hibernate.ddl-auto: update
-
   main.banner-mode: off
 
   web:
