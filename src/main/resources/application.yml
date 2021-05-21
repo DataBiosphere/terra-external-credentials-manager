@@ -1,0 +1,27 @@
+logging.pattern.level: '%X{requestId} %5p'
+
+server:
+  compression:
+    enabled: true
+    mime-types: text/css,application/javascript
+  port: 8080
+
+spring:
+  application.name: kong
+
+  datasource:
+    password: ${DATABASE_USER_PASSWORD:kongpwd}
+    url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/kong
+    username: ${DATABASE_USER:konguser}
+
+  jpa.hibernate.ddl-auto: update
+
+  main.banner-mode: off
+
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          max-age: 0
+          must-revalidate: true
+        use-last-modified: false
