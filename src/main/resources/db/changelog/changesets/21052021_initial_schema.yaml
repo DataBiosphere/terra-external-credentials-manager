@@ -1,0 +1,125 @@
+databaseChangeLog:
+  - changeSet:
+      id: "1"
+      author: kfeldman
+      changes:
+        - sql:
+            sql: CREATE TYPE token_type_enum AS ENUM ('document', 'code')
+        - createTable:
+            tableName: user
+            columns:
+              - column:
+                  name: id
+                  type: text
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+        - createTable:
+            tableName: oidc_refresh_token
+            columns:
+              - column:
+                  name: id
+                  type: text
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: text
+                  constraints:
+                    nullable: false
+                    references: user(id)
+                    foreignKeyName: fk_oidc_refresh_token_user
+              - column:
+                  name: provider_id
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: token
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: external_user_id
+                  type: text
+        - createTable:
+            tableName: ga4gh_passport
+            columns:
+              - column:
+                  name: id
+                  type: text
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: provider_id
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: text
+                  constraints:
+                    nullable: false
+                    references: user(id)
+                    foreignKeyName: fk_oidc_refresh_token_user
+              - column:
+                  name: expires
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: ga4gh_visa
+            columns:
+              - column:
+                  name: id
+                  type: text
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: passport_id
+                  type: text
+                  constraints:
+                    nullable: false
+                    references: ga4gh_passport(id)
+                    foreignKeyName: fk_ga4gh_passport_id
+              - column:
+                  name: visa_type
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: jwt
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: issuer
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: token_type
+                  type: token_type_enum
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_validated
+                  type: timestamp
+                  constraints:
+                    nullable: false
+
+
+
