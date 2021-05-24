@@ -1,25 +1,17 @@
 databaseChangeLog:
   - changeSet:
       id: "1"
-      author: kfeldman
+      author: kfeldman, swessel, zarsky
       changes:
         - sql:
-            sql: CREATE TYPE token_type_enum AS ENUM ('document', 'code')
+            sql: "CREATE TYPE token_type_enum AS ENUM ('document', 'code')"
         - createTable:
-            tableName: user
+            tableName: linked_account
             columns:
               - column:
                   name: id
-                  type: text
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-        - createTable:
-            tableName: oidc_refresh_token
-            columns:
-              - column:
-                  name: id
-                  type: text
+                  type: int
+                  autoIncrement: true
                   constraints:
                     primaryKey: true
                     nullable: false
@@ -28,15 +20,13 @@ databaseChangeLog:
                   type: text
                   constraints:
                     nullable: false
-                    references: user(id)
-                    foreignKeyName: fk_oidc_refresh_token_user
               - column:
                   name: provider_id
                   type: text
                   constraints:
                     nullable: false
               - column:
-                  name: token
+                  name: refresh_token
                   type: text
                   constraints:
                     nullable: false
@@ -53,22 +43,18 @@ databaseChangeLog:
             columns:
               - column:
                   name: id
-                  type: text
+                  type: int
+                  autoIncrement: true
                   constraints:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: provider_id
-                  type: text
+                  name: linked_account_id
+                  type: int
                   constraints:
                     nullable: false
-              - column:
-                  name: user_id
-                  type: text
-                  constraints:
-                    nullable: false
-                    references: user(id)
-                    foreignKeyName: fk_oidc_refresh_token_user
+                    references: linked_account(id)
+                    foreignKeyName: fk_linked_account_id
               - column:
                   name: expires
                   type: timestamp
@@ -79,13 +65,14 @@ databaseChangeLog:
             columns:
               - column:
                   name: id
-                  type: text
+                  type: int
+                  autoIncrement: true
                   constraints:
                     primaryKey: true
                     nullable: false
               - column:
                   name: passport_id
-                  type: text
+                  type: int
                   constraints:
                     nullable: false
                     references: ga4gh_passport(id)
