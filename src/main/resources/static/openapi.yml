@@ -12,11 +12,14 @@ paths:
           description: A JSON array of providers
           content:
             application/json:
-              schema:
+              schema: # array of strings
                 type: array
                 items:
                   type: string
-  /api/oidc/v1/provider:
+  /api/oidc/v1/{provider}:
+    parameters:
+      - name: provider
+        in: path
     get:
       summary: Returns info about the linked account for the provider.
       responses:
@@ -24,7 +27,7 @@ paths:
           description: A JSON object including the external user id and expiration timestamp
           content:
             application/json:
-              schema:
+              schema: # json object, keys are external user id and expiration timestamp
                 type: array
                 items:
                   type: string
@@ -34,7 +37,10 @@ paths:
       responses:
         '204':
           description: Deletes the refresh token and revokes it with the provider.
-  /api/oidc/v1/provider/accesstoken:
+  /api/oidc/v1/{provider}/accesstoken:
+    parameters:
+      - name: provider
+        in: path
     get:
       summary: Gets a new access token from and for the provider if the account has been linked.
       description: Requires an authenticated user.
@@ -43,11 +49,14 @@ paths:
           description: A JSON object including the access token
           content:
             application/json:
-              schema:
+              schema: # string
                 type: array
                 items:
                   type: string
-  /api/oidc/v1/provider/authorization-url:
+  /api/oidc/v1/{provider}/authorization-url:
+    parameters:
+      - name: provider
+        in: path
     get:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
       description: First step to link a new provider.
@@ -56,16 +65,68 @@ paths:
           description: A JSON object including the authorization URL
           content:
             application/json:
-              schema:
+              schema: # string
                 type: array
                 items:
                   type: string
-  /api/oidc/v1/provider/oauthcode:
+  /api/oidc/v1/{provider}/oauthcode:
+    parameters:
+      - name: provider
+        in: path
     post:
       summary: Link the user's account with the provider.
       description: |
-        Response same as GET /api/oidc/v1​{provider}. |
+        Response same as GET /api/oidc/v1{provider}. |
         Code from the GET /api/oidc/v1/{provider}/authorization-url goes here.
       responses:
         '200':
+          description: A JSON object
+          content:
+            application/json:
+              schema: # json object, keys are external user id and expiration timestamp
+                type: array
+                items:
+                  type: string
+  /api/ga4gh/v1/passport:
+    get:
+      summary: Return a Terra signed JWT containing all of a user’s Visas.
+      description: Future enhancement may include parameters to limit which Visas are included.
+      responses:
+        '200':
+          description: A JSON object
+          content:
+            application/json:
+              schema: # base64 encoded string
+                type: array
+                items:
+                  type: string
+  /well-known/openid-configuration:
+    get:
+      summary: Discovery api for openid configuration.
+      description: The only field published by this service is jwks_uri which will point to the google service account jwks.
+      responses:
+        '200':
+          description: A JSON object
+          content:
+            application/json:
+              schema: # json object
+                type: array
+                items:
+                  type: string
+  /api/user/v1/{user_id}/visas:
+    parameters:
+      - name: user_id
+        in: path
+    get:
+      summary: Returns all of a user's decoded Visas (JWT payloads, not full JWTs)
+      responses:
+        '200':
+          description: A JSON object
+          content:
+            application/json:
+              schema: # array of objects???
+                type: array
+                items:
+                  type: string
+
 
