@@ -1,0 +1,71 @@
+openapi: 3.0.0
+info:
+  title: External Credential Manager
+  description: A manager for external credentials
+  version: 0.0.1
+paths:
+  /api/oidc/v1/providers:
+    get:
+      summary: Lists the available OIDC providers.
+      responses:
+        '200':
+          description: A JSON array of providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/oidc/v1/provider:
+    get:
+      summary: Returns info about the linked account for the provider.
+      responses:
+        '200':
+          description: A JSON object including the external user id and expiration timestamp
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+    delete:
+      summary: Delete the account link for the provider, if an account has been linked.
+      description: Requires an authenticated user.
+      responses:
+        '204':
+          description: Deletes the refresh token and revokes it with the provider.
+  /api/oidc/v1/provider/accesstoken:
+    get:
+      summary: Gets a new access token from and for the provider if the account has been linked.
+      description: Requires an authenticated user.
+      responses:
+        '200':
+          description: A JSON object including the access token
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/oidc/v1/provider/authorization-url:
+    get:
+      summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
+      description: First step to link a new provider.
+      responses:
+        '200':
+          description: A JSON object including the authorization URL
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/oidc/v1/provider/oauthcode:
+    post:
+      summary: Link the user's account with the provider.
+      description: |
+        Response same as GET /api/oidc/v1​{provider}. |
+        Code from the GET /api/oidc/v1/{provider}/authorization-url goes here.
+      responses:
+        '200':
+
