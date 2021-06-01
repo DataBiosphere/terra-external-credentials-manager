@@ -4,7 +4,7 @@ databaseChangeLog:
       author: kfeldman, swessel, zarsky
       changes:
         - sql:
-            sql: "CREATE TYPE token_type_enum AS ENUM ('document', 'code')"
+            sql: "CREATE TYPE token_type_enum AS ENUM ('document_token', 'access_token')"
         - createTable:
             tableName: linked_account
             columns:
@@ -38,6 +38,9 @@ databaseChangeLog:
               - column:
                   name: external_user_id
                   type: text
+        - addUniqueConstraint:
+            tableName: linked_account
+            columnNames: user_id, provider_id
         - createTable:
             tableName: ga4gh_passport
             columns:
