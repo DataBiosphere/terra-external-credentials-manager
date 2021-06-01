@@ -1,0 +1,112 @@
+databaseChangeLog:
+  - changeSet:
+      id: "1"
+      author: kfeldman, swessel, zarsky
+      changes:
+        - sql:
+            sql: "CREATE TYPE token_type_enum AS ENUM ('document_token', 'access_token')"
+        - createTable:
+            tableName: linked_account
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: provider_id
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: refresh_token
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: external_user_id
+                  type: text
+        - addUniqueConstraint:
+            tableName: linked_account
+            columnNames: user_id, provider_id
+        - createTable:
+            tableName: ga4gh_passport
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: linked_account_id
+                  type: int
+                  constraints:
+                    nullable: false
+                    references: linked_account(id)
+                    foreignKeyName: fk_linked_account_id
+              - column:
+                  name: expires
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: ga4gh_visa
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: passport_id
+                  type: int
+                  constraints:
+                    nullable: false
+                    references: ga4gh_passport(id)
+                    foreignKeyName: fk_ga4gh_passport_id
+              - column:
+                  name: visa_type
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: jwt
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: issuer
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: token_type
+                  type: token_type_enum
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_validated
+                  type: timestamp
+                  constraints:
+                    nullable: false
