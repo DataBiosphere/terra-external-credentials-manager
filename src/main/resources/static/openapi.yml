@@ -12,10 +12,10 @@ paths:
           description: A JSON array of providers
           content:
             application/json:
-              schema: # array of strings
+              schema:
                 type: array
                 items:
-                  type: string
+                  type: string # TODO: particular type?
   /api/oidc/v1/{provider}:
     parameters:
       - name: provider
@@ -27,10 +27,8 @@ paths:
           description: A JSON object including the external user id and expiration timestamp
           content:
             application/json:
-              schema: # json object, keys are external user id and expiration timestamp
-                type: array
-                items:
-                  type: string
+              schema:
+                $ref: '#/components/schemas/ProviderLink'
     delete:
       summary: Delete the account link for the provider, if an account has been linked.
       description: Requires an authenticated user.
@@ -46,13 +44,11 @@ paths:
       description: Requires an authenticated user.
       responses:
         '200':
-          description: A JSON object including the access token
+          description: The access token
           content:
             application/json:
-              schema: # string
-                type: array
-                items:
-                  type: string
+              schema:
+                type: string # TODO: particular type?
   /api/oidc/v1/{provider}/authorization-url:
     parameters:
       - name: provider
@@ -62,13 +58,11 @@ paths:
       description: First step to link a new provider.
       responses:
         '200':
-          description: A JSON object including the authorization URL
+          description: The authorization URL
           content:
             application/json:
-              schema: # string
-                type: array
-                items:
-                  type: string
+              schema:
+                type: string # TODO: particular type?
   /api/oidc/v1/{provider}/oauthcode:
     parameters:
       - name: provider
@@ -76,17 +70,15 @@ paths:
     post:
       summary: Link the user's account with the provider.
       description: |
-        Response same as GET /api/oidc/v1{provider}. |
+        Response same as GET /api/oidc/v1{provider}.
         Code from the GET /api/oidc/v1/{provider}/authorization-url goes here.
       responses:
         '200':
           description: A JSON object
           content:
             application/json:
-              schema: # json object, keys are external user id and expiration timestamp
-                type: array
-                items:
-                  type: string
+              schema:
+                $ref: '#/components/schemas/ProviderLink'
   /api/ga4gh/v1/passport:
     get:
       summary: Return a Terra signed JWT containing all of a user’s Visas.
@@ -100,6 +92,7 @@ paths:
                 type: array
                 items:
                   type: string
+                  format: base64
   /well-known/openid-configuration:
     get:
       summary: Discovery api for openid configuration.
@@ -109,10 +102,10 @@ paths:
           description: A JSON object
           content:
             application/json:
-              schema: # json object
+              schema:
                 type: array
                 items:
-                  type: string
+                  type: string # TODO: put a type here
   /api/user/v1/{user_id}/visas:
     parameters:
       - name: user_id
@@ -124,9 +117,18 @@ paths:
           description: A JSON object
           content:
             application/json:
-              schema: # array of objects???
+              schema:
                 type: array
                 items:
-                  type: string
+                  type: string # TODO: particular type?
 
-
+components:
+  schemas:
+    ProviderLink:
+      type: object
+      properties:
+        externalUserId:
+          type: string
+        expirationTimestamp:
+          type: string
+          format: date-time
