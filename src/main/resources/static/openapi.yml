@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: External Credential Manager
+  title: Terra External Credentials Manager
   description: A manager for external credentials
   version: 0.0.1
 paths:
