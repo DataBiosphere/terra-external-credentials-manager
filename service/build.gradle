@@ -55,17 +55,16 @@ swaggerSources {
 	service {
 		inputFile = file('../common/openapi.yml')
 		code {
-			language = "spring"
-			library = "spring-boot"
-			components = ["models", "apis"]
-			rawOptions = [
-					"--api-package", "${artifactGroup}.generated.controller",
-					"--model-package", "${artifactGroup}.generated.model",
-					"--model-name-prefix", "Api",
-					"-D", "interfaceOnly=true," +
-							"useTags=true," +
-							"dateLibrary=java8"
-			]
+			language = 'spring'
+			components = ['models', 'apis']
+			additionalProperties = [
+					modelPackage     : "${artifactGroup}.generated.model",
+					apiPackage       : "${artifactGroup}.generated.api",
+					dateLibrary      : 'java8',
+					interfaceOnly    : true,
+					useTags          : true,
+					springBootVersion: dependencyManagement.managedVersions['org.springframework.boot:spring-boot']
+			] as Map
 		}
 	}
 }

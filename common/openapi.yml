@@ -8,6 +8,7 @@ paths:
     get:
       summary: Lists the available OIDC providers.
       tags: [ oidc ]
+      operationId: listProviders
       responses:
         '200':
           description: A JSON array of providers
@@ -26,6 +27,7 @@ paths:
     get:
       summary: Returns info about the linked account for the provider.
       tags: [ oidc ]
+      operationId: getLink
       responses:
         '200':
           $ref: '#/components/responses/LinkInfoResponse'
@@ -36,6 +38,7 @@ paths:
     delete:
       summary: Delete the account link for the provider, if an account has been linked.
       tags: [ oidc ]
+      operationId: deleteLink
       description: Requires an authenticated user.
       responses:
         '204':
@@ -51,6 +54,7 @@ paths:
     get:
       summary: Gets a new access token from and for the provider if the account has been linked.
       tags: [ oidc ]
+      operationId: getAccessToken
       description: Requires an authenticated user.
       responses:
         '200':
@@ -70,6 +74,7 @@ paths:
     get:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
       tags: [ oidc ]
+      operationId: getAuthUrl
       description: First step to link a new provider.
       responses:
         '200':
@@ -87,6 +92,7 @@ paths:
     post:
       summary: Link the user's account with the provider.
       tags: [ oidc ]
+      operationId: createLink
       description: Response same as GET /api/oidc/v1/{provider}. Code from the GET /api/oidc/v1/{provider}/authorization-url goes here.
       responses:
         '200':
@@ -98,6 +104,7 @@ paths:
     get:
       summary: Return a Terra signed JWT containing all of a user’s Visas.
       tags: [ ga4gh ]
+      operationId: getPassport
       description: Future enhancement may include parameters to limit which Visas are included.
       responses:
         '200':
@@ -118,6 +125,7 @@ paths:
     get:
       summary: Returns all of a user's decoded Visas (JWT payloads, not full JWTs)
       tags: [ user ]
+      operationId: getVisas
       responses:
         '200':
           description: A JSON object
@@ -130,10 +138,11 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
 
-  /well-known/openid-configuration:
+  /.well-known/openid-configuration:
     get:
       summary: Discovery api for openid configuration.
       tags: [ public ]
+      operationId: getOIDC
       security: []
       description: The only field published by this service is jwks_uri which will point to the google service account jwks.
       responses:
@@ -150,6 +159,7 @@ paths:
     get:
       summary: Check status of the service.
       tags: [ public ]
+      operationId: getStatus
       security: []
       responses:
         '200':
@@ -214,6 +224,7 @@ components:
   schemas:
     LinkInfo:
       type: object
+      required: [ externalUserId, expirationTimestamp ]
       properties:
         externalUserId:
           type: string

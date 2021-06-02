@@ -1,1 +1,2 @@
+// Spotless requires this at the root level
 buildscript { repositories { mavenCentral() } }
