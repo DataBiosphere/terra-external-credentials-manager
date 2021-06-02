@@ -134,6 +134,7 @@ paths:
     get:
       summary: Discovery api for openid configuration.
       tags: [ public ]
+      security: []
       description: The only field published by this service is jwks_uri which will point to the google service account jwks.
       responses:
         '200':
@@ -149,6 +150,7 @@ paths:
     get:
       summary: Check status of the service.
       tags: [ public ]
+      security: []
       responses:
         '200':
           description: A JSON description of the ok subsystems.
@@ -226,3 +228,21 @@ components:
           type: string
         statusCode:
           type: integer
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    authorization:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://accounts.google.com/o/oauth2/auth
+          scopes:
+            openid: open id authorization
+            email: email authorization
+            profile: profile authorization
+
+security:
+  - bearerAuth: []
+  - authorization: [openid, email, profile]

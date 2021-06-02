@@ -2,10 +2,10 @@ plugins {
 	id 'idea'
 	id 'java'
 
-	id 'org.springframework.boot' version '2.4.6'
+	id 'org.springframework.boot' version '2.5.0'
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 
-	id 'com.github.ben-manes.versions' version '0.38.0'
+	id 'com.github.ben-manes.versions' version '0.39.0'
 	id 'com.diffplug.spotless' version '5.12.5'
 	id 'org.hidetake.swagger.generator' version '2.18.2'
 }
@@ -37,7 +37,6 @@ dependencies {
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
@@ -48,8 +47,8 @@ dependencies {
 	// Swagger deps
 	implementation 'io.swagger.core.v3:swagger-annotations:2.1.9'
 	implementation 'org.webjars:webjars-locator-core:0.46'
-	runtimeOnly 'org.webjars.npm:swagger-ui-dist:3.37.2'
-	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.25'
+	runtimeOnly 'org.webjars.npm:swagger-ui-dist:3.49.0'
+	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.26'
 
 	// DB deps (versioned by Spring)
 	implementation 'org.liquibase:liquibase-core'
