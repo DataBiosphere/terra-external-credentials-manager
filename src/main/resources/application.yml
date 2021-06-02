@@ -7,12 +7,12 @@ server:
   port: 8080
 
 spring:
-  application.name: kong
+  application.name: externalcreds
 
   datasource:
-    password: ${DATABASE_USER_PASSWORD:kongpwd}
-    url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/kong
-    username: ${DATABASE_USER:konguser}
+    password: ${DATABASE_USER_PASSWORD:ecmpwd}
+    url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/ecm
+    username: ${DATABASE_USER:ecmuser}
 
   main.banner-mode: off
 
