@@ -14,11 +14,7 @@ group = 'bio.terra'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
 
-idea {
-	module {
-		downloadJavadoc = true
-	}
-}
+def artifactGroup = "${group}.${rootProject.getName()}"
 
 configurations {
 	compileOnly { extendsFrom annotationProcessor }
@@ -27,7 +23,7 @@ configurations {
 repositories {
 	mavenCentral()
 	maven { url "https://broadinstitute.jfrog.io/broadinstitute/libs-snapshot-local/" }
-	maven { url "https://broadinstitute.jfrog.io/broadinstitute/libs-release-local/" }
+	maven { url "https://broadinstitute.jfrog.io/broadinstitute/libs-release/" }
 }
 
 dependencies {
@@ -48,9 +44,37 @@ dependencies {
 	runtimeOnly 'org.webjars.npm:swagger-ui-dist:3.49.0'
 	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.26'
 
+	implementation 'javax.validation:validation-api'
+
 	// DB deps (versioned by Spring)
 	implementation 'org.liquibase:liquibase-core'
 	runtimeOnly 'org.postgresql:postgresql'
+}
+
+swaggerSources {
+	service {
+		inputFile = file('../common/openapi.yml')
+		code {
+			language = "spring"
+			library = "spring-boot"
+			components = ["models", "apis"]
+			rawOptions = [
+					"--api-package", "${artifactGroup}.generated.controller",
+					"--model-package", "${artifactGroup}.generated.model",
+					"--model-name-prefix", "Api",
+					"-D", "interfaceOnly=true," +
+							"useTags=true," +
+							"dateLibrary=java8"
+			]
+		}
+	}
+}
+
+idea {
+	module {
+		generatedSourceDirs = [file("${swaggerSources.service.code.outputDir}/src/main/java")]
+		downloadJavadoc = true
+	}
 }
 
 test { useJUnitPlatform() }
@@ -67,4 +91,7 @@ task bootRunDev {
 	finalizedBy(bootRun)
 }
 
-compileJava.dependsOn spotlessApply
+sourceSets.main.java.srcDir "${swaggerSources.service.code.outputDir}/src/main/java"
+
+compileJava.dependsOn swaggerSources.service.code, spotlessApply
+
