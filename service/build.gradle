@@ -21,9 +21,7 @@ idea {
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+	compileOnly { extendsFrom annotationProcessor }
 }
 
 repositories {
@@ -55,9 +53,7 @@ dependencies {
 	runtimeOnly 'org.postgresql:postgresql'
 }
 
-test {
-	useJUnitPlatform()
-}
+test { useJUnitPlatform() }
 
 spotless {
 	java {
@@ -67,10 +63,8 @@ spotless {
 }
 
 task bootRunDev {
-	bootRun.configure {
-		systemProperty 'spring.profiles.active', 'human-readable-logging'
-	}
+	bootRun.configure { systemProperty 'spring.profiles.active', 'human-readable-logging' }
+	finalizedBy(bootRun)
 }
-bootRunDev.finalizedBy bootRun
 
 compileJava.dependsOn spotlessApply
