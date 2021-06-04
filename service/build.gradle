@@ -6,12 +6,11 @@ plugins {
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 
 	id 'com.github.ben-manes.versions' version '0.39.0'
+	id 'com.google.cloud.tools.jib' version '3.0.0'
 	id 'com.diffplug.spotless' version '5.12.5'
 	id 'org.hidetake.swagger.generator' version '2.18.2'
 }
 
-group = 'bio.terra'
-version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
 
 def artifactGroup = "${group}.${rootProject.getName()}"
@@ -88,6 +87,17 @@ spotless {
 task bootRunDev {
 	bootRun.configure { systemProperty 'spring.profiles.active', 'human-readable-logging' }
 	finalizedBy(bootRun)
+}
+
+jib {
+	from {
+		// see https://github.com/broadinstitute/dsp-appsec-blessed-images/tree/main/jre
+		// Google's distroless images are openjdk, this is the simplest with adoptopenjdk
+		image = 'us.gcr.io/broad-dsp-gcr-public/base/jre:11-debian'
+	}
+	container {
+		filesModificationTime = java.time.ZonedDateTime.now().toString() // to prevent ui caching
+	}
 }
 
 sourceSets.main.java.srcDir "${swaggerSources.service.code.outputDir}/src/main/java"

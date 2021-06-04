@@ -3,11 +3,14 @@ name: Build and Test
 on:
   push:
     branches: [ dev ]
+    paths-ignore:
+      - '*.md'
+      - '.github/**'
   pull_request:
     branches: [ '**' ]
 
 jobs:
-  build:
+  build-and-test:
 
     runs-on: ubuntu-latest
 
