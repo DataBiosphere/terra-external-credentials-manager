@@ -1,0 +1,259 @@
+openapi: 3.0.3
+info:
+  title: Terra External Credentials Manager
+  description: A manager for external credentials
+  version: 0.0.1
+paths:
+  /api/oidc/v1/providers:
+    get:
+      summary: Lists the available OIDC providers.
+      tags: [ oidc ]
+      operationId: listProviders
+      responses:
+        '200':
+          description: A JSON array of providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/oidc/v1/{provider}:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+    get:
+      summary: Returns info about the linked account for the provider.
+      tags: [ oidc ]
+      operationId: getLink
+      responses:
+        '200':
+          $ref: '#/components/responses/LinkInfoResponse'
+        '404':
+          $ref: '#/components/responses/LinkNotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Delete the account link for the provider, if an account has been linked.
+      tags: [ oidc ]
+      operationId: deleteLink
+      description: Requires an authenticated user.
+      responses:
+        '204':
+          description: Deletes the refresh token and revokes it with the provider.
+        '404':
+          $ref: '#/components/responses/LinkNotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/oidc/v1/{provider}/accesstoken:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+    get:
+      summary: Gets a new access token from and for the provider if the account has been linked.
+      tags: [ oidc ]
+      operationId: getAccessToken
+      description: Requires an authenticated user.
+      responses:
+        '200':
+          description: The access token
+          content:
+            application/json:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/LinkNotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/oidc/v1/{provider}/authorization-url:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+    get:
+      summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
+      tags: [ oidc ]
+      operationId: getAuthUrl
+      description: First step to link a new provider.
+      responses:
+        '200':
+          description: The authorization URL
+          content:
+            application/json:
+              schema:
+                type: string
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/oidc/v1/{provider}/oauthcode:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+    post:
+      summary: Link the user's account with the provider.
+      tags: [ oidc ]
+      operationId: createLink
+      description: Response same as GET /api/oidc/v1/{provider}. Code from the GET /api/oidc/v1/{provider}/authorization-url goes here.
+      responses:
+        '200':
+          $ref: '#/components/responses/LinkInfoResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/ga4gh/v1/passport:
+    get:
+      summary: Return a Terra signed JWT containing all of a user’s Visas.
+      tags: [ ga4gh ]
+      operationId: getPassport
+      description: Future enhancement may include parameters to limit which Visas are included.
+      responses:
+        '200':
+          description: A JSON object
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: base64
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/user/v1/{user_id}/visas:
+    parameters:
+      - $ref: '#/components/parameters/userIdParam'
+    get:
+      summary: Returns all of a user's decoded Visas (JWT payloads, not full JWTs)
+      tags: [ user ]
+      operationId: getVisas
+      responses:
+        '200':
+          description: A JSON object
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /.well-known/openid-configuration:
+    get:
+      summary: Discovery api for openid configuration.
+      tags: [ public ]
+      operationId: getOIDC
+      security: []
+      description: The only field published by this service is jwks_uri which will point to the google service account jwks.
+      responses:
+        '200':
+          description: A JSON object
+          content:
+            application/json:
+              schema:
+                type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /status:
+    get:
+      summary: Check status of the service.
+      tags: [ public ]
+      operationId: getStatus
+      security: []
+      responses:
+        '200':
+          description: A JSON description of the ok subsystems.
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          description: A JSON description of the subsystems and any issues they might have.
+
+components:
+  parameters:
+    providerParam:
+      name: provider
+      in: path
+      schema:
+        type: string
+        default: ras
+      required: true
+    userIdParam:
+      name: user_id
+      in: path
+      schema:
+        type: string
+      required: true
+
+  responses:
+    LinkInfoResponse:
+      description: A JSON object including the external user id and expiration timestamp
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LinkInfo'
+    LinkNotFound:
+      description: Unable to find a link for the user to the provider. Consider re-linking with an oauthcode.
+
+    # Error Responses
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorReport'
+    PermissionDenied:
+      description: Permission denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorReport'
+    NotFound:
+      description: Not found (or unauthorized)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorReport'
+    ServerError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorReport'
+
+  schemas:
+    LinkInfo:
+      type: object
+      required: [ externalUserId, expirationTimestamp ]
+      properties:
+        externalUserId:
+          type: string
+        expirationTimestamp:
+          type: string
+          format: date-time
+    ErrorReport:
+      type: object
+      required: [ message, statusCode ]
+      properties:
+        message:
+          type: string
+        statusCode:
+          type: integer
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    authorization:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://accounts.google.com/o/oauth2/auth
+          scopes:
+            openid: open id authorization
+            email: email authorization
+            profile: profile authorization
+
+security:
+  - bearerAuth: []
+  - authorization: [openid, email, profile]
