@@ -38,34 +38,16 @@ Government data.
 ### Database Configuration
 ECM relies on a Postgresql database server. There are two options for running the Postgres server:
 
-#### Option A: Docker Postgres
-##### Running the Postgres Container
-To start a postgres container configured with the necessary databases:
+- Manual setup:  
+  Setup Postgres using whatever method you like.
+- Convenient app setup:  
+  Install [the convenient app](https://postgresapp.com/), and create a database called `ecm`.
+
+#### Initialize your database:
 ```sh
-./local-dev/run_postgres.sh start
+psql -h 127.0.0.1 -U postgres -f ./common/postgres-init.sql
 ```
-To stop the container:
-```sh
-./local-dev/run_postgres.sh stop
-```
-Note that the contents of the database is not saved between container runs.
-
-##### Connecting to the Postgres Container
-Use `psql` to connect to databases within the started database container, e.g. for database `wm` users `wmuser` with password `wmpwd`:
-```sh
-PGPASSWORD=wmpwd psql postgresql://127.0.0.1:5432/wm -U wmuser
-```
-
-#### Option B: Local Postgres 
-##### Database Configuration
-
-To set up Workspace Manager's required database, run the following command, which will create the DB's and users for unit tests, Stairway, and the app itself:
-
-```sh
-psql -f local-dev/local-postgres-init.sql
-```
-
-At some point, we will connect this to a CloudSQL instance but for local dev purposes having the option to use a local DB instead makes sense.
+***N.B.*** If you used **the convenient app**, you should run `psql` as `/Applications/Postgres.app/Contents/Versions/latest/bin/psql`
 
 ### IntelliJ Setup
 
