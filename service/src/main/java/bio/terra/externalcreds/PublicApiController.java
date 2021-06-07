@@ -15,7 +15,6 @@ public class PublicApiController implements PublicApi {
 
   final JdbcTemplate jdbcTemplate;
 
-  @Autowired
   public PublicApiController(JdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
   }
