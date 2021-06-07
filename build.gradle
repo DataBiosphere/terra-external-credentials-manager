@@ -1,7 +1,13 @@
 // Spotless requires this at the root level
 buildscript { repositories { mavenCentral() } }
 
+plugins {
+	id 'idea'
+}
+
 allprojects {
 	group = 'bio.terra'
 	version = '0.0.1-SNAPSHOT'
 }
+
+idea.project.jdkName = '11'
