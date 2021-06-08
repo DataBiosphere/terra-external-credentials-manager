@@ -3,7 +3,6 @@ package bio.terra.externalcreds;
 import bio.terra.externalcreds.generated.api.PublicApi;
 import java.sql.SQLException;
 import java.util.Objects;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,7 +25,7 @@ public class PublicApiController implements PublicApi {
       if (Objects.requireNonNull(this.jdbcTemplate.getDataSource()).getConnection().isValid(0)) {
         return new ResponseEntity<>(HttpStatus.OK);
       } else {
-        return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
       }
     } catch (SQLException e) {
       return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
