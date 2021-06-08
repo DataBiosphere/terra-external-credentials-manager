@@ -245,9 +245,7 @@ components:
           type: integer
 
     SystemStatus:
-      required:
-        - ok
-        - systems
+      required: [ ok, systems ]
       type: object
       properties:
         ok:
