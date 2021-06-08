@@ -1,0 +1,17 @@
+if (hasProperty('buildScan')) {
+	buildScan {
+		termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+		termsOfServiceAgree = 'yes'
+	}
+}
+
+spotless {
+	java {
+		googleJavaFormat()
+		target 'src/*/java/**/*.java'
+	}
+}
+
+compileJava.dependsOn spotlessApply
+
+idea.module.downloadJavadoc = true

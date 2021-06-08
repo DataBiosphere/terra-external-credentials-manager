@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ExternalCredsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="externalcreds.service.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="bio.terra.externalcreds.ExternalCredsApplication" />
+    <option name="HIDE_BANNER" value="true" />
+    <option name="ACTIVE_PROFILES" value="human-readable-logging" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <option name="SHORTEN_COMMAND_LINE" value="NONE" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
