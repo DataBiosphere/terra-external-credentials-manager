@@ -1,6 +1,8 @@
 package bio.terra.externalcreds;
 
 import bio.terra.externalcreds.generated.api.PublicApi;
+import bio.terra.externalcreds.generated.model.SubsystemStatus;
+import bio.terra.externalcreds.generated.model.SystemStatus;
 import java.sql.SQLException;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
@@ -18,17 +20,25 @@ public class PublicApiController implements PublicApi {
     this.jdbcTemplate = jdbcTemplate;
   }
 
+  private boolean getPostgresStatus() {
+    try {
+      return Objects.requireNonNull(this.jdbcTemplate.getDataSource()).getConnection().isValid(0);
+    } catch (SQLException e) {
+      return false;
+    }
+  }
+
   @Override
   @GetMapping("/status")
-  public ResponseEntity<Void> getStatus() {
-    try {
-      if (Objects.requireNonNull(this.jdbcTemplate.getDataSource()).getConnection().isValid(0)) {
-        return new ResponseEntity<>(HttpStatus.OK);
-      } else {
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-    } catch (SQLException e) {
-      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+  public ResponseEntity<SystemStatus> getStatus() {
+    SubsystemStatus subsystems = new SubsystemStatus();
+
+    subsystems.put("postgres", getPostgresStatus());
+
+    Boolean isOk = !subsystems.containsValue(false);
+
+    return new ResponseEntity<>(
+        new SystemStatus().ok(isOk).systems(subsystems),
+        isOk ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
