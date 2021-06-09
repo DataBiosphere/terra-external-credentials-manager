@@ -164,6 +164,10 @@ paths:
       responses:
         '200':
           description: A JSON description of the ok subsystems.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
         '500':
           $ref: '#/components/responses/ServerError'
         '503':
@@ -239,6 +243,21 @@ components:
           type: string
         statusCode:
           type: integer
+
+    SystemStatus:
+      required: [ ok, systems ]
+      type: object
+      properties:
+        ok:
+          type: boolean
+          description: whether any system(s) need attention
+        systems:
+          $ref: '#/components/schemas/SubsystemStatus'
+
+    SubsystemStatus:
+      type: object
+      additionalProperties:
+        type: boolean
 
   securitySchemes:
     bearerAuth:
