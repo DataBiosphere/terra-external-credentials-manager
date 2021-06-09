@@ -1,7 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
+import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Objects;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -14,11 +14,11 @@ public class StatusDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  public boolean isPostgresOk() {
-    try {
-      return Objects.requireNonNull(this.jdbcTemplate.getDataSource()).getConnection().isValid(0);
-    } catch (SQLException e) {
-      return false;
-    }
+  private boolean isConnectionValid(Connection connection) throws SQLException {
+    return connection.isValid(1);
+  }
+
+  public Boolean isPostgresOk() {
+    return this.jdbcTemplate.execute(this::isConnectionValid);
   }
 }

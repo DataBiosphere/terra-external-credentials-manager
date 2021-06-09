@@ -10,6 +10,7 @@ spring:
   application.name: externalcreds
 
   datasource:
+    hikari.connection-timeout: 5000
     password: ${DATABASE_USER_PASSWORD:ecmpwd}
     url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/ecm
     username: ${DATABASE_USER:ecmuser}
