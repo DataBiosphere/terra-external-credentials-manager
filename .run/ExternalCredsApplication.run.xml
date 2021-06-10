@@ -6,6 +6,13 @@
     <option name="ACTIVE_PROFILES" value="human-readable-logging" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <option name="SHORTEN_COMMAND_LINE" value="NONE" />
+    <additionalParameters>
+      <param>
+        <option name="enabled" value="true" />
+        <option name="name" value="spring.resources.static-locations" />
+        <option name="value" value="file:service/src/main/resources/static" />
+      </param>
+    </additionalParameters>
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
