@@ -1,13 +1,14 @@
 package bio.terra.externalcreds.models;
 
+import java.sql.Timestamp;
 import lombok.Builder;
 
 @Builder
 public class LinkedAccount {
-    final int id;
-    final String userId;
-    final String providerId;
-    final String refreshToken;
-    final String expires;
-    final String externalUserId;
+  private final int id;
+  private final String userId;
+  private final String providerId;
+  private final String refreshToken;
+  private final Timestamp expires;
+  private final String externalUserId;
 }
