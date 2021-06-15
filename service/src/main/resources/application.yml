@@ -9,6 +9,8 @@ server:
 spring:
   application.name: externalcreds
 
+  config.import: optional:classpath:rendered/providers.yaml
+
   datasource:
     hikari.connection-timeout: 5000
     password: ${DATABASE_USER_PASSWORD:ecmpwd}
