@@ -1,4 +1,4 @@
-ENV=${1:dev}
+ENV=${1:-dev}
 VAULT_TOKEN=${2:-$(cat "$HOME"/.vault-token)}
 
 VAULT_ADDR="https://clotho.broadinstitute.org:8200"
@@ -14,7 +14,7 @@ fi
 
 echo > "$OUTPUT_LOCATION"
 
-for PROVIDER in $($VAULT_COMMAND list -format=yaml $VAULT_PATH | sed  's/- //g')
+for PROVIDER in $($VAULT_COMMAND list -format=yaml "$VAULT_PATH" | sed  's/- //g')
 do
   echo "externalcreds.providers.services.$PROVIDER:" >> "$OUTPUT_LOCATION"
   $VAULT_COMMAND read -format=yaml -field=data "$VAULT_PATH/$PROVIDER" | while read -r YAML_LINE; do

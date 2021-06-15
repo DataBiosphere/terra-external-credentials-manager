@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.config;
 
+import java.time.Duration;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,13 +18,10 @@ public class ProviderConfig {
   @Getter
   @Setter
   public static class ProviderInfo {
-    /** Length of validity for this provider */
-    private String expiration;
-    /** Revocation endpoint for this provider */
-    private String revoke;
-
     private String clientId;
     private String clientSecret;
+    private Duration linkLifespan;
     private String openidConfiguration;
+    private String revokeEndpoint;
   }
 }
