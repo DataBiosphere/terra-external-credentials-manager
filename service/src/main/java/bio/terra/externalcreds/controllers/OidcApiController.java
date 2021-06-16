@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
 import bio.terra.externalcreds.generated.api.OidcApi;
+import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.services.ProviderService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -23,5 +24,22 @@ public class OidcApiController implements OidcApi {
     List<String> providers = providerService.getProviderList();
 
     return new ResponseEntity<>(providers, HttpStatus.OK);
+  }
+
+  @Override
+  @GetMapping("/api/oidc/v1/{provider}")
+  public ResponseEntity<LinkInfo> getLink(String provider) {
+
+    // QUESTIONS:
+    // - does each provider only have one link?
+    // - how do we get the id of the authenticated user?
+    // - are we enforcing that (user_id, provider_id) is unique?
+
+
+    LinkInfo link = new LinkInfo();
+
+    return new ResponseEntity<>(link, HttpStatus.OK);
+
+    // return a 404 if none exists
   }
 }
