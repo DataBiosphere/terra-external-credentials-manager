@@ -2,6 +2,7 @@ package bio.terra.externalcreds.controllers;
 
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
+import bio.terra.externalcreds.services.AccountLinkService;
 import bio.terra.externalcreds.services.ProviderService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -13,9 +14,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class OidcApiController implements OidcApi {
 
   private final ProviderService providerService;
+  private final AccountLinkService accountLinkService;
 
-  public OidcApiController(ProviderService providerService) {
+  public OidcApiController(ProviderService providerService, AccountLinkService accountLinkService) {
     this.providerService = providerService;
+    this.accountLinkService = accountLinkService;
   }
 
   @Override
@@ -31,12 +34,11 @@ public class OidcApiController implements OidcApi {
   public ResponseEntity<LinkInfo> getLink(String provider) {
 
     // QUESTIONS:
-    // - does each provider only have one link?
     // - how do we get the id of the authenticated user?
+    // - does each user-provider combo only have one link?
     // - are we enforcing that (user_id, provider_id) is unique?
 
-
-    LinkInfo link = new LinkInfo();
+    LinkInfo link = accountLinkService.getAccountLink("", provider);
 
     return new ResponseEntity<>(link, HttpStatus.OK);
 

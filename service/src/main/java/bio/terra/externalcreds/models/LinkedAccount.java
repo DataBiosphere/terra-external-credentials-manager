@@ -2,7 +2,9 @@ package bio.terra.externalcreds.models;
 
 import java.sql.Timestamp;
 import lombok.Builder;
+import lombok.Getter;
 
+@Getter
 @Builder
 public class LinkedAccount {
   private final int id;
