@@ -100,11 +100,32 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
 
+  /api/oidc/v1/{provider}/passport:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+    get:
+      summary: Get the original passport from this provider
+      tags: [ oidc ]
+      operationId: getProviderPassport
+      description: Gets passport signed by provider, not Terra, containing only visas from provider
+      responses:
+        '200':
+          description: A JSON object
+          content:
+            application/json:
+              schema:
+                type: string
+                format: base64
+        '404':
+          description: provider does not support passports
+        '500':
+          $ref: '#/components/responses/ServerError'
+
   /api/ga4gh/v1/passport:
     get:
-      summary: Return a Terra signed JWT containing all of a user’s Visas.
+      summary: Return a Terra signed JWT containing all of a user’s Visas across all providers.
       tags: [ ga4gh ]
-      operationId: getPassport
+      operationId: getTerraPassport
       description: Future enhancement may include parameters to limit which Visas are included.
       responses:
         '200':
@@ -112,10 +133,8 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
-                  format: base64
+                type: string
+                format: base64
         '500':
           $ref: '#/components/responses/ServerError'
 
