@@ -1,7 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
-import bio.terra.externalcreds.config.ProviderConfig;
 import bio.terra.externalcreds.generated.api.OidcApi;
+import bio.terra.externalcreds.services.ProviderService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,16 +11,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class OidcApiController implements OidcApi {
 
-  private final ProviderConfig providerConfig;
+  private final ProviderService providerService;
 
-  public OidcApiController(ProviderConfig providerConfig) {
-    this.providerConfig = providerConfig;
+  public OidcApiController(ProviderService providerService) {
+    this.providerService = providerService;
   }
 
   @Override
   @GetMapping("/api/oidc/v1/providers")
   public ResponseEntity<List<String>> listProviders() {
-    List<String> providers = List.copyOf(providerConfig.getServices().keySet());
+    List<String> providers = providerService.getProviderList();
 
     return new ResponseEntity<>(providers, HttpStatus.OK);
   }
