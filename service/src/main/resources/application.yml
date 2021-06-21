@@ -12,7 +12,7 @@ spring:
   datasource:
     hikari.connection-timeout: 5000
     password: ${DATABASE_USER_PASSWORD:ecmpwd}
-    url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/ecm
+    url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/${DATABASE_NAME:ecm}
     username: ${DATABASE_USER:ecmuser}
 
   main.banner-mode: off
