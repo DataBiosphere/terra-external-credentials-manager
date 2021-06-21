@@ -1,7 +1,8 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.config.ProviderConfig;
-import java.util.List;
+import java.util.Collections;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,7 +14,7 @@ public class ProviderService {
     this.providerConfig = providerConfig;
   }
 
-  public List<String> getProviderList() {
-    return List.copyOf(providerConfig.getServices().keySet());
+  public Set<String> getProviderList() {
+    return Collections.unmodifiableSet(providerConfig.getServices().keySet());
   }
 }

@@ -23,9 +23,9 @@ public class ProvidersTest extends BaseTest {
   void testListProviders() throws Exception {
     when(providerConfig.getServices())
         .thenReturn(
-            Map.of("fake-provider", new ProviderInfo(), "fake-provider2", new ProviderInfo()));
+            Map.of("fake-provider2", new ProviderInfo(), "fake-provider1", new ProviderInfo()));
 
     mvc.perform(get("/api/oidc/v1/providers"))
-        .andExpect(content().json("[\"fake-provider\",\"fake-provider2\"]"));
+        .andExpect(content().json("[\"fake-provider1\",\"fake-provider2\"]"));
   }
 }
