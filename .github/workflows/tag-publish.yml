@@ -106,11 +106,11 @@ jobs:
         image: ${{ steps.image-name.outputs.name }}
     - name: Push GCR image
       run: "docker push ${{ steps.image-name.outputs.name }}"
-#    - name: Deploy to Terra Dev environment
-#      if: github.event_name == 'push'
-#      uses: broadinstitute/repository-dispatch@master
-#      with:
-#        token: ${{ secrets.BROADBOT_TOKEN }}
-#        repository: broadinstitute/terra-helmfile
-#        event-type: update-service
-#        client-payload: '{"service": "externalcreds", "version": "${{ steps.tag.outputs.tag }}", "dev_only": false}'
+    - name: Deploy to Terra Dev environment
+      if: github.event_name == 'push'
+      uses: broadinstitute/repository-dispatch@master
+      with:
+        token: ${{ secrets.BROADBOT_TOKEN }}
+        repository: broadinstitute/terra-helmfile
+        event-type: update-service
+        client-payload: '{"service": "externalcreds", "version": "${{ steps.tag.outputs.tag }}", "dev_only": false}'
