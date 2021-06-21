@@ -7,5 +7,6 @@ import lombok.Builder;
 public class GA4GHPassport {
   private final int id;
   private final int linkedAccountId;
+  private final String jwt;
   private final Timestamp expires;
 }
