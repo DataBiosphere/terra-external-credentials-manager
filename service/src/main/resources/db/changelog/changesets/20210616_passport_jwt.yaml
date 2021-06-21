@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_passport_jwt"
+      author: dvoet
+      changes:
+        - addColumn:
+            tableName: ga4gh_passport
+            columns:
+              - column:
+                  name: jwt
+                  type: text
+                  constraints:
+                    nullable: false
