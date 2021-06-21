@@ -11,7 +11,7 @@ dependencies {
 
 }
 
-def artifactGroup = "${group}.${rootProject.getName()}"
+String artifactGroup = "${group}.${rootProject.getName()}"
 
 swaggerSources {
 	service {
