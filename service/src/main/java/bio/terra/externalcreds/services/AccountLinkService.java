@@ -32,7 +32,8 @@ public class AccountLinkService {
     } catch (Exception e) {
       log.warn("Error getting linked account information", e);
       // TODO return something here?
-      return null;
+      linkInfo.setExternalUserId(e.getMessage());
+      return linkInfo;
     }
   }
 }

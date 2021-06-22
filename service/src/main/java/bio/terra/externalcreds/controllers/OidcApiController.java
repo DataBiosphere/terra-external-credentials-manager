@@ -40,10 +40,8 @@ public class OidcApiController implements OidcApi {
     // - does each user-provider combo only have one link?
     // - are we enforcing that (user_id, provider_id) is unique?
 
-    LinkInfo link = accountLinkService.getAccountLink("", provider);
+    LinkInfo link = accountLinkService.getAccountLink("fake_user_id", provider);
 
-    return new ResponseEntity<>(link, HttpStatus.OK);
-
-    // return a 404 if none exists
+    return new ResponseEntity<>(link, (link != null) ? HttpStatus.OK : HttpStatus.NOT_FOUND);
   }
 }
