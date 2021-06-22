@@ -71,6 +71,9 @@ paths:
   /api/oidc/v1/{provider}/authorization-url:
     parameters:
       - $ref: '#/components/parameters/providerParam'
+      - $ref: '#/components/parameters/scopesParam'
+      - $ref: '#/components/parameters/redirectUriParam'
+      - $ref: '#/components/parameters/stateParam'
     get:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
       tags: [ oidc ]
@@ -89,6 +92,14 @@ paths:
   /api/oidc/v1/{provider}/oauthcode:
     parameters:
       - $ref: '#/components/parameters/providerParam'
+      - $ref: '#/components/parameters/scopesParam'
+      - $ref: '#/components/parameters/redirectUriParam'
+      - $ref: '#/components/parameters/stateParam'
+      - name: oauthcode
+        description: oauth code returned by identity provider
+        in: query
+        schema:
+          type: string
     post:
       summary: Link the user's account with the provider.
       tags: [ oidc ]
@@ -207,6 +218,27 @@ components:
       schema:
         type: string
       required: true
+    scopesParam:
+      name: scopes
+      description: list of scopes to authorize
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+    redirectUriParam:
+      name: redirectUri
+      description: oidc redirect uri
+      in: query
+      schema:
+        type: string
+    stateParam:
+      name: state
+      description: oidc authorization state
+      in: query
+      required: false
+      schema:
+        type: string
 
   responses:
     LinkInfoResponse:

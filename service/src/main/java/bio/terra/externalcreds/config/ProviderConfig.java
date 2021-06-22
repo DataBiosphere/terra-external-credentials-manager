@@ -21,7 +21,8 @@ public class ProviderConfig {
     private String clientId;
     private String clientSecret;
     private Duration linkLifespan;
-    private String openidConfiguration;
+    private String issuer;
     private String revokeEndpoint;
+    private Map<String, Object> additionalAuthorizationParameters;
   }
 }
