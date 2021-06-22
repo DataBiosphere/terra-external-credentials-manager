@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.models;
 
 public enum TokenTypeEnum {
-  DOCUMENT,
-  ACCESS
+  DOCUMENT_TOKEN,
+  ACCESS_TOKEN
 }
