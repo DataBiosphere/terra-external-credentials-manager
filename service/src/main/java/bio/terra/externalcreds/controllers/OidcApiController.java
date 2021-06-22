@@ -1,8 +1,9 @@
 package bio.terra.externalcreds.controllers;
 
 import bio.terra.externalcreds.generated.api.OidcApi;
+import bio.terra.externalcreds.generated.model.LinkInfo;
+import bio.terra.externalcreds.services.AccountLinkService;
 import bio.terra.externalcreds.services.ProviderService;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +33,6 @@ public class OidcApiController implements OidcApi {
   }
 
   @Override
-  @GetMapping("/api/oidc/v1/{provider}")
   public ResponseEntity<LinkInfo> getLink(String provider) {
 
     // QUESTIONS:
