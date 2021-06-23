@@ -4,9 +4,11 @@ import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.services.AccountLinkService;
 import bio.terra.externalcreds.services.ProviderService;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -35,13 +37,20 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<LinkInfo> getLink(String provider) {
 
-    // QUESTIONS:
+    // TODO Questions:
     // - how do we get the id of the authenticated user?
-    // - does each user-provider combo only have one link?
     // - are we enforcing that (user_id, provider_id) is unique?
 
-    LinkInfo link = accountLinkService.getAccountLink("fake_user_id", provider);
+    String userId = "fake_user_id"; // TODO: stop hardcoding this
 
-    return new ResponseEntity<>(link, (link != null) ? HttpStatus.OK : HttpStatus.NOT_FOUND);
+    try {
+      LinkInfo link = accountLinkService.getAccountLink(userId, provider);
+      return new ResponseEntity<>(link, HttpStatus.OK);
+    } catch (EmptyResultDataAccessException e) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    } catch (SQLException e) {
+      log.warn("Encountered a SQL Exception while getting linked account information:", e);
+      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
