@@ -26,3 +26,5 @@ spring:
           max-age: 0
           must-revalidate: true
         use-last-modified: false
+
+logging.level.org.springframework: debug
