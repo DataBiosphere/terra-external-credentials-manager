@@ -17,10 +17,8 @@ public class LinkedAccountDAO {
   }
 
   public LinkedAccount getLinkedAccount(String userId, String providerId) throws SQLException {
-    // Is this too hacky of a way to get this??
-    //    Connection connection = this.jdbcTemplate.execute(this::getConnection);
-    //
     String query = "SELECT * FROM linked_account WHERE user_id = ? and provider_id = ?";
+
     //    System.out.println(query);
     //    PreparedStatement ps = connection.prepareStatement(query);
     //    ps.setString(1, userId);
@@ -42,7 +40,6 @@ public class LinkedAccountDAO {
 
     return jdbcTemplate.queryForObject(
         query,
-        new Object[] {userId, providerId},
         (rs, rowNum) ->
             LinkedAccount.builder()
                 .id(rs.getInt("id"))
@@ -51,6 +48,8 @@ public class LinkedAccountDAO {
                 .refreshToken(rs.getString("refresh_token"))
                 .expires(rs.getTimestamp("expires"))
                 .externalUserId(rs.getString("external_user_id"))
-                .build());
+                .build(),
+        userId,
+        providerId);
   }
 }
