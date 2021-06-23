@@ -12,4 +12,4 @@ if ! [ -x "$(command -v vault)" ]; then
   VAULT_COMMAND="docker run --rm -e VAULT_TOKEN=$VAULT_TOKEN -e VAULT_ADDR=$VAULT_ADDR vault:1.7.3 $VAULT_COMMAND"
 fi
 
-echo "externalcreds.providers.services: $($VAULT_COMMAND read -field=providers "$VAULT_PATH")" > "$OUTPUT_LOCATION"
+$VAULT_COMMAND read -field=providers "$VAULT_PATH" > "$OUTPUT_LOCATION"
