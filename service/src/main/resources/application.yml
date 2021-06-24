@@ -27,4 +27,4 @@ spring:
           must-revalidate: true
         use-last-modified: false
 
-logging.level.org.springframework.web.client.RestTemplate: trace
+logging.level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
