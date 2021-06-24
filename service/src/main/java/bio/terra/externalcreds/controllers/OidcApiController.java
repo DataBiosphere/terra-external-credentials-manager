@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
 import bio.terra.common.exception.UnauthorizedException;
+import bio.terra.common.iam.BearerTokenParser;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.services.AccountLinkService;
@@ -54,19 +55,22 @@ public class OidcApiController implements OidcApi {
     // TODO: Consider renaming "AccountLinkService" to "LinkedAccountService" or other
 
     try {
-      // TODO substring
+      // TODO: pull this out into its own function for reusibility
       String accessToken =
           getRequest()
-              .map(r -> r.getHeader("authorization"))
+              .map(r -> BearerTokenParser.parse(r.getHeader("authorization")))
               .orElseThrow(() -> new UnauthorizedException("Access token header not found."));
       String userId = samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
 
       LinkInfo link = accountLinkService.getAccountLink(userId, provider);
       return new ResponseEntity<>(link, HttpStatus.OK);
 
+      // TODO handle exceptions without this big try catch block where possible
     } catch (EmptyResultDataAccessException e) {
+      // TODO look into why/where the EmptyResultDataAccessException is actually being thrown
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     } catch (SQLException e) {
+      // catch this in the DAO
       log.warn("Encountered a SQL Exception while getting linked account information:", e);
       return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     } catch (ApiException e) {

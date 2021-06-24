@@ -18,6 +18,7 @@ public class LinkedAccountDAO {
 
   public LinkedAccount getLinkedAccount(String userId, String providerId) throws SQLException {
     String query = "SELECT * FROM linked_account WHERE user_id = ? and provider_id = ?";
+    // TODO: used named parameters here
 
     //    System.out.println(query);
     //    PreparedStatement ps = connection.prepareStatement(query);
@@ -38,6 +39,7 @@ public class LinkedAccountDAO {
 
     // return jdbcTemplate.queryForObject(query, LinkedAccount.class, userId, providerId);
 
+    // TODO create a RowMapper for this, so we have a reusable thing
     return jdbcTemplate.queryForObject(
         query,
         (rs, rowNum) ->
