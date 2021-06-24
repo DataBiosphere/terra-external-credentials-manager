@@ -1,13 +1,18 @@
 package bio.terra.externalcreds.controllers;
 
+import bio.terra.common.exception.UnauthorizedException;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.services.AccountLinkService;
 import bio.terra.externalcreds.services.ProviderService;
+import bio.terra.externalcreds.services.SamService;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+
+import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +24,18 @@ public class OidcApiController implements OidcApi {
 
   private final ProviderService providerService;
   private final AccountLinkService accountLinkService;
+  private final SamService samService;
+  private final HttpServletRequest request;
 
-  public OidcApiController(ProviderService providerService, AccountLinkService accountLinkService) {
+  public OidcApiController(
+      ProviderService providerService,
+      AccountLinkService accountLinkService,
+      SamService samService,
+      HttpServletRequest request) {
     this.providerService = providerService;
     this.accountLinkService = accountLinkService;
+    this.samService = samService;
+    this.request = request;
   }
 
   @Override
@@ -37,20 +50,30 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<LinkInfo> getLink(String provider) {
 
-    // TODO Questions:
-    // - how do we get the id of the authenticated user?
-    // - are we enforcing that (user_id, provider_id) is unique?
-
-    String userId = "fake_user_id"; // TODO: stop hardcoding this
+    // TODO: enforce that (user_id, provider_id) is unique in the DB!
+    // TODO: Consider renaming "AccountLinkService" to "LinkedAccountService" or other
 
     try {
+      // TODO substring
+      String accessToken =
+          getRequest()
+              .map(r -> r.getHeader("authorization"))
+              .orElseThrow(() -> new UnauthorizedException("Access token header not found."));
+      String userId = samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
+
       LinkInfo link = accountLinkService.getAccountLink(userId, provider);
       return new ResponseEntity<>(link, HttpStatus.OK);
+
     } catch (EmptyResultDataAccessException e) {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     } catch (SQLException e) {
       log.warn("Encountered a SQL Exception while getting linked account information:", e);
       return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    } catch (ApiException e) {
+      log.warn("Encountered an exception while getting the user's access token:", e);
+      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    } catch (UnauthorizedException e) {
+      return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
   }
 }
