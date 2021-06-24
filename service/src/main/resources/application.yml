@@ -27,4 +27,4 @@ spring:
           must-revalidate: true
         use-last-modified: false
 
-logging.level.org.springframework: debug
+logging.level.org.springframework.web.client.RestTemplate: trace

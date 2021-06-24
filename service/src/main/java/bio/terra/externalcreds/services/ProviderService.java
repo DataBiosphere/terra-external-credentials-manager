@@ -35,8 +35,6 @@ public class ProviderService {
       return null;
     }
 
-    log.debug("foo");
-
     ClientRegistration providerClient = providerClientCache.getProviderClient(provider);
 
     return oAuth2Service.getAuthorizationRequestUri(
