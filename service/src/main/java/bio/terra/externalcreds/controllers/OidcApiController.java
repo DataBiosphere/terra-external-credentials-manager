@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
-
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
@@ -56,6 +55,9 @@ public class OidcApiController implements OidcApi {
 
     try {
       // TODO: pull this out into its own function for reusibility
+      // testing
+      String request = getRequest().map(r -> r.getHeader("authorization")).orElse("nothing found");
+      System.out.println(getRequest().toString() + "_______");
       String accessToken =
           getRequest()
               .map(r -> BearerTokenParser.parse(r.getHeader("authorization")))
@@ -63,6 +65,7 @@ public class OidcApiController implements OidcApi {
       String userId = samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
 
       LinkInfo link = accountLinkService.getAccountLink(userId, provider);
+
       return new ResponseEntity<>(link, HttpStatus.OK);
 
       // TODO handle exceptions without this big try catch block where possible
