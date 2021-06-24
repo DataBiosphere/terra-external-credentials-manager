@@ -38,6 +38,11 @@ public class OidcApiController implements OidcApi {
     this.request = request;
   }
 
+  private String getUserIdFromSam() throws ApiException {
+    String accessToken = BearerTokenParser.parse(this.request.getHeader("authorization"));
+    return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
+  }
+
   @Override
   @GetMapping("/api/oidc/v1/providers")
   public ResponseEntity<List<String>> listProviders() {
@@ -54,10 +59,7 @@ public class OidcApiController implements OidcApi {
     // TODO: Consider renaming "AccountLinkService" to "LinkedAccountService" or other
 
     try {
-      // TODO: pull this out into its own function for reusibility
-      String accessToken = BearerTokenParser.parse(this.request.getHeader("authorization"));
-      String userId = samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
-
+      String userId = getUserIdFromSam();
       LinkInfo link = accountLinkService.getAccountLink(userId, provider);
 
       return new ResponseEntity<>(link, HttpStatus.OK);
