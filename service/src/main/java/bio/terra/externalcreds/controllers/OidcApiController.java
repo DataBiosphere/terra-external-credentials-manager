@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 @Controller
 public class OidcApiController implements OidcApi {
@@ -56,19 +55,8 @@ public class OidcApiController implements OidcApi {
 
     try {
       // TODO: pull this out into its own function for reusibility
-      // testing
-      //      String request = getRequest().map(r -> r.getHeader("authorization")).orElse("nothing
-      // found");
-      //      System.out.println(getRequest().toString() + "_______");
-      //      String accessToken =
-      //          getRequest()
-      //              .map(r -> BearerTokenParser.parse(r.getHeader("authorization")))
-      //              .orElseThrow(() -> new UnauthorizedException("Access token header not
-      // found."));
-      System.out.println(this.request.getHeaderNames() + "_____________");
       String accessToken = BearerTokenParser.parse(this.request.getHeader("authorization"));
       String userId = samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
-      System.out.println(userId + "____________");
 
       LinkInfo link = accountLinkService.getAccountLink(userId, provider);
 
