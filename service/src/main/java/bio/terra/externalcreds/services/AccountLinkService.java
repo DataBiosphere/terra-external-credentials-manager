@@ -19,7 +19,7 @@ public class AccountLinkService {
     this.linkedAccountDAO = linkedAccountDAO;
   }
 
-  public LinkInfo getAccountLink(String userId, String providerId) throws SQLException {
+  public LinkInfo getAccountLink(String userId, String providerId) {
     LinkedAccount link = linkedAccountDAO.getLinkedAccount(userId, providerId);
     OffsetDateTime expTime =
         OffsetDateTime.ofInstant(

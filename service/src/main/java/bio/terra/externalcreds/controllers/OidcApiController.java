@@ -58,25 +58,8 @@ public class OidcApiController implements OidcApi {
     // TODO: enforce that (user_id, provider_id) is unique in the DB!
     // TODO: Consider renaming "AccountLinkService" to "LinkedAccountService" or other
 
-    try {
-      String userId = getUserIdFromSam();
-      LinkInfo link = accountLinkService.getAccountLink(userId, provider);
+    String userId = getUserIdFromSam();
+    LinkInfo link = accountLinkService.getAccountLink(userId, provider);
 
-      return new ResponseEntity<>(link, HttpStatus.OK);
-
-      // TODO handle exceptions without this big try catch block where possible
-    } catch (EmptyResultDataAccessException e) {
-      // TODO look into why/where the EmptyResultDataAccessException is actually being thrown
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    } catch (SQLException e) {
-      // catch this in the DAO
-      log.warn("Encountered a SQL Exception while getting linked account information:", e);
-      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-    } catch (ApiException e) {
-      log.warn("Encountered an exception while getting the user's access token:", e);
-      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-    } catch (UnauthorizedException e) {
-      return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-    }
-  }
+    return new ResponseEntity<>(link, HttpStatus.OK);
 }
