@@ -1,19 +1,16 @@
 package bio.terra.externalcreds.controllers;
 
-import bio.terra.common.exception.UnauthorizedException;
 import bio.terra.common.iam.BearerTokenParser;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.services.AccountLinkService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;

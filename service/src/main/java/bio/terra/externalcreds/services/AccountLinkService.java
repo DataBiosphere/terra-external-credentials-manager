@@ -23,7 +23,7 @@ public class AccountLinkService {
     LinkedAccount link = linkedAccountDAO.getLinkedAccount(userId, providerId);
     OffsetDateTime expTime =
         OffsetDateTime.ofInstant(
-            link.getExpires().toInstant(), ZoneId.of("UTC")); // TODO unit test this conversion
+            link.getExpires().toInstant(), ZoneId.of("UTC"));
     return new LinkInfo().externalUserId(link.getExternalUserId()).expirationTimestamp(expTime);
   }
 }
