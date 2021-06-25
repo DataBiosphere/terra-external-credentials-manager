@@ -26,7 +26,7 @@ public class LinkedAccountDAOTest extends BaseTest {
             .providerId("provider")
             .refreshToken("refresh")
             .userId(UUID.randomUUID().toString())
-            .externalUserId("externalUserId")
+            .externalUserId("externalUser")
             .build();
     linkedAccountDAO.createLinkedAccount(linkedAccount);
 
