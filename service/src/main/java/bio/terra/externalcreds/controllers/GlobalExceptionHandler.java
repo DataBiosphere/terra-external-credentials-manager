@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
   // -- catchall - log so we can understand what we have missed in the handlers above
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorReport> catchallHandler(Exception ex) {
-    logger.error("Exception caught by catchall hander", ex);
+    logger.error("Exception caught by catchall handler", ex);
     return buildErrorReport(ex, HttpStatus.INTERNAL_SERVER_ERROR, null);
   }
 

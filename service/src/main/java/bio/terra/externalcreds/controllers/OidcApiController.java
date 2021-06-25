@@ -1,11 +1,15 @@
 package bio.terra.externalcreds.controllers;
 
 import bio.terra.common.iam.BearerTokenParser;
+import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
-import bio.terra.externalcreds.services.AccountLinkService;
+import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,24 +24,28 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class OidcApiController implements OidcApi {
 
   private final ProviderService providerService;
-  private final AccountLinkService accountLinkService;
+  private final LinkedAccountService linkedAccountService;
   private final SamService samService;
   private final HttpServletRequest request;
 
   public OidcApiController(
       ProviderService providerService,
-      AccountLinkService accountLinkService,
+      LinkedAccountService accountLinkService,
       SamService samService,
       HttpServletRequest request) {
     this.providerService = providerService;
-    this.accountLinkService = accountLinkService;
+    this.linkedAccountService = accountLinkService;
     this.samService = samService;
     this.request = request;
   }
 
-  private String getUserIdFromSam() throws ApiException {
-    String accessToken = BearerTokenParser.parse(this.request.getHeader("authorization"));
-    return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
+  private String getUserIdFromSam() {
+    try {
+      String accessToken = BearerTokenParser.parse(this.request.getHeader("authorization"));
+      return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
+    } catch (ApiException e) {
+      throw new ExternalCredsException(e, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Override
@@ -52,11 +60,18 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<LinkInfo> getLink(String provider) {
 
-    // TODO: enforce that (user_id, provider_id) is unique in the DB!
-    // TODO: Consider renaming "AccountLinkService" to "LinkedAccountService" or other
-
     String userId = getUserIdFromSam();
-    LinkInfo link = accountLinkService.getAccountLink(userId, provider);
+    LinkedAccount linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
+    if (linkedAccount == null) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+    OffsetDateTime expTime =
+        OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
+    LinkInfo linkInfo =
+        new LinkInfo()
+            .externalUserId(linkedAccount.getExternalUserId())
+            .expirationTimestamp(expTime);
 
-    return new ResponseEntity<>(link, HttpStatus.OK);
+    return new ResponseEntity<>(linkInfo, HttpStatus.OK);
+  }
 }
