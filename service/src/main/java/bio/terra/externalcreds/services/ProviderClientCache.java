@@ -26,10 +26,18 @@ public class ProviderClientCache {
       return null;
     }
 
-    return ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
-        .clientId(providerInfo.getClientId())
-        .clientSecret(providerInfo.getClientSecret())
-        .issuerUri(providerInfo.getIssuer())
-        .build();
+    ClientRegistration.Builder builder =
+        ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+            .clientId(providerInfo.getClientId())
+            .clientSecret(providerInfo.getClientSecret())
+            .issuerUri(providerInfo.getIssuer());
+
+    // set optional overrides
+    providerInfo.getUserInfoEndpoint().map(builder::userInfoUri);
+    providerInfo.getAuthorizationEndpoint().map(builder::authorizationUri);
+    providerInfo.getTokenEndpoint().map(builder::tokenUri);
+    providerInfo.getJwksUri().map(builder::jwkSetUri);
+
+    return builder.build();
   }
 }
