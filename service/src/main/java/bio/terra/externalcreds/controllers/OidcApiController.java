@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import net.minidev.json.JSONValue;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -38,7 +37,7 @@ public class OidcApiController implements OidcApi {
     if (authorizationUrl == null) {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     } else {
-      return new ResponseEntity<>(JSONValue.toJSONString(authorizationUrl), HttpStatus.OK);
+      return new ResponseEntity<>(authorizationUrl, HttpStatus.OK);
     }
   }
 }

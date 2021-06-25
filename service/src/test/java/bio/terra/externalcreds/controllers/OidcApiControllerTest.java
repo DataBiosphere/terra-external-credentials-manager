@@ -9,7 +9,6 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.services.ProviderService;
 import java.util.List;
 import java.util.Set;
-import net.minidev.json.JSONValue;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -46,7 +45,7 @@ public class OidcApiControllerTest extends BaseTest {
     queryParams.add("redirectUri", redirectUri);
     queryParams.addAll("scopes", List.copyOf(scopes));
     mvc.perform(get("/api/oidc/v1/{provider}/authorization-url", provider).queryParams(queryParams))
-        .andExpect(content().json(JSONValue.toJSONString(result)));
+        .andExpect(content().json("\"" + result + "\""));
   }
 
   @Test

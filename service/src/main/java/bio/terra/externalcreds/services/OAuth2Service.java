@@ -106,10 +106,8 @@ public class OAuth2Service {
     OAuth2AuthorizationCodeGrantRequest codeGrantRequest =
         new OAuth2AuthorizationCodeGrantRequest(
             providerClient, new OAuth2AuthorizationExchange(authRequest, authResponse));
-    OAuth2AccessTokenResponse tokenResponse =
-        tokenResponseClient.getTokenResponse(codeGrantRequest);
 
-    return tokenResponse;
+    return tokenResponseClient.getTokenResponse(codeGrantRequest);
   }
 
   /**
@@ -122,7 +120,7 @@ public class OAuth2Service {
    */
   public OAuth2AccessTokenResponse authorizeWithRefreshToken(
       ClientRegistration providerClient, OAuth2RefreshToken refreshToken) {
-    // the OAuth2RefreshTokenGrantRequest requires an access token to be specified but a valid one
+    // the OAuth2RefreshTokenGrantRequest requires an access token to be specified but not a valid one
     OAuth2AccessToken dummyAccessToken =
         new OAuth2AccessToken(
             OAuth2AccessToken.TokenType.BEARER, "dummy", Instant.EPOCH, Instant.now());

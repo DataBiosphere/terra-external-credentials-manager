@@ -1,4 +1,6 @@
-logging.pattern.level: '%X{requestId} %5p'
+logging:
+  level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
+  pattern.level: '%X{requestId} %5p'
 
 server:
   compression:
@@ -26,5 +28,3 @@ spring:
           max-age: 0
           must-revalidate: true
         use-last-modified: false
-
-logging.level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
