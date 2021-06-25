@@ -51,7 +51,6 @@ public class OidcApiControllerTest extends BaseTest {
 
   @Test
   void testGetAuthUrl404() throws Exception {
-    String result = "https://test/authorization/uri";
     String provider = "fake";
     String redirectUri = "fakeuri";
     Set<String> scopes = Set.of("openid", "email");

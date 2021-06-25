@@ -20,11 +20,16 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 /**
- * Service that encapsulates all OAuth2 features need by ECM. General flow: 1)
- * getAuthorizationRequestUri - visit to authenticate with provider 2) authorizationCodeExchange -
- * using code resulting from authentication, get access and refresh tokens 3) getUserInfo - using
- * access token call the user info endpoint - called periodically to get updated user info 4)
- * authorizeWithRefreshToken - get a new access token using a refresh token when required
+ * Service that encapsulates all OAuth2 features need by ECM. General flow:
+ *
+ * <ol>
+ *   <li>getAuthorizationRequestUri - visit to authenticate with provider
+ *   <li>authorizationCodeExchange - using code resulting from authentication, get access and
+ *       refresh tokens
+ *   <li>getUserInfo - using access token call the user info endpoint - called periodically to get
+ *       updated user info
+ *   <li>authorizeWithRefreshToken - get a new access token using a refresh token when required
+ * </ol>
  */
 @Service
 public class OAuth2Service {
