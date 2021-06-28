@@ -9,7 +9,7 @@ server:
 spring:
   application.name: externalcreds
 
-  config.import: optional:classpath:rendered/providers.yaml;classpath:git.properties
+  config.import: optional:classpath:rendered/providers.yaml;classpath:rendered/version.properties
 
   datasource:
     hikari.connection-timeout: 5000
