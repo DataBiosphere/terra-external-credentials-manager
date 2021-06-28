@@ -7,11 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
+import bio.terra.externalcreds.services.SamService;
 import java.sql.Timestamp;
 import java.util.UUID;
-import javax.servlet.http.HttpServletRequest;
-
-import bio.terra.externalcreds.services.SamService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,32 +21,27 @@ public class OidcApiControllerTest extends BaseTest {
   @Autowired private MockMvc mvc;
 
   @MockBean private LinkedAccountService linkedAccountService;
-  @MockBean private HttpServletRequest httpServletRequest;
   @MockBean private SamService samService;
 
   @Test
   void testGetLink() throws Exception {
-    String userIdFromSam = "";
-    String provider = "";
     LinkedAccount inputLinkedAccount =
         LinkedAccount.builder()
-            .expires(new Timestamp(100))
-            .providerId("provider")
+            .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
+            .providerId("testProvider")
             .refreshToken("refresh")
             .userId(UUID.randomUUID().toString())
             .externalUserId("externalUser")
             .build();
-    when(httpServletRequest.getHeader(Mockito.anyString())).thenReturn("");
-    when(samService.samUsersApi(Mockito.anyString()).getUserStatusInfo().getUserSubjectId())
-        .thenReturn("");
 
+    when(samService.getUserIdFromSam()).thenReturn("");
     when(linkedAccountService.getLinkedAccount(Mockito.anyString(), Mockito.anyString()))
         .thenReturn(inputLinkedAccount);
-    String timestamp = inputLinkedAccount.getExpires().toString();
-    String jsonString =
-        String.format(
-            "{\"externalUserId\":\"externalUser\", \"expirationTimestamp\":\"%s\"}", timestamp);
 
-    mvc.perform(get("/api/oidc/v1/{provider}")).andExpect(content().json(jsonString));
+    mvc.perform(get("/api/oidc/v1/testProvider"))
+        .andExpect(
+            content()
+                .json(
+                    "{\"externalUserId\":\"externalUser\", \"expirationTimestamp\":\"2007-09-23T14:10:10Z\"}"));
   }
 }
