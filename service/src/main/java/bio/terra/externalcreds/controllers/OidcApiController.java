@@ -24,10 +24,10 @@ public class OidcApiController implements OidcApi {
 
   public OidcApiController(
       ProviderService providerService,
-      LinkedAccountService accountLinkService,
+      LinkedAccountService linkedAccountService,
       SamService samService) {
     this.providerService = providerService;
-    this.linkedAccountService = accountLinkService;
+    this.linkedAccountService = linkedAccountService;
     this.samService = samService;
   }
 
@@ -41,7 +41,6 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<LinkInfo> getLink(String provider) {
-
     String userId = samService.getUserIdFromSam();
     LinkedAccount linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
     if (linkedAccount == null) {
