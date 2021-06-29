@@ -182,15 +182,11 @@ paths:
       security: []
       responses:
         '200':
-          description: A JSON description of the ok subsystems.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SystemStatus'
+          $ref: '#/components/responses/SystemStatusResponse'
         '500':
           $ref: '#/components/responses/ServerError'
         '503':
-          description: A JSON description of the subsystems and any issues they might have.
+          $ref: '#/components/responses/SystemStatusResponse'
   /version:
     get:
       summary: Get version info of the deployed service.
@@ -232,6 +228,13 @@ components:
             $ref: '#/components/schemas/LinkInfo'
     LinkNotFound:
       description: Unable to find a link for the user to the provider. Consider re-linking with an oauthcode.
+
+    SystemStatusResponse:
+      description: A JSON description of the subsystems and their statuses.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SystemStatus'
 
     # Error Responses
     BadRequest:
