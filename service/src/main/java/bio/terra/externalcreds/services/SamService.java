@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.services;
 
+import bio.terra.common.exception.UnauthorizedException;
 import bio.terra.common.iam.BearerTokenParser;
 import bio.terra.externalcreds.ExternalCredsException;
 import javax.servlet.http.HttpServletRequest;
@@ -30,7 +31,10 @@ public class SamService {
 
   public String getUserIdFromSam() {
     try {
-      String accessToken = BearerTokenParser.parse(request.getHeader("authorization"));
+      String header = request.getHeader("authorization");
+      if (header == null) throw new UnauthorizedException("User is not authorized");
+      String accessToken = BearerTokenParser.parse(header);
+
       return samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
     } catch (ApiException e) {
       throw new ExternalCredsException(e, HttpStatus.INTERNAL_SERVER_ERROR);
