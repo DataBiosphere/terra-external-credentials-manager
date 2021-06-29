@@ -16,4 +16,8 @@ public class LinkedAccountService {
   public LinkedAccount getLinkedAccount(String userId, String providerId) {
     return linkedAccountDAO.getLinkedAccount(userId, providerId);
   }
+
+  public void deleteLinkedAccount(String userId, String providerId) {
+    linkedAccountDAO.deleteLinkedAccount(userId, providerId);
+  }
 }

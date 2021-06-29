@@ -55,4 +55,13 @@ public class OidcApiController implements OidcApi {
 
     return new ResponseEntity<>(linkInfo, HttpStatus.OK);
   }
+
+  @Override
+  public ResponseEntity<Void> deleteLink(String provider) {
+    // TODO: think about making "provider"/"providerId" phrasing consistent (change in DB?)
+    String userId = samService.getUserIdFromSam();
+    linkedAccountService.deleteLinkedAccount(userId, provider);
+
+    return new ResponseEntity<>(HttpStatus.OK);
+  }
 }
