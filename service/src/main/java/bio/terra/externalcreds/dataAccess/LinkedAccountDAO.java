@@ -44,6 +44,7 @@ public class LinkedAccountDAO {
   }
 
   public void deleteLinkedAccount(String userId, String providerId) {
+    // TODO: handle cases where linkage doesn't exist
     String query =
         "DELETE FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
     SqlParameterSource namedParameters =
