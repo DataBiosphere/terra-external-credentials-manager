@@ -11,6 +11,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -54,5 +55,19 @@ public class OidcApiController implements OidcApi {
             .expirationTimestamp(expTime);
 
     return new ResponseEntity<>(linkInfo, HttpStatus.OK);
+  }
+
+  @Override
+  public ResponseEntity<String> getAuthUrl(
+      String provider, List<String> scopes, String redirectUri, String state) {
+    String authorizationUrl =
+        providerService.getProviderAuthorizationUrl(
+            provider, redirectUri, Set.copyOf(scopes), state);
+
+    if (authorizationUrl == null) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    } else {
+      return new ResponseEntity<>(authorizationUrl, HttpStatus.OK);
+    }
   }
 }

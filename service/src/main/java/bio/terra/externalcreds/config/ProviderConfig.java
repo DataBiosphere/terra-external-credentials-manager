@@ -2,6 +2,7 @@ package bio.terra.externalcreds.config;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -21,7 +22,14 @@ public class ProviderConfig {
     private String clientId;
     private String clientSecret;
     private Duration linkLifespan;
-    private String openidConfiguration;
+    private String issuer;
     private String revokeEndpoint;
+    private Map<String, Object> additionalAuthorizationParameters;
+
+    // optional overrides for values in provider's /.well-known/openid-configuration
+    private Optional<String> userInfoEndpoint = Optional.empty();
+    private Optional<String> authorizationEndpoint = Optional.empty();
+    private Optional<String> tokenEndpoint = Optional.empty();
+    private Optional<String> jwksUri = Optional.empty();
   }
 }

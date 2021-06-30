@@ -1,6 +1,8 @@
 externalcreds.sam-address: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
 
-logging.pattern.level: '%X{requestId} %5p'
+logging:
+  level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
+  pattern.level: '%X{requestId} %5p'
 
 server:
   compression:
@@ -11,7 +13,7 @@ server:
 spring:
   application.name: externalcreds
 
-  config.import: optional:classpath:rendered/providers.yaml
+  config.import: optional:classpath:rendered/providers.yaml;classpath:rendered/version.properties
 
   datasource:
     hikari.connection-timeout: 5000
