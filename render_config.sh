@@ -1,6 +1,7 @@
 ENV=${1:-dev}
 VAULT_TOKEN=${2:-$(cat "$HOME"/.vault-token)}
 
+VAULT_ADDR="https://clotho.broadinstitute.org:8200"
 VAULT_PATH="secret/dsde/terra/kernel/$ENV/$ENV/externalcreds"
 
 VAULT_COMMAND="vault read"
