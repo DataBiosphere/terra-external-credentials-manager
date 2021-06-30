@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.services;
 
-import bio.terra.common.logging.LoggingInitializer;
 import bio.terra.externalcreds.config.ProviderConfig;
 import java.util.Map;
 import java.util.Scanner;
@@ -13,7 +12,7 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenRespon
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
-@SpringBootApplication(scanBasePackages = {"bio.terra.externalcreds", "bio.terra.common.logging"})
+@SpringBootApplication(scanBasePackages = {"bio.terra.externalcreds"})
 @Component
 public class OAuth2ServiceTest {
 
@@ -23,7 +22,6 @@ public class OAuth2ServiceTest {
 
   public static void main(String[] args) {
     new SpringApplicationBuilder(OAuth2ServiceTest.class)
-        .initializers(new LoggingInitializer())
         .profiles("human-readable-logging")
         .run(args)
         .getBean(OAuth2ServiceTest.class)

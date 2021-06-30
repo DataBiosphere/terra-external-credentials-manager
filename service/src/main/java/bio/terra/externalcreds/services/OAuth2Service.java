@@ -120,7 +120,8 @@ public class OAuth2Service {
    */
   public OAuth2AccessTokenResponse authorizeWithRefreshToken(
       ClientRegistration providerClient, OAuth2RefreshToken refreshToken) {
-    // the OAuth2RefreshTokenGrantRequest requires an access token to be specified but not a valid one
+    // the OAuth2RefreshTokenGrantRequest requires an access token to be specified but
+    // it does not have to be a valid one so create a dummy
     OAuth2AccessToken dummyAccessToken =
         new OAuth2AccessToken(
             OAuth2AccessToken.TokenType.BEARER, "dummy", Instant.EPOCH, Instant.now());
