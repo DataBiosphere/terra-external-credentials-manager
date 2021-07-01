@@ -43,14 +43,13 @@ public class LinkedAccountDAO {
     jdbcTemplate.update(query, namedParameters);
   }
 
-  public void deleteLinkedAccount(String userId, String providerId) {
-    // TODO: handle cases where linkage doesn't exist
+  public boolean deleteLinkedAccount(String userId, String providerId) {
     String query =
         "DELETE FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
     SqlParameterSource namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
 
-    jdbcTemplate.update(query, namedParameters);
+    return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
   private static class LinkedAccountRowMapper implements RowMapper<LinkedAccount> {

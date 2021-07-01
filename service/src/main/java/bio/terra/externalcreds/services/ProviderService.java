@@ -17,4 +17,8 @@ public class ProviderService {
   public Set<String> getProviderList() {
     return Collections.unmodifiableSet(providerConfig.getServices().keySet());
   }
+
+  public ProviderConfig.ProviderInfo getProviderInfo(String provider) {
+    return providerConfig.getServices().get(provider);
+  }
 }
