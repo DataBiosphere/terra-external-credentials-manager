@@ -34,17 +34,20 @@ public class WriteTransactionProbe {
   public void successfulWriteTransaction(CyclicBarrier barrier, int id)
       throws BrokenBarrierException, InterruptedException {
     Integer probeValue = getTestProbeValue(id);
-    barrier.await();
-    jdbcTemplate.update("update transaction_test set probe = ? where id = ?", probeValue + 1, id);
-    barrier.await();
+    barrier.await(); // wait 1
+    incrementTestProbeValue(id, probeValue);
   }
 
   @WriteTransaction
   public void retriedWriteTransaction(CyclicBarrier barrier, int id)
       throws BrokenBarrierException, InterruptedException {
     Integer probeValue = getTestProbeValue(id);
-    barrier.await();
-    barrier.await();
+    barrier.await(); // wait 1 and 3
+    barrier.await(); // wait 2 and 4
+    incrementTestProbeValue(id, probeValue);
+  }
+
+  private void incrementTestProbeValue(int id, Integer probeValue) {
     jdbcTemplate.update("update transaction_test set probe = ? where id = ?", probeValue + 1, id);
   }
 }
