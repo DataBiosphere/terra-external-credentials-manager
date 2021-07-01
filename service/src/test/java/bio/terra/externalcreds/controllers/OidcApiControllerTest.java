@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -17,9 +18,13 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.broadinstitute.dsde.workbench.client.sam.ApiException;
+import org.broadinstitute.dsde.workbench.client.sam.api.UsersApi;
+import org.broadinstitute.dsde.workbench.client.sam.model.UserStatusInfo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -77,21 +82,28 @@ public class OidcApiControllerTest extends BaseTest {
 
   @Test
   void testGetLink() throws Exception {
-
+    String accessToken = "testToken";
+    String userId = UUID.randomUUID().toString();
     LinkedAccount inputLinkedAccount =
         LinkedAccount.builder()
-            .userId(UUID.randomUUID().toString())
+            .userId(userId)
             .providerId("testProvider")
             .externalUserId("externalUser")
             .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
             .build();
 
-    when(samService.getUserIdFromSam()).thenReturn(inputLinkedAccount.getUserId());
+    UsersApi usersApiMock = mock(UsersApi.class);
+    UserStatusInfo userStatusInfo = new UserStatusInfo().userSubjectId(userId);
+    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
+
     when(linkedAccountService.getLinkedAccount(
             eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderId())))
         .thenReturn(inputLinkedAccount);
 
-    mvc.perform(get("/api/oidc/v1/" + inputLinkedAccount.getProviderId()))
+    mvc.perform(
+            get("/api/oidc/v1/" + inputLinkedAccount.getProviderId())
+                .header("authorization", "Bearer " + accessToken))
         .andExpect(
             content()
                 .json(
@@ -107,13 +119,42 @@ public class OidcApiControllerTest extends BaseTest {
   void testGetLinkedAccount404() throws Exception {
     String userId = "non-existent-user";
     String providerId = "non-existent-provider";
-    when(samService.getUserIdFromSam()).thenReturn(userId);
+    String accessToken = "testToken";
 
-    mvc.perform(get("/api/oidc/v1/" + providerId)).andExpect(status().isNotFound());
+    UsersApi usersApiMock = mock(UsersApi.class);
+    UserStatusInfo userStatusInfo = new UserStatusInfo().userSubjectId(userId);
+    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
+
+    mvc.perform(get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isNotFound());
   }
 
   @Test
-  void testGetLinkedAccount403() throws Exception {}
+  void testGetLinkedAccount403() throws Exception {
+    String providerId = "provider";
+    String accessToken = "testToken";
 
-  // test for forbidden (when SAM throws a 404)
+    UsersApi usersApiMock = mock(UsersApi.class);
+    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo())
+        .thenThrow(new ApiException(HttpStatus.NOT_FOUND.value(), "Not Found"));
+
+    mvc.perform(get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void testGetLinkedAccount500() throws Exception {
+    String providerId = "provider";
+    String accessToken = "testToken";
+
+    UsersApi usersApiMock = mock(UsersApi.class);
+    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo())
+        .thenThrow(new ApiException(HttpStatus.NO_CONTENT.value(), "Not Found"));
+
+    mvc.perform(get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isInternalServerError());
+  }
 }
