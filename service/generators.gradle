@@ -39,10 +39,13 @@ compileJava.dependsOn swaggerSources.service.code
 
 // see https://github.com/n0mer/gradle-git-properties
 gitProperties {
+	boolean isCi = System.getenv('CI').toBoolean()
+	String expectedTag = version.replace('-SNAPSHOT', '')
+
 	gitPropertiesName = 'rendered/version.properties'
 	keys = []
-	customProperty('version.gitTag', { "${it.describe(tags: true)}${!it.status().clean ? '-dirty' : ''}" })
-	customProperty('version.gitHash', { it.head().id })
-	customProperty('version.github', { "https://github.com/DataBiosphere/terra-external-credentials-manager/tree/${it.describe(tags: true)}" })
+	customProperty('version.gitTag', { isCi ? expectedTag : "${it.describe(tags: true)}${!it.status().clean ? '-dirty' : ''}" })
+	customProperty('version.gitHash', { it.head().abbreviatedId })
+	customProperty('version.github', { "https://github.com/DataBiosphere/terra-external-credentials-manager/tree/${isCi ? expectedTag : it.describe(tags: true)}" })
 	customProperty('version.build', version)
 }
