@@ -2,10 +2,13 @@ package bio.terra.externalcreds.controllers;
 
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.services.ProviderService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import lombok.SneakyThrows;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -14,9 +17,11 @@ import org.springframework.stereotype.Controller;
 public class OidcApiController implements OidcApi {
 
   private final ProviderService providerService;
+  private final ObjectMapper mapper;
 
-  public OidcApiController(ProviderService providerService) {
+  public OidcApiController(ProviderService providerService, ObjectMapper mapper) {
     this.providerService = providerService;
+    this.mapper = mapper;
   }
 
   @Override
@@ -27,6 +32,8 @@ public class OidcApiController implements OidcApi {
     return new ResponseEntity<>(providers, HttpStatus.OK);
   }
 
+  // Because we're just processing String -> json string, there shouldn't be any conversion issue.
+  @SneakyThrows(JsonProcessingException.class)
   @Override
   public ResponseEntity<String> getAuthUrl(
       String provider, List<String> scopes, String redirectUri, String state) {
@@ -35,9 +42,11 @@ public class OidcApiController implements OidcApi {
             provider, redirectUri, Set.copyOf(scopes), state);
 
     if (authorizationUrl == null) {
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+      return ResponseEntity.notFound().build();
     } else {
-      return new ResponseEntity<>(authorizationUrl, HttpStatus.OK);
+      // We explicitly run this through the mapper because otherwise it's treated as text/plain, and
+      // not correctly quoted to be valid json.
+      return new ResponseEntity<>(mapper.writeValueAsString(authorizationUrl), HttpStatus.OK);
     }
   }
 }

@@ -1,6 +1,6 @@
 <!-- Copied from the swagger-ui static file -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8">
     <title>ECM Swagger UI</title>
@@ -56,7 +56,7 @@
 
     <script src="/webjars/swagger-ui-dist/swagger-ui-bundle.js"> </script>
     <script src="/webjars/swagger-ui-dist/swagger-ui-standalone-preset.js"> </script>
-    <script>
+    <script th:inline="javascript">
     const cleanupPlugin = function(system) {
       return {
         components: {
@@ -88,8 +88,14 @@
         defaultModelsExpandDepth: -1, // hide the huge list of schemas under the routes
         defaultModelRendering: 'model', // schema has the descriptions, unlike the example value
         defaultModelExpandDepth: 2, // affects the schema shown for a request or response
+        oauth2RedirectUrl: `${window.location.protocol}/${window.location.host}/webjars/swagger-ui-dist/oauth2-redirect.html`
       })
       // End Swagger UI call region
+
+      ui.initOAuth({
+        clientId: [[${clientId}]],
+        scopes: "openid email profile"
+      })
 
       window.ui = ui
     }
