@@ -102,4 +102,18 @@ public class OidcApiControllerTest extends BaseTest {
                             inputLinkedAccount.getExpires().toInstant(), ZoneId.of("UTC"))
                         + "\"}"));
   }
+
+  @Test
+  void testGetLinkedAccount404() throws Exception {
+    String userId = "non-existent-user";
+    String providerId = "non-existent-provider";
+    when(samService.getUserIdFromSam()).thenReturn(userId);
+
+    mvc.perform(get("/api/oidc/v1/" + providerId)).andExpect(status().isNotFound());
+  }
+
+  @Test
+  void testGetLinkedAccount403() throws Exception {}
+
+  // test for forbidden (when SAM throws a 404)
 }

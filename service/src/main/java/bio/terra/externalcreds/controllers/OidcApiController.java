@@ -49,10 +49,13 @@ public class OidcApiController implements OidcApi {
     }
     OffsetDateTime expTime =
         OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
+    System.out.println("__________OffsetDateTime:" + expTime.toString());
     LinkInfo linkInfo =
         new LinkInfo()
             .externalUserId(linkedAccount.getExternalUserId())
             .expirationTimestamp(expTime);
+    System.out.println(
+        "__________LinkInfo OffsetDateTime:" + linkInfo.getExpirationTimestamp().toString());
 
     return new ResponseEntity<>(linkInfo, HttpStatus.OK);
   }
