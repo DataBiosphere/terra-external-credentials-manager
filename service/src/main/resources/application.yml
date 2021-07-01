@@ -21,6 +21,8 @@ spring:
     url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/${DATABASE_NAME:ecm}
     username: ${DATABASE_USER:ecmuser}
 
+  jackson.serialization.indent_output: true
+
   main.banner-mode: off
 
   web:
