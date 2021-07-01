@@ -1,7 +1,5 @@
 package bio.terra.externalcreds.service;
 
-import static org.mockito.Mockito.when;
-
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -10,18 +8,15 @@ import java.sql.Timestamp;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 public class LinkedAccountServiceTest extends BaseTest {
   @Autowired private LinkedAccountService linkedAccountService;
-
-  @MockBean private LinkedAccountDAO linkedAccountDAO;
+  @Autowired private LinkedAccountDAO linkedAccountDAO;
 
   @Test
   void testGetLinkedAccount() {
-    LinkedAccount inputLinkedAccount =
+    LinkedAccount linkedAccount =
         LinkedAccount.builder()
             .expires(new Timestamp(100))
             .providerId("provider")
@@ -29,11 +24,11 @@ public class LinkedAccountServiceTest extends BaseTest {
             .userId(UUID.randomUUID().toString())
             .externalUserId("externalUser")
             .build();
-    when(linkedAccountDAO.getLinkedAccount(Mockito.anyString(), Mockito.anyString()))
-        .thenReturn(inputLinkedAccount);
+    linkedAccountDAO.createLinkedAccount(linkedAccount);
 
-    LinkedAccount outputLinkedAccount = linkedAccountService.getLinkedAccount("", "");
-
-    Assertions.assertEquals(inputLinkedAccount, outputLinkedAccount);
+    LinkedAccount savedLinkedAccount =
+        linkedAccountService.getLinkedAccount(
+            linkedAccount.getUserId(), linkedAccount.getProviderId());
+    Assertions.assertEquals(linkedAccount, savedLinkedAccount.withId(0));
   }
 }

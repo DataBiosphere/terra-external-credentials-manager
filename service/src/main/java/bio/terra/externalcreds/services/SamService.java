@@ -37,7 +37,7 @@ public class SamService {
 
       return samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
     } catch (ApiException e) {
-      throw new ExternalCredsException(e, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new ExternalCredsException(e, HttpStatus.FORBIDDEN);
     }
   }
 }
