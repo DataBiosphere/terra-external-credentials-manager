@@ -3,33 +3,36 @@ package bio.terra.externalcreds.util;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.classify.BinaryExceptionClassifier;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.backoff.BackOffContext;
 import org.springframework.retry.backoff.BackOffInterruptedException;
 import org.springframework.retry.backoff.BackOffPolicy;
 
-public class CompositeBackoffPolicy implements BackOffPolicy {
-  private final LinkedHashMap<BinaryExceptionClassifier, BackOffPolicy> backOffPolicies;
+/**
+ * BackOffPolicy that delegates to a number of nested BackOffPolicies. The BackOffPolicy chosen is
+ * determined by the exception being handled. If more than one policy matches, the first is used.
+ */
+@Slf4j
+public class CompositeBackOffPolicy implements BackOffPolicy {
+  // LinkedHashMap to ensure consistent behavior
+  private final LinkedHashMap<BinaryExceptionClassifier, BackOffPolicy> backOffPoliciesByClassifier;
 
-  public CompositeBackoffPolicy(
+  public CompositeBackOffPolicy(
       LinkedHashMap<Class<? extends Throwable>, BackOffPolicy> backOffPolicies) {
-    this.backOffPolicies = new LinkedHashMap<>();
+    this.backOffPoliciesByClassifier = new LinkedHashMap<>();
     backOffPolicies.forEach(
         (throwableClass, backOffPolicy) ->
-            this.backOffPolicies.put(
+            this.backOffPoliciesByClassifier.put(
                 new BinaryExceptionClassifier(Map.of(throwableClass, true)), backOffPolicy));
   }
 
   @Override
   public BackOffContext start(RetryContext context) {
     Map<BinaryExceptionClassifier, BackOffContext> backOffContextMap = new HashMap<>();
-    for (Map.Entry<BinaryExceptionClassifier, BackOffPolicy> classifierAndPolicy :
-        this.backOffPolicies.entrySet()) {
-      backOffContextMap.put(
-          classifierAndPolicy.getKey(), classifierAndPolicy.getValue().start(context));
-    }
-
+    this.backOffPoliciesByClassifier.forEach(
+        (classifier, policy) -> backOffContextMap.put(classifier, policy.start(context)));
     return new BackOffContextByClassifier(context, backOffContextMap);
   }
 
@@ -41,14 +44,26 @@ public class CompositeBackoffPolicy implements BackOffPolicy {
     for (BinaryExceptionClassifier classifier :
         backOffContextByClassifier.backOffContexts.keySet()) {
       if (classifier.classify(backOffContextByClassifier.retryContext.getLastThrowable())) {
-        backOffPolicies
+        log.debug(
+            "retrying",
+            Map.of(
+                "exception",
+                backOffContextByClassifier.retryContext.getLastThrowable().getClass().getName(),
+                "failedTrialCount",
+                backOffContextByClassifier.retryContext.getRetryCount()));
+
+        backOffPoliciesByClassifier
             .get(classifier)
             .backOff(backOffContextByClassifier.backOffContexts.get(classifier));
+        break; // don't back off for any further matching back off policies
       }
     }
   }
 
-  private class BackOffContextByClassifier implements BackOffContext {
+  /**
+   * Class to keep track of retry context and a back off context for each nested back off policy.
+   */
+  private static class BackOffContextByClassifier implements BackOffContext {
     private final RetryContext retryContext;
     private final Map<BinaryExceptionClassifier, BackOffContext> backOffContexts;
 

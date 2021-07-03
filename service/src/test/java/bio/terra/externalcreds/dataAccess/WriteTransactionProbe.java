@@ -67,7 +67,7 @@ public class WriteTransactionProbe {
   @WriteTransaction
   public void throwCannotSerializeTransactionException() {
     throwCannotSerializeTransactionExceptionCount.incrementAndGet();
-    throw new CannotSerializeTransactionException("test") {};
+    throw new CannotSerializeTransactionException("test");
   }
 
   public int getThrowCannotSerializeTransactionExceptionCount() {

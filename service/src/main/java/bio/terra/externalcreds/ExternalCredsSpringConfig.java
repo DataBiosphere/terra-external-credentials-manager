@@ -1,6 +1,6 @@
 package bio.terra.externalcreds;
 
-import bio.terra.externalcreds.util.CompositeBackoffPolicy;
+import bio.terra.externalcreds.util.CompositeBackOffPolicy;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.sql.DataSource;
@@ -48,14 +48,18 @@ public class ExternalCredsSpringConfig {
    */
   @Bean("writeTransactionRetryInterceptor")
   public MethodInterceptor getWriteTransactionRetryInterceptor() {
-    CompositeRetryPolicy retryPolicy = new CompositeRetryPolicy();
-    retryPolicy.setOptimistic(true);
-    retryPolicy.setPolicies(
-        new RetryPolicy[] {
-          new SimpleRetryPolicy(100, Map.of(TransientDataAccessException.class, true), false),
-          new SimpleRetryPolicy(4, Map.of(RecoverableDataAccessException.class, true), false)
-        });
+    return RetryInterceptorBuilder.stateless()
+        .retryPolicy(createWriteTransactionRetryPolicy())
+        .backOffPolicy(createWriteTransactionBackOffPolicy())
+        .build();
+  }
 
+  /**
+   * TransientDataAccessException retries with random delay between 10ms and 20ms.
+   * RecoverableDataAccessException retries with exponential back off with initial 1s delay,
+   * doubling each attempt.
+   */
+  private BackOffPolicy createWriteTransactionBackOffPolicy() {
     UniformRandomBackOffPolicy transientBackOffPolicy = new UniformRandomBackOffPolicy();
     transientBackOffPolicy.setMaxBackOffPeriod(20);
     transientBackOffPolicy.setMinBackOffPeriod(10);
@@ -69,11 +73,22 @@ public class ExternalCredsSpringConfig {
     backOffPolicies.put(TransientDataAccessException.class, transientBackOffPolicy);
     backOffPolicies.put(RecoverableDataAccessException.class, recoverableBackOffPolicy);
 
-    BackOffPolicy backOffPolicy = new CompositeBackoffPolicy(backOffPolicies);
+    BackOffPolicy backOffPolicy = new CompositeBackOffPolicy(backOffPolicies);
+    return backOffPolicy;
+  }
 
-    return RetryInterceptorBuilder.stateless()
-        .retryPolicy(retryPolicy)
-        .backOffPolicy(backOffPolicy)
-        .build();
+  /**
+   * Policy dictating TransientDataAccessException is allowed 100 attempts and
+   * RecoverableDataAccessException is allowed 4 attempts
+   */
+  private RetryPolicy createWriteTransactionRetryPolicy() {
+    CompositeRetryPolicy retryPolicy = new CompositeRetryPolicy();
+    retryPolicy.setOptimistic(true); // retry when any nested policy says to retry
+    retryPolicy.setPolicies(
+        new RetryPolicy[] {
+          new SimpleRetryPolicy(100, Map.of(TransientDataAccessException.class, true), false),
+          new SimpleRetryPolicy(4, Map.of(RecoverableDataAccessException.class, true), false)
+        });
+    return retryPolicy;
   }
 }
