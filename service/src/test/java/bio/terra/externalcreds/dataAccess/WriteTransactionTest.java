@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.CannotSerializeTransactionException;
-import org.springframework.dao.RecoverableDataAccessException;
+import org.springframework.transaction.CannotCreateTransactionException;
 
 public class WriteTransactionTest extends BaseTest {
   @Autowired private WriteTransactionProbe writeTransactionProbe;
@@ -92,10 +92,11 @@ public class WriteTransactionTest extends BaseTest {
   }
 
   @Test
-  public void testRecoverableDataAccessExceptionRetries() {
+  public void testCannotCreateTransactionExceptionRetries() {
     Assertions.assertThrows(
-        RecoverableDataAccessException.class,
-        () -> writeTransactionProbe.throwRecoverableDataAccessException());
-    Assertions.assertEquals(4, writeTransactionProbe.getThrowRecoverableDataAccessExceptionCount());
+        CannotCreateTransactionException.class,
+        () -> writeTransactionProbe.throwCannotCreateTransactionException());
+    Assertions.assertEquals(
+        4, writeTransactionProbe.getThrowCannotCreateTransactionExceptionCount());
   }
 }

@@ -4,9 +4,9 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.dao.CannotSerializeTransactionException;
-import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.CannotCreateTransactionException;
 
 @Repository
 public class WriteTransactionProbe {
@@ -50,16 +50,16 @@ public class WriteTransactionProbe {
     incrementTestProbeValue(id, probeValue);
   }
 
-  private AtomicInteger throwRecoverableDataAccessExceptionCount = new AtomicInteger(0);
+  private AtomicInteger throwCannotCreateTransactionExceptionCount = new AtomicInteger(0);
 
   @WriteTransaction
-  public void throwRecoverableDataAccessException() {
-    throwRecoverableDataAccessExceptionCount.incrementAndGet();
-    throw new RecoverableDataAccessException("test");
+  public void throwCannotCreateTransactionException() {
+    throwCannotCreateTransactionExceptionCount.incrementAndGet();
+    throw new CannotCreateTransactionException("test");
   }
 
-  public int getThrowRecoverableDataAccessExceptionCount() {
-    return throwRecoverableDataAccessExceptionCount.get();
+  public int getThrowCannotCreateTransactionExceptionCount() {
+    return throwCannotCreateTransactionExceptionCount.get();
   }
 
   private AtomicInteger throwCannotSerializeTransactionExceptionCount = new AtomicInteger(0);

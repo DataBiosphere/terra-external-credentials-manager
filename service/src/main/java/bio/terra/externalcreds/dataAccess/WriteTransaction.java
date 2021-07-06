@@ -15,6 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Retryable(interceptor = "writeTransactionRetryInterceptor")
+@Retryable(interceptor = "transactionRetryInterceptor")
 @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
 public @interface WriteTransaction {}
