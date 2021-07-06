@@ -1,16 +1,19 @@
 package bio.terra.externalcreds.dataAccess;
 
-import bio.terra.externalcreds.BaseTest;
 import java.util.concurrent.CyclicBarrier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.CannotSerializeTransactionException;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.CannotCreateTransactionException;
 
-public class WriteTransactionTest extends BaseTest {
+@SpringBootTest
+@ActiveProfiles("human-readable-logging")
+public class WriteTransactionTest {
   @Autowired private WriteTransactionProbe writeTransactionProbe;
 
   @BeforeEach

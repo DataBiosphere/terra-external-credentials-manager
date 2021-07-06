@@ -43,8 +43,6 @@ public class ExternalCredsSpringConfig {
    * generally cause by concurrency failures, are retried quickly, random 10-20ms delay, and up to
    * 100 times total. CannotCreateTransactionExceptions, such as database is down, are retried with
    * exponential back off starting at 1s delay up to 4 times total.
-   *
-   * @return
    */
   @Bean("transactionRetryInterceptor")
   public MethodInterceptor getTransactionRetryInterceptor() {
@@ -73,8 +71,7 @@ public class ExternalCredsSpringConfig {
     backOffPolicies.put(TransientDataAccessException.class, transientBackOffPolicy);
     backOffPolicies.put(CannotCreateTransactionException.class, recoverableBackOffPolicy);
 
-    BackOffPolicy backOffPolicy = new CompositeBackOffPolicy(backOffPolicies);
-    return backOffPolicy;
+    return new CompositeBackOffPolicy(backOffPolicies);
   }
 
   /**
