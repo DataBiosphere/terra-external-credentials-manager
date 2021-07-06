@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.transaction.annotation.Transactional;
 
 public class LinkedAccountDAOTest extends BaseTest {
   @Autowired private LinkedAccountDAO linkedAccountDAO;
@@ -19,6 +21,8 @@ public class LinkedAccountDAOTest extends BaseTest {
   }
 
   @Test
+  @Transactional
+  @Rollback
   void testCreateAndGetLinkedAccount() {
     LinkedAccount linkedAccount =
         LinkedAccount.builder()
@@ -37,6 +41,8 @@ public class LinkedAccountDAOTest extends BaseTest {
   }
 
   @Test
+  @Transactional
+  @Rollback
   void testDuplicateLinkedAccounts() {
     LinkedAccount linkedAccount =
         LinkedAccount.builder()
