@@ -10,9 +10,6 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @Slf4j
@@ -24,10 +21,6 @@ public class LinkedAccountDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  @Transactional(
-      propagation = Propagation.REQUIRED,
-      isolation = Isolation.SERIALIZABLE,
-      readOnly = true)
   public LinkedAccount getLinkedAccount(String userId, String providerId) {
     SqlParameterSource namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
@@ -37,7 +30,6 @@ public class LinkedAccountDAO {
         jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper()));
   }
 
-  @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.SERIALIZABLE)
   public void createLinkedAccount(LinkedAccount linkedAccount) {
     String query =
         "INSERT INTO linked_account (user_id, provider_id, refresh_token, expires, external_user_id)"
