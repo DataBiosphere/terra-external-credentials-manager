@@ -49,6 +49,8 @@ public class CompositeBackOffPolicy implements BackOffPolicy {
             Map.of(
                 "exception",
                 backOffContextByClassifier.retryContext.getLastThrowable().getClass().getName(),
+                "exceptionMessage",
+                backOffContextByClassifier.retryContext.getLastThrowable().getMessage(),
                 "failedTrialCount",
                 backOffContextByClassifier.retryContext.getRetryCount()));
 
