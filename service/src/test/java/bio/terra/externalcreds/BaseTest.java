@@ -4,7 +4,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest
+@SpringBootTest({"DATABASE_NAME=ecm_test"})
 @AutoConfigureMockMvc
 @ActiveProfiles("human-readable-logging")
 public class BaseTest {}
