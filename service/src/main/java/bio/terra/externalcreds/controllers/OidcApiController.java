@@ -27,23 +27,23 @@ import org.springframework.stereotype.Controller;
 @Controller
 public class OidcApiController implements OidcApi {
 
-  private final ProviderService providerService;
-  private final LinkedAccountService linkedAccountService;
-  private final SamService samService;
   private final HttpServletRequest request;
+  private final LinkedAccountService linkedAccountService;
   private final ObjectMapper mapper;
+  private final ProviderService providerService;
+  private final SamService samService;
 
   public OidcApiController(
-      ProviderService providerService,
-      LinkedAccountService linkedAccountService,
-      SamService samService,
       HttpServletRequest request,
-      ObjectMapper mapper) {
-    this.providerService = providerService;
-    this.linkedAccountService = linkedAccountService;
-    this.samService = samService;
+      LinkedAccountService linkedAccountService,
+      ObjectMapper mapper,
+      ProviderService providerService,
+      SamService samService) {
     this.request = request;
+    this.linkedAccountService = linkedAccountService;
     this.mapper = mapper;
+    this.providerService = providerService;
+    this.samService = samService;
   }
 
   private String getUserIdFromSam() {
@@ -54,11 +54,11 @@ public class OidcApiController implements OidcApi {
 
       return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
     } catch (ApiException e) {
-      if (e.getCode() == HttpStatus.NOT_FOUND.value()) {
-        throw new ExternalCredsException(e, HttpStatus.FORBIDDEN);
-      } else {
-        throw new ExternalCredsException(e, HttpStatus.INTERNAL_SERVER_ERROR);
-      }
+      throw new ExternalCredsException(
+          e,
+          e.getCode() == HttpStatus.NOT_FOUND.value()
+              ? HttpStatus.FORBIDDEN
+              : HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -67,7 +67,7 @@ public class OidcApiController implements OidcApi {
     List<String> providers = new ArrayList<>(providerService.getProviderList());
     Collections.sort(providers);
 
-    return new ResponseEntity<>(providers, HttpStatus.OK);
+    return ResponseEntity.ok(providers);
   }
 
   @Override
@@ -75,7 +75,7 @@ public class OidcApiController implements OidcApi {
     String userId = getUserIdFromSam();
     LinkedAccount linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
     if (linkedAccount == null) {
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+      return ResponseEntity.notFound().build();
     }
     OffsetDateTime expTime =
         OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
@@ -84,7 +84,7 @@ public class OidcApiController implements OidcApi {
             .externalUserId(linkedAccount.getExternalUserId())
             .expirationTimestamp(expTime);
 
-    return new ResponseEntity<>(linkInfo, HttpStatus.OK);
+    return ResponseEntity.ok(linkInfo);
   }
 
   // Because we're just processing String -> json string, there shouldn't be any conversion issue.
@@ -101,7 +101,7 @@ public class OidcApiController implements OidcApi {
     } else {
       // We explicitly run this through the mapper because otherwise it's treated as text/plain, and
       // not correctly quoted to be valid json.
-      return new ResponseEntity<>(mapper.writeValueAsString(authorizationUrl), HttpStatus.OK);
+      return ResponseEntity.ok(mapper.writeValueAsString(authorizationUrl));
     }
   }
 }

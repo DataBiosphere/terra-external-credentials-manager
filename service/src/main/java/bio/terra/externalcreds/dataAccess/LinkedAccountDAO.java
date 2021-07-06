@@ -40,7 +40,8 @@ public class LinkedAccountDAO {
   @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.SERIALIZABLE)
   public void createLinkedAccount(LinkedAccount linkedAccount) {
     String query =
-        "INSERT INTO linked_account (user_id, provider_id, refresh_token, expires, external_user_id) VALUES (:userId, :providerId, :refreshToken, :expires, :externalUserId)";
+        "INSERT INTO linked_account (user_id, provider_id, refresh_token, expires, external_user_id)"
+            + " VALUES (:userId, :providerId, :refreshToken, :expires, :externalUserId)";
     SqlParameterSource namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", linkedAccount.getUserId())

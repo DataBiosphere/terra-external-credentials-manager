@@ -29,6 +29,6 @@ public class PublicApiController implements PublicApi {
 
   @Override
   public ResponseEntity<VersionProperties> getVersion() {
-    return new ResponseEntity<>(versionProperties, HttpStatus.OK);
+    return ResponseEntity.ok(versionProperties);
   }
 }
