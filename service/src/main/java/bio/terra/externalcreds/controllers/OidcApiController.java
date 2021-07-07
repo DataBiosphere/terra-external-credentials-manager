@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.SneakyThrows;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -29,7 +28,7 @@ public class OidcApiController implements OidcApi {
     List<String> providers = new ArrayList<>(providerService.getProviderList());
     Collections.sort(providers);
 
-    return new ResponseEntity<>(providers, HttpStatus.OK);
+    return ResponseEntity.ok(providers);
   }
 
   // Because we're just processing String -> json string, there shouldn't be any conversion issue.
@@ -46,7 +45,7 @@ public class OidcApiController implements OidcApi {
     } else {
       // We explicitly run this through the mapper because otherwise it's treated as text/plain, and
       // not correctly quoted to be valid json.
-      return new ResponseEntity<>(mapper.writeValueAsString(authorizationUrl), HttpStatus.OK);
+      return ResponseEntity.ok(mapper.writeValueAsString(authorizationUrl));
     }
   }
 }
