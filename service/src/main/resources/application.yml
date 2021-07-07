@@ -1,3 +1,5 @@
+externalcreds.sam-address: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
+
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
   pattern.level: '%X{requestId} %5p'
