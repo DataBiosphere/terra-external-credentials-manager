@@ -1,9 +1,8 @@
-package bio.terra.externalcreds.service;
+package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.LinkedAccount;
-import bio.terra.externalcreds.services.LinkedAccountService;
 import java.sql.Timestamp;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -30,5 +29,24 @@ public class LinkedAccountServiceTest extends BaseTest {
         linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId());
     Assertions.assertEquals(linkedAccount, savedLinkedAccount.withId(0));
+  }
+
+  @Test
+  void testRevokeProviderLink() {
+    LinkedAccount linkedAccount =
+        LinkedAccount.builder()
+            .expires(new Timestamp(100))
+            .providerId("ras")
+            .refreshToken("token")
+            .userId(UUID.randomUUID().toString())
+            .externalUserId("externalUser")
+            .build();
+    linkedAccountDAO.createLinkedAccount(linkedAccount);
+
+    String result =
+        linkedAccountService.revokeProviderLink(
+            linkedAccount.getUserId(), linkedAccount.getProviderId());
+
+    Assertions.assertEquals("", result);
   }
 }

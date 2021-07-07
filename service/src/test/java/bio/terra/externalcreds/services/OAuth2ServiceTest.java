@@ -64,6 +64,9 @@ public class OAuth2ServiceTest {
         oAuth2Service.authorizeWithRefreshToken(
             providerClient, oAuth2AccessTokenResponse.getRefreshToken());
 
+    System.out.println(
+        "refresh token:__________" + tokenResponse.getRefreshToken().getTokenValue());
+
     // 4) test getUserInfo
     OAuth2User oAuth2User =
         oAuth2Service.getUserInfo(providerClient, tokenResponse.getAccessToken());
