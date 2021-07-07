@@ -23,12 +23,13 @@ public class PublicApiController implements PublicApi {
   public ResponseEntity<SystemStatus> getStatus() {
     SystemStatus currentStatus = statusService.getSystemStatus();
 
-    return new ResponseEntity<>(
-        currentStatus, currentStatus.isOk() ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE);
+    return ResponseEntity.status(
+            currentStatus.isOk() ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE)
+        .body(currentStatus);
   }
 
   @Override
   public ResponseEntity<VersionProperties> getVersion() {
-    return new ResponseEntity<>(versionProperties, HttpStatus.OK);
+    return ResponseEntity.ok(versionProperties);
   }
 }
