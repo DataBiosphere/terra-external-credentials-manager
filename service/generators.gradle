@@ -27,6 +27,7 @@ swaggerSources {
 					useTags          : true,
 					springBootVersion: dependencyManagement.managedVersions['org.springframework.boot:spring-boot']
 			] as Map
+			rawOptions = ['--import-mappings', "VersionProperties=${artifactGroup}.config.VersionProperties"]
 		}
 	}
 }
@@ -34,3 +35,14 @@ swaggerSources {
 idea.module.generatedSourceDirs = [file("${swaggerSources.service.code.outputDir}/src/main/java")]
 sourceSets.main.java.srcDir "${swaggerSources.service.code.outputDir}/src/main/java"
 compileJava.dependsOn swaggerSources.service.code
+
+
+// see https://github.com/n0mer/gradle-git-properties
+gitProperties {
+	gitPropertiesName = 'rendered/version.properties'
+	keys = []
+	customProperty('version.gitTag', { "${it.describe(tags: true)}${!it.status().clean ? '-dirty' : ''}" })
+	customProperty('version.gitHash', { it.head().id })
+	customProperty('version.github', { "https://github.com/DataBiosphere/terra-external-credentials-manager/tree/${it.describe(tags: true)}" })
+	customProperty('version.build', version)
+}

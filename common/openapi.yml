@@ -71,6 +71,9 @@ paths:
   /api/oidc/v1/{provider}/authorization-url:
     parameters:
       - $ref: '#/components/parameters/providerParam'
+      - $ref: '#/components/parameters/scopesParam'
+      - $ref: '#/components/parameters/redirectUriParam'
+      - $ref: '#/components/parameters/stateParam'
     get:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
       tags: [ oidc ]
@@ -89,6 +92,14 @@ paths:
   /api/oidc/v1/{provider}/oauthcode:
     parameters:
       - $ref: '#/components/parameters/providerParam'
+      - $ref: '#/components/parameters/scopesParam'
+      - $ref: '#/components/parameters/redirectUriParam'
+      - $ref: '#/components/parameters/stateParam'
+      - name: oauthcode
+        description: oauth code returned by identity provider
+        in: query
+        schema:
+          type: string
     post:
       summary: Link the user's account with the provider.
       tags: [ oidc ]
@@ -162,7 +173,7 @@ paths:
       summary: Discovery api for openid configuration.
       tags: [ public ]
       operationId: getOIDC
-      security: []
+      security: [ ]
       description: The only field published by this service is jwks_uri which will point to the google service account jwks.
       responses:
         '200':
@@ -179,18 +190,29 @@ paths:
       summary: Check status of the service.
       tags: [ public ]
       operationId: getStatus
-      security: []
+      security: [ ]
       responses:
         '200':
-          description: A JSON description of the ok subsystems.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SystemStatus'
+          $ref: '#/components/responses/SystemStatusResponse'
         '500':
           $ref: '#/components/responses/ServerError'
         '503':
-          description: A JSON description of the subsystems and any issues they might have.
+          $ref: '#/components/responses/SystemStatusResponse'
+  /version:
+    get:
+      summary: Get version info of the deployed service.
+      tags: [ public ]
+      operationId: getVersion
+      security: [ ]
+      responses:
+        '200':
+          description: Version information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionProperties'
+        '500':
+          $ref: '#/components/responses/ServerError'
 
 components:
   parameters:
@@ -207,6 +229,31 @@ components:
       schema:
         type: string
       required: true
+    scopesParam:
+      name: scopes
+      description: list of scopes to authorize
+      in: query
+      required: true
+      example: [ "openid", "email", "ga4gh_passport_v1" ]
+      schema:
+        type: array
+        items:
+          type: string
+    redirectUriParam:
+      name: redirectUri
+      description: oidc redirect uri
+      in: query
+      required: true
+      example: "http://localhost:9000/fence-callback"
+      schema:
+        type: string
+    stateParam:
+      name: state
+      description: oidc authorization state
+      in: query
+      required: false
+      schema:
+        type: string
 
   responses:
     LinkInfoResponse:
@@ -217,6 +264,13 @@ components:
             $ref: '#/components/schemas/LinkInfo'
     LinkNotFound:
       description: Unable to find a link for the user to the provider. Consider re-linking with an oauthcode.
+
+    SystemStatusResponse:
+      description: A JSON description of the subsystems and their statuses.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SystemStatus'
 
     # Error Responses
     BadRequest:
@@ -278,10 +332,19 @@ components:
       additionalProperties:
         type: boolean
 
+    VersionProperties:
+      type: object
+      properties:
+        gitTag:
+          type: string
+        gitHash:
+          type: string
+        github:
+          type: string
+        build:
+          type: string
+
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
     authorization:
       type: oauth2
       flows:
@@ -291,7 +354,10 @@ components:
             openid: open id authorization
             email: email authorization
             profile: profile authorization
+    bearerAuth:
+      type: http
+      scheme: bearer
 
 security:
-  - bearerAuth: []
-  - authorization: [openid, email, profile]
+  - authorization: [ openid, email, profile ]
+  - bearerAuth: [ ]

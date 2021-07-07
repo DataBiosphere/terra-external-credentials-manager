@@ -2,12 +2,12 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.config.ProviderConfig;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.dataAccess.ReadTransaction;
 import bio.terra.externalcreds.models.LinkedAccount;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class LinkedAccountService {
@@ -20,6 +20,7 @@ public class LinkedAccountService {
     this.providerService = providerService;
   }
 
+  @ReadTransaction
   public LinkedAccount getLinkedAccount(String userId, String providerId) {
     return linkedAccountDAO.getLinkedAccount(userId, providerId);
   }
