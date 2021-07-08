@@ -41,8 +41,8 @@ compileJava.dependsOn swaggerSources.service.code
 gitProperties {
 	gitPropertiesName = 'rendered/version.properties'
 	keys = []
-	customProperty('version.gitTag', { "${it.describe(tags: true)}${!it.status().clean ? '-dirty' : ''}" })
-	customProperty('version.gitHash', { it.head().id })
+	customProperty('version.gitTag', { it.describe(tags: true) })
+	customProperty('version.gitHash', { it.head().abbreviatedId })
 	customProperty('version.github', { "https://github.com/DataBiosphere/terra-external-credentials-manager/tree/${it.describe(tags: true)}" })
 	customProperty('version.build', version)
 }

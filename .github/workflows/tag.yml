@@ -1,0 +1,22 @@
+name: Tag
+on:
+  push:
+    branches: [ dev ]
+    paths-ignore: [ '*.md', '.github/**' ]
+
+jobs:
+  tag-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current code
+        uses: actions/checkout@v2
+      - name: Bump the tag to a new version
+        # https://github.com/DataBiosphere/github-actions/tree/master/actions/bumper
+        uses: databiosphere/github-actions/actions/bumper@bumper-0.0.3
+        id: tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.BROADBOT_TOKEN }}
+          DEFAULT_BUMP: minor
+          VERSION_FILE_PATH: build.gradle
+          VERSION_LINE_MATCH: "^\\s*version\\s*=\\s*'.*'"
+          VERSION_SUFFIX: SNAPSHOT
