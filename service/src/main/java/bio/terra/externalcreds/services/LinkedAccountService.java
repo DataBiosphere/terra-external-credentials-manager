@@ -13,14 +13,17 @@ public class LinkedAccountService {
   private final LinkedAccountDAO linkedAccountDAO;
   private final GA4GHPassportDAO ga4ghPassportDAO;
   private final GA4GHVisaDAO ga4ghVisaDAO;
+  private final PassportService passportService;
 
   public LinkedAccountService(
       LinkedAccountDAO linkedAccountDAO,
       GA4GHPassportDAO ga4ghPassportDAO,
-      GA4GHVisaDAO ga4ghVisaDAO) {
+      GA4GHVisaDAO ga4ghVisaDAO,
+      PassportService passportService) {
     this.linkedAccountDAO = linkedAccountDAO;
     this.ga4ghPassportDAO = ga4ghPassportDAO;
     this.ga4ghVisaDAO = ga4ghVisaDAO;
+    this.passportService = passportService;
   }
 
   @ReadTransaction
@@ -34,8 +37,8 @@ public class LinkedAccountService {
     LinkedAccount savedLinkedAccount =
         linkedAccountDAO.upsertLinkedAccount(linkedAccountWithPassportAndVisas.getLinkedAccount());
 
-    // clear out any passport that may exist and save the new one
-    ga4ghPassportDAO.deletePassport(savedLinkedAccount.getId());
+    // clear out any passport and visas that may exist and save the new one
+    passportService.deletePassportAndContainedVisas(savedLinkedAccount.getId());
     savePassportIfExists(linkedAccountWithPassportAndVisas, savedLinkedAccount);
 
     return savedLinkedAccount;

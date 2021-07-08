@@ -2,6 +2,7 @@ package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.models.GA4GHVisa;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -40,5 +41,17 @@ public class GA4GHVisaDAO {
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
     return visa.withId(generatedKeyHolder.getKey().intValue());
+  }
+
+  /**
+   * Deletes all visas belonging to the given passport.
+   *
+   * @param passportId id of the passport
+   * @return the number of visas deleted
+   */
+  public int deleteVisas(int passportId) {
+    val namedParameters = new MapSqlParameterSource().addValue("passportId", passportId);
+    val query = "DELETE FROM ga4gh_visa v WHERE v.passport_id = :passportId";
+    return jdbcTemplate.update(query, namedParameters);
   }
 }
