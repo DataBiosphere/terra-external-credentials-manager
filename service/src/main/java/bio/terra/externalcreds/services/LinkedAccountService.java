@@ -34,6 +34,8 @@ public class LinkedAccountService {
     LinkedAccount savedLinkedAccount =
         linkedAccountDAO.upsertLinkedAccount(linkedAccountWithPassportAndVisas.getLinkedAccount());
 
+    // clear out any passport that may exist and save the new one
+    ga4ghPassportDAO.deletePassport(savedLinkedAccount.getId());
     savePassportIfExists(linkedAccountWithPassportAndVisas, savedLinkedAccount);
 
     return savedLinkedAccount;
