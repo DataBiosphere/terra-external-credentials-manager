@@ -35,11 +35,11 @@ public class LinkedAccountDAO {
     String query =
         "INSERT INTO linked_account (user_id, provider_id, refresh_token, expires, external_user_id)"
             + " VALUES (:userId, :providerId, :refreshToken, :expires, :externalUserId)"
-            + "ON CONFLICT (user_id, provider_id) DO UPDATE SET "
-            + "refresh_token = excluded.refresh_token, "
-            + "expires = excluded.expires, "
-            + "external_user_id = excluded.external_user_id "
-            + "RETURNING id";
+            + " ON CONFLICT (user_id, provider_id) DO UPDATE SET"
+            + " refresh_token = excluded.refresh_token,"
+            + " expires = excluded.expires,"
+            + " external_user_id = excluded.external_user_id"
+            + " RETURNING id";
 
     SqlParameterSource namedParameters =
         new MapSqlParameterSource()

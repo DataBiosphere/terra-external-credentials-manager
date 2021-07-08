@@ -22,7 +22,7 @@ public class GA4GHVisaDAO {
     String query =
         "INSERT INTO ga4gh_visa (passport_id, visa_type, jwt, expires, issuer, token_type, last_validated)"
             + " VALUES (:passportId, :visaType, :jwt, :expires, :issuer, :tokenType, :lastValidated)"
-            + "RETURNING id";
+            + " RETURNING id";
 
     SqlParameterSource namedParameters =
         new MapSqlParameterSource()

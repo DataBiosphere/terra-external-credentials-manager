@@ -39,7 +39,7 @@ public class GA4GHPassportDAO {
     String query =
         "INSERT INTO ga4gh_passport (linked_account_id, jwt, expires)"
             + " VALUES (:linkedAccountId, :jwt, :expires)"
-            + "RETURNING id";
+            + " RETURNING id";
 
     SqlParameterSource namedParameters =
         new MapSqlParameterSource()
