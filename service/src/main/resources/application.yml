@@ -34,3 +34,20 @@ spring:
           max-age: 0
           must-revalidate: true
         use-last-modified: false
+
+# This governs how database transactions are retried. TransientDataAccessExceptions,
+# generally cause by concurrency failures, are retried quickly, random 10-20ms delay, and up to
+# 100 times total. RecoverableDataAccessException and CannotCreateTransactionExceptions, such as
+# database is down, are retried with exponential back off starting at 1s delay up to 4 times total.
+terra.common.retry.transaction:
+  fast-retry-exceptions:
+    - org.springframework.dao.TransientDataAccessException
+  fast-retry-max-attempts: 100
+  fast-retry-min-back-off-period: 10ms
+  fast-retry-max-back-off-period: 20ms
+  slow-retry-exceptions:
+    - org.springframework.dao.RecoverableDataAccessException
+    - org.springframework.transaction.CannotCreateTransactionException
+  slow-retry-max-attempts: 4
+  slow-retry-initial-interval: 1s
+  slow-retry-multiplier: 2

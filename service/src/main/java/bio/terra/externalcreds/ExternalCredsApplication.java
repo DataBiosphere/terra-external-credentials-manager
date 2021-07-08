@@ -4,7 +4,12 @@ import bio.terra.common.logging.LoggingInitializer;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
-@SpringBootApplication(scanBasePackages = {"bio.terra.externalcreds", "bio.terra.common.logging"})
+@SpringBootApplication(
+    scanBasePackages = {
+      "bio.terra.externalcreds",
+      "bio.terra.common.logging",
+      "bio.terra.common.retry.transaction"
+    })
 public class ExternalCredsApplication {
 
   public static void main(String[] args) {
