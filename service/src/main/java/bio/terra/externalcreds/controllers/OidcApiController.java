@@ -5,7 +5,6 @@ import bio.terra.common.iam.BearerTokenParser;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
-import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
+import lombok.val;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,9 +48,9 @@ public class OidcApiController implements OidcApi {
 
   private String getUserIdFromSam() {
     try {
-      String header = request.getHeader("authorization");
+      val header = request.getHeader("authorization");
       if (header == null) throw new UnauthorizedException("User is not authorized");
-      String accessToken = BearerTokenParser.parse(header);
+      val accessToken = BearerTokenParser.parse(header);
 
       return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
     } catch (ApiException e) {
@@ -64,7 +64,7 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<List<String>> listProviders() {
-    List<String> providers = new ArrayList<>(providerService.getProviderList());
+    val providers = new ArrayList<>(providerService.getProviderList());
     Collections.sort(providers);
 
     return ResponseEntity.ok(providers);
@@ -72,14 +72,14 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<LinkInfo> getLink(String provider) {
-    String userId = getUserIdFromSam();
-    LinkedAccount linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
+    val userId = getUserIdFromSam();
+    val linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
     if (linkedAccount == null) {
       return ResponseEntity.notFound().build();
     }
-    OffsetDateTime expTime =
+    val expTime =
         OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
-    LinkInfo linkInfo =
+    val linkInfo =
         new LinkInfo()
             .externalUserId(linkedAccount.getExternalUserId())
             .expirationTimestamp(expTime);
@@ -92,7 +92,7 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<String> getAuthUrl(
       String provider, List<String> scopes, String redirectUri, String state) {
-    String authorizationUrl =
+    val authorizationUrl =
         providerService.getProviderAuthorizationUrl(
             provider, redirectUri, Set.copyOf(scopes), state);
 

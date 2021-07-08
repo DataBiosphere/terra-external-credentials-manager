@@ -2,6 +2,7 @@ package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.BaseTest;
 import java.util.concurrent.CyclicBarrier;
+import lombok.val;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,8 +34,8 @@ public class WriteTransactionTest extends BaseTest {
    */
   @Test
   public void testWriteTransactionAnnotation() throws InterruptedException {
-    int probeValue = 22;
-    int probeId = 1;
+    val probeValue = 22;
+    val probeId = 1;
 
     writeTransactionProbe.insertTestRecord(probeId, probeValue);
 

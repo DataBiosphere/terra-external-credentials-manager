@@ -6,6 +6,7 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import java.sql.Timestamp;
 import java.util.UUID;
+import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
   @Test
   void testGetLinkedAccount() {
-    LinkedAccount linkedAccount =
+    val linkedAccount =
         LinkedAccount.builder()
             .expires(new Timestamp(100))
             .providerId("provider")
@@ -26,7 +27,7 @@ public class LinkedAccountServiceTest extends BaseTest {
             .build();
     linkedAccountDAO.createLinkedAccount(linkedAccount);
 
-    LinkedAccount savedLinkedAccount =
+    val savedLinkedAccount =
         linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId());
     Assertions.assertEquals(linkedAccount, savedLinkedAccount.withId(0));

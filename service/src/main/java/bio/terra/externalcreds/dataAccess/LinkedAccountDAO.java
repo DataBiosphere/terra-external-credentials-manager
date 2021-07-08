@@ -4,11 +4,11 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -22,19 +22,19 @@ public class LinkedAccountDAO {
   }
 
   public LinkedAccount getLinkedAccount(String userId, String providerId) {
-    SqlParameterSource namedParameters =
+    val namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
-    String query =
+    val query =
         "SELECT * FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
     return DataAccessUtils.singleResult(
         jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper()));
   }
 
   public void createLinkedAccount(LinkedAccount linkedAccount) {
-    String query =
+    val query =
         "INSERT INTO linked_account (user_id, provider_id, refresh_token, expires, external_user_id)"
             + " VALUES (:userId, :providerId, :refreshToken, :expires, :externalUserId)";
-    SqlParameterSource namedParameters =
+    val namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", linkedAccount.getUserId())
             .addValue("providerId", linkedAccount.getProviderId())

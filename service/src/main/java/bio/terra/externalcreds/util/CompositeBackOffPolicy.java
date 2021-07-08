@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.classify.BinaryExceptionClassifier;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.backoff.BackOffContext;
@@ -30,7 +31,7 @@ public class CompositeBackOffPolicy implements BackOffPolicy {
 
   @Override
   public BackOffContext start(RetryContext context) {
-    Map<BinaryExceptionClassifier, BackOffContext> backOffContextMap = new HashMap<>();
+    val backOffContextMap = new HashMap<BinaryExceptionClassifier, BackOffContext>();
     this.backOffPoliciesByClassifier.forEach(
         (classifier, policy) -> backOffContextMap.put(classifier, policy.start(context)));
     return new BackOffContextByClassifier(context, backOffContextMap);
