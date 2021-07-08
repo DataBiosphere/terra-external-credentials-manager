@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -30,10 +31,16 @@ public class LinkedAccountDAO {
         jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper()));
   }
 
-  public void createLinkedAccount(LinkedAccount linkedAccount) {
+  public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
     String query =
         "INSERT INTO linked_account (user_id, provider_id, refresh_token, expires, external_user_id)"
-            + " VALUES (:userId, :providerId, :refreshToken, :expires, :externalUserId)";
+            + " VALUES (:userId, :providerId, :refreshToken, :expires, :externalUserId)"
+            + "ON CONFLICT (user_id, provider_id) DO UPDATE SET "
+            + "refresh_token = excluded.refresh_token, "
+            + "expires = excluded.expires, "
+            + "external_user_id = excluded.external_user_id "
+            + "RETURNING id";
+
     SqlParameterSource namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", linkedAccount.getUserId())
@@ -41,7 +48,13 @@ public class LinkedAccountDAO {
             .addValue("refreshToken", linkedAccount.getRefreshToken())
             .addValue("expires", linkedAccount.getExpires())
             .addValue("externalUserId", linkedAccount.getExternalUserId());
-    jdbcTemplate.update(query, namedParameters);
+
+    // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
+    // clause
+    GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
+    jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
+
+    return linkedAccount.withId(generatedKeyHolder.getKey().intValue());
   }
 
   private static class LinkedAccountRowMapper implements RowMapper<LinkedAccount> {

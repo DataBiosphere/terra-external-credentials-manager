@@ -108,6 +108,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/LinkInfoResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
 

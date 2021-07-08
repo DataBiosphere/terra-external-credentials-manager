@@ -24,7 +24,7 @@ public class LinkedAccountServiceTest extends BaseTest {
             .userId(UUID.randomUUID().toString())
             .externalUserId("externalUser")
             .build();
-    linkedAccountDAO.createLinkedAccount(linkedAccount);
+    linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     LinkedAccount savedLinkedAccount =
         linkedAccountService.getLinkedAccount(
