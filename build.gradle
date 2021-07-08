@@ -7,7 +7,7 @@ plugins {
 
 allprojects {
 	group = 'bio.terra'
-	version = '0.0.1-SNAPSHOT'
+	version = '0.1.0-SNAPSHOT'
 }
 
 idea.project.jdkName = '11'
