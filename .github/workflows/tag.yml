@@ -1,6 +1,6 @@
 name: Tag
 on:
-  workflow_dispatch
+  workflow_dispatch:
   push:
     branches: [ dev ]
     paths-ignore: [ '*.md', '.github/**' ]
