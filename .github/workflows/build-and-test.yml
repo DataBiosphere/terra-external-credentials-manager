@@ -19,13 +19,9 @@ jobs:
         image: postgres:13
         env:
           POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports:
           - 5432:5432
+        # rather than specifying the health check here, we do it manually later so we don't have to wait
 
     steps:
       - uses: actions/checkout@v2
@@ -44,13 +40,19 @@ jobs:
           key: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}-${{ hashFiles('**/*.gradle') }}
           restore-keys: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}
 
-      - name: Initialize Postgres DB
+#      - name: Grant execute permission for gradlew
+#        run: chmod +x gradlew
+
+        # Build while waiting for the database to start since we use it for tests
+      - name: Build with Gradle
+        run: ./gradlew build -x test
+
+      - name: Make sure Postgres is ready and init
         env:
           PGPASSWORD: postgres
-        run: psql -h 127.0.0.1 -U postgres -f ./common/postgres-init.sql
+        run: |
+          pg_isready -t 10
+          psql -h localhost -U postgres -f ./common/postgres-init.sql
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build and test with Gradle
-        run: ./gradlew build
+      - name: Test with Gradle
+        run: ./gradlew test
