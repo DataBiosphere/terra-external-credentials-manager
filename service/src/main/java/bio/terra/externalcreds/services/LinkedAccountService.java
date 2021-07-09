@@ -5,6 +5,7 @@ import bio.terra.externalcreds.models.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import lombok.val;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,7 +35,7 @@ public class LinkedAccountService {
   @WriteTransaction
   public LinkedAccount saveLinkedAccount(
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
-    LinkedAccount savedLinkedAccount =
+    val savedLinkedAccount =
         linkedAccountDAO.upsertLinkedAccount(linkedAccountWithPassportAndVisas.getLinkedAccount());
 
     // clear out any passport and visas that may exist and save the new one
@@ -49,7 +50,7 @@ public class LinkedAccountService {
       LinkedAccount savedLinkedAccount) {
     if (linkedAccountWithPassportAndVisas.getPassport() != null) {
 
-      GA4GHPassport savedPassport =
+      val savedPassport =
           ga4ghPassportDAO.insertPassport(
               linkedAccountWithPassportAndVisas
                   .getPassport()

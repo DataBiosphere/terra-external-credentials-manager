@@ -9,7 +9,6 @@ import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 
@@ -52,17 +51,16 @@ public class LinkedAccountDAO {
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
-    GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
+    val generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
     return linkedAccount.withId(generatedKeyHolder.getKey().intValue());
   }
 
   public boolean deleteLinkedAccount(String userId, String providerId) {
-    val query =
-            "DELETE FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
+    val query = "DELETE FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
     val namedParameters =
-            new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
+        new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
 
     return jdbcTemplate.update(query, namedParameters) > 0;
   }

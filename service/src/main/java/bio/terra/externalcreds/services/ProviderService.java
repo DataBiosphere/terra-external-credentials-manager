@@ -11,10 +11,6 @@ import java.time.Instant;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.core.OAuth2RefreshToken;
-import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -72,14 +68,14 @@ public class ProviderService {
       Set<String> scopes,
       String state) {
 
-    ProviderConfig.ProviderInfo providerInfo = providerConfig.getServices().get(provider);
+    val providerInfo = providerConfig.getServices().get(provider);
     if (providerInfo == null) {
       throw new NotFoundException(String.format("provider %s not found", provider));
     }
 
-    ClientRegistration providerClient = providerClientCache.getProviderClient(provider);
+    val providerClient = providerClientCache.getProviderClient(provider);
 
-    OAuth2AccessTokenResponse tokenResponse =
+    val tokenResponse =
         oAuth2Service.authorizationCodeExchange(
             providerClient,
             authorizationCode,
@@ -88,18 +84,17 @@ public class ProviderService {
             state,
             providerInfo.getAdditionalAuthorizationParameters());
 
-    OAuth2RefreshToken refreshToken = tokenResponse.getRefreshToken();
+    val refreshToken = tokenResponse.getRefreshToken();
     if (refreshToken == null) {
       throw new ExternalCredsException(
           "cannot link account because authorization response did not contain refresh token");
     }
 
-    Timestamp expires =
-        new Timestamp(Instant.now().plus(providerInfo.getLinkLifespan()).toEpochMilli());
+    val expires = new Timestamp(Instant.now().plus(providerInfo.getLinkLifespan()).toEpochMilli());
 
-    OAuth2User userInfo = oAuth2Service.getUserInfo(providerClient, tokenResponse.getAccessToken());
+    val userInfo = oAuth2Service.getUserInfo(providerClient, tokenResponse.getAccessToken());
 
-    LinkedAccount linkedAccount =
+    val linkedAccount =
         LinkedAccount.builder()
             .providerId(provider)
             .userId(userId)
@@ -110,8 +105,8 @@ public class ProviderService {
 
     String passportJwtString = userInfo.getAttribute(PASSPORT_JWT_V11_CLAIM);
     if (passportJwtString != null) {
-      Jwt passportJwt = decodeJwt(passportJwtString);
-      GA4GHPassport passport = buildPassport(passportJwt);
+      val passportJwt = decodeJwt(passportJwtString);
+      val passport = buildPassport(passportJwt);
 
       List<String> visaJwtStrings =
           Objects.requireNonNullElse(
@@ -135,7 +130,7 @@ public class ProviderService {
   private Jwt decodeJwt(String jwt) {
     try {
       // first we need to get the issuer from the jwt, the issuer is needed to validate
-      String issuer = JWTParser.parse(jwt).getJWTClaimsSet().getIssuer();
+      val issuer = JWTParser.parse(jwt).getJWTClaimsSet().getIssuer();
       if (issuer == null) {
         throw new InvalidJwtException("jwt missing issuer (iss) claim");
       }
@@ -153,7 +148,7 @@ public class ProviderService {
   }
 
   private Timestamp getJwtExpires(Jwt decodedPassportJwt) {
-    Instant expiresAt = decodedPassportJwt.getExpiresAt();
+    val expiresAt = decodedPassportJwt.getExpiresAt();
     if (expiresAt == null) {
       throw new InvalidJwtException("jwt missing expires (exp) claim");
     }
@@ -161,7 +156,7 @@ public class ProviderService {
   }
 
   private String getJwtClaim(Jwt jwt, String claimName) {
-    String claim = jwt.getClaimAsString(claimName);
+    val claim = jwt.getClaimAsString(claimName);
     if (claim == null) {
       throw new InvalidJwtException("jwt missing claim " + claimName);
     }
@@ -169,7 +164,7 @@ public class ProviderService {
   }
 
   private GA4GHPassport buildPassport(Jwt passportJwt) {
-    Timestamp passportExpiresAt = getJwtExpires(passportJwt);
+    val passportExpiresAt = getJwtExpires(passportJwt);
 
     return GA4GHPassport.builder()
         .jwt(passportJwt.getTokenValue())

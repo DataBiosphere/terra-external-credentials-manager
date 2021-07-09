@@ -6,7 +6,6 @@ import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.models.LinkedAccount;
-import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
@@ -65,9 +64,9 @@ public class OidcApiController implements OidcApi {
   }
 
   private LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
-    OffsetDateTime expTime =
+    val expTime =
         OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
-    LinkInfo linkInfo =
+    val linkInfo =
         new LinkInfo()
             .externalUserId(linkedAccount.getExternalUserId())
             .expirationTimestamp(expTime);
@@ -120,12 +119,12 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<LinkInfo> createLink(
       String provider, List<String> scopes, String redirectUri, String state, String oauthcode) {
-    String userId = getUserIdFromSam();
-    LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas =
+    val userId = getUserIdFromSam();
+    val linkedAccountWithPassportAndVisas =
         providerService.useAuthorizationCodeToGetLinkedAccount(
             provider, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
 
-    LinkedAccount savedLinkedAccount =
+    val savedLinkedAccount =
         linkedAccountService.saveLinkedAccount(linkedAccountWithPassportAndVisas);
 
     return ResponseEntity.ok(getLinkInfoFromLinkedAccount(savedLinkedAccount));

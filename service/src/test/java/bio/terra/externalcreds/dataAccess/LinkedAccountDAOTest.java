@@ -16,7 +16,7 @@ public class LinkedAccountDAOTest extends BaseTest {
 
   @Test
   void testMissingLinkedAccount() {
-    LinkedAccount shouldBeNull = linkedAccountDAO.getLinkedAccount("", "");
+    val shouldBeNull = linkedAccountDAO.getLinkedAccount("", "");
     Assertions.assertNull(shouldBeNull);
   }
 
@@ -32,11 +32,11 @@ public class LinkedAccountDAOTest extends BaseTest {
             .userId(UUID.randomUUID().toString())
             .externalUserId("externalUser")
             .build();
-    LinkedAccount savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+    val savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
     Assertions.assertTrue(savedLinkedAccount.getId() > 0);
     Assertions.assertEquals(linkedAccount, savedLinkedAccount.withId(0));
 
-    LinkedAccount loadedLinkedAccount =
+    val loadedLinkedAccount =
         linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
     Assertions.assertEquals(savedLinkedAccount, loadedLinkedAccount);
   }
@@ -52,11 +52,11 @@ public class LinkedAccountDAOTest extends BaseTest {
             .refreshToken("refresh")
             .userId(UUID.randomUUID().toString())
             .build();
-    LinkedAccount createdLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+    val createdLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
     Assertions.assertTrue(createdLinkedAccount.getId() > 0);
     Assertions.assertEquals(linkedAccount, createdLinkedAccount.withId(0));
 
-    LinkedAccount updatedLinkedAccount =
+    val updatedLinkedAccount =
         linkedAccountDAO.upsertLinkedAccount(
             linkedAccount
                 .withRefreshToken("different_refresh")
@@ -71,7 +71,7 @@ public class LinkedAccountDAOTest extends BaseTest {
     Assertions.assertNotEquals(
         createdLinkedAccount.getExpires(), updatedLinkedAccount.getExpires());
 
-    LinkedAccount loadedLinkedAccount =
+    val loadedLinkedAccount =
         linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
     Assertions.assertEquals(updatedLinkedAccount, loadedLinkedAccount);
   }
