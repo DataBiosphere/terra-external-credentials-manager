@@ -49,7 +49,7 @@ public class GA4GHVisaDAO {
    * @return the number of visas deleted
    */
   public int deleteVisas(int passportId) {
-    val namedParameters = new MapSqlParameterSource().addValue("passportId", passportId);
+    val namedParameters = new MapSqlParameterSource("passportId", passportId);
     val query = "DELETE FROM ga4gh_visa v WHERE v.passport_id = :passportId";
     return jdbcTemplate.update(query, namedParameters);
   }

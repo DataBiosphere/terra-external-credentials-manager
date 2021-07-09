@@ -29,7 +29,7 @@ public class GA4GHPassportDAO {
    * @return true if a passport was deleted
    */
   public boolean deletePassport(int linkedAccountId) {
-    val namedParameters = new MapSqlParameterSource().addValue("linkedAccountId", linkedAccountId);
+    val namedParameters = new MapSqlParameterSource("linkedAccountId", linkedAccountId);
     val query = "DELETE FROM ga4gh_passport p WHERE p.linked_account_id :linkedAccountId";
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
@@ -55,7 +55,7 @@ public class GA4GHPassportDAO {
   }
 
   public GA4GHPassport getPassport(int linkedAccountId) {
-    val namedParameters = new MapSqlParameterSource().addValue("linkedAccountId", linkedAccountId);
+    val namedParameters = new MapSqlParameterSource("linkedAccountId", linkedAccountId);
     val query = "SELECT * FROM ga4gh_passport p WHERE p.linked_account_id :linkedAccountId";
     return DataAccessUtils.singleResult(
         jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper()));

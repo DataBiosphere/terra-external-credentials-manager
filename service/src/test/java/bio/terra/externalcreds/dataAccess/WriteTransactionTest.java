@@ -1,10 +1,12 @@
 package bio.terra.externalcreds.dataAccess;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import bio.terra.externalcreds.BaseTest;
 import java.util.concurrent.CyclicBarrier;
 import lombok.val;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,24 +82,22 @@ public class WriteTransactionTest extends BaseTest {
     successfulThread.join(5000);
     retriedThread.join(5000);
 
-    Assertions.assertEquals(probeValue + 2, writeTransactionProbe.getTestProbeValue(probeId));
+    assertEquals(probeValue + 2, writeTransactionProbe.getTestProbeValue(probeId));
   }
 
   @Test
   public void testCannotSerializeTransactionExceptionRetries() {
-    Assertions.assertThrows(
+    assertThrows(
         CannotSerializeTransactionException.class,
         () -> writeTransactionProbe.throwCannotSerializeTransactionException());
-    Assertions.assertEquals(
-        100, writeTransactionProbe.getThrowCannotSerializeTransactionExceptionCount());
+    assertEquals(100, writeTransactionProbe.getThrowCannotSerializeTransactionExceptionCount());
   }
 
   @Test
   public void testCannotCreateTransactionExceptionRetries() {
-    Assertions.assertThrows(
+    assertThrows(
         CannotCreateTransactionException.class,
         () -> writeTransactionProbe.throwCannotCreateTransactionException());
-    Assertions.assertEquals(
-        4, writeTransactionProbe.getThrowCannotCreateTransactionExceptionCount());
+    assertEquals(4, writeTransactionProbe.getThrowCannotCreateTransactionExceptionCount());
   }
 }
