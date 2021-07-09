@@ -4,7 +4,7 @@ import bio.terra.externalcreds.config.ProviderConfig;
 import java.util.Collections;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import lombok.val;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,12 +30,12 @@ public class ProviderService {
 
   public String getProviderAuthorizationUrl(
       String provider, String redirectUri, Set<String> scopes, String state) {
-    ProviderConfig.ProviderInfo providerInfo = providerConfig.getServices().get(provider);
+    val providerInfo = providerConfig.getServices().get(provider);
     if (providerInfo == null) {
       return null;
     }
 
-    ClientRegistration providerClient = providerClientCache.getProviderClient(provider);
+    val providerClient = providerClientCache.getProviderClient(provider);
 
     return oAuth2Service.getAuthorizationRequestUri(
         providerClient,

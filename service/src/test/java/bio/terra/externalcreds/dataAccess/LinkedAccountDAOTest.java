@@ -4,6 +4,7 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.models.LinkedAccount;
 import java.sql.Timestamp;
 import java.util.UUID;
+import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,7 @@ public class LinkedAccountDAOTest extends BaseTest {
   @Transactional
   @Rollback
   void testCreateAndGetLinkedAccount() {
-    LinkedAccount linkedAccount =
+    val linkedAccount =
         LinkedAccount.builder()
             .expires(new Timestamp(100))
             .providerId("provider")
@@ -34,7 +35,7 @@ public class LinkedAccountDAOTest extends BaseTest {
             .build();
     linkedAccountDAO.createLinkedAccount(linkedAccount);
 
-    LinkedAccount savedLinkedAccount =
+    val savedLinkedAccount =
         linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
     Assertions.assertTrue(savedLinkedAccount.getId() > 0);
     Assertions.assertEquals(linkedAccount, savedLinkedAccount.withId(0));
@@ -44,7 +45,7 @@ public class LinkedAccountDAOTest extends BaseTest {
   @Transactional
   @Rollback
   void testDuplicateLinkedAccounts() {
-    LinkedAccount linkedAccount =
+    val linkedAccount =
         LinkedAccount.builder()
             .expires(new Timestamp(100))
             .providerId("provider")

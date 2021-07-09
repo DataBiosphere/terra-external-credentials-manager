@@ -3,6 +3,7 @@ package bio.terra.externalcreds.services;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
+import lombok.val;
 import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.DefaultRefreshTokenTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
@@ -91,19 +92,18 @@ public class OAuth2Service {
       String state,
       Map<String, Object> additionalAuthorizationParameters) {
 
-    OAuth2AuthorizationRequest authRequest =
+    val authRequest =
         createOAuth2AuthorizationRequest(
             redirectUri, scopes, state, providerClient, additionalAuthorizationParameters);
 
-    OAuth2AuthorizationResponse authResponse =
+    val authResponse =
         OAuth2AuthorizationResponse.success(authorizationCode)
             .redirectUri(redirectUri)
             .state(state)
             .build();
 
-    DefaultAuthorizationCodeTokenResponseClient tokenResponseClient =
-        new DefaultAuthorizationCodeTokenResponseClient();
-    OAuth2AuthorizationCodeGrantRequest codeGrantRequest =
+    val tokenResponseClient = new DefaultAuthorizationCodeTokenResponseClient();
+    val codeGrantRequest =
         new OAuth2AuthorizationCodeGrantRequest(
             providerClient, new OAuth2AuthorizationExchange(authRequest, authResponse));
 
@@ -122,21 +122,20 @@ public class OAuth2Service {
       ClientRegistration providerClient, OAuth2RefreshToken refreshToken) {
     // the OAuth2RefreshTokenGrantRequest requires an access token to be specified but
     // it does not have to be a valid one so create a dummy
-    OAuth2AccessToken dummyAccessToken =
+    val dummyAccessToken =
         new OAuth2AccessToken(
             OAuth2AccessToken.TokenType.BEARER, "dummy", Instant.EPOCH, Instant.now());
 
-    OAuth2RefreshTokenGrantRequest refreshTokenGrantRequest =
+    val refreshTokenGrantRequest =
         new OAuth2RefreshTokenGrantRequest(providerClient, dummyAccessToken, refreshToken);
 
-    DefaultRefreshTokenTokenResponseClient refreshTokenTokenResponseClient =
-        new DefaultRefreshTokenTokenResponseClient();
+    val refreshTokenTokenResponseClient = new DefaultRefreshTokenTokenResponseClient();
 
     return refreshTokenTokenResponseClient.getTokenResponse(refreshTokenGrantRequest);
   }
 
   public OAuth2User getUserInfo(ClientRegistration providerClient, OAuth2AccessToken accessToken) {
-    OAuth2UserRequest userRequest = new OAuth2UserRequest(providerClient, accessToken);
+    val userRequest = new OAuth2UserRequest(providerClient, accessToken);
     return new DefaultOAuth2UserService().loadUser(userRequest);
   }
 }
