@@ -38,13 +38,6 @@ jobs:
           key: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}-${{ hashFiles('**/*.gradle') }}
           restore-keys: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}
 
-#      - name: Grant execute permission for gradlew
-#        run: chmod +x gradlew
-
-        # Build while waiting for the database to start since we use it for tests
-      - name: Build with Gradle
-        run: ./gradlew build -x test
-
       - name: Make sure Postgres is ready and init
         env:
           PGPASSWORD: postgres
@@ -52,5 +45,13 @@ jobs:
           pg_isready -h localhost -t 10
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
-      - name: Test with Gradle
-        run: ./gradlew test
+      - name: Build
+        run: ./gradlew build
+
+        # Build while waiting for the database to start since we use it for tests
+#      - name: Build with Gradle
+#        run: ./gradlew build -x test
+#
+#
+#      - name: Test with Gradle
+#        run: ./gradlew test
