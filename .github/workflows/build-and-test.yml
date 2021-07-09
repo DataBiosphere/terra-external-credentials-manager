@@ -49,7 +49,7 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          pg_isready -t 10
+          pg_isready -h localhost -t 10
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
       - name: Test with Gradle
