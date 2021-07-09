@@ -46,5 +46,5 @@ jobs:
           pg_isready -h localhost -t 10
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
-      - name: Build with Gradle
+      - name: Build and test with Gradle
         run: ./gradlew build
