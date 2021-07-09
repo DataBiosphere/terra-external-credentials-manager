@@ -4,6 +4,7 @@ import bio.terra.externalcreds.dataAccess.StatusDAO;
 import bio.terra.externalcreds.generated.model.SubsystemStatus;
 import bio.terra.externalcreds.generated.model.SystemStatus;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,7 +18,7 @@ public class StatusService {
   }
 
   public SystemStatus getSystemStatus() {
-    SubsystemStatus subsystems = new SubsystemStatus();
+    val subsystems = new SubsystemStatus();
 
     try {
       subsystems.put("postgres", statusDAO.isPostgresOk());

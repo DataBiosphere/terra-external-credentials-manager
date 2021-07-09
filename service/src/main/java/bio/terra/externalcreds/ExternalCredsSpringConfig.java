@@ -4,6 +4,7 @@ import bio.terra.externalcreds.util.CompositeBackOffPolicy;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.sql.DataSource;
+import lombok.val;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -58,16 +59,15 @@ public class ExternalCredsSpringConfig {
    * doubling each attempt.
    */
   private BackOffPolicy createTransactionBackOffPolicy() {
-    UniformRandomBackOffPolicy transientBackOffPolicy = new UniformRandomBackOffPolicy();
+    val transientBackOffPolicy = new UniformRandomBackOffPolicy();
     transientBackOffPolicy.setMaxBackOffPeriod(20);
     transientBackOffPolicy.setMinBackOffPeriod(10);
 
-    ExponentialBackOffPolicy recoverableBackOffPolicy = new ExponentialBackOffPolicy();
+    val recoverableBackOffPolicy = new ExponentialBackOffPolicy();
     recoverableBackOffPolicy.setInitialInterval(1000);
     recoverableBackOffPolicy.setMultiplier(2.0);
 
-    LinkedHashMap<Class<? extends Throwable>, BackOffPolicy> backOffPolicies =
-        new LinkedHashMap<>();
+    val backOffPolicies = new LinkedHashMap<Class<? extends Throwable>, BackOffPolicy>();
     backOffPolicies.put(TransientDataAccessException.class, transientBackOffPolicy);
     backOffPolicies.put(CannotCreateTransactionException.class, recoverableBackOffPolicy);
 
@@ -79,7 +79,7 @@ public class ExternalCredsSpringConfig {
    * CannotCreateTransactionException is allowed 4 attempts
    */
   private RetryPolicy createTransactionRetryPolicy() {
-    CompositeRetryPolicy retryPolicy = new CompositeRetryPolicy();
+    val retryPolicy = new CompositeRetryPolicy();
     retryPolicy.setOptimistic(true); // retry when any nested policy says to retry
     retryPolicy.setPolicies(
         new RetryPolicy[] {

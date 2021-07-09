@@ -10,7 +10,7 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import lombok.val;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -48,12 +48,12 @@ public class ProviderService {
 
   public String getProviderAuthorizationUrl(
       String provider, String redirectUri, Set<String> scopes, String state) {
-    ProviderConfig.ProviderInfo providerInfo = providerConfig.getServices().get(provider);
+    val providerInfo = providerConfig.getServices().get(provider);
     if (providerInfo == null) {
       return null;
     }
 
-    ClientRegistration providerClient = providerClientCache.getProviderClient(provider);
+    val providerClient = providerClientCache.getProviderClient(provider);
 
     return oAuth2Service.getAuthorizationRequestUri(
         providerClient,
