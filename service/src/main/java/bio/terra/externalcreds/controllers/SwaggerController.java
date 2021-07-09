@@ -3,8 +3,6 @@ package bio.terra.externalcreds.controllers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.stream.Collectors;
-import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.core.io.ClassPathResource;
@@ -20,11 +18,11 @@ public class SwaggerController {
 
   public SwaggerController() {
     try {
-      @Cleanup
-      val swaggerClientIdStream =
-          new ClassPathResource("rendered/swagger-client-id").getInputStream();
-      try (val reader = new BufferedReader(new InputStreamReader(swaggerClientIdStream))) {
-        swaggerClientId = reader.lines().collect(Collectors.joining("\n"));
+      try (val reader =
+          new BufferedReader(
+              new InputStreamReader(
+                  new ClassPathResource("rendered/swagger-client-id").getInputStream()))) {
+        swaggerClientId = reader.readLine();
       }
     } catch (IOException e) {
       log.error(
