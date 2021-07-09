@@ -63,6 +63,16 @@ public class OidcApiController implements OidcApi {
     }
   }
 
+  private LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
+    OffsetDateTime expTime =
+        OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
+    LinkInfo linkInfo =
+        new LinkInfo()
+            .externalUserId(linkedAccount.getExternalUserId())
+            .expirationTimestamp(expTime);
+    return linkInfo;
+  }
+
   @Override
   public ResponseEntity<List<String>> listProviders() {
     List<String> providers = new ArrayList<>(providerService.getProviderList());
@@ -80,16 +90,6 @@ public class OidcApiController implements OidcApi {
     }
 
     return ResponseEntity.ok(getLinkInfoFromLinkedAccount(linkedAccount));
-  }
-
-  private LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
-    OffsetDateTime expTime =
-        OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
-    LinkInfo linkInfo =
-        new LinkInfo()
-            .externalUserId(linkedAccount.getExternalUserId())
-            .expirationTimestamp(expTime);
-    return linkInfo;
   }
 
   // Because we're just processing String -> json string, there shouldn't be any conversion issue.
