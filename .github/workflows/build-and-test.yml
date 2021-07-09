@@ -3,9 +3,7 @@ name: Build and Test
 on:
   push:
     branches: [ dev ]
-    paths-ignore:
-      - '*.md'
-      - '.github/**'
+    paths-ignore: [ '*.md' ]
   pull_request:
     branches: [ '**' ]
 
