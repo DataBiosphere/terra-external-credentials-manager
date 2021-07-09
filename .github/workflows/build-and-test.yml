@@ -19,7 +19,8 @@ jobs:
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
-        # rather than specifying the health check here, we do it manually later so we don't have to wait
+        # Rather than specifying the health check here, we do it manually later to give Postgres
+        # time to start while we restore dependencies.
 
     steps:
       - uses: actions/checkout@v2
@@ -45,13 +46,5 @@ jobs:
           pg_isready -h localhost -t 10
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
-      - name: Build
+      - name: Build with Gradle
         run: ./gradlew build
-
-        # Build while waiting for the database to start since we use it for tests
-#      - name: Build with Gradle
-#        run: ./gradlew build -x test
-#
-#
-#      - name: Test with Gradle
-#        run: ./gradlew test
