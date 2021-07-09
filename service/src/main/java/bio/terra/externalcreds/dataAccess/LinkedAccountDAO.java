@@ -58,6 +58,15 @@ public class LinkedAccountDAO {
     return linkedAccount.withId(generatedKeyHolder.getKey().intValue());
   }
 
+  public boolean deleteLinkedAccount(String userId, String providerId) {
+    val query =
+            "DELETE FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
+    val namedParameters =
+            new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
+
+    return jdbcTemplate.update(query, namedParameters) > 0;
+  }
+
   private static class LinkedAccountRowMapper implements RowMapper<LinkedAccount> {
 
     @Override
