@@ -57,7 +57,12 @@ public class LinkedAccountDAO {
     return linkedAccount.withId(generatedKeyHolder.getKey().intValue());
   }
 
-  public boolean deleteLinkedAccount(String userId, String providerId) {
+  /**
+   * @param userId
+   * @param providerId
+   * @return boolean whether or not an account was found and deleted
+   */
+  public boolean deleteLinkedAccountIfExists(String userId, String providerId) {
     val query = "DELETE FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
     val namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
