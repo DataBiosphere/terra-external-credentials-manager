@@ -3,11 +3,13 @@ name: Build and Test
 on:
   push:
     branches: [ dev ]
-    paths-ignore:
-      - '*.md'
-      - '.github/**'
+    paths-ignore: [ '*.md' ]
   pull_request:
     branches: [ '**' ]
+
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
@@ -19,13 +21,10 @@ jobs:
         image: postgres:13
         env:
           POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports:
           - 5432:5432
+        # Rather than specifying the health check here, we do it manually later to give Postgres
+        # time to start while we restore dependencies.
 
     steps:
       - uses: actions/checkout@v2
@@ -44,13 +43,12 @@ jobs:
           key: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}-${{ hashFiles('**/*.gradle') }}
           restore-keys: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}
 
-      - name: Initialize Postgres DB
+      - name: Make sure Postgres is ready and init
         env:
           PGPASSWORD: postgres
-        run: psql -h 127.0.0.1 -U postgres -f ./common/postgres-init.sql
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+        run: |
+          pg_isready -h localhost -t 10
+          psql -h localhost -U postgres -f ./common/postgres-init.sql
 
       - name: Build and test with Gradle
         run: ./gradlew build
