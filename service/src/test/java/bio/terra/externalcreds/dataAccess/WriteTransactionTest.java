@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.CannotSerializeTransactionException;
-import org.springframework.transaction.CannotCreateTransactionException;
 
 public class WriteTransactionTest extends BaseTest {
   @Autowired private WriteTransactionProbe writeTransactionProbe;
@@ -25,10 +23,10 @@ public class WriteTransactionTest extends BaseTest {
   }
 
   /**
-   * This tests that in a pair of competing write transactions (see {@link WriteTransaction}) one
-   * fails and is retried. This uses a {@link CyclicBarrier} to coordinate 2 threads such that one
-   * must fail if they are both using Isolation.SERIALIZABLE. The failure must then be retried in
-   * order to achieve success.
+   * This tests that in a pair of competing write transactions (see {@link
+   * bio.terra.common.db.WriteTransaction}) one fails and is retried. This uses a {@link
+   * CyclicBarrier} to coordinate 2 threads such that one must fail if they are both using
+   * Isolation.SERIALIZABLE. The failure must then be retried in order to achieve success.
    *
    * @throws InterruptedException
    */
@@ -81,23 +79,5 @@ public class WriteTransactionTest extends BaseTest {
     retriedThread.join(5000);
 
     Assertions.assertEquals(probeValue + 2, writeTransactionProbe.getTestProbeValue(probeId));
-  }
-
-  @Test
-  public void testCannotSerializeTransactionExceptionRetries() {
-    Assertions.assertThrows(
-        CannotSerializeTransactionException.class,
-        () -> writeTransactionProbe.throwCannotSerializeTransactionException());
-    Assertions.assertEquals(
-        100, writeTransactionProbe.getThrowCannotSerializeTransactionExceptionCount());
-  }
-
-  @Test
-  public void testCannotCreateTransactionExceptionRetries() {
-    Assertions.assertThrows(
-        CannotCreateTransactionException.class,
-        () -> writeTransactionProbe.throwCannotCreateTransactionException());
-    Assertions.assertEquals(
-        4, writeTransactionProbe.getThrowCannotCreateTransactionExceptionCount());
   }
 }

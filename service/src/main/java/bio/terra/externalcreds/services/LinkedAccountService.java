@@ -1,7 +1,7 @@
 package bio.terra.externalcreds.services;
 
+import bio.terra.common.db.ReadTransaction;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
-import bio.terra.externalcreds.dataAccess.ReadTransaction;
 import bio.terra.externalcreds.models.LinkedAccount;
 import org.springframework.stereotype.Service;
 
