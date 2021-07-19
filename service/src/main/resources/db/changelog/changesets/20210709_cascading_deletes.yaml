@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_cascading_delete_constraint"
+      author: swessel, kfeldman, zarsky
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE ga4gh_passport
+              DROP CONSTRAINT fk_linked_account_id,
+              ADD CONSTRAINT fk_linked_account_id
+              FOREIGN KEY (linked_account_id)
+              REFERENCES linked_account(id)
+              on DELETE cascade;
+        - sql:
+            sql: >
+              ALTER TABLE ga4gh_visa
+              DROP CONSTRAINT fk_ga4gh_passport_id,
+              ADD CONSTRAINT fk_ga4gh_passport_id
+              FOREIGN KEY (passport_id)
+              REFERENCES ga4gh_passport(id)
+              on DELETE cascade;

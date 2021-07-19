@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -19,7 +20,9 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 public class LinkedAccountDAOTest extends BaseTest {
+
   @Autowired private LinkedAccountDAO linkedAccountDAO;
+  @Autowired private GA4GHPassportDAO passportDAO;
 
   private LinkedAccount linkedAccount;
 
@@ -110,6 +113,18 @@ public class LinkedAccountDAOTest extends BaseTest {
     @Test
     @Transactional
     @Rollback
-    void testCascadingDelete() {}
+    void testAlsoDeletesPassport() {
+      val savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+      val passport =
+          GA4GHPassport.builder()
+              .linkedAccountId(savedLinkedAccount.getId())
+              .expires(new Timestamp(100))
+              .jwt("jwt")
+              .build();
+      passportDAO.insertPassport(passport);
+      linkedAccountDAO.deleteLinkedAccountIfExists(
+          savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
+      assertNull(passportDAO.getPassport(savedLinkedAccount.getId()));
+    }
   }
 }
