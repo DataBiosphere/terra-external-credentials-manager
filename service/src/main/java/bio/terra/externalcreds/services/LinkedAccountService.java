@@ -2,8 +2,12 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
-import bio.terra.externalcreds.dataAccess.*;
-import bio.terra.externalcreds.models.*;
+import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
+import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
+import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -15,17 +19,14 @@ public class LinkedAccountService {
   private final LinkedAccountDAO linkedAccountDAO;
   private final GA4GHPassportDAO ga4ghPassportDAO;
   private final GA4GHVisaDAO ga4ghVisaDAO;
-  private final PassportService passportService;
 
   public LinkedAccountService(
       LinkedAccountDAO linkedAccountDAO,
       GA4GHPassportDAO ga4ghPassportDAO,
-      GA4GHVisaDAO ga4ghVisaDAO,
-      PassportService passportService) {
+      GA4GHVisaDAO ga4ghVisaDAO) {
     this.linkedAccountDAO = linkedAccountDAO;
     this.ga4ghPassportDAO = ga4ghPassportDAO;
     this.ga4ghVisaDAO = ga4ghVisaDAO;
-    this.passportService = passportService;
   }
 
   @ReadTransaction
@@ -40,7 +41,7 @@ public class LinkedAccountService {
         linkedAccountDAO.upsertLinkedAccount(linkedAccountWithPassportAndVisas.getLinkedAccount());
 
     // clear out any passport and visas that may exist and save the new one
-    passportService.deletePassportAndContainedVisas(savedLinkedAccount.getId());
+    ga4ghPassportDAO.deletePassport(savedLinkedAccount.getId());
     savePassportIfExists(linkedAccountWithPassportAndVisas, savedLinkedAccount);
 
     return savedLinkedAccount;
