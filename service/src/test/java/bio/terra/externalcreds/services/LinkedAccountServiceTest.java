@@ -1,4 +1,4 @@
-package bio.terra.externalcreds.service;
+package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
