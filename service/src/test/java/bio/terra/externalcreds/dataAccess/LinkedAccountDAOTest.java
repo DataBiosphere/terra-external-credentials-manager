@@ -11,7 +11,6 @@ import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import java.sql.Timestamp;
 import java.util.UUID;
-import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,7 +39,7 @@ public class LinkedAccountDAOTest extends BaseTest {
 
   @Test
   void testMissingLinkedAccount() {
-    val shouldBeNull = linkedAccountDAO.getLinkedAccount("", "");
+    var shouldBeNull = linkedAccountDAO.getLinkedAccount("", "");
     assertNull(shouldBeNull);
   }
 
@@ -48,11 +47,11 @@ public class LinkedAccountDAOTest extends BaseTest {
   @Transactional
   @Rollback
   void testCreateAndGetLinkedAccount() {
-    val savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+    var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
     assertTrue(savedLinkedAccount.getId() > 0);
-    assertEquals(linkedAccount, savedLinkedAccount.withId(0));
+    assertEquals(linkedAccount.withId(savedLinkedAccount.getId()), savedLinkedAccount);
 
-    val loadedLinkedAccount =
+    var loadedLinkedAccount =
         linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
     assertEquals(savedLinkedAccount, loadedLinkedAccount);
   }
@@ -61,11 +60,9 @@ public class LinkedAccountDAOTest extends BaseTest {
   @Transactional
   @Rollback
   void testUpsertLinkedAccounts() {
-    val createdLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-    assertTrue(createdLinkedAccount.getId() > 0);
-    assertEquals(linkedAccount, createdLinkedAccount.withId(0));
+    var createdLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
-    val updatedLinkedAccount =
+    var updatedLinkedAccount =
         linkedAccountDAO.upsertLinkedAccount(
             linkedAccount
                 .withRefreshToken("different_refresh")
@@ -78,7 +75,7 @@ public class LinkedAccountDAOTest extends BaseTest {
         createdLinkedAccount.getExternalUserId(), updatedLinkedAccount.getExternalUserId());
     assertNotEquals(createdLinkedAccount.getExpires(), updatedLinkedAccount.getExpires());
 
-    val loadedLinkedAccount =
+    var loadedLinkedAccount =
         linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
     assertEquals(updatedLinkedAccount, loadedLinkedAccount);
   }
@@ -90,8 +87,8 @@ public class LinkedAccountDAOTest extends BaseTest {
     @Transactional
     @Rollback
     void testDeleteLinkedAccountIfExists() {
-      val createdLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-      val deletionSucceeded =
+      var createdLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+      var deletionSucceeded =
           linkedAccountDAO.deleteLinkedAccountIfExists(
               createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderId());
       assertTrue(deletionSucceeded);
@@ -104,8 +101,8 @@ public class LinkedAccountDAOTest extends BaseTest {
     @Transactional
     @Rollback
     void testDeleteNonexistentLinkedAccount() {
-      val userId = UUID.randomUUID().toString();
-      val deletionSucceeded = linkedAccountDAO.deleteLinkedAccountIfExists(userId, "fake_provider");
+      var userId = UUID.randomUUID().toString();
+      var deletionSucceeded = linkedAccountDAO.deleteLinkedAccountIfExists(userId, "fake_provider");
       assertNull(linkedAccountDAO.getLinkedAccount(userId, "fake_provider"));
       assertFalse(deletionSucceeded);
     }
@@ -114,8 +111,8 @@ public class LinkedAccountDAOTest extends BaseTest {
     @Transactional
     @Rollback
     void testAlsoDeletesPassport() {
-      val savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-      val passport =
+      var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+      var passport =
           GA4GHPassport.builder()
               .linkedAccountId(savedLinkedAccount.getId())
               .expires(new Timestamp(100))

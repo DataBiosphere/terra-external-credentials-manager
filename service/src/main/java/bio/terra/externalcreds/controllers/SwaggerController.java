@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,7 +17,7 @@ public class SwaggerController {
 
   public SwaggerController() {
     try {
-      try (val reader =
+      try (var reader =
           new BufferedReader(
               new InputStreamReader(
                   new ClassPathResource("rendered/swagger-client-id").getInputStream()))) {

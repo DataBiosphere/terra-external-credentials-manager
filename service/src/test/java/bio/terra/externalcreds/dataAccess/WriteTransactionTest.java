@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import bio.terra.externalcreds.BaseTest;
 import java.util.concurrent.CyclicBarrier;
-import lombok.val;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,8 +35,8 @@ public class WriteTransactionTest extends BaseTest {
    */
   @Test
   public void testWriteTransactionAnnotation() throws InterruptedException {
-    val probeValue = 22;
-    val probeId = 1;
+    var probeValue = 22;
+    var probeId = 1;
 
     writeTransactionProbe.insertTestRecord(probeId, probeValue);
 

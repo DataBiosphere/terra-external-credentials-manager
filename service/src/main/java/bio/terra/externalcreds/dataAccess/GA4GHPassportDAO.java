@@ -4,7 +4,6 @@ import bio.terra.externalcreds.models.GA4GHPassport;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -29,18 +28,18 @@ public class GA4GHPassportDAO {
    * @return true if a passport was deleted
    */
   public boolean deletePassport(int linkedAccountId) {
-    val namedParameters = new MapSqlParameterSource("linkedAccountId", linkedAccountId);
-    val query = "DELETE FROM ga4gh_passport WHERE linked_account_id = :linkedAccountId";
+    var namedParameters = new MapSqlParameterSource("linkedAccountId", linkedAccountId);
+    var query = "DELETE FROM ga4gh_passport WHERE linked_account_id = :linkedAccountId";
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
   public GA4GHPassport insertPassport(GA4GHPassport passport) {
-    val query =
+    var query =
         "INSERT INTO ga4gh_passport (linked_account_id, jwt, expires)"
             + " VALUES (:linkedAccountId, :jwt, :expires)"
             + " RETURNING id";
 
-    val namedParameters =
+    var namedParameters =
         new MapSqlParameterSource()
             .addValue("linkedAccountId", passport.getLinkedAccountId())
             .addValue("jwt", passport.getJwt())
@@ -48,15 +47,15 @@ public class GA4GHPassportDAO {
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
-    val generatedKeyHolder = new GeneratedKeyHolder();
+    var generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
     return passport.withId(generatedKeyHolder.getKey().intValue());
   }
 
   public GA4GHPassport getPassport(int linkedAccountId) {
-    val namedParameters = new MapSqlParameterSource("linkedAccountId", linkedAccountId);
-    val query = "SELECT * FROM ga4gh_passport WHERE linked_account_id = :linkedAccountId";
+    var namedParameters = new MapSqlParameterSource("linkedAccountId", linkedAccountId);
+    var query = "SELECT * FROM ga4gh_passport WHERE linked_account_id = :linkedAccountId";
     return DataAccessUtils.singleResult(
         jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper()));
   }

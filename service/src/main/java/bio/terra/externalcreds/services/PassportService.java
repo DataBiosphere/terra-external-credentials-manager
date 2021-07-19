@@ -3,7 +3,6 @@ package bio.terra.externalcreds.services;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.WriteTransaction;
-import lombok.val;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,7 +18,7 @@ public class PassportService {
 
   @WriteTransaction
   public void deletePassportAndContainedVisas(int linkedAccountId) {
-    val passport = ga4ghPassportDAO.getPassport(linkedAccountId);
+    var passport = ga4ghPassportDAO.getPassport(linkedAccountId);
     ga4ghVisaDAO.deleteVisas(passport.getId());
     ga4ghPassportDAO.deletePassport(linkedAccountId);
   }

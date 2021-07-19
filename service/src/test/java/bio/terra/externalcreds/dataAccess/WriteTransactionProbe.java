@@ -3,7 +3,6 @@ package bio.terra.externalcreds.dataAccess;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.val;
 import org.springframework.dao.CannotSerializeTransactionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -37,7 +36,7 @@ public class WriteTransactionProbe {
   @WriteTransaction
   public void successfulWriteTransaction(CyclicBarrier barrier, int id)
       throws BrokenBarrierException, InterruptedException {
-    val probeValue = getTestProbeValue(id);
+    var probeValue = getTestProbeValue(id);
     barrier.await(); // wait 1
     incrementTestProbeValue(id, probeValue);
   }
@@ -45,7 +44,7 @@ public class WriteTransactionProbe {
   @WriteTransaction
   public void retriedWriteTransaction(CyclicBarrier barrier, int id)
       throws BrokenBarrierException, InterruptedException {
-    val probeValue = getTestProbeValue(id);
+    var probeValue = getTestProbeValue(id);
     barrier.await(); // wait 1 and 3
     barrier.await(); // wait 2 and 4
     incrementTestProbeValue(id, probeValue);

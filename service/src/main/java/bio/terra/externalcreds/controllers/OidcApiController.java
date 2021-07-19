@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
-import lombok.val;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,9 +48,9 @@ public class OidcApiController implements OidcApi {
 
   private String getUserIdFromSam() {
     try {
-      val header = request.getHeader("authorization");
+      var header = request.getHeader("authorization");
       if (header == null) throw new UnauthorizedException("User is not authorized");
-      val accessToken = BearerTokenParser.parse(header);
+      var accessToken = BearerTokenParser.parse(header);
 
       return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
     } catch (ApiException e) {
@@ -64,9 +63,9 @@ public class OidcApiController implements OidcApi {
   }
 
   private LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
-    val expTime =
+    var expTime =
         OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
-    val linkInfo =
+    var linkInfo =
         new LinkInfo()
             .externalUserId(linkedAccount.getExternalUserId())
             .expirationTimestamp(expTime);
@@ -75,7 +74,7 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<List<String>> listProviders() {
-    val providers = new ArrayList<>(providerService.getProviderList());
+    var providers = new ArrayList<>(providerService.getProviderList());
     Collections.sort(providers);
 
     return ResponseEntity.ok(providers);
@@ -83,14 +82,14 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<LinkInfo> getLink(String provider) {
-    val userId = getUserIdFromSam();
-    val linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
+    var userId = getUserIdFromSam();
+    var linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
     if (linkedAccount == null) {
       return ResponseEntity.notFound().build();
     }
-    val expTime =
+    var expTime =
         OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
-    val linkInfo =
+    var linkInfo =
         new LinkInfo()
             .externalUserId(linkedAccount.getExternalUserId())
             .expirationTimestamp(expTime);
@@ -103,7 +102,7 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<String> getAuthUrl(
       String provider, List<String> scopes, String redirectUri, String state) {
-    val authorizationUrl =
+    var authorizationUrl =
         providerService.getProviderAuthorizationUrl(
             provider, redirectUri, Set.copyOf(scopes), state);
 
@@ -119,12 +118,12 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<LinkInfo> createLink(
       String provider, List<String> scopes, String redirectUri, String state, String oauthcode) {
-    val userId = getUserIdFromSam();
-    val linkedAccountWithPassportAndVisas =
+    var userId = getUserIdFromSam();
+    var linkedAccountWithPassportAndVisas =
         providerService.useAuthorizationCodeToGetLinkedAccount(
             provider, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
 
-    val savedLinkedAccount =
+    var savedLinkedAccount =
         linkedAccountService.saveLinkedAccount(linkedAccountWithPassportAndVisas);
 
     return ResponseEntity.ok(getLinkInfoFromLinkedAccount(savedLinkedAccount));

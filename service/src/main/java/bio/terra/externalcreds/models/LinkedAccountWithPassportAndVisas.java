@@ -2,10 +2,12 @@ package bio.terra.externalcreds.models;
 
 import java.util.List;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
+import lombok.With;
 
 @Builder
-@Getter
+@Data
+@With
 public class LinkedAccountWithPassportAndVisas {
   private final LinkedAccount linkedAccount;
   private final GA4GHPassport passport;
