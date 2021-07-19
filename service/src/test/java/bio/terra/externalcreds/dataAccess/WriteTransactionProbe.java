@@ -1,12 +1,10 @@
 package bio.terra.externalcreds.dataAccess;
 
+import bio.terra.common.db.WriteTransaction;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.springframework.dao.CannotSerializeTransactionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.CannotCreateTransactionException;
 
 @Repository
 public class WriteTransactionProbe {
@@ -48,30 +46,6 @@ public class WriteTransactionProbe {
     barrier.await(); // wait 1 and 3
     barrier.await(); // wait 2 and 4
     incrementTestProbeValue(id, probeValue);
-  }
-
-  private AtomicInteger throwCannotCreateTransactionExceptionCount = new AtomicInteger(0);
-
-  @WriteTransaction
-  public void throwCannotCreateTransactionException() {
-    throwCannotCreateTransactionExceptionCount.incrementAndGet();
-    throw new CannotCreateTransactionException("test");
-  }
-
-  public int getThrowCannotCreateTransactionExceptionCount() {
-    return throwCannotCreateTransactionExceptionCount.get();
-  }
-
-  private AtomicInteger throwCannotSerializeTransactionExceptionCount = new AtomicInteger(0);
-
-  @WriteTransaction
-  public void throwCannotSerializeTransactionException() {
-    throwCannotSerializeTransactionExceptionCount.incrementAndGet();
-    throw new CannotSerializeTransactionException("test");
-  }
-
-  public int getThrowCannotSerializeTransactionExceptionCount() {
-    return throwCannotSerializeTransactionExceptionCount.get();
   }
 
   private void incrementTestProbeValue(int id, Integer probeValue) {

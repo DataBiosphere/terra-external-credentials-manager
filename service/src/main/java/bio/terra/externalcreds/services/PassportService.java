@@ -1,8 +1,8 @@
 package bio.terra.externalcreds.services;
 
+import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
-import bio.terra.externalcreds.dataAccess.WriteTransaction;
 import org.springframework.stereotype.Service;
 
 @Service
