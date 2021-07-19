@@ -6,6 +6,7 @@ import java.util.concurrent.CyclicBarrier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+@SuppressWarnings("SqlResolve")
 @Repository
 public class WriteTransactionProbe {
   private final JdbcTemplate jdbcTemplate;
