@@ -28,4 +28,8 @@ repositories {
 dependencies {
 	implementation 'bio.terra:terra-common-lib:0.0.49-SNAPSHOT'
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-beb5b1c'
+
+	// for testing with mock web server
+	testImplementation 'com.squareup.okhttp3:okhttp:4.0.1'
+	testImplementation 'com.squareup.okhttp3:mockwebserver:4.0.1'
 }

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.LinkedAccount;
-import bio.terra.externalcreds.services.LinkedAccountService;
 import java.sql.Timestamp;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
