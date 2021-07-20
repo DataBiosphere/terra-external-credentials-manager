@@ -28,6 +28,7 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,8 +80,7 @@ public class ProviderServiceTest extends BaseTest {
   }
 
   @Test
-  void testUseAuthorizationCodeToGetLinkedAccountNoVisas()
-      throws JOSEException {
+  void testUseAuthorizationCodeToGetLinkedAccountNoVisas() throws JOSEException {
     var provider = "testProvider";
     var userId = "testUser";
     var authorizationCode = "testAuthCode";
