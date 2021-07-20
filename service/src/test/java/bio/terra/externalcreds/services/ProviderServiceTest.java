@@ -26,7 +26,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -60,6 +59,7 @@ public class ProviderServiceTest extends BaseTest {
 
   private RSAKey rsaJWK;
   private JWKSet jwkSet;
+  private JWSSigner signer;
 
   @BeforeEach
   void setUp() throws IOException, JOSEException {
@@ -68,6 +68,9 @@ public class ProviderServiceTest extends BaseTest {
 
     rsaJWK = new RSAKeyGenerator(2048).keyID("123").generate();
     jwkSet = new JWKSet(rsaJWK);
+
+    // Create RSA-signer with the private key
+    signer = new RSASSASigner(rsaJWK);
   }
 
   @AfterEach
@@ -76,7 +79,8 @@ public class ProviderServiceTest extends BaseTest {
   }
 
   @Test
-  void testUseAuthorizationCodeToGetLinkedAccountNoVisas() throws JOSEException, URISyntaxException {
+  void testUseAuthorizationCodeToGetLinkedAccountNoVisas()
+      throws JOSEException {
     var provider = "testProvider";
     var userId = "testUser";
     var authorizationCode = "testAuthCode";
@@ -89,7 +93,8 @@ public class ProviderServiceTest extends BaseTest {
 
     // Round the expiration to the nearest second because it will be rounded in the JWT.
     var passportExpires = new Date((new Date().getTime() + 60 * 1000) / 1000 * 1000);
-    String jwtString = createJwtString(issuer, userEmail, passportExpires, Collections.emptyList());
+    String jwtString =
+        createPassportJwtString(issuer, userEmail, passportExpires, Collections.emptyList());
 
     var expectedLinkedAccount =
         LinkedAccount.builder()
@@ -111,7 +116,8 @@ public class ProviderServiceTest extends BaseTest {
         redirectUri,
         scopes,
         state,
-        issuer);
+        issuer,
+        1);
 
     var linkedAccountWithPassportAndVisas =
         providerService.useAuthorizationCodeToGetLinkedAccount(
@@ -126,7 +132,8 @@ public class ProviderServiceTest extends BaseTest {
   }
 
   @Test
-  void testUseAuthorizationCodeToGetLinkedAccountWithVisas() throws JOSEException, URISyntaxException {
+  void testUseAuthorizationCodeToGetLinkedAccountWithAccessTokenVisa()
+      throws JOSEException, URISyntaxException {
     var provider = "testProvider";
     var userId = "testUser";
     var authorizationCode = "testAuthCode";
@@ -136,12 +143,20 @@ public class ProviderServiceTest extends BaseTest {
     var refreshToken = "testRefreshToken";
     var userEmail = "test@user.com";
     var issuer = "http://localhost:" + mockBackEnd.getPort();
-
-    
-
     // Round the expiration to the nearest second because it will be rounded in the JWT.
     var passportExpires = new Date((new Date().getTime() + 60 * 1000) / 1000 * 1000);
-    String jwtString = createJwtString(issuer, userEmail, passportExpires, Collections.emptyList());
+
+    var visa =
+        GA4GHVisa.builder()
+            .visaType("")
+            .tokenType(TokenTypeEnum.access_token)
+            .issuer(issuer)
+            .expires(new Timestamp(passportExpires.getTime()))
+            .build();
+    visa = visa.withJwt(createVisaJwtString(visa));
+
+    String jwtString =
+        createPassportJwtString(issuer, userEmail, passportExpires, List.of(visa.getJwt()));
 
     var expectedLinkedAccount =
         LinkedAccount.builder()
@@ -163,7 +178,8 @@ public class ProviderServiceTest extends BaseTest {
         redirectUri,
         scopes,
         state,
-        issuer);
+        issuer,
+        2);
 
     var linkedAccountWithPassportAndVisas =
         providerService.useAuthorizationCodeToGetLinkedAccount(
@@ -174,7 +190,106 @@ public class ProviderServiceTest extends BaseTest {
         linkedAccountWithPassportAndVisas.getLinkedAccount().withExpires(null));
 
     Assertions.assertEquals(expectedPassport, linkedAccountWithPassportAndVisas.getPassport());
-    Assertions.assertTrue(linkedAccountWithPassportAndVisas.getVisas().isEmpty());
+    Assertions.assertEquals(
+        visa, linkedAccountWithPassportAndVisas.getVisas().get(0).withLastValidated(null));
+  }
+
+  @Test
+  void testUseAuthorizationCodeToGetLinkedAccountWithDocumentTokenVisa()
+      throws JOSEException, URISyntaxException {
+    var provider = "testProvider";
+    var userId = "testUser";
+    var authorizationCode = "testAuthCode";
+    var redirectUri = "https://test/redirect/uri";
+    var scopes = Set.of("email", "ga4gh");
+    var state = "testState";
+    var refreshToken = "testRefreshToken";
+    var userEmail = "test@user.com";
+    var issuer = "http://localhost:" + mockBackEnd.getPort();
+    // Round the expiration to the nearest second because it will be rounded in the JWT.
+    var passportExpires = new Date((new Date().getTime() + 60 * 1000) / 1000 * 1000);
+
+    var visa =
+        GA4GHVisa.builder()
+            .visaType("")
+            .tokenType(TokenTypeEnum.document_token)
+            .issuer(issuer)
+            .expires(new Timestamp(passportExpires.getTime()))
+            .build();
+    visa = visa.withJwt(createVisaJwtString(visa));
+
+    String jwtString =
+        createPassportJwtString(issuer, userEmail, passportExpires, List.of(visa.getJwt()));
+
+    var expectedLinkedAccount =
+        LinkedAccount.builder()
+            .providerId(provider)
+            .userId(userId)
+            .refreshToken(refreshToken)
+            .externalUserId(userEmail)
+            .build();
+    var expectedPassport =
+        GA4GHPassport.builder()
+            .jwt(jwtString)
+            .expires(new Timestamp(passportExpires.getTime()))
+            .build();
+
+    mockEverything(
+        expectedLinkedAccount,
+        expectedPassport,
+        authorizationCode,
+        redirectUri,
+        scopes,
+        state,
+        issuer,
+        2);
+
+    var linkedAccountWithPassportAndVisas =
+        providerService.useAuthorizationCodeToGetLinkedAccount(
+            provider, userId, authorizationCode, redirectUri, scopes, state);
+
+    Assertions.assertEquals(
+        expectedLinkedAccount,
+        linkedAccountWithPassportAndVisas.getLinkedAccount().withExpires(null));
+
+    Assertions.assertEquals(expectedPassport, linkedAccountWithPassportAndVisas.getPassport());
+    Assertions.assertEquals(
+        visa, linkedAccountWithPassportAndVisas.getVisas().get(0).withLastValidated(null));
+  }
+
+  @Test
+  void testUseAuthorizationCodeToGetLinkedAccountWithNoPassport() {
+    var provider = "testProvider";
+    var userId = "testUser";
+    var authorizationCode = "testAuthCode";
+    var redirectUri = "https://test/redirect/uri";
+    var scopes = Set.of("email", "ga4gh");
+    var state = "testState";
+    var refreshToken = "testRefreshToken";
+    var userEmail = "test@user.com";
+    var issuer = "http://localhost:" + mockBackEnd.getPort();
+
+    var expectedLinkedAccount =
+        LinkedAccount.builder()
+            .providerId(provider)
+            .userId(userId)
+            .refreshToken(refreshToken)
+            .externalUserId(userEmail)
+            .build();
+
+    mockEverything(
+        expectedLinkedAccount, null, authorizationCode, redirectUri, scopes, state, issuer, 0);
+
+    var linkedAccountWithPassportAndVisas =
+        providerService.useAuthorizationCodeToGetLinkedAccount(
+            provider, userId, authorizationCode, redirectUri, scopes, state);
+
+    Assertions.assertEquals(
+        expectedLinkedAccount,
+        linkedAccountWithPassportAndVisas.getLinkedAccount().withExpires(null));
+
+    Assertions.assertNull(linkedAccountWithPassportAndVisas.getPassport());
+    Assertions.assertNull(linkedAccountWithPassportAndVisas.getVisas());
   }
 
   private void mockEverything(
@@ -184,7 +299,8 @@ public class ProviderServiceTest extends BaseTest {
       String redirectUri,
       Set<String> scopes,
       String state,
-      String issuer) {
+      String issuer,
+      int jwtCount) {
     var accessToken = "testAccessToken";
 
     var providerInfo = new ProviderInfo();
@@ -209,10 +325,11 @@ public class ProviderServiceTest extends BaseTest {
             providerClient, authorizationCode, redirectUri, scopes, state, null))
         .thenReturn(accessTokenResponse);
 
-    Map<String, Object> userAttributes =
-        Map.of(
-            ProviderService.EXTERNAL_USERID_ATTR, linkedAccount.getExternalUserId(),
-            ProviderService.PASSPORT_JWT_V11_CLAIM, passport.getJwt());
+    Map<String, Object> userAttributes = new HashMap<>();
+    userAttributes.put(ProviderService.EXTERNAL_USERID_ATTR, linkedAccount.getExternalUserId());
+    if (passport != null) {
+      userAttributes.put(ProviderService.PASSPORT_JWT_V11_CLAIM, passport.getJwt());
+    }
 
     var wellKnownConfigMap =
         Map.of(
@@ -220,6 +337,19 @@ public class ProviderServiceTest extends BaseTest {
             issuer,
             "jwks_uri",
             String.format("http://localhost:%d/openid/connect/jwks.json", mockBackEnd.getPort()));
+
+    for (int i = 0; i < jwtCount; i++) {
+      enqueueResponsesForJwtValidation(wellKnownConfigMap);
+    }
+
+    OAuth2User user =
+        new DefaultOAuth2User(null, userAttributes, ProviderService.EXTERNAL_USERID_ATTR);
+
+    when(oAuth2Service.getUserInfo(providerClient, accessTokenResponse.getAccessToken()))
+        .thenReturn(user);
+  }
+
+  private void enqueueResponsesForJwtValidation(Map<String, String> wellKnownConfigMap) {
     mockBackEnd.enqueue(
         new MockResponse()
             .addHeader("Content-Type", "application/json")
@@ -234,36 +364,10 @@ public class ProviderServiceTest extends BaseTest {
         new MockResponse()
             .addHeader("Content-Type", "application/json")
             .setBody(jwkSet.toString()));
-
-    OAuth2User user =
-        new DefaultOAuth2User(null, userAttributes, ProviderService.EXTERNAL_USERID_ATTR);
-
-    when(oAuth2Service.getUserInfo(providerClient, accessTokenResponse.getAccessToken()))
-        .thenReturn(user);
   }
 
-  private String createJwtString(String issuer, String email, Date expires, List<GA4GHVisa> visas)
-      throws JOSEException, URISyntaxException {
-    // Create RSA-signer with the private key
-    JWSSigner signer = new RSASSASigner(rsaJWK);
-
-    var visaJwts = new ArrayList<String>(visas.size());
-    for (var visa : visas) {
-      JWTClaimsSet visaClaimSet =
-          new JWTClaimsSet.Builder()
-              .expirationTime(visa.getExpires())
-              .issuer(visa.getIssuer())
-              .claim(ProviderService.VISA_TYPE_CLAIM, visa.getVisaType())
-              .build();
-
-      Builder jwtHeaderBuilder = new Builder(JWSAlgorithm.RS256).keyID(rsaJWK.getKeyID());
-      if (visa.getTokenType() == TokenTypeEnum.document_token) {
-        jwtHeaderBuilder.jwkURL(new URI(issuer));
-      }
-      SignedJWT signedVisaJwt = new SignedJWT(jwtHeaderBuilder.build(), visaClaimSet);
-      signedVisaJwt.sign(signer);
-      visaJwts.add(signedVisaJwt.serialize());
-    }
+  private String createPassportJwtString(
+      String issuer, String email, Date expires, List<String> visaJwts) throws JOSEException {
 
     JWTClaimsSet.Builder passportClaimSetBuilder =
         new JWTClaimsSet.Builder()
@@ -285,5 +389,22 @@ public class ProviderServiceTest extends BaseTest {
     signedJWT.sign(signer);
 
     return signedJWT.serialize();
+  }
+
+  private String createVisaJwtString(GA4GHVisa visa) throws URISyntaxException, JOSEException {
+    JWTClaimsSet visaClaimSet =
+        new JWTClaimsSet.Builder()
+            .expirationTime(visa.getExpires())
+            .issuer(visa.getIssuer())
+            .claim(ProviderService.VISA_TYPE_CLAIM, visa.getVisaType())
+            .build();
+
+    Builder jwtHeaderBuilder = new Builder(JWSAlgorithm.RS256).keyID(rsaJWK.getKeyID());
+    if (visa.getTokenType() == TokenTypeEnum.document_token) {
+      jwtHeaderBuilder.jwkURL(new URI(visa.getIssuer()));
+    }
+    SignedJWT signedVisaJwt = new SignedJWT(jwtHeaderBuilder.build(), visaClaimSet);
+    signedVisaJwt.sign(signer);
+    return signedVisaJwt.serialize();
   }
 }
