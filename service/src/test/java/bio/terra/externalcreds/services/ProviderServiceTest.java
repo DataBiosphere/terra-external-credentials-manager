@@ -80,19 +80,50 @@ public class ProviderServiceTest extends BaseTest {
     var userEmail = "test@user.com";
     var issuer = "http://localhost:" + mockBackEnd.getPort();
 
+    var expectedLinkedAccount =
+            LinkedAccount.builder()
+                    .providerId(provider)
+                    .userId(userId)
+                    .refreshToken(refreshToken)
+                    .externalUserId(userEmail)
+                    .build();
+
+    // Round the expiration to the nearest second because it will be rounded in the JWT.
+    var passportExpires = new Date((new Date().getTime() + 60 * 1000) / 1000 * 1000);
+    String jwtString = createJwtString(issuer, userEmail, passportExpires);
+    mockEverything(expectedLinkedAccount, redirectUri, scopes, state, accessToken, issuer, jwtString);
+
+    var linkedAccountWithPassportAndVisas =
+        providerService.useAuthorizationCodeToGetLinkedAccount(
+            provider, userId, authorizationCode, redirectUri, scopes, state);
+
+    Assertions.assertEquals(
+        expectedLinkedAccount,
+        linkedAccountWithPassportAndVisas.getLinkedAccount().withExpires(null));
+
+    var expectedPassport =
+        GA4GHPassport.builder()
+            .jwt(jwtString)
+            .expires(new Timestamp(passportExpires.getTime()))
+            .build();
+    Assertions.assertEquals(expectedPassport, linkedAccountWithPassportAndVisas.getPassport());
+    Assertions.assertTrue(linkedAccountWithPassportAndVisas.getVisas().isEmpty());
+  }
+
+  private void mockEverything(LinkedAccount linkedAccount, String authorizationCode, String redirectUri, Set<String> scopes, String state, String accessToken, String issuer, String jwtString) {
     var providerInfo = new ProviderInfo();
     providerInfo.setLinkLifespan(Duration.ZERO);
 
-    when(providerConfig.getServices()).thenReturn(Map.of(provider, providerInfo));
+    when(providerConfig.getServices()).thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
     var providerClient =
-        ClientRegistration.withRegistrationId(provider)
+        ClientRegistration.withRegistrationId(linkedAccount.getProviderId())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .build();
-    when(providerClientCache.getProviderClient(provider)).thenReturn(providerClient);
+    when(providerClientCache.getProviderClient(linkedAccount.getProviderId())).thenReturn(providerClient);
 
     var accessTokenResponse =
         OAuth2AccessTokenResponse.withToken(accessToken)
-            .refreshToken(refreshToken)
+            .refreshToken(linkedAccount.getRefreshToken())
             .tokenType(TokenType.BEARER)
             .build();
 
@@ -100,20 +131,17 @@ public class ProviderServiceTest extends BaseTest {
             providerClient, authorizationCode, redirectUri, scopes, state, null))
         .thenReturn(accessTokenResponse);
 
-    // Round the expiration to the nearest second because it will be rounded in the JWT.
-    var passportExpires = new Date((new Date().getTime() + 60 * 1000) / 1000 * 1000);
-    String jwtString = createJwtString(issuer, userEmail, passportExpires);
     Map<String, Object> userAttributes =
         Map.of(
             ProviderService.EXTERNAL_USERID_ATTR,
-            userEmail,
+                linkedAccount.getExternalUserId(),
             ProviderService.PASSPORT_JWT_V11_CLAIM,
-            jwtString);
+                jwtString);
 
     var wellKnownConfigMap =
         Map.of(
             "issuer",
-            issuer,
+                issuer,
             "jwks_uri",
             String.format(
                 "http://localhost:%d/openid/connect/jwks.json", mockBackEnd.getPort()));
@@ -137,30 +165,6 @@ public class ProviderServiceTest extends BaseTest {
 
     when(oAuth2Service.getUserInfo(providerClient, accessTokenResponse.getAccessToken()))
         .thenReturn(user);
-
-    var linkedAccountWithPassportAndVisas =
-        providerService.useAuthorizationCodeToGetLinkedAccount(
-            provider, userId, authorizationCode, redirectUri, scopes, state);
-
-    var expectedLinkedAccount =
-        LinkedAccount.builder()
-            .providerId(provider)
-            .userId(userId)
-            .refreshToken(refreshToken)
-            .externalUserId(userEmail)
-            .build();
-
-    Assertions.assertEquals(
-        expectedLinkedAccount,
-        linkedAccountWithPassportAndVisas.getLinkedAccount().withExpires(null));
-
-    var expectedPassport =
-        GA4GHPassport.builder()
-            .jwt(jwtString)
-            .expires(new Timestamp(passportExpires.getTime()))
-            .build();
-    Assertions.assertEquals(expectedPassport, linkedAccountWithPassportAndVisas.getPassport());
-    Assertions.assertTrue(linkedAccountWithPassportAndVisas.getVisas().isEmpty());
   }
 
   private String createJwtString(String issuer, String email, Date expires) throws JOSEException {
