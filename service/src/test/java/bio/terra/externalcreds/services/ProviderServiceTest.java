@@ -5,17 +5,21 @@ import static org.mockito.Mockito.when;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.config.ProviderConfig;
 import bio.terra.externalcreds.config.ProviderConfig.ProviderInfo;
+import bio.terra.externalcreds.models.GA4GHPassport;
+import bio.terra.externalcreds.models.LinkedAccount;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 import com.nimbusds.jose.util.JSONObjectUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Map;
@@ -24,6 +28,7 @@ import java.util.UUID;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,10 +50,16 @@ public class ProviderServiceTest extends BaseTest {
 
   public static MockWebServer mockBackEnd;
 
+  private static RSAKey rsaJWK;
+  private static JWKSet jwkSet;
+
   @BeforeAll
-  static void setUp() throws IOException {
+  static void setUp() throws IOException, JOSEException {
     mockBackEnd = new MockWebServer();
     mockBackEnd.start();
+
+    rsaJWK = new RSAKeyGenerator(2048).keyID("123").generate();
+    jwkSet = new JWKSet(rsaJWK);
   }
 
   @AfterAll
@@ -67,7 +78,7 @@ public class ProviderServiceTest extends BaseTest {
     var accessToken = "testAccessToken";
     var refreshToken = "testRefreshToken";
     var userEmail = "test@user.com";
-    var issuer = "http://localhost:" + this.mockBackEnd.getPort();
+    var issuer = "http://localhost:" + mockBackEnd.getPort();
 
     var providerInfo = new ProviderInfo();
     providerInfo.setLinkLifespan(Duration.ZERO);
@@ -89,12 +100,15 @@ public class ProviderServiceTest extends BaseTest {
             providerClient, authorizationCode, redirectUri, scopes, state, null))
         .thenReturn(accessTokenResponse);
 
+    // Round the expiration to the nearest second because it will be rounded in the JWT.
+    var passportExpires = new Date((new Date().getTime() + 60 * 1000) / 1000 * 1000);
+    String jwtString = createJwtString(issuer, userEmail, passportExpires);
     Map<String, Object> userAttributes =
         Map.of(
             ProviderService.EXTERNAL_USERID_ATTR,
             userEmail,
             ProviderService.PASSPORT_JWT_V11_CLAIM,
-            createJwtString(issuer, userEmail));
+            jwtString);
 
     var wellKnownConfigMap =
         Map.of(
@@ -102,11 +116,21 @@ public class ProviderServiceTest extends BaseTest {
             issuer,
             "jwks_uri",
             String.format(
-                "http://localhost:%d/openid/connect/jwks.json", this.mockBackEnd.getPort()));
-    this.mockBackEnd.enqueue(
+                "http://localhost:%d/openid/connect/jwks.json", mockBackEnd.getPort()));
+    mockBackEnd.enqueue(
         new MockResponse()
             .addHeader("Content-Type", "application/json")
             .setBody(JSONObjectUtils.toJSONString(wellKnownConfigMap)));
+
+    mockBackEnd.enqueue(
+        new MockResponse()
+            .addHeader("Content-Type", "application/json")
+            .setBody(jwkSet.toString()));
+
+    mockBackEnd.enqueue(
+        new MockResponse()
+            .addHeader("Content-Type", "application/json")
+            .setBody(jwkSet.toString()));
 
     OAuth2User user =
         new DefaultOAuth2User(null, userAttributes, ProviderService.EXTERNAL_USERID_ATTR);
@@ -117,17 +141,35 @@ public class ProviderServiceTest extends BaseTest {
     var linkedAccountWithPassportAndVisas =
         providerService.useAuthorizationCodeToGetLinkedAccount(
             provider, userId, authorizationCode, redirectUri, scopes, state);
+
+    var expectedLinkedAccount =
+        LinkedAccount.builder()
+            .providerId(provider)
+            .userId(userId)
+            .refreshToken(refreshToken)
+            .externalUserId(userEmail)
+            .build();
+
+    Assertions.assertEquals(
+        expectedLinkedAccount,
+        linkedAccountWithPassportAndVisas.getLinkedAccount().withExpires(null));
+
+    var expectedPassport =
+        GA4GHPassport.builder()
+            .jwt(jwtString)
+            .expires(new Timestamp(passportExpires.getTime()))
+            .build();
+    Assertions.assertEquals(expectedPassport, linkedAccountWithPassportAndVisas.getPassport());
+    Assertions.assertTrue(linkedAccountWithPassportAndVisas.getVisas().isEmpty());
   }
 
-  private String createJwtString(String issuer, String email) throws JOSEException {
-    RSAKey rsaJWK = new RSAKeyGenerator(2048).keyID("123").generate();
-
+  private String createJwtString(String issuer, String email, Date expires) throws JOSEException {
     JWTClaimsSet claimsSet =
         new JWTClaimsSet.Builder()
             .subject(UUID.randomUUID().toString())
             .claim(ProviderService.EXTERNAL_USERID_ATTR, email)
             .issuer(issuer)
-            .expirationTime(new Date(new Date().getTime() + 60 * 1000))
+            .expirationTime(expires)
             .build();
 
     SignedJWT signedJWT =
