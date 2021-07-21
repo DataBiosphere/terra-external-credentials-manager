@@ -80,6 +80,7 @@ public class GA4GHVisaDAO {
           .issuer(rs.getString("issuer"))
           .tokenType(TokenTypeEnum.valueOf(rs.getString("token_type")))
           .lastValidated(rs.getTimestamp("last_validated"))
+          .visaType(rs.getString("visa_type"))
           .build();
     }
   }
