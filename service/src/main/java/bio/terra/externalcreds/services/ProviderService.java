@@ -45,62 +45,6 @@ public class ProviderService {
     this.oAuth2Service = oAuth2Service;
   }
 
-  private Jwt decodeJwt(String jwt) {
-    try {
-      // first we need to get the issuer from the jwt, the issuer is needed to validate
-      var issuer = JWTParser.parse(jwt).getJWTClaimsSet().getIssuer();
-      if (issuer == null) {
-        throw new InvalidJwtException("jwt missing issuer (iss) claim");
-      }
-      return JwtDecoders.fromIssuerLocation(issuer).decode(jwt);
-    } catch (ParseException | JwtException e) {
-      throw new InvalidJwtException(e);
-    }
-  }
-
-  private TokenTypeEnum determineTokenType(Jwt visaJwt) {
-    // https://github.com/ga4gh/data-security/blob/master/AAI/AAIConnectProfile.md#conformance-for-embedded-token-issuers
-    return visaJwt.getHeaders().containsKey(JKU_HEADER)
-        ? TokenTypeEnum.document_token
-        : TokenTypeEnum.access_token;
-  }
-
-  private Timestamp getJwtExpires(Jwt decodedPassportJwt) {
-    var expiresAt = decodedPassportJwt.getExpiresAt();
-    if (expiresAt == null) {
-      throw new InvalidJwtException("jwt missing expires (exp) claim");
-    }
-    return new Timestamp(expiresAt.toEpochMilli());
-  }
-
-  private String getJwtClaim(Jwt jwt, String claimName) {
-    var claim = jwt.getClaimAsString(claimName);
-    if (claim == null) {
-      throw new InvalidJwtException("jwt missing claim " + claimName);
-    }
-    return claim;
-  }
-
-  private GA4GHPassport buildPassport(Jwt passportJwt) {
-    var passportExpiresAt = getJwtExpires(passportJwt);
-
-    return GA4GHPassport.builder()
-        .jwt(passportJwt.getTokenValue())
-        .expires(passportExpiresAt)
-        .build();
-  }
-
-  private GA4GHVisa buildVisa(Jwt visaJwt) {
-    return GA4GHVisa.builder()
-        .visaType(getJwtClaim(visaJwt, VISA_TYPE_CLAIM))
-        .jwt(visaJwt.getTokenValue())
-        .expires(getJwtExpires(visaJwt))
-        .issuer(visaJwt.getIssuer().toString())
-        .lastValidated(new Timestamp(Instant.now().toEpochMilli()))
-        .tokenType(determineTokenType(visaJwt))
-        .build();
-  }
-
   public Set<String> getProviderList() {
     return Collections.unmodifiableSet(providerConfig.getServices().keySet());
   }
@@ -185,5 +129,61 @@ public class ProviderService {
     } else {
       return LinkedAccountWithPassportAndVisas.builder().linkedAccount(linkedAccount).build();
     }
+  }
+
+  private Jwt decodeJwt(String jwt) {
+    try {
+      // first we need to get the issuer from the jwt, the issuer is needed to validate
+      var issuer = JWTParser.parse(jwt).getJWTClaimsSet().getIssuer();
+      if (issuer == null) {
+        throw new InvalidJwtException("jwt missing issuer (iss) claim");
+      }
+      return JwtDecoders.fromIssuerLocation(issuer).decode(jwt);
+    } catch (ParseException | JwtException e) {
+      throw new InvalidJwtException(e);
+    }
+  }
+
+  private TokenTypeEnum determineTokenType(Jwt visaJwt) {
+    // https://github.com/ga4gh/data-security/blob/master/AAI/AAIConnectProfile.md#conformance-for-embedded-token-issuers
+    return visaJwt.getHeaders().containsKey(JKU_HEADER)
+        ? TokenTypeEnum.document_token
+        : TokenTypeEnum.access_token;
+  }
+
+  private Timestamp getJwtExpires(Jwt decodedPassportJwt) {
+    var expiresAt = decodedPassportJwt.getExpiresAt();
+    if (expiresAt == null) {
+      throw new InvalidJwtException("jwt missing expires (exp) claim");
+    }
+    return new Timestamp(expiresAt.toEpochMilli());
+  }
+
+  private String getJwtClaim(Jwt jwt, String claimName) {
+    var claim = jwt.getClaimAsString(claimName);
+    if (claim == null) {
+      throw new InvalidJwtException("jwt missing claim " + claimName);
+    }
+    return claim;
+  }
+
+  private GA4GHPassport buildPassport(Jwt passportJwt) {
+    var passportExpiresAt = getJwtExpires(passportJwt);
+
+    return GA4GHPassport.builder()
+        .jwt(passportJwt.getTokenValue())
+        .expires(passportExpiresAt)
+        .build();
+  }
+
+  private GA4GHVisa buildVisa(Jwt visaJwt) {
+    return GA4GHVisa.builder()
+        .visaType(getJwtClaim(visaJwt, VISA_TYPE_CLAIM))
+        .jwt(visaJwt.getTokenValue())
+        .expires(getJwtExpires(visaJwt))
+        .issuer(visaJwt.getIssuer().toString())
+        .lastValidated(new Timestamp(Instant.now().toEpochMilli()))
+        .tokenType(determineTokenType(visaJwt))
+        .build();
   }
 }

@@ -25,20 +25,6 @@ public class LinkedAccountService {
     this.ga4ghVisaDAO = ga4ghVisaDAO;
   }
 
-  private void savePassportIfExists(
-      LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas, int linkedAccountId) {
-    if (linkedAccountWithPassportAndVisas.getPassport() != null) {
-
-      var savedPassport =
-          ga4ghPassportDAO.insertPassport(
-              linkedAccountWithPassportAndVisas.getPassport().withLinkedAccountId(linkedAccountId));
-
-      linkedAccountWithPassportAndVisas
-          .getVisas()
-          .forEach(v -> ga4ghVisaDAO.insertVisa(v.withPassportId(savedPassport.getId())));
-    }
-  }
-
   @ReadTransaction
   public LinkedAccount getLinkedAccount(String userId, String providerId) {
     return linkedAccountDAO.getLinkedAccount(userId, providerId);
@@ -55,5 +41,19 @@ public class LinkedAccountService {
     savePassportIfExists(linkedAccountWithPassportAndVisas, savedLinkedAccount.getId());
 
     return savedLinkedAccount;
+  }
+
+  private void savePassportIfExists(
+      LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas, int linkedAccountId) {
+    if (linkedAccountWithPassportAndVisas.getPassport() != null) {
+
+      var savedPassport =
+          ga4ghPassportDAO.insertPassport(
+              linkedAccountWithPassportAndVisas.getPassport().withLinkedAccountId(linkedAccountId));
+
+      linkedAccountWithPassportAndVisas
+          .getVisas()
+          .forEach(v -> ga4ghVisaDAO.insertVisa(v.withPassportId(savedPassport.getId())));
+    }
   }
 }

@@ -74,6 +74,85 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   private final Date passportExpires = new Date((new Date().getTime() + 60 * 1000) / 1000 * 1000);
   private final Timestamp passportExpiresTime = new Timestamp(passportExpires.getTime());
 
+  @BeforeAll
+  static void setUpJwtVerification() throws JOSEException {
+    rsaJWK = new RSAKeyGenerator(2048).keyID("123").generate();
+
+    // Create RSA-signer with the private key
+    signer = new RSASSASigner(rsaJWK);
+
+    mockServer = ClientAndServer.startClientAndServer(50555);
+
+    issuer = "http://localhost:" + mockServer.getPort();
+    var wellKnownConfigMap =
+        Map.of(
+            "issuer",
+            issuer,
+            "jwks_uri",
+            String.format("http://localhost:%d%s", mockServer.getPort(), JWKS_PATH));
+
+    mockServer
+        .when(HttpRequest.request("/.well-known/openid-configuration").withMethod("GET"))
+        .respond(
+            HttpResponse.response(JSONObjectUtils.toJSONString(wellKnownConfigMap))
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON));
+
+    mockServer
+        .when(HttpRequest.request(JWKS_PATH).withMethod("GET"))
+        .respond(
+            HttpResponse.response(new JWKSet(rsaJWK).toString())
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON));
+  }
+
+  @AfterAll
+  static void tearDown() {
+    mockServer.stop();
+  }
+
+  @Test
+  void testNoVisas() throws JOSEException {
+    var expectedPassport = createTestPassport(Collections.emptyList());
+    var expectedLinkedAccount = createTestLinkedAccount();
+    runTest(expectedLinkedAccount, expectedPassport, Collections.emptyList());
+  }
+
+  @Test
+  void testAccessTokenVisa() throws JOSEException, URISyntaxException {
+    var visa = createTestVisa(TokenTypeEnum.access_token);
+    var expectedPassport = createTestPassport(List.of(visa));
+    var expectedLinkedAccount = createTestLinkedAccount();
+    runTest(expectedLinkedAccount, expectedPassport, List.of(visa));
+  }
+
+  @Test
+  void testDocumentTokenVisa() throws JOSEException, URISyntaxException {
+    var visa = createTestVisa(TokenTypeEnum.document_token);
+    var expectedPassport = createTestPassport(List.of(visa));
+    var expectedLinkedAccount = createTestLinkedAccount();
+    runTest(expectedLinkedAccount, expectedPassport, List.of(visa));
+  }
+
+  @Test
+  void testMultipleVisas() throws URISyntaxException, JOSEException {
+    var visas =
+        List.of(
+            createTestVisa(TokenTypeEnum.document_token),
+            createTestVisa(TokenTypeEnum.access_token),
+            createTestVisa(TokenTypeEnum.document_token),
+            createTestVisa(TokenTypeEnum.access_token));
+    var expectedPassport = createTestPassport(visas);
+    var expectedLinkedAccount = createTestLinkedAccount();
+    runTest(expectedLinkedAccount, expectedPassport, visas);
+  }
+
+  @Test
+  void testNoPassport() {
+    var expectedLinkedAccount = createTestLinkedAccount();
+    runTest(expectedLinkedAccount, null, Collections.emptyList());
+  }
+
   private void setupMocks(
       LinkedAccount linkedAccount,
       GA4GHPassport passport,
@@ -208,84 +287,5 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         .expires(passportExpiresTime)
         .jwt(createVisaJwtString(tokenType))
         .build();
-  }
-
-  @BeforeAll
-  static void setUpJwtVerification() throws JOSEException {
-    rsaJWK = new RSAKeyGenerator(2048).keyID("123").generate();
-
-    // Create RSA-signer with the private key
-    signer = new RSASSASigner(rsaJWK);
-
-    mockServer = ClientAndServer.startClientAndServer(50555);
-
-    issuer = "http://localhost:" + mockServer.getPort();
-    var wellKnownConfigMap =
-        Map.of(
-            "issuer",
-            issuer,
-            "jwks_uri",
-            String.format("http://localhost:%d%s", mockServer.getPort(), JWKS_PATH));
-
-    mockServer
-        .when(HttpRequest.request("/.well-known/openid-configuration").withMethod("GET"))
-        .respond(
-            HttpResponse.response(JSONObjectUtils.toJSONString(wellKnownConfigMap))
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON));
-
-    mockServer
-        .when(HttpRequest.request(JWKS_PATH).withMethod("GET"))
-        .respond(
-            HttpResponse.response(new JWKSet(rsaJWK).toString())
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON));
-  }
-
-  @AfterAll
-  static void tearDown() {
-    mockServer.stop();
-  }
-
-  @Test
-  void testNoVisas() throws JOSEException {
-    var expectedPassport = createTestPassport(Collections.emptyList());
-    var expectedLinkedAccount = createTestLinkedAccount();
-    runTest(expectedLinkedAccount, expectedPassport, Collections.emptyList());
-  }
-
-  @Test
-  void testAccessTokenVisa() throws JOSEException, URISyntaxException {
-    var visa = createTestVisa(TokenTypeEnum.access_token);
-    var expectedPassport = createTestPassport(List.of(visa));
-    var expectedLinkedAccount = createTestLinkedAccount();
-    runTest(expectedLinkedAccount, expectedPassport, List.of(visa));
-  }
-
-  @Test
-  void testDocumentTokenVisa() throws JOSEException, URISyntaxException {
-    var visa = createTestVisa(TokenTypeEnum.document_token);
-    var expectedPassport = createTestPassport(List.of(visa));
-    var expectedLinkedAccount = createTestLinkedAccount();
-    runTest(expectedLinkedAccount, expectedPassport, List.of(visa));
-  }
-
-  @Test
-  void testMultipleVisas() throws URISyntaxException, JOSEException {
-    var visas =
-        List.of(
-            createTestVisa(TokenTypeEnum.document_token),
-            createTestVisa(TokenTypeEnum.access_token),
-            createTestVisa(TokenTypeEnum.document_token),
-            createTestVisa(TokenTypeEnum.access_token));
-    var expectedPassport = createTestPassport(visas);
-    var expectedLinkedAccount = createTestLinkedAccount();
-    runTest(expectedLinkedAccount, expectedPassport, visas);
-  }
-
-  @Test
-  void testNoPassport() {
-    var expectedLinkedAccount = createTestLinkedAccount();
-    runTest(expectedLinkedAccount, null, Collections.emptyList());
   }
 }
