@@ -15,15 +15,16 @@ plugins {
 
 sourceCompatibility = '11'
 
+repositories {
+	mavenCentral()
+	maven { url "https://broadinstitute.jfrog.io/broadinstitute/libs-snapshot-local/" }
+	maven { url "https://broadinstitute.jfrog.io/broadinstitute/libs-release/" }
+}
+
 apply from: 'publishing.gradle'
 apply from: 'spring.gradle'
 apply from: 'generators.gradle'
 apply from: 'tooling.gradle'
-
-repositories {
-	maven { url "https://broadinstitute.jfrog.io/broadinstitute/libs-snapshot-local/" }
-	maven { url "https://broadinstitute.jfrog.io/broadinstitute/libs-release/" }
-}
 
 dependencies {
 	implementation 'bio.terra:terra-common-lib:0.0.49-SNAPSHOT'
