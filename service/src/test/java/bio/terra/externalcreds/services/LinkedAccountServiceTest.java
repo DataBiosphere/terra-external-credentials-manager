@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
@@ -78,7 +77,6 @@ public class LinkedAccountServiceTest extends BaseTest {
     saveAndValidateLinkedAccount(linkedAccount, null, null);
   }
 
-  @NotNull
   private LinkedAccount saveAndValidateLinkedAccount(
       LinkedAccount linkedAccount, GA4GHPassport passport, List<GA4GHVisa> visas) {
     var savedLinkedAccount =
@@ -135,7 +133,6 @@ public class LinkedAccountServiceTest extends BaseTest {
         .build();
   }
 
-  @NotNull
   private Timestamp getRandomTimestamp() {
     return new Timestamp(System.currentTimeMillis());
   }

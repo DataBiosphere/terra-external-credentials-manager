@@ -31,16 +31,17 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
+import org.mockserver.model.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -52,18 +53,18 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 
 public class AuthorizationCodeExchangeTest extends BaseTest {
 
+  public static final String JWKS_PATH = "/openid/connect/jwks.json";
+
   @MockBean OAuth2Service oAuth2Service;
   @MockBean ProviderClientCache providerClientCache;
   @MockBean ProviderConfig providerConfig;
 
   @Autowired ProviderService providerService;
 
-  public MockWebServer mockBackEnd;
-
-  private RSAKey rsaJWK;
-  private JWKSet jwkSet;
-  private JWSSigner signer;
-  private String issuer;
+  private static ClientAndServer mockServer;
+  private static RSAKey rsaJWK;
+  private static JWSSigner signer;
+  private static String issuer;
 
   private final String authorizationCode = UUID.randomUUID().toString();
   private final String redirectUri = "https://test/redirect/uri";
@@ -73,22 +74,43 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   // Round the expiration to the nearest second because it will be rounded in the JWT.
   private final Date passportExpires = new Date((new Date().getTime() + 60 * 1000) / 1000 * 1000);
 
-  @BeforeEach
-  void setUp() throws IOException, JOSEException {
-    mockBackEnd = new MockWebServer();
-    mockBackEnd.start();
-
+  @BeforeAll
+  static void setUpJwtVerification() throws JOSEException {
     rsaJWK = new RSAKeyGenerator(2048).keyID("123").generate();
-    jwkSet = new JWKSet(rsaJWK);
 
     // Create RSA-signer with the private key
     signer = new RSASSASigner(rsaJWK);
-    issuer = "http://localhost:" + mockBackEnd.getPort();
+
+    mockServer = ClientAndServer.startClientAndServer(50555);
+
+    issuer = "http://localhost:" + mockServer.getPort();
+    var wellKnownConfigMap =
+        Map.of(
+            "issuer",
+            issuer,
+            "jwks_uri",
+            String.format("http://localhost:%d%s", mockServer.getPort(), JWKS_PATH));
+
+    mockServer
+        .when(HttpRequest.request("/.well-known/openid-configuration").withMethod("GET"))
+        .respond(
+            HttpResponse.response()
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON)
+                .withBody(JSONObjectUtils.toJSONString(wellKnownConfigMap)));
+
+    mockServer
+        .when(HttpRequest.request(JWKS_PATH).withMethod("GET"))
+        .respond(
+            HttpResponse.response()
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON)
+                .withBody(new JWKSet(rsaJWK).toString()));
   }
 
-  @AfterEach
-  void tearDown() throws IOException {
-    mockBackEnd.shutdown();
+  @AfterAll
+  static void tearDown() throws IOException {
+    mockServer.stop();
   }
 
   @Test
@@ -137,19 +159,9 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
       LinkedAccount expectedLinkedAccount,
       GA4GHPassport expectedPassport,
       List<GA4GHVisa> expectedVisas) {
-    int jwtCount =
-        expectedPassport == null
-            ? 0
-            : 1 + Objects.requireNonNullElse(expectedVisas, Collections.emptyList()).size();
-    mockEverything(
-        expectedLinkedAccount,
-        expectedPassport,
-        authorizationCode,
-        redirectUri,
-        scopes,
-        state,
-        issuer,
-        jwtCount);
+
+    setupMocks(
+        expectedLinkedAccount, expectedPassport, authorizationCode, redirectUri, scopes, state);
 
     var linkedAccountWithPassportAndVisas =
         providerService.useAuthorizationCodeToGetLinkedAccount(
@@ -173,17 +185,13 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     Assertions.assertEquals(expectedVisas, visasWithoutLastValidated);
   }
 
-  private void mockEverything(
+  private void setupMocks(
       LinkedAccount linkedAccount,
       GA4GHPassport passport,
       String authorizationCode,
       String redirectUri,
       Set<String> scopes,
-      String state,
-      String issuer,
-      int jwtCount) {
-    var accessToken = "testAccessToken";
-
+      String state) {
     var providerInfo = new ProviderInfo();
     providerInfo.setLinkLifespan(Duration.ZERO);
     var providerClient =
@@ -191,7 +199,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .build();
     var accessTokenResponse =
-        OAuth2AccessTokenResponse.withToken(accessToken)
+        OAuth2AccessTokenResponse.withToken(UUID.randomUUID().toString())
             .refreshToken(linkedAccount.getRefreshToken())
             .tokenType(TokenType.BEARER)
             .build();
@@ -212,34 +220,6 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         .thenReturn(accessTokenResponse);
     when(oAuth2Service.getUserInfo(providerClient, accessTokenResponse.getAccessToken()))
         .thenReturn(user);
-
-    var wellKnownConfigMap =
-        Map.of(
-            "issuer",
-            issuer,
-            "jwks_uri",
-            String.format("http://localhost:%d/openid/connect/jwks.json", mockBackEnd.getPort()));
-
-    for (int i = 0; i < jwtCount; i++) {
-      enqueueResponsesForJwtValidation(wellKnownConfigMap);
-    }
-  }
-
-  private void enqueueResponsesForJwtValidation(Map<String, String> wellKnownConfigMap) {
-    mockBackEnd.enqueue(
-        new MockResponse()
-            .addHeader("Content-Type", "application/json")
-            .setBody(JSONObjectUtils.toJSONString(wellKnownConfigMap)));
-
-    mockBackEnd.enqueue(
-        new MockResponse()
-            .addHeader("Content-Type", "application/json")
-            .setBody(jwkSet.toString()));
-
-    mockBackEnd.enqueue(
-        new MockResponse()
-            .addHeader("Content-Type", "application/json")
-            .setBody(jwkSet.toString()));
   }
 
   private String createPassportJwtString(Date expires, List<String> visaJwts) throws JOSEException {
