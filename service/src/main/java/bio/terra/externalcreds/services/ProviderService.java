@@ -12,11 +12,10 @@ import com.nimbusds.jwt.JWTParser;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
@@ -44,6 +43,62 @@ public class ProviderService {
     this.providerConfig = providerConfig;
     this.providerClientCache = providerClientCache;
     this.oAuth2Service = oAuth2Service;
+  }
+
+  private Jwt decodeJwt(String jwt) {
+    try {
+      // first we need to get the issuer from the jwt, the issuer is needed to validate
+      var issuer = JWTParser.parse(jwt).getJWTClaimsSet().getIssuer();
+      if (issuer == null) {
+        throw new InvalidJwtException("jwt missing issuer (iss) claim");
+      }
+      return JwtDecoders.fromIssuerLocation(issuer).decode(jwt);
+    } catch (ParseException | JwtException e) {
+      throw new InvalidJwtException(e);
+    }
+  }
+
+  private TokenTypeEnum determineTokenType(Jwt visaJwt) {
+    // https://github.com/ga4gh/data-security/blob/master/AAI/AAIConnectProfile.md#conformance-for-embedded-token-issuers
+    return visaJwt.getHeaders().containsKey(JKU_HEADER)
+        ? TokenTypeEnum.document_token
+        : TokenTypeEnum.access_token;
+  }
+
+  private Timestamp getJwtExpires(Jwt decodedPassportJwt) {
+    var expiresAt = decodedPassportJwt.getExpiresAt();
+    if (expiresAt == null) {
+      throw new InvalidJwtException("jwt missing expires (exp) claim");
+    }
+    return new Timestamp(expiresAt.toEpochMilli());
+  }
+
+  private String getJwtClaim(Jwt jwt, String claimName) {
+    var claim = jwt.getClaimAsString(claimName);
+    if (claim == null) {
+      throw new InvalidJwtException("jwt missing claim " + claimName);
+    }
+    return claim;
+  }
+
+  private GA4GHPassport buildPassport(Jwt passportJwt) {
+    var passportExpiresAt = getJwtExpires(passportJwt);
+
+    return GA4GHPassport.builder()
+        .jwt(passportJwt.getTokenValue())
+        .expires(passportExpiresAt)
+        .build();
+  }
+
+  private GA4GHVisa buildVisa(Jwt visaJwt) {
+    return GA4GHVisa.builder()
+        .visaType(getJwtClaim(visaJwt, VISA_TYPE_CLAIM))
+        .jwt(visaJwt.getTokenValue())
+        .expires(getJwtExpires(visaJwt))
+        .issuer(visaJwt.getIssuer().toString())
+        .lastValidated(new Timestamp(Instant.now().toEpochMilli()))
+        .tokenType(determineTokenType(visaJwt))
+        .build();
   }
 
   public Set<String> getProviderList() {
@@ -110,83 +165,25 @@ public class ProviderService {
             .refreshToken(refreshToken.getTokenValue())
             .build();
 
-    String passportJwtString = userInfo.getAttribute(PASSPORT_JWT_V11_CLAIM);
+    var passportJwtString = userInfo.<String>getAttribute(PASSPORT_JWT_V11_CLAIM);
     if (passportJwtString != null) {
       var passportJwt = decodeJwt(passportJwtString);
-      var passport = buildPassport(passportJwt);
 
-      List<String> visaJwtStrings =
+      var visaJwtStrings =
           Objects.requireNonNullElse(
-              passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM), Collections.emptyList());
+              passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM),
+              Collections.<String>emptyList());
 
-      List<GA4GHVisa> visas = new ArrayList<>(visaJwtStrings.size());
-      for (var visaJwtString : visaJwtStrings) {
-        visas.add(buildVisa(decodeJwt(visaJwtString)));
-      }
+      var visas =
+          visaJwtStrings.stream().map(s -> buildVisa(decodeJwt(s))).collect(Collectors.toList());
 
       return LinkedAccountWithPassportAndVisas.builder()
           .linkedAccount(linkedAccount)
-          .passport(passport)
+          .passport(buildPassport(passportJwt))
           .visas(visas)
           .build();
     } else {
       return LinkedAccountWithPassportAndVisas.builder().linkedAccount(linkedAccount).build();
     }
-  }
-
-  private Jwt decodeJwt(String jwt) {
-    try {
-      // first we need to get the issuer from the jwt, the issuer is needed to validate
-      var issuer = JWTParser.parse(jwt).getJWTClaimsSet().getIssuer();
-      if (issuer == null) {
-        throw new InvalidJwtException("jwt missing issuer (iss) claim");
-      }
-      return JwtDecoders.fromIssuerLocation(issuer).decode(jwt);
-    } catch (ParseException | JwtException e) {
-      throw new InvalidJwtException(e);
-    }
-  }
-
-  private TokenTypeEnum determineTokenType(Jwt visaJwt) {
-    // https://github.com/ga4gh/data-security/blob/master/AAI/AAIConnectProfile.md#conformance-for-embedded-token-issuers
-    return visaJwt.getHeaders().containsKey(JKU_HEADER)
-        ? TokenTypeEnum.document_token
-        : TokenTypeEnum.access_token;
-  }
-
-  private Timestamp getJwtExpires(Jwt decodedPassportJwt) {
-    var expiresAt = decodedPassportJwt.getExpiresAt();
-    if (expiresAt == null) {
-      throw new InvalidJwtException("jwt missing expires (exp) claim");
-    }
-    return new Timestamp(expiresAt.toEpochMilli());
-  }
-
-  private String getJwtClaim(Jwt jwt, String claimName) {
-    var claim = jwt.getClaimAsString(claimName);
-    if (claim == null) {
-      throw new InvalidJwtException("jwt missing claim " + claimName);
-    }
-    return claim;
-  }
-
-  private GA4GHPassport buildPassport(Jwt passportJwt) {
-    var passportExpiresAt = getJwtExpires(passportJwt);
-
-    return GA4GHPassport.builder()
-        .jwt(passportJwt.getTokenValue())
-        .expires(passportExpiresAt)
-        .build();
-  }
-
-  private GA4GHVisa buildVisa(Jwt visaJwt) {
-    return GA4GHVisa.builder()
-        .visaType(getJwtClaim(visaJwt, VISA_TYPE_CLAIM))
-        .jwt(visaJwt.getTokenValue())
-        .expires(getJwtExpires(visaJwt))
-        .issuer(visaJwt.getIssuer().toString())
-        .lastValidated(new Timestamp(Instant.now().toEpochMilli()))
-        .tokenType(determineTokenType(visaJwt))
-        .build();
   }
 }

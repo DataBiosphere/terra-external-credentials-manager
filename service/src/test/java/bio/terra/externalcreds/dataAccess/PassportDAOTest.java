@@ -55,9 +55,8 @@ public class PassportDAOTest extends BaseTest {
   @Transactional
   @Rollback
   void testCreateAndGetPassport() {
-    var savedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-    var savedPassport =
-        passportDAO.insertPassport(passport.withLinkedAccountId(savedAccount.getId()));
+    var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
+    var savedPassport = passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
     assertTrue(savedPassport.getId() > 0);
     assertEquals(
         passport
@@ -65,7 +64,7 @@ public class PassportDAOTest extends BaseTest {
             .withLinkedAccountId(savedPassport.getLinkedAccountId()),
         savedPassport);
 
-    var loadedPassport = passportDAO.getPassport(savedAccount.getId());
+    var loadedPassport = passportDAO.getPassport(savedAccountId);
     assertEquals(savedPassport, loadedPassport);
   }
 
@@ -73,9 +72,8 @@ public class PassportDAOTest extends BaseTest {
   @Transactional
   @Rollback
   void testPassportIsUniqueForLinkedAccount() {
-    var savedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-    var savedPassport =
-        passportDAO.insertPassport(passport.withLinkedAccountId(savedAccount.getId()));
+    var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
+    var savedPassport = passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
 
     assertThrows(
         DuplicateKeyException.class,
@@ -91,12 +89,12 @@ public class PassportDAOTest extends BaseTest {
     @Transactional
     @Rollback
     void testDeletePassportIfExists() {
-      var savedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-      passportDAO.insertPassport(passport.withLinkedAccountId(savedAccount.getId()));
+      var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
+      passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
 
-      assertNotNull(passportDAO.getPassport(savedAccount.getId()));
-      assertTrue(passportDAO.deletePassport(savedAccount.getId()));
-      assertNull(passportDAO.getPassport(savedAccount.getId()));
+      assertNotNull(passportDAO.getPassport(savedAccountId));
+      assertTrue(passportDAO.deletePassport(savedAccountId));
+      assertNull(passportDAO.getPassport(savedAccountId));
     }
 
     @Test
@@ -110,9 +108,8 @@ public class PassportDAOTest extends BaseTest {
     @Transactional
     @Rollback
     void testAlsoDeletesVisa() {
-      var savedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-      var savedPassport =
-          passportDAO.insertPassport(passport.withLinkedAccountId(savedAccount.getId()));
+      var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
+      var savedPassport = passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
 
       visaDAO.insertVisa(
           GA4GHVisa.builder()
@@ -126,7 +123,7 @@ public class PassportDAOTest extends BaseTest {
               .build());
 
       assertFalse(visaDAO.listVisas(savedPassport.getId()).isEmpty());
-      assertTrue(passportDAO.deletePassport(savedAccount.getId()));
+      assertTrue(passportDAO.deletePassport(savedAccountId));
       assertTrue(visaDAO.listVisas(savedPassport.getId()).isEmpty());
     }
   }

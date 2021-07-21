@@ -5,12 +5,8 @@ import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
-import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,6 +25,20 @@ public class LinkedAccountService {
     this.ga4ghVisaDAO = ga4ghVisaDAO;
   }
 
+  private void savePassportIfExists(
+      LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas, int linkedAccountId) {
+    if (linkedAccountWithPassportAndVisas.getPassport() != null) {
+
+      var savedPassport =
+          ga4ghPassportDAO.insertPassport(
+              linkedAccountWithPassportAndVisas.getPassport().withLinkedAccountId(linkedAccountId));
+
+      linkedAccountWithPassportAndVisas
+          .getVisas()
+          .forEach(v -> ga4ghVisaDAO.insertVisa(v.withPassportId(savedPassport.getId())));
+    }
+  }
+
   @ReadTransaction
   public LinkedAccount getLinkedAccount(String userId, String providerId) {
     return linkedAccountDAO.getLinkedAccount(userId, providerId);
@@ -42,29 +52,8 @@ public class LinkedAccountService {
 
     // clear out any passport and visas that may exist and save the new one
     ga4ghPassportDAO.deletePassport(savedLinkedAccount.getId());
-    savePassportIfExists(linkedAccountWithPassportAndVisas, savedLinkedAccount);
+    savePassportIfExists(linkedAccountWithPassportAndVisas, savedLinkedAccount.getId());
 
     return savedLinkedAccount;
-  }
-
-  private void savePassportIfExists(
-      LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas,
-      LinkedAccount savedLinkedAccount) {
-    if (linkedAccountWithPassportAndVisas.getPassport() != null) {
-
-      var savedPassport =
-          ga4ghPassportDAO.insertPassport(
-              linkedAccountWithPassportAndVisas
-                  .getPassport()
-                  .withLinkedAccountId(savedLinkedAccount.getId()));
-
-      List<GA4GHVisa> visas =
-          Objects.requireNonNullElse(
-              linkedAccountWithPassportAndVisas.getVisas(), Collections.emptyList());
-
-      for (var visa : visas) {
-        ga4ghVisaDAO.insertVisa(visa.withPassportId(savedPassport.getId()));
-      }
-    }
   }
 }

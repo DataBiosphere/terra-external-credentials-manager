@@ -65,11 +65,9 @@ public class OidcApiController implements OidcApi {
   private LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
     var expTime =
         OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
-    var linkInfo =
-        new LinkInfo()
-            .externalUserId(linkedAccount.getExternalUserId())
-            .expirationTimestamp(expTime);
-    return linkInfo;
+    return new LinkInfo()
+        .externalUserId(linkedAccount.getExternalUserId())
+        .expirationTimestamp(expTime);
   }
 
   @Override
@@ -87,12 +85,6 @@ public class OidcApiController implements OidcApi {
     if (linkedAccount == null) {
       return ResponseEntity.notFound().build();
     }
-    var expTime =
-        OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
-    var linkInfo =
-        new LinkInfo()
-            .externalUserId(linkedAccount.getExternalUserId())
-            .expirationTimestamp(expTime);
 
     return ResponseEntity.ok(getLinkInfoFromLinkedAccount(linkedAccount));
   }
@@ -119,10 +111,11 @@ public class OidcApiController implements OidcApi {
   public ResponseEntity<LinkInfo> createLink(
       String provider, List<String> scopes, String redirectUri, String state, String oauthcode) {
     var userId = getUserIdFromSam();
+
+    // calling services from here allows for @transactions
     var linkedAccountWithPassportAndVisas =
         providerService.useAuthorizationCodeToGetLinkedAccount(
             provider, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
-
     var savedLinkedAccount =
         linkedAccountService.saveLinkedAccount(linkedAccountWithPassportAndVisas);
 

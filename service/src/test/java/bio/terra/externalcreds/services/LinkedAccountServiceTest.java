@@ -29,6 +29,64 @@ public class LinkedAccountServiceTest extends BaseTest {
   @Autowired private GA4GHPassportDAO passportDAO;
   @Autowired private GA4GHVisaDAO visaDAO;
 
+  private LinkedAccount saveAndValidateLinkedAccount(
+      LinkedAccount linkedAccount, GA4GHPassport passport, List<GA4GHVisa> visas) {
+    var savedLinkedAccount =
+        linkedAccountService.saveLinkedAccount(
+            LinkedAccountWithPassportAndVisas.builder()
+                .linkedAccount(linkedAccount)
+                .passport(passport)
+                .visas(visas)
+                .build());
+
+    assertEquals(linkedAccount, savedLinkedAccount.withId(0));
+    assertTrue(savedLinkedAccount.getId() > 0);
+
+    var savedPassport = passportDAO.getPassport(savedLinkedAccount.getId());
+    if (passport == null) {
+      assertNull(savedPassport);
+    } else {
+      assertEquals(passport, savedPassport.withId(0).withLinkedAccountId(0));
+      var savedVisas = visaDAO.listVisas(savedPassport.getId());
+      assertEquals(
+          visas,
+          savedVisas.stream().map(v -> v.withId(0).withPassportId(0)).collect(Collectors.toList()));
+    }
+
+    return savedLinkedAccount;
+  }
+
+  private Timestamp getRandomTimestamp() {
+    return new Timestamp(System.currentTimeMillis());
+  }
+
+  private LinkedAccount createRandomLinkedAccount() {
+    return LinkedAccount.builder()
+        .expires(getRandomTimestamp())
+        .providerId(UUID.randomUUID().toString())
+        .refreshToken(UUID.randomUUID().toString())
+        .userId(UUID.randomUUID().toString())
+        .externalUserId(UUID.randomUUID().toString())
+        .build();
+  }
+
+  private GA4GHPassport createRandomPassport() {
+    return GA4GHPassport.builder()
+        .jwt(UUID.randomUUID().toString())
+        .expires(getRandomTimestamp())
+        .build();
+  }
+
+  private GA4GHVisa createRandomVisa() {
+    return GA4GHVisa.builder()
+        .visaType(UUID.randomUUID().toString())
+        .tokenType(TokenTypeEnum.access_token)
+        .expires(getRandomTimestamp())
+        .issuer(UUID.randomUUID().toString())
+        .jwt(UUID.randomUUID().toString())
+        .build();
+  }
+
   @Test
   @Transactional
   @Rollback
@@ -74,66 +132,6 @@ public class LinkedAccountServiceTest extends BaseTest {
   @Rollback
   void testSaveLinkedAccountWithoutPassport() {
     var linkedAccount = createRandomLinkedAccount();
-    saveAndValidateLinkedAccount(linkedAccount, null, null);
-  }
-
-  private LinkedAccount saveAndValidateLinkedAccount(
-      LinkedAccount linkedAccount, GA4GHPassport passport, List<GA4GHVisa> visas) {
-    var savedLinkedAccount =
-        linkedAccountService.saveLinkedAccount(
-            LinkedAccountWithPassportAndVisas.builder()
-                .linkedAccount(linkedAccount)
-                .passport(passport)
-                .visas(visas)
-                .build());
-
-    assertEquals(linkedAccount, savedLinkedAccount.withId(0));
-    assertTrue(savedLinkedAccount.getId() > 0);
-
-    var savedPassport = passportDAO.getPassport(savedLinkedAccount.getId());
-    if (passport == null) {
-      assertNull(savedPassport);
-    } else {
-      assertEquals(passport, savedPassport.withId(0).withLinkedAccountId(0));
-      var savedVisas = visaDAO.listVisas(savedPassport.getId());
-      assertEquals(
-          visas,
-          savedVisas.stream()
-              .map(visa -> visa.withId(0).withPassportId(0))
-              .collect(Collectors.toList()));
-    }
-
-    return savedLinkedAccount;
-  }
-
-  private LinkedAccount createRandomLinkedAccount() {
-    return LinkedAccount.builder()
-        .expires(getRandomTimestamp())
-        .providerId(UUID.randomUUID().toString())
-        .refreshToken(UUID.randomUUID().toString())
-        .userId(UUID.randomUUID().toString())
-        .externalUserId(UUID.randomUUID().toString())
-        .build();
-  }
-
-  private GA4GHPassport createRandomPassport() {
-    return GA4GHPassport.builder()
-        .jwt(UUID.randomUUID().toString())
-        .expires(getRandomTimestamp())
-        .build();
-  }
-
-  private GA4GHVisa createRandomVisa() {
-    return GA4GHVisa.builder()
-        .visaType(UUID.randomUUID().toString())
-        .tokenType(TokenTypeEnum.access_token)
-        .expires(getRandomTimestamp())
-        .issuer(UUID.randomUUID().toString())
-        .jwt(UUID.randomUUID().toString())
-        .build();
-  }
-
-  private Timestamp getRandomTimestamp() {
-    return new Timestamp(System.currentTimeMillis());
+    saveAndValidateLinkedAccount(linkedAccount, null, Collections.emptyList());
   }
 }

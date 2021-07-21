@@ -50,18 +50,6 @@ public class GA4GHVisaDAO {
     return visa.withId(generatedKeyHolder.getKey().intValue());
   }
 
-  /**
-   * Deletes all visas belonging to the given passport.
-   *
-   * @param passportId id of the passport
-   * @return the number of visas deleted
-   */
-  public int deleteVisas(int passportId) {
-    var namedParameters = new MapSqlParameterSource("passportId", passportId);
-    var query = "DELETE FROM ga4gh_visa v WHERE v.passport_id = :passportId";
-    return jdbcTemplate.update(query, namedParameters);
-  }
-
   public List<GA4GHVisa> listVisas(int passportId) {
     var namedParameters = new MapSqlParameterSource("passportId", passportId);
     var query = "SELECT * FROM ga4gh_visa WHERE passport_id = :passportId";
