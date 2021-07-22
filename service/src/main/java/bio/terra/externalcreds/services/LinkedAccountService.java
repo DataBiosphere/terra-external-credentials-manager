@@ -2,6 +2,7 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
+import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ProviderConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
@@ -9,6 +10,7 @@ import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +57,7 @@ public class LinkedAccountService {
     return savedLinkedAccount;
   }
 
+  @WriteTransaction
   public boolean deleteLinkedAccount(String userId, String providerId) {
     return linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
   }
@@ -73,23 +76,35 @@ public class LinkedAccountService {
     }
   }
 
-  public void revokeRefreshToken(String userId, String providerId) {
-    LinkedAccount linkedAccount = getLinkedAccount(userId, providerId);
+  @WriteTransaction
+  public void deleteLinkedAccountAndRevokeToken(String userId, String providerId) {
+    LinkedAccount linkedAccount = linkedAccountDAO.getLinkedAccount(userId, providerId);
+
+    if (linkedAccount == null) {
+      throw new NotFoundException("Linked account not found.");
+    } else {
+      revokeRefreshToken(providerId, linkedAccount.getRefreshToken());
+      var deleteSucceeded = linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
+      if (!deleteSucceeded)
+        // The transaction should prevent this from ever happening, but we check anyway
+        throw new ExternalCredsException(
+            String.format(
+                "Refresh token was revoked but linked account not deletion failed: userId=%s and providerId=%s",
+                userId, providerId));
+    }
+  }
+
+  @VisibleForTesting
+  public void revokeRefreshToken(String providerId, String refreshToken) {
     ProviderConfig.ProviderInfo providerInfo = providerConfig.getServices().get(providerId);
-    ;
-    if (providerInfo == null) throw new ExternalCredsException("Provider not found");
 
-    // TODO:
-    //  - use WebTestClient to test
-    //  - figure out whether to log the response
-    //  - change return type back to void
+    if (providerInfo == null)
+      throw new NotFoundException(String.format("Provider %s not found", providerId));
 
-    // Get the endpoint with the refresh token
-    System.out.println("___________" + providerInfo.getRevokeEndpoint());
-    String revokeEndpoint =
-        String.format(providerInfo.getRevokeEndpoint(), linkedAccount.getRefreshToken());
+    // Get the endpoint URL and insert the token
+    String revokeEndpoint = String.format(providerInfo.getRevokeEndpoint(), refreshToken);
     // Add authorization information and make request
-    WebClient.ResponseSpec response =
+    WebClient.ResponseSpec response = // TODO mock this endpoint in the tests
         WebClient.create(revokeEndpoint)
             .post()
             .uri(
@@ -107,9 +122,14 @@ public class LinkedAccountService {
                 clientResponse ->
                     Mono.error(
                         new ExternalCredsException(
-                            "Encountered an error while revoking the refresh token."))) // TODO figure out what exception to throw here
+                            "Encountered an error while revoking the refresh token."))) // TODO test
+            // that this
+            // error is
+            // thrown
             .bodyToMono(String.class)
             .block(Duration.of(1000, ChronoUnit.MILLIS));
+
+    // TODO: figure out whether to log the response
     log.info("Token revocation request returned with message: " + responseBody);
   }
 }

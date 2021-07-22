@@ -81,7 +81,6 @@ public class LinkedAccountServiceTest extends BaseTest {
   @Transactional
   @Rollback
   void testRevokeProviderLink() {
-    // TODO have this test use the WebTestClient class
     LinkedAccount linkedAccount =
         LinkedAccount.builder()
             .expires(new Timestamp(100))
@@ -91,9 +90,14 @@ public class LinkedAccountServiceTest extends BaseTest {
             .externalUserId("externalUser")
             .build();
     linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-    linkedAccountService.revokeProviderLink(
-            linkedAccount.getUserId(), linkedAccount.getProviderId());
+
+    // TODO: Mock the endpoint using mockServer
+
+    linkedAccountService.revokeRefreshToken(
+        linkedAccount.getUserId(), linkedAccount.getProviderId());
   }
+
+  // TODO test deleteLinkedAccountAndRevokeToken
 
   private LinkedAccount saveAndValidateLinkedAccount(
       LinkedAccount linkedAccount, GA4GHPassport passport, List<GA4GHVisa> visas) {

@@ -126,12 +126,8 @@ public class OidcApiController implements OidcApi {
   public ResponseEntity<Void> deleteLink(String provider) {
     // TODO: think about making "provider"/"providerId" phrasing consistent (change in DB?)
     String userId = getUserIdFromSam();
-    boolean recordDeleted = linkedAccountService.deleteLinkedAccount(userId, provider);
-    if (recordDeleted) {
-      linkedAccountService.revokeRefreshToken(userId, provider);
-      return new ResponseEntity<>(HttpStatus.OK);
-    } else {
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
+    linkedAccountService.deleteLinkedAccountAndRevokeToken(userId, provider);
+
+    return ResponseEntity.ok().build();
   }
 }
