@@ -4,7 +4,6 @@ import bio.terra.common.exception.ErrorReportException;
 import bio.terra.externalcreds.generated.model.ErrorReport;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -40,11 +39,11 @@ public class GlobalExceptionHandler {
     // For security reasons, we generally don't want to include the user's invalid (and potentially
     // malicious) input in the error response, which also means we don't include the full exception.
     // Instead, we return a generic error message about input validation.
-    val validationErrorMessage =
+    var validationErrorMessage =
         "Request could not be parsed or was invalid: "
             + ex.getClass().getSimpleName()
             + ". Ensure that all types are correct and that enums have valid values.";
-    val errorReport =
+    var errorReport =
         new ErrorReport()
             .message(validationErrorMessage)
             .statusCode(HttpStatus.BAD_REQUEST.value());
@@ -62,7 +61,7 @@ public class GlobalExceptionHandler {
       @NotNull Throwable ex, HttpStatus statusCode) {
     log.error("Global exception handler:", ex);
 
-    val errorReport = new ErrorReport().message(ex.getMessage()).statusCode(statusCode.value());
+    var errorReport = new ErrorReport().message(ex.getMessage()).statusCode(statusCode.value());
     return ResponseEntity.status(statusCode).body(errorReport);
   }
 }

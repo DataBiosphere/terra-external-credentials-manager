@@ -1,7 +1,6 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.config.ProviderConfig;
-import lombok.val;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrations;
@@ -22,12 +21,12 @@ public class ProviderClientCache {
 
   @Cacheable(cacheNames = "providerClients", sync = true)
   public ClientRegistration getProviderClient(String provider) {
-    val providerInfo = providerConfig.getServices().get(provider);
+    var providerInfo = providerConfig.getServices().get(provider);
     if (providerInfo == null) {
       return null;
     }
 
-    val builder =
+    var builder =
         ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
             .clientId(providerInfo.getClientId())
             .clientSecret(providerInfo.getClientSecret())

@@ -18,7 +18,6 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import lombok.val;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.broadinstitute.dsde.workbench.client.sam.api.UsersApi;
 import org.broadinstitute.dsde.workbench.client.sam.model.UserStatusInfo;
@@ -49,16 +48,16 @@ public class OidcApiControllerTest extends BaseTest {
 
   @Test
   void testGetAuthUrl() throws Exception {
-    val result = "https://test/authorization/uri";
-    val provider = "fake";
-    val redirectUri = "fakeuri";
-    val scopes = Set.of("openid", "email");
+    var result = "https://test/authorization/uri";
+    var provider = "fake";
+    var redirectUri = "fakeuri";
+    var scopes = Set.of("openid", "email");
     String state = null;
 
     when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
         .thenReturn(result);
 
-    val queryParams = new LinkedMultiValueMap<String, String>();
+    var queryParams = new LinkedMultiValueMap<String, String>();
     queryParams.add("redirectUri", redirectUri);
     queryParams.addAll("scopes", List.copyOf(scopes));
     mvc.perform(get("/api/oidc/v1/{provider}/authorization-url", provider).queryParams(queryParams))
@@ -67,15 +66,15 @@ public class OidcApiControllerTest extends BaseTest {
 
   @Test
   void testGetAuthUrl404() throws Exception {
-    val provider = "fake";
-    val redirectUri = "fakeuri";
-    val scopes = Set.of("openid", "email");
+    var provider = "fake";
+    var redirectUri = "fakeuri";
+    var scopes = Set.of("openid", "email");
     String state = null;
 
     when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
         .thenReturn(null);
 
-    val queryParams = new LinkedMultiValueMap<String, String>();
+    var queryParams = new LinkedMultiValueMap<String, String>();
     queryParams.add("redirectUri", redirectUri);
     queryParams.addAll("scopes", List.copyOf(scopes));
     mvc.perform(get("/api/oidc/v1/{provider}/authorization-url", provider).queryParams(queryParams))
@@ -84,9 +83,9 @@ public class OidcApiControllerTest extends BaseTest {
 
   @Test
   void testGetLink() throws Exception {
-    val accessToken = "testToken";
-    val userId = UUID.randomUUID().toString();
-    val inputLinkedAccount =
+    var accessToken = "testToken";
+    var userId = UUID.randomUUID().toString();
+    var inputLinkedAccount =
         LinkedAccount.builder()
             .userId(userId)
             .providerId("testProvider")
@@ -94,8 +93,8 @@ public class OidcApiControllerTest extends BaseTest {
             .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
             .build();
 
-    val usersApiMock = mock(UsersApi.class);
-    val userStatusInfo = new UserStatusInfo().userSubjectId(userId);
+    var usersApiMock = mock(UsersApi.class);
+    var userStatusInfo = new UserStatusInfo().userSubjectId(userId);
     when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
 
@@ -119,12 +118,12 @@ public class OidcApiControllerTest extends BaseTest {
 
   @Test
   void testGetLinkedAccount404() throws Exception {
-    val userId = "non-existent-user";
-    val providerId = "non-existent-provider";
-    val accessToken = "testToken";
+    var userId = "non-existent-user";
+    var providerId = "non-existent-provider";
+    var accessToken = "testToken";
 
-    val usersApiMock = mock(UsersApi.class);
-    val userStatusInfo = new UserStatusInfo().userSubjectId(userId);
+    var usersApiMock = mock(UsersApi.class);
+    var userStatusInfo = new UserStatusInfo().userSubjectId(userId);
     when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
 
@@ -134,10 +133,10 @@ public class OidcApiControllerTest extends BaseTest {
 
   @Test
   void testGetLinkedAccount403() throws Exception {
-    val providerId = "provider";
-    val accessToken = "testToken";
+    var providerId = "provider";
+    var accessToken = "testToken";
 
-    val usersApiMock = mock(UsersApi.class);
+    var usersApiMock = mock(UsersApi.class);
     when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo())
         .thenThrow(new ApiException(HttpStatus.NOT_FOUND.value(), "Not Found"));
@@ -151,7 +150,7 @@ public class OidcApiControllerTest extends BaseTest {
     String providerId = "provider";
     String accessToken = "testToken";
 
-    val usersApiMock = mock(UsersApi.class);
+    var usersApiMock = mock(UsersApi.class);
     when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo())
         .thenThrow(new ApiException(HttpStatus.NO_CONTENT.value(), "Not Found"));

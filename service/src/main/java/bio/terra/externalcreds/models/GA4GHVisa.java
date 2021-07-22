@@ -2,8 +2,12 @@ package bio.terra.externalcreds.models;
 
 import java.sql.Timestamp;
 import lombok.Builder;
+import lombok.Data;
+import lombok.With;
 
 @Builder
+@Data
+@With
 public class GA4GHVisa {
   private final int id;
   private final int passportId;

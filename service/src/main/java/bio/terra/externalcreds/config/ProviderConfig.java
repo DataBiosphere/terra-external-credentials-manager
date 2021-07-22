@@ -3,21 +3,18 @@ package bio.terra.externalcreds.config;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConfigurationProperties("externalcreds.providers")
-@Getter
-@Setter
+@Data
 public class ProviderConfig {
   /** The list of enabled provider services */
   private Map<String, ProviderInfo> services;
 
-  @Getter
-  @Setter
+  @Data
   public static class ProviderInfo {
     private String clientId;
     private String clientSecret;

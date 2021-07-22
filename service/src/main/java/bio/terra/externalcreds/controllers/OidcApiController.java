@@ -5,6 +5,7 @@ import bio.terra.common.iam.BearerTokenParser;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
+import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
@@ -18,7 +19,6 @@ import java.util.List;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
-import lombok.val;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,9 +48,9 @@ public class OidcApiController implements OidcApi {
 
   private String getUserIdFromSam() {
     try {
-      val header = request.getHeader("authorization");
+      var header = request.getHeader("authorization");
       if (header == null) throw new UnauthorizedException("User is not authorized");
-      val accessToken = BearerTokenParser.parse(header);
+      var accessToken = BearerTokenParser.parse(header);
 
       return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
     } catch (ApiException e) {
@@ -62,9 +62,17 @@ public class OidcApiController implements OidcApi {
     }
   }
 
+  private LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
+    var expTime =
+        OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
+    return new LinkInfo()
+        .externalUserId(linkedAccount.getExternalUserId())
+        .expirationTimestamp(expTime);
+  }
+
   @Override
   public ResponseEntity<List<String>> listProviders() {
-    val providers = new ArrayList<>(providerService.getProviderList());
+    var providers = new ArrayList<>(providerService.getProviderList());
     Collections.sort(providers);
 
     return ResponseEntity.ok(providers);
@@ -72,19 +80,13 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<LinkInfo> getLink(String provider) {
-    val userId = getUserIdFromSam();
-    val linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
+    var userId = getUserIdFromSam();
+    var linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
     if (linkedAccount == null) {
       return ResponseEntity.notFound().build();
     }
-    val expTime =
-        OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
-    val linkInfo =
-        new LinkInfo()
-            .externalUserId(linkedAccount.getExternalUserId())
-            .expirationTimestamp(expTime);
 
-    return ResponseEntity.ok(linkInfo);
+    return ResponseEntity.ok(getLinkInfoFromLinkedAccount(linkedAccount));
   }
 
   // Because we're just processing String -> json string, there shouldn't be any conversion issue.
@@ -92,7 +94,7 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<String> getAuthUrl(
       String provider, List<String> scopes, String redirectUri, String state) {
-    val authorizationUrl =
+    var authorizationUrl =
         providerService.getProviderAuthorizationUrl(
             provider, redirectUri, Set.copyOf(scopes), state);
 
@@ -103,5 +105,20 @@ public class OidcApiController implements OidcApi {
       // not correctly quoted to be valid json.
       return ResponseEntity.ok(mapper.writeValueAsString(authorizationUrl));
     }
+  }
+
+  @Override
+  public ResponseEntity<LinkInfo> createLink(
+      String provider, List<String> scopes, String redirectUri, String state, String oauthcode) {
+    var userId = getUserIdFromSam();
+
+    // calling services from here allows for @transactions
+    var linkedAccountWithPassportAndVisas =
+        providerService.useAuthorizationCodeToGetLinkedAccount(
+            provider, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
+    var savedLinkedAccount =
+        linkedAccountService.saveLinkedAccount(linkedAccountWithPassportAndVisas);
+
+    return ResponseEntity.ok(getLinkInfoFromLinkedAccount(savedLinkedAccount));
   }
 }
