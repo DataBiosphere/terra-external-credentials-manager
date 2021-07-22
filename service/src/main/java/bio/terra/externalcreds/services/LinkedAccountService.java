@@ -95,8 +95,8 @@ public class LinkedAccountService {
             .uri(
                 uriBuilder ->
                     uriBuilder
-                        .queryParam("client_id", "hello") // providerInfo.getClientId())
-                        .queryParam("client_secret", "hello") // providerInfo.getClientSecret())
+                        .queryParam("client_id", providerInfo.getClientId())
+                        .queryParam("client_secret", providerInfo.getClientSecret())
                         .build())
             .retrieve();
     // handle the response
