@@ -56,7 +56,7 @@ public class LinkedAccountService {
   }
 
   public boolean deleteLinkedAccount(String userId, String providerId) {
-    return linkedAccountDAO.deleteLinkedAccount(userId, providerId);
+    return linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
   }
 
   private void savePassportIfExists(

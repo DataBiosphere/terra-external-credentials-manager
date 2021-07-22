@@ -70,15 +70,6 @@ public class LinkedAccountDAO {
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
-  public boolean deleteLinkedAccount(String userId, String providerId) {
-    String query =
-        "DELETE FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
-    SqlParameterSource namedParameters =
-        new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
-
-    return jdbcTemplate.update(query, namedParameters) > 0;
-  }
-
   private static class LinkedAccountRowMapper implements RowMapper<LinkedAccount> {
 
     @Override
