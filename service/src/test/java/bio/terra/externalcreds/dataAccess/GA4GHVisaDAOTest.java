@@ -11,21 +11,29 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
 import java.util.Collections;
+import java.util.Set;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
-public class VisaDAOTest extends BaseTest {
+public class GA4GHVisaDAOTest extends BaseTest {
 
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
   @Autowired private GA4GHVisaDAO visaDAO;
 
-  private GA4GHVisa visa;
+  private final GA4GHVisa visa =
+      GA4GHVisa.builder()
+          .visaType("fake")
+          .expires(new Timestamp(100))
+          .jwt("fake-jwt")
+          .issuer("issuer")
+          .tokenType(TokenTypeEnum.access_token)
+          .lastValidated(new Timestamp(10))
+          .build();
 
   /**
    * Insert a passport and linked account, which are required before the visa can be inserted.
@@ -53,19 +61,6 @@ public class VisaDAOTest extends BaseTest {
     return savedPassport.getId();
   }
 
-  @BeforeEach
-  void setup() {
-    visa =
-        GA4GHVisa.builder()
-            .visaType("fake")
-            .expires(new Timestamp(100))
-            .jwt("fake-jwt")
-            .issuer("issuer")
-            .tokenType(TokenTypeEnum.access_token)
-            .lastValidated(new Timestamp(10))
-            .build();
-  }
-
   @Test
   @Transactional
   @Rollback
@@ -83,8 +78,7 @@ public class VisaDAOTest extends BaseTest {
 
     var loadedVisas = visaDAO.listVisas(passportId);
     assertEquals(loadedVisas.size(), 2);
-    assertEquals(savedVisa1, loadedVisas.get(0));
-    assertEquals(savedVisa2, loadedVisas.get(1));
+    assertEquals(Set.of(savedVisa1, savedVisa2), Set.copyOf(loadedVisas));
   }
 
   @Test
