@@ -309,7 +309,9 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         new JWTClaimsSet.Builder()
             .expirationTime(visa.getExpires())
             .issuer(visa.getIssuer())
-            .claim(ProviderService.VISA_TYPE_CLAIM, visa.getVisaType())
+            .claim(
+                ProviderService.GA4GH_VISA_V1_CLAIM,
+                Map.of(ProviderService.VISA_TYPE_CLAIM, visa.getVisaType()))
             .build();
 
     var jwtHeaderBuilder = new Builder(JWSAlgorithm.RS256);
@@ -333,7 +335,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
       throws URISyntaxException, JOSEException {
     var visa =
         GA4GHVisa.builder()
-            .visaType("")
+            .visaType(UUID.randomUUID().toString())
             .tokenType(tokenType)
             .issuer(issuer)
             .expires(new Timestamp(passportExpires.getTime()))
