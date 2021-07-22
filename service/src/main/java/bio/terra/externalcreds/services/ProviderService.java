@@ -9,42 +9,23 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.google.common.annotations.VisibleForTesting;
-import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.KeySourceException;
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.JWKMatcher;
-import com.nimbusds.jose.jwk.JWKSelector;
-import com.nimbusds.jose.jwk.KeyType;
-import com.nimbusds.jose.jwk.KeyUse;
-import com.nimbusds.jose.jwk.source.JWKSource;
-import com.nimbusds.jose.jwk.source.RemoteJWKSet;
-import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.shaded.json.JSONObject;
 import com.nimbusds.jwt.JWTParser;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.oauth2.core.OAuth2TokenValidator;
-import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtException;
-import org.springframework.security.oauth2.jwt.JwtValidators;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 @Service
 @Slf4j
@@ -169,7 +150,7 @@ public class ProviderService {
       if (jkuOption.isPresent()) {
         // presence of the jku header means the url it specifies contains the key set that must be
         // used validate the signature
-        return LocalJwtDecoders.fromJku(jkuOption.get()).decode(jwtString);
+        return ExternalCredsJwtDecoders.fromJku(jkuOption.get()).decode(jwtString);
       } else {
         // no jku means use the issuer to lookup configuration and location of key set
         return JwtDecoders.fromIssuerLocation(issuer).decode(jwtString);
@@ -225,64 +206,5 @@ public class ProviderService {
         .lastValidated(new Timestamp(Instant.now().toEpochMilli()))
         .tokenType(determineTokenType(visaJwt))
         .build();
-  }
-
-  /** provides decoders that are not in {@link JwtDecoders} */
-  static class LocalJwtDecoders {
-
-    /** Adapted from {@link JwtDecoders#withProviderConfiguration(java.util.Map, String)} */
-    public static JwtDecoder fromJku(URI jku) throws MalformedURLException {
-      OAuth2TokenValidator<Jwt> jwtValidator = JwtValidators.createDefault();
-      RemoteJWKSet<SecurityContext> jwkSource = new RemoteJWKSet<>(jku.toURL());
-      Set<SignatureAlgorithm> signatureAlgorithms = getSignatureAlgorithms(jwkSource);
-      NimbusJwtDecoder jwtDecoder =
-          NimbusJwtDecoder.withJwkSetUri(jku.toString())
-              .jwsAlgorithms((algs) -> algs.addAll(signatureAlgorithms))
-              .build();
-      jwtDecoder.setJwtValidator(jwtValidator);
-      return jwtDecoder;
-    }
-
-    /**
-     * Copied from {@link
-     * org.springframework.security.oauth2.jwt.JwtDecoderProviderConfigurationUtils#getSignatureAlgorithms(JWKSource)}
-     * because it is private
-     */
-    private static Set<SignatureAlgorithm> getSignatureAlgorithms(
-        JWKSource<SecurityContext> jwkSource) {
-      JWKMatcher jwkMatcher =
-          new JWKMatcher.Builder()
-              .publicOnly(true)
-              .keyUses(KeyUse.SIGNATURE, null)
-              .keyTypes(KeyType.RSA, KeyType.EC)
-              .build();
-      Set<JWSAlgorithm> jwsAlgorithms = new HashSet<>();
-      try {
-        List<? extends JWK> jwks = jwkSource.get(new JWKSelector(jwkMatcher), null);
-        for (JWK jwk : jwks) {
-          if (jwk.getAlgorithm() != null) {
-            JWSAlgorithm jwsAlgorithm = JWSAlgorithm.parse(jwk.getAlgorithm().getName());
-            jwsAlgorithms.add(jwsAlgorithm);
-          } else {
-            if (jwk.getKeyType() == KeyType.RSA) {
-              jwsAlgorithms.addAll(JWSAlgorithm.Family.RSA);
-            } else if (jwk.getKeyType() == KeyType.EC) {
-              jwsAlgorithms.addAll(JWSAlgorithm.Family.EC);
-            }
-          }
-        }
-      } catch (KeySourceException ex) {
-        throw new IllegalStateException(ex);
-      }
-      Set<SignatureAlgorithm> signatureAlgorithms = new HashSet<>();
-      for (JWSAlgorithm jwsAlgorithm : jwsAlgorithms) {
-        SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.from(jwsAlgorithm.getName());
-        if (signatureAlgorithm != null) {
-          signatureAlgorithms.add(signatureAlgorithm);
-        }
-      }
-      Assert.notEmpty(signatureAlgorithms, "Failed to find any algorithms from the JWK set");
-      return signatureAlgorithms;
-    }
   }
 }
