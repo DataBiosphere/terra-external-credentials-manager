@@ -20,6 +20,7 @@ import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.RemoteJWKSet;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jose.shaded.json.JSONObject;
 import com.nimbusds.jwt.JWTParser;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -51,6 +52,7 @@ public class ProviderService {
 
   public static final String PASSPORT_JWT_V11_CLAIM = "passport_jwt_v11";
   public static final String GA4GH_PASSPORT_V1_CLAIM = "ga4gh_passport_v1";
+  public static final String GA4GH_VISA_V1_CLAIM = "ga4gh_visa_v1";
   public static final String VISA_TYPE_CLAIM = "type";
   public static final String JKU_HEADER = "jku";
   public static final String EXTERNAL_USERID_ATTR = "email";
@@ -192,10 +194,10 @@ public class ProviderService {
     return new Timestamp(expiresAt.toEpochMilli());
   }
 
-  private String getJwtClaim(Jwt jwt, String claimName) {
-    var claim = jwt.getClaimAsString(claimName);
+  private <T> T getJwtClaim(Jwt jwt, String claimName) {
+    T claim = jwt.getClaim(claimName);
     if (claim == null) {
-      throw new InvalidJwtException("jwt missing claim " + claimName);
+      throw new InvalidJwtException(String.format("jwt missing claim [%s]", claimName));
     }
     return claim;
   }
@@ -210,8 +212,13 @@ public class ProviderService {
   }
 
   private GA4GHVisa buildVisa(Jwt visaJwt) {
+    JSONObject visaClaims = getJwtClaim(visaJwt, GA4GH_VISA_V1_CLAIM);
+    var visaType = visaClaims.get(VISA_TYPE_CLAIM);
+    if (visaType == null) {
+      throw new InvalidJwtException(String.format("visa missing claim [%s]", VISA_TYPE_CLAIM));
+    }
     return GA4GHVisa.builder()
-        .visaType(getJwtClaim(visaJwt, VISA_TYPE_CLAIM))
+        .visaType(visaType.toString())
         .jwt(visaJwt.getTokenValue())
         .expires(getJwtExpires(visaJwt))
         .issuer(visaJwt.getIssuer().toString())
