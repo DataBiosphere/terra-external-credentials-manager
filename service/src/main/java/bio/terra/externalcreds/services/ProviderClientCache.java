@@ -21,12 +21,12 @@ public class ProviderClientCache {
 
   @Cacheable(cacheNames = "providerClients", sync = true)
   public ClientRegistration getProviderClient(String provider) {
-    ProviderConfig.ProviderInfo providerInfo = providerConfig.getServices().get(provider);
+    var providerInfo = providerConfig.getServices().get(provider);
     if (providerInfo == null) {
       return null;
     }
 
-    ClientRegistration.Builder builder =
+    var builder =
         ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
             .clientId(providerInfo.getClientId())
             .clientSecret(providerInfo.getClientSecret())

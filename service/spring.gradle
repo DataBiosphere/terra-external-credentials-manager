@@ -1,7 +1,5 @@
 configurations { compileOnly { extendsFrom annotationProcessor } }
 
-repositories { mavenCentral() }
-
 dependencies {
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -12,6 +10,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	implementation 'org.springframework.security:spring-security-oauth2-core'
 	implementation 'org.springframework.security:spring-security-oauth2-client'
+	implementation 'org.springframework.security:spring-security-oauth2-jose'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.retry:spring-retry'
 

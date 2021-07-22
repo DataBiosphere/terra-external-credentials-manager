@@ -39,15 +39,15 @@ public class GlobalExceptionHandler {
     // For security reasons, we generally don't want to include the user's invalid (and potentially
     // malicious) input in the error response, which also means we don't include the full exception.
     // Instead, we return a generic error message about input validation.
-    String validationErrorMessage =
+    var validationErrorMessage =
         "Request could not be parsed or was invalid: "
             + ex.getClass().getSimpleName()
             + ". Ensure that all types are correct and that enums have valid values.";
-    ErrorReport errorReport =
+    var errorReport =
         new ErrorReport()
             .message(validationErrorMessage)
             .statusCode(HttpStatus.BAD_REQUEST.value());
-    return new ResponseEntity<>(errorReport, HttpStatus.BAD_REQUEST);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorReport);
   }
 
   // -- catchall - log so we can understand what we have missed in the handlers above
@@ -61,8 +61,7 @@ public class GlobalExceptionHandler {
       @NotNull Throwable ex, HttpStatus statusCode) {
     log.error("Global exception handler:", ex);
 
-    ErrorReport errorReport =
-        new ErrorReport().message(ex.getMessage()).statusCode(statusCode.value());
-    return new ResponseEntity<>(errorReport, statusCode);
+    var errorReport = new ErrorReport().message(ex.getMessage()).statusCode(statusCode.value());
+    return ResponseEntity.status(statusCode).body(errorReport);
   }
 }

@@ -12,7 +12,7 @@ public class SamService {
   private String samBasePath;
 
   public UsersApi samUsersApi(String accessToken) {
-    ApiClient client = new ApiClient();
+    var client = new ApiClient();
     client.setAccessToken(accessToken);
     return new UsersApi(client.setBasePath(samBasePath));
   }

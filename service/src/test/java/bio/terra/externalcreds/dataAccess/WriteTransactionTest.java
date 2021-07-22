@@ -1,14 +1,13 @@
 package bio.terra.externalcreds.dataAccess;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import bio.terra.externalcreds.BaseTest;
 import java.util.concurrent.CyclicBarrier;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.CannotSerializeTransactionException;
-import org.springframework.transaction.CannotCreateTransactionException;
 
 public class WriteTransactionTest extends BaseTest {
   @Autowired private WriteTransactionProbe writeTransactionProbe;
@@ -24,17 +23,17 @@ public class WriteTransactionTest extends BaseTest {
   }
 
   /**
-   * This tests that in a pair of competing write transactions (see {@link WriteTransaction}) one
-   * fails and is retried. This uses a {@link CyclicBarrier} to coordinate 2 threads such that one
-   * must fail if they are both using Isolation.SERIALIZABLE. The failure must then be retried in
-   * order to achieve success.
+   * This tests that in a pair of competing write transactions (see {@link
+   * bio.terra.common.db.WriteTransaction}) one fails and is retried. This uses a {@link
+   * CyclicBarrier} to coordinate 2 threads such that one must fail if they are both using
+   * Isolation.SERIALIZABLE. The failure must then be retried in order to achieve success.
    *
    * @throws InterruptedException
    */
   @Test
   public void testWriteTransactionAnnotation() throws InterruptedException {
-    int probeValue = 22;
-    int probeId = 1;
+    var probeValue = 22;
+    var probeId = 1;
 
     writeTransactionProbe.insertTestRecord(probeId, probeValue);
 
@@ -79,24 +78,6 @@ public class WriteTransactionTest extends BaseTest {
     successfulThread.join(5000);
     retriedThread.join(5000);
 
-    Assertions.assertEquals(probeValue + 2, writeTransactionProbe.getTestProbeValue(probeId));
-  }
-
-  @Test
-  public void testCannotSerializeTransactionExceptionRetries() {
-    Assertions.assertThrows(
-        CannotSerializeTransactionException.class,
-        () -> writeTransactionProbe.throwCannotSerializeTransactionException());
-    Assertions.assertEquals(
-        100, writeTransactionProbe.getThrowCannotSerializeTransactionExceptionCount());
-  }
-
-  @Test
-  public void testCannotCreateTransactionExceptionRetries() {
-    Assertions.assertThrows(
-        CannotCreateTransactionException.class,
-        () -> writeTransactionProbe.throwCannotCreateTransactionException());
-    Assertions.assertEquals(
-        4, writeTransactionProbe.getThrowCannotCreateTransactionExceptionCount());
+    assertEquals(probeValue + 2, writeTransactionProbe.getTestProbeValue(probeId));
   }
 }

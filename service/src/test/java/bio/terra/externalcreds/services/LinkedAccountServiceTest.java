@@ -23,7 +23,7 @@ public class LinkedAccountServiceTest extends BaseTest {
             .userId(UUID.randomUUID().toString())
             .externalUserId("externalUser")
             .build();
-    linkedAccountDAO.createLinkedAccount(linkedAccount);
+    linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     LinkedAccount savedLinkedAccount =
         linkedAccountService.getLinkedAccount(
@@ -41,7 +41,7 @@ public class LinkedAccountServiceTest extends BaseTest {
             .userId(UUID.randomUUID().toString())
             .externalUserId("externalUser")
             .build();
-    linkedAccountDAO.createLinkedAccount(linkedAccount);
+    linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     String result =
         linkedAccountService.revokeProviderLink(

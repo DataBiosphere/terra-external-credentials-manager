@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_cascading_delete_account_passport"
+      author: swessel, kfeldman, zarsky
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE ga4gh_passport
+                  DROP CONSTRAINT fk_linked_account_id,
+                  ADD CONSTRAINT fk_linked_account_id FOREIGN KEY (linked_account_id)
+              REFERENCES linked_account (id) on DELETE cascade;
+
+  - changeSet:
+      id: "add_cascading_delete_passport_visa"
+      author: swessel, kfeldman, zarsky
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE ga4gh_visa
+                  DROP CONSTRAINT fk_ga4gh_passport_id,
+                  ADD CONSTRAINT fk_ga4gh_passport_id FOREIGN KEY (passport_id)
+              REFERENCES ga4gh_passport (id) on DELETE cascade;
+
+
+  - changeSet:
+      id: "add_unique_constraint_passport_linked_account_id"
+      author: swessel, kfeldman, zarsky
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE ga4gh_passport
+                  ADD CONSTRAINT unique_linked_account_id UNIQUE (linked_account_id);
+
+  - changeSet:
+      id: "nullable_last_validated"
+      author: dvoet
+      changes:
+        - sql:
+            sql: ALTER TABLE ga4gh_visa ALTER last_validated DROP NOT NULL;

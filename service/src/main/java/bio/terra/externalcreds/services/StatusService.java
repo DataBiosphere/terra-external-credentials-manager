@@ -17,7 +17,7 @@ public class StatusService {
   }
 
   public SystemStatus getSystemStatus() {
-    SubsystemStatus subsystems = new SubsystemStatus();
+    var subsystems = new SubsystemStatus();
 
     try {
       subsystems.put("postgres", statusDAO.isPostgresOk());
