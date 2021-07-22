@@ -128,6 +128,7 @@ public class OidcApiController implements OidcApi {
     String userId = getUserIdFromSam();
     boolean recordDeleted = linkedAccountService.deleteLinkedAccount(userId, provider);
     if (recordDeleted) {
+      linkedAccountService.revokeRefreshToken(userId, provider);
       return new ResponseEntity<>(HttpStatus.OK);
     } else {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);

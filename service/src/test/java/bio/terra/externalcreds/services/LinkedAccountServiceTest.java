@@ -81,20 +81,18 @@ public class LinkedAccountServiceTest extends BaseTest {
   @Transactional
   @Rollback
   void testRevokeProviderLink() {
+    // TODO have this test use the WebTestClient class
     LinkedAccount linkedAccount =
         LinkedAccount.builder()
             .expires(new Timestamp(100))
             .providerId("ras")
-            .refreshToken("token")
+            .refreshToken("e58b4fe9-9ee2-4ee0-9b82-4fb80bb29440")
             .userId(UUID.randomUUID().toString())
             .externalUserId("externalUser")
             .build();
     linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-    String result =
-        linkedAccountService.revokeProviderLink(
+    linkedAccountService.revokeProviderLink(
             linkedAccount.getUserId(), linkedAccount.getProviderId());
-
-    assertEquals("", result);
   }
 
   private LinkedAccount saveAndValidateLinkedAccount(

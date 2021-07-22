@@ -73,7 +73,7 @@ public class LinkedAccountService {
     }
   }
 
-  public String revokeProviderLink(String userId, String providerId) {
+  public void revokeRefreshToken(String userId, String providerId) {
     LinkedAccount linkedAccount = getLinkedAccount(userId, providerId);
     ProviderConfig.ProviderInfo providerInfo = providerConfig.getServices().get(providerId);
     ;
@@ -107,10 +107,9 @@ public class LinkedAccountService {
                 clientResponse ->
                     Mono.error(
                         new ExternalCredsException(
-                            "ahhh"))) // TODO figure out what exception to throw here
+                            "Encountered an error while revoking the refresh token."))) // TODO figure out what exception to throw here
             .bodyToMono(String.class)
             .block(Duration.of(1000, ChronoUnit.MILLIS));
     log.info("Token revocation request returned with message: " + responseBody);
-    return responseBody;
   }
 }
