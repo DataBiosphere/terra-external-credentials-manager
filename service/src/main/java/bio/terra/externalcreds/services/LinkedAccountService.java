@@ -103,8 +103,7 @@ public class LinkedAccountService {
     }
   }
 
-  @VisibleForTesting
-  public void revokeRefreshToken(String providerId, String refreshToken) {
+  private void revokeRefreshToken(String providerId, String refreshToken) {
     ProviderConfig.ProviderInfo providerInfo = providerConfig.getServices().get(providerId);
 
     if (providerInfo == null)

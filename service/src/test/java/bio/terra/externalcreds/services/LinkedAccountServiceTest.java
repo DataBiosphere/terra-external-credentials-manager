@@ -83,30 +83,32 @@ public class LinkedAccountServiceTest extends BaseTest {
   }
 
   @Test
-  void testRevokeRefreshToken() {
-    var providerId = "provider";
-    var refreshToken = "refreshToken";
-    var path = "/test/revoke/";
+  void testDeleteLinkedAccountAndRevokeToken() {
+    var revocationPath = "/test/revoke/";
     var mockServerPort = 50555;
+    var linkedAccount = createRandomLinkedAccount();
+    linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     var providerInfo = new ProviderInfo();
     providerInfo.setClientId("clientId");
     providerInfo.setClientSecret("clientSecret");
-    providerInfo.setRevokeEndpoint("http://localhost:" + mockServerPort + path + "?token=%s");
+    providerInfo.setRevokeEndpoint(
+        "http://localhost:" + mockServerPort + revocationPath + "?token=%s");
 
     var expectedParameters =
         List.of(
-            new Parameter("token", refreshToken),
+            new Parameter("token", linkedAccount.getRefreshToken()),
             new Parameter("client_id", providerInfo.getClientId()),
             new Parameter("client_secret", providerInfo.getClientSecret()));
 
-    when(providerConfig.getServices()).thenReturn(Map.of(providerId, providerInfo));
+    when(providerConfig.getServices())
+        .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
 
     //  Mock the server response
     var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
     mockServer
         .when(
-            HttpRequest.request(path)
+            HttpRequest.request(revocationPath)
                 .withMethod("POST")
                 .withQueryStringParameters(expectedParameters))
         .respond(
@@ -114,37 +116,45 @@ public class LinkedAccountServiceTest extends BaseTest {
                 .withStatusCode(200)
                 .withContentType(MediaType.APPLICATION_JSON));
 
-    // Test that the post request is formatted correctly and no errors are thrown
-    linkedAccountService.revokeRefreshToken(providerId, refreshToken);
+    // Check that no errors are thrown
+    linkedAccountService.deleteLinkedAccountAndRevokeToken(
+        linkedAccount.getUserId(), linkedAccount.getProviderId());
+
+    // Check that the LinkedAccount was deleted
+    assertNull(
+        linkedAccountDAO.getLinkedAccount(
+            linkedAccount.getUserId(), linkedAccount.getProviderId()));
 
     mockServer.stop();
   }
 
   @Test
-  void testRevokeRefreshTokenHandlesErrorResponse() {
-    var providerId = "provider";
-    var refreshToken = "refreshToken";
-    var path = "/test/revoke/";
+  void testDeleteLinkedAccountAndRevokeTokenHandlesErrorResponse() {
+    var revocationPath = "/test/revoke/";
     var mockServerPort = 50555;
+    var linkedAccount = createRandomLinkedAccount();
+    linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     var providerInfo = new ProviderInfo();
     providerInfo.setClientId("clientId");
     providerInfo.setClientSecret("clientSecret");
-    providerInfo.setRevokeEndpoint("http://localhost:" + mockServerPort + path + "?token=%s");
+    providerInfo.setRevokeEndpoint(
+        "http://localhost:" + mockServerPort + revocationPath + "?token=%s");
 
     var expectedParameters =
         List.of(
-            new Parameter("token", refreshToken),
+            new Parameter("token", linkedAccount.getRefreshToken()),
             new Parameter("client_id", providerInfo.getClientId()),
             new Parameter("client_secret", providerInfo.getClientSecret()));
 
-    when(providerConfig.getServices()).thenReturn(Map.of(providerId, providerInfo));
+    when(providerConfig.getServices())
+        .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
 
     //  Mock the server response
     var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
     mockServer
         .when(
-            HttpRequest.request(path)
+            HttpRequest.request(revocationPath)
                 .withMethod("POST")
                 .withQueryStringParameters(expectedParameters))
         .respond(
@@ -155,12 +165,19 @@ public class LinkedAccountServiceTest extends BaseTest {
     // Test that the post request is formatted correctly and no errors are thrown
     assertThrows(
         ExternalCredsException.class,
-        () -> linkedAccountService.revokeRefreshToken(providerId, refreshToken));
+        () ->
+            linkedAccountService.deleteLinkedAccountAndRevokeToken(
+                linkedAccount.getUserId(), linkedAccount.getProviderId()));
+
+    // check that the LinkedAccount was not deleted
+    assertEquals(
+        linkedAccount,
+        linkedAccountDAO
+            .getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId())
+            .withId(0));
 
     mockServer.stop();
   }
-
-  // TODO test deleteLinkedAccountAndRevokeToken
 
   private LinkedAccount saveAndValidateLinkedAccount(
       LinkedAccount linkedAccount, GA4GHPassport passport, List<GA4GHVisa> visas) {
