@@ -3,8 +3,11 @@ package bio.terra.externalcreds.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.config.ProviderConfig;
+import bio.terra.externalcreds.config.ProviderConfig.ProviderInfo;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
@@ -16,14 +19,24 @@ import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
+import org.mockserver.model.MediaType;
+import org.mockserver.model.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 public class LinkedAccountServiceTest extends BaseTest {
+
+  @MockBean ProviderConfig providerConfig;
+
   @Autowired private LinkedAccountService linkedAccountService;
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
@@ -80,22 +93,44 @@ public class LinkedAccountServiceTest extends BaseTest {
   @Test
   @Transactional
   @Rollback
-  void testRevokeProviderLink() {
-    LinkedAccount linkedAccount =
-        LinkedAccount.builder()
-            .expires(new Timestamp(100))
-            .providerId("ras")
-            .refreshToken("e58b4fe9-9ee2-4ee0-9b82-4fb80bb29440")
-            .userId(UUID.randomUUID().toString())
-            .externalUserId("externalUser")
-            .build();
-    linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+  void testRevokeRefreshToken() {
+    var providerId = "provider";
+    var refreshToken = "refreshToken";
+    var path = "/test/revoke/";
+    var mockServerPort = 50555;
 
-    // TODO: Mock the endpoint using mockServer
+    var providerInfo = new ProviderInfo();
+    providerInfo.setClientId("clientId");
+    providerInfo.setClientSecret("clientSecret");
+    providerInfo.setRevokeEndpoint("http://localhost:" + mockServerPort + path + "?token=%s");
 
-    linkedAccountService.revokeRefreshToken(
-        linkedAccount.getUserId(), linkedAccount.getProviderId());
+    var expectedParameters =
+        List.of(
+            new Parameter("token", refreshToken),
+            new Parameter("client_id", providerInfo.getClientId()),
+            new Parameter("client_secret", providerInfo.getClientSecret()));
+
+    when(providerConfig.getServices()).thenReturn(Map.of(providerId, providerInfo));
+
+    //  Mock the server response
+    var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
+    mockServer
+        .when(
+            HttpRequest.request(path)
+                .withMethod("POST")
+                .withQueryStringParameters(expectedParameters))
+        .respond(
+            HttpResponse.response("{ \"result\": \"revoked\" }")
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON));
+
+    // Test that the post request is formatted correctly and no errors are thrown
+    linkedAccountService.revokeRefreshToken(providerId, refreshToken);
+
+    mockServer.stop();
   }
+
+  // TODO test that revokeProviderLink throws an exception when it gets a non 200 response
 
   // TODO test deleteLinkedAccountAndRevokeToken
 

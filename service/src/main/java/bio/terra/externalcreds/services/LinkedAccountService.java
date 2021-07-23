@@ -130,6 +130,6 @@ public class LinkedAccountService {
             .block(Duration.of(1000, ChronoUnit.MILLIS));
 
     // TODO: figure out whether to log the response
-    log.info("Token revocation request returned with message: " + responseBody);
+    log.info("Token revocation request returned with the result: " + responseBody);
   }
 }
