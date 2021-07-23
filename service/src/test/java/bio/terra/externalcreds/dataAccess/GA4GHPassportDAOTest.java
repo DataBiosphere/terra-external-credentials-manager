@@ -19,8 +19,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.transaction.annotation.Transactional;
 
 public class GA4GHPassportDAOTest extends BaseTest {
 
@@ -52,8 +50,6 @@ public class GA4GHPassportDAOTest extends BaseTest {
   }
 
   @Test
-  @Transactional
-  @Rollback
   void testCreateAndGetPassport() {
     var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
     var savedPassport = passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
@@ -69,8 +65,6 @@ public class GA4GHPassportDAOTest extends BaseTest {
   }
 
   @Test
-  @Transactional
-  @Rollback
   void testPassportIsUniqueForLinkedAccount() {
     var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
     var savedPassport = passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
@@ -86,8 +80,6 @@ public class GA4GHPassportDAOTest extends BaseTest {
   class DeletePassport {
 
     @Test
-    @Transactional
-    @Rollback
     void testDeletePassportIfExists() {
       var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
       passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
@@ -98,15 +90,11 @@ public class GA4GHPassportDAOTest extends BaseTest {
     }
 
     @Test
-    @Transactional
-    @Rollback
     void testDeleteNonexistentPassport() {
       assertFalse(passportDAO.deletePassport(-1));
     }
 
     @Test
-    @Transactional
-    @Rollback
     void testAlsoDeletesVisa() {
       var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
       var savedPassport = passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));

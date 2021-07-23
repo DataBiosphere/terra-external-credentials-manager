@@ -4,11 +4,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
@@ -93,10 +95,7 @@ public class OidcApiControllerTest extends BaseTest {
             .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
             .build();
 
-    var usersApiMock = mock(UsersApi.class);
-    var userStatusInfo = new UserStatusInfo().userSubjectId(userId);
-    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
-    when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
+    mockSamUser(userId, accessToken);
 
     when(linkedAccountService.getLinkedAccount(
             eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderId())))
@@ -122,10 +121,7 @@ public class OidcApiControllerTest extends BaseTest {
     var providerId = "non-existent-provider";
     var accessToken = "testToken";
 
-    var usersApiMock = mock(UsersApi.class);
-    var userStatusInfo = new UserStatusInfo().userSubjectId(userId);
-    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
-    when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
+    mockSamUser(userId, accessToken);
 
     mvc.perform(get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
         .andExpect(status().isNotFound());
@@ -136,10 +132,7 @@ public class OidcApiControllerTest extends BaseTest {
     var providerId = "provider";
     var accessToken = "testToken";
 
-    var usersApiMock = mock(UsersApi.class);
-    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
-    when(usersApiMock.getUserStatusInfo())
-        .thenThrow(new ApiException(HttpStatus.NOT_FOUND.value(), "Not Found"));
+    mockSamUserError(accessToken, HttpStatus.NOT_FOUND);
 
     mvc.perform(get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
         .andExpect(status().isForbidden());
@@ -150,12 +143,71 @@ public class OidcApiControllerTest extends BaseTest {
     String providerId = "provider";
     String accessToken = "testToken";
 
-    var usersApiMock = mock(UsersApi.class);
-    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
-    when(usersApiMock.getUserStatusInfo())
-        .thenThrow(new ApiException(HttpStatus.NO_CONTENT.value(), "Not Found"));
+    mockSamUserError(accessToken, HttpStatus.NO_CONTENT);
 
     mvc.perform(get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
         .andExpect(status().isInternalServerError());
+  }
+
+  @Test
+  void testCreateLink() throws Exception {
+    var accessToken = "testToken";
+    var userId = UUID.randomUUID().toString();
+    var inputLinkedAccount =
+        LinkedAccount.builder()
+            .userId(userId)
+            .providerId("testProvider")
+            .externalUserId("externalUser")
+            .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
+            .build();
+
+    var scopes = new String[] {"email", "foo"};
+    var redirectUri = "http://redirect";
+    var state = UUID.randomUUID().toString();
+    var oauthcode = UUID.randomUUID().toString();
+
+    mockSamUser(userId, accessToken);
+
+    when(providerService.createLink(
+            inputLinkedAccount.getProviderId(),
+            inputLinkedAccount.getUserId(),
+            oauthcode,
+            redirectUri,
+            Set.of(scopes),
+            state))
+        .thenReturn(
+            LinkedAccountWithPassportAndVisas.builder().linkedAccount(inputLinkedAccount).build());
+
+    mvc.perform(
+            post("/api/oidc/v1/{provider}/oauthcode", inputLinkedAccount.getProviderId())
+                .header("authorization", "Bearer " + accessToken)
+                .param("scopes", scopes)
+                .param("redirectUri", redirectUri)
+                .param("state", state)
+                .param("oauthcode", oauthcode))
+        .andExpect(status().isOk())
+        .andExpect(
+            content()
+                .json(
+                    "{\"externalUserId\":\""
+                        + inputLinkedAccount.getExternalUserId()
+                        + "\", \"expirationTimestamp\":\""
+                        + OffsetDateTime.ofInstant(
+                            inputLinkedAccount.getExpires().toInstant(), ZoneId.of("UTC"))
+                        + "\"}"));
+  }
+
+  private void mockSamUser(String userId, String accessToken) throws ApiException {
+    var usersApiMock = mock(UsersApi.class);
+    var userStatusInfo = new UserStatusInfo().userSubjectId(userId);
+    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
+  }
+
+  private void mockSamUserError(String accessToken, HttpStatus notFound) throws ApiException {
+    var usersApiMock = mock(UsersApi.class);
+    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo())
+        .thenThrow(new ApiException(notFound.value(), "Not Found"));
   }
 }
