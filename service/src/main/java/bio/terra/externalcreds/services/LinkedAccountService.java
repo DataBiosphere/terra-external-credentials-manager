@@ -113,7 +113,7 @@ public class LinkedAccountService {
     // Get the endpoint URL and insert the token
     String revokeEndpoint = String.format(providerInfo.getRevokeEndpoint(), refreshToken);
     // Add authorization information and make request
-    WebClient.ResponseSpec response = // TODO mock this endpoint in the tests
+    WebClient.ResponseSpec response =
         WebClient.create(revokeEndpoint)
             .post()
             .uri(
@@ -129,16 +129,15 @@ public class LinkedAccountService {
             .onStatus(
                 HttpStatus::isError,
                 clientResponse ->
-                    Mono.error(
+                    Mono.error( // TODO: decide whether to log the status code
                         new ExternalCredsException(
-                            "Encountered an error while revoking the refresh token."))) // TODO test
+                            "Encountered an error while revoking the refresh token.")))
             // that this
             // error is
             // thrown
             .bodyToMono(String.class)
             .block(Duration.of(1000, ChronoUnit.MILLIS));
 
-    // TODO: figure out whether to log the response
     log.info("Token revocation request returned with the result: " + responseBody);
   }
 }
