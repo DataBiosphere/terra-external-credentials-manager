@@ -112,13 +112,11 @@ public class OidcApiController implements OidcApi {
       String provider, List<String> scopes, String redirectUri, String state, String oauthcode) {
     var userId = getUserIdFromSam();
 
-    // calling services from here allows for @transactions
     var linkedAccountWithPassportAndVisas =
-        providerService.useAuthorizationCodeToGetLinkedAccount(
+        providerService.createLink(
             provider, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
-    var savedLinkedAccount =
-        linkedAccountService.saveLinkedAccount(linkedAccountWithPassportAndVisas);
 
-    return ResponseEntity.ok(getLinkInfoFromLinkedAccount(savedLinkedAccount));
+    return ResponseEntity.ok(
+        getLinkInfoFromLinkedAccount(linkedAccountWithPassportAndVisas.getLinkedAccount()));
   }
 }

@@ -243,7 +243,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         expectedLinkedAccount, expectedPassport, authorizationCode, redirectUri, scopes, state);
 
     var linkedAccountWithPassportAndVisas =
-        providerService.useAuthorizationCodeToGetLinkedAccount(
+        providerService.createLink(
             expectedLinkedAccount.getProviderId(),
             expectedLinkedAccount.getUserId(),
             authorizationCode,
@@ -253,15 +253,21 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
 
     assertEquals(
         expectedLinkedAccount,
-        linkedAccountWithPassportAndVisas.getLinkedAccount().withExpires(null));
-    assertEquals(expectedPassport, linkedAccountWithPassportAndVisas.getPassport());
-    var visasWithoutLastValidated =
+        linkedAccountWithPassportAndVisas.getLinkedAccount().withExpires(null).withId(0));
+
+    var stablePassport =
+        linkedAccountWithPassportAndVisas.getPassport() == null
+            ? null
+            : linkedAccountWithPassportAndVisas.getPassport().withId(0).withLinkedAccountId(0);
+    assertEquals(expectedPassport, stablePassport);
+
+    var stableVisas =
         linkedAccountWithPassportAndVisas.getVisas() == null
             ? null
             : linkedAccountWithPassportAndVisas.getVisas().stream()
-                .map(visa -> visa.withLastValidated(null))
+                .map(visa -> visa.withLastValidated(null).withId(0).withPassportId(0))
                 .collect(Collectors.toList());
-    assertEquals(expectedVisas, visasWithoutLastValidated);
+    assertEquals(expectedVisas, stableVisas);
   }
 
   private String createPassportJwtString(Date expires, List<String> visaJwts) throws JOSEException {

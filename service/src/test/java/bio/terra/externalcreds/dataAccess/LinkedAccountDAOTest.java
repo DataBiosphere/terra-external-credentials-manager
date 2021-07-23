@@ -15,8 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.transaction.annotation.Transactional;
 
 public class LinkedAccountDAOTest extends BaseTest {
 
@@ -44,8 +42,6 @@ public class LinkedAccountDAOTest extends BaseTest {
   }
 
   @Test
-  @Transactional
-  @Rollback
   void testCreateAndGetLinkedAccount() {
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
     assertTrue(savedLinkedAccount.getId() > 0);
@@ -57,8 +53,6 @@ public class LinkedAccountDAOTest extends BaseTest {
   }
 
   @Test
-  @Transactional
-  @Rollback
   void testUpsertLinkedAccounts() {
     var createdLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
@@ -84,8 +78,6 @@ public class LinkedAccountDAOTest extends BaseTest {
   class DeleteLinkedAccount {
 
     @Test
-    @Transactional
-    @Rollback
     void testDeleteLinkedAccountIfExists() {
       var createdLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
       var deletionSucceeded =
@@ -98,8 +90,6 @@ public class LinkedAccountDAOTest extends BaseTest {
     }
 
     @Test
-    @Transactional
-    @Rollback
     void testDeleteNonexistentLinkedAccount() {
       var userId = UUID.randomUUID().toString();
       var deletionSucceeded = linkedAccountDAO.deleteLinkedAccountIfExists(userId, "fake_provider");
@@ -108,8 +98,6 @@ public class LinkedAccountDAOTest extends BaseTest {
     }
 
     @Test
-    @Transactional
-    @Rollback
     void testAlsoDeletesPassport() {
       var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
       var passport =
