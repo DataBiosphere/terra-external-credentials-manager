@@ -6,12 +6,16 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @Value.Style(typeImmutable = "*")
-public interface AbstractGA4GHPassport {
+public interface AbstractLinkedAccount {
   Optional<Integer> getId();
 
-  Optional<Integer> getLinkedAccountId();
+  String getUserId();
 
-  String getJwt();
+  String getProviderId();
+
+  String getRefreshToken();
 
   Timestamp getExpires();
+
+  String getExternalUserId();
 }

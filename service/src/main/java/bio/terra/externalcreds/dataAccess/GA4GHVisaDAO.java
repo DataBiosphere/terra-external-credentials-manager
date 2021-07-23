@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -31,7 +32,7 @@ public class GA4GHVisaDAO {
 
     var namedParameters =
         new MapSqlParameterSource()
-            .addValue("passportId", visa.getPassportId())
+            .addValue("passportId", visa.getPassportId().orElseThrow())
             .addValue("visaType", visa.getVisaType())
             .addValue("jwt", visa.getJwt())
             .addValue("expires", visa.getExpires())
@@ -40,7 +41,7 @@ public class GA4GHVisaDAO {
                 "tokenType",
                 visa.getTokenType(),
                 Types.OTHER) // because it's an enum, not a string...
-            .addValue("lastValidated", visa.getLastValidated());
+            .addValue("lastValidated", visa.getLastValidated().orElse(null));
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
@@ -67,7 +68,7 @@ public class GA4GHVisaDAO {
           .expires(rs.getTimestamp("expires"))
           .issuer(rs.getString("issuer"))
           .tokenType(TokenTypeEnum.valueOf(rs.getString("token_type")))
-          .lastValidated(rs.getTimestamp("last_validated"))
+          .lastValidated(Optional.ofNullable(rs.getTimestamp("last_validated")))
           .visaType(rs.getString("visa_type"))
           .build();
     }

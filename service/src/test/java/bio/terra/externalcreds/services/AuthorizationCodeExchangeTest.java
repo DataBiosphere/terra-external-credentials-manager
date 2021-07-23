@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -170,7 +171,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   @Test
   void testJwtMissingIssuer() throws URISyntaxException, JOSEException {
     var jwtMissingIssuer =
-        createVisaJwtString(createTestVisa(TokenTypeEnum.access_token).withIssuer(null));
+        createVisaJwtString(createTestVisa(TokenTypeEnum.access_token).withIssuer("null"));
     assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtMissingIssuer));
   }
 
@@ -253,19 +254,26 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
 
     assertEquals(
         expectedLinkedAccount,
-        linkedAccountWithPassportAndVisas.getLinkedAccount().withExpires(null).withId(0));
+        linkedAccountWithPassportAndVisas
+            .getLinkedAccount()
+            .withExpires(passportExpiresTime)
+            .withId(Optional.empty()));
 
     var stablePassport =
-        linkedAccountWithPassportAndVisas.getPassport() == null
-            ? null
-            : linkedAccountWithPassportAndVisas.getPassport().withId(0).withLinkedAccountId(0);
-    assertEquals(expectedPassport, stablePassport);
+        linkedAccountWithPassportAndVisas
+            .getPassport()
+            .map(p -> p.withId(Optional.empty()).withLinkedAccountId(Optional.empty()));
+    assertEquals(Optional.ofNullable(expectedPassport), stablePassport);
 
     var stableVisas =
         linkedAccountWithPassportAndVisas.getVisas() == null
             ? null
             : linkedAccountWithPassportAndVisas.getVisas().stream()
-                .map(visa -> visa.withLastValidated(null).withId(0).withPassportId(0))
+                .map(
+                    visa ->
+                        visa.withLastValidated(Optional.empty())
+                            .withId(Optional.empty())
+                            .withPassportId(Optional.empty()))
                 .collect(Collectors.toList());
     assertEquals(expectedVisas, stableVisas);
   }
@@ -301,6 +309,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         .userId(UUID.randomUUID().toString())
         .refreshToken(UUID.randomUUID().toString())
         .externalUserId(userEmail)
+        .expires(passportExpiresTime)
         .build();
   }
 
@@ -314,7 +323,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     var visaClaimSet =
         new JWTClaimsSet.Builder()
             .expirationTime(visa.getExpires())
-            .issuer(visa.getIssuer())
+            .issuer(visa.getIssuer() == "null" ? null : visa.getIssuer())
             .claim(
                 ProviderService.GA4GH_VISA_V1_CLAIM,
                 Map.of(ProviderService.VISA_TYPE_CLAIM, visa.getVisaType()))
@@ -345,6 +354,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
             .tokenType(tokenType)
             .issuer(issuer)
             .expires(new Timestamp(passportExpires.getTime()))
+            .jwt("temp")
             .build();
     visa = visa.withJwt(createVisaJwtString(visa));
     return visa;

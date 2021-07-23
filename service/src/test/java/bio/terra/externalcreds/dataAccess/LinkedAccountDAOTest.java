@@ -44,7 +44,7 @@ public class LinkedAccountDAOTest extends BaseTest {
   @Test
   void testCreateAndGetLinkedAccount() {
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-    assertTrue(savedLinkedAccount.getId() > 0);
+    assertTrue(savedLinkedAccount.getId().isPresent());
     assertEquals(linkedAccount.withId(savedLinkedAccount.getId()), savedLinkedAccount);
 
     var loadedLinkedAccount =
@@ -100,6 +100,7 @@ public class LinkedAccountDAOTest extends BaseTest {
     @Test
     void testAlsoDeletesPassport() {
       var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+      assertPresent(savedLinkedAccount.getId());
       var passport =
           GA4GHPassport.builder()
               .linkedAccountId(savedLinkedAccount.getId())
@@ -109,7 +110,7 @@ public class LinkedAccountDAOTest extends BaseTest {
       passportDAO.insertPassport(passport);
       linkedAccountDAO.deleteLinkedAccountIfExists(
           savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
-      assertEmpty(passportDAO.getPassport(savedLinkedAccount.getId()));
+      assertEmpty(passportDAO.getPassport(savedLinkedAccount.getId().get()));
     }
   }
 }

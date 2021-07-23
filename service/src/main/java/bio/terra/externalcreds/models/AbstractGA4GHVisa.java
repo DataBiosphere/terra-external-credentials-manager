@@ -1,20 +1,25 @@
 package bio.terra.externalcreds.models;
 
 import java.sql.Timestamp;
-import lombok.Builder;
-import lombok.Data;
-import lombok.With;
+import java.util.Optional;
+import org.immutables.value.Value;
 
-@Builder
-@Data
-@With
-public class GA4GHVisa {
-  private final int id;
-  private final int passportId;
-  private final String visaType;
-  private final Timestamp expires;
-  private final String jwt;
-  private final String issuer;
-  private final TokenTypeEnum tokenType;
-  private final Timestamp lastValidated;
+@Value.Immutable
+@Value.Style(typeImmutable = "*")
+public interface AbstractGA4GHVisa {
+  Optional<Integer> getId();
+
+  Optional<Integer> getPassportId();
+
+  String getVisaType();
+
+  Timestamp getExpires();
+
+  String getJwt();
+
+  String getIssuer();
+
+  TokenTypeEnum getTokenType();
+
+  Optional<Timestamp> getLastValidated();
 }
