@@ -22,7 +22,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
-public class PassportDAOTest extends BaseTest {
+public class GA4GHPassportDAOTest extends BaseTest {
 
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
