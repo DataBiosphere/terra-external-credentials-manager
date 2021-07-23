@@ -30,8 +30,6 @@ import org.mockserver.model.MediaType;
 import org.mockserver.model.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.transaction.annotation.Transactional;
 
 public class LinkedAccountServiceTest extends BaseTest {
 
@@ -43,8 +41,6 @@ public class LinkedAccountServiceTest extends BaseTest {
   @Autowired private GA4GHVisaDAO visaDAO;
 
   @Test
-  @Transactional
-  @Rollback
   void testGetLinkedAccount() {
     var linkedAccount = createRandomLinkedAccount();
     linkedAccountDAO.upsertLinkedAccount(linkedAccount);
@@ -56,8 +52,6 @@ public class LinkedAccountServiceTest extends BaseTest {
   }
 
   @Test
-  @Transactional
-  @Rollback
   void testSaveLinkedAccountWithPassportAndVisas() {
     var linkedAccount = createRandomLinkedAccount();
     var passport = createRandomPassport();
@@ -74,8 +68,6 @@ public class LinkedAccountServiceTest extends BaseTest {
   }
 
   @Test
-  @Transactional
-  @Rollback
   void testSaveLinkedAccountWithPassportNoVisas() {
     var linkedAccount = createRandomLinkedAccount();
     var passport = createRandomPassport();
@@ -83,16 +75,12 @@ public class LinkedAccountServiceTest extends BaseTest {
   }
 
   @Test
-  @Transactional
-  @Rollback
   void testSaveLinkedAccountWithoutPassport() {
     var linkedAccount = createRandomLinkedAccount();
     saveAndValidateLinkedAccount(linkedAccount, null, Collections.emptyList());
   }
 
   @Test
-  @Transactional
-  @Rollback
   void testRevokeRefreshToken() {
     var providerId = "provider";
     var refreshToken = "refreshToken";
@@ -136,7 +124,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
   private LinkedAccount saveAndValidateLinkedAccount(
       LinkedAccount linkedAccount, GA4GHPassport passport, List<GA4GHVisa> visas) {
-    var savedLinkedAccount =
+    var saved =
         linkedAccountService.saveLinkedAccount(
             LinkedAccountWithPassportAndVisas.builder()
                 .linkedAccount(linkedAccount)
@@ -144,10 +132,10 @@ public class LinkedAccountServiceTest extends BaseTest {
                 .visas(visas)
                 .build());
 
-    assertEquals(linkedAccount, savedLinkedAccount.withId(0));
-    assertTrue(savedLinkedAccount.getId() > 0);
+    assertEquals(linkedAccount, saved.getLinkedAccount().withId(0));
+    assertTrue(saved.getLinkedAccount().getId() > 0);
 
-    var savedPassport = passportDAO.getPassport(savedLinkedAccount.getId());
+    var savedPassport = passportDAO.getPassport(saved.getLinkedAccount().getId());
     if (passport == null) {
       assertNull(savedPassport);
     } else {
@@ -158,7 +146,7 @@ public class LinkedAccountServiceTest extends BaseTest {
           savedVisas.stream().map(v -> v.withId(0).withPassportId(0)).collect(Collectors.toList()));
     }
 
-    return savedLinkedAccount;
+    return saved.getLinkedAccount();
   }
 
   private Timestamp getRandomTimestamp() {

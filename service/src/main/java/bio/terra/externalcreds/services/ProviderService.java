@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -41,14 +42,17 @@ public class ProviderService {
   private final ProviderConfig providerConfig;
   private final ProviderClientCache providerClientCache;
   private final OAuth2Service oAuth2Service;
+  private final LinkedAccountService linkedAccountService;
 
   public ProviderService(
       ProviderConfig providerConfig,
       ProviderClientCache providerClientCache,
-      OAuth2Service oAuth2Service) {
+      OAuth2Service oAuth2Service,
+      LinkedAccountService linkedAccountService) {
     this.providerConfig = providerConfig;
     this.providerClientCache = providerClientCache;
     this.oAuth2Service = oAuth2Service;
+    this.linkedAccountService = linkedAccountService;
   }
 
   public Set<String> getProviderList() {
@@ -72,7 +76,7 @@ public class ProviderService {
         providerInfo.getAdditionalAuthorizationParameters());
   }
 
-  public LinkedAccountWithPassportAndVisas useAuthorizationCodeToGetLinkedAccount(
+  public LinkedAccountWithPassportAndVisas createLink(
       String provider,
       String userId,
       String authorizationCode,
@@ -115,6 +119,11 @@ public class ProviderService {
             .refreshToken(refreshToken.getTokenValue())
             .build();
 
+    return linkedAccountService.saveLinkedAccount(extractPassport(userInfo, linkedAccount));
+  }
+
+  private LinkedAccountWithPassportAndVisas extractPassport(
+      OAuth2User userInfo, LinkedAccount linkedAccount) {
     var passportJwtString = userInfo.<String>getAttribute(PASSPORT_JWT_V11_CLAIM);
     if (passportJwtString != null) {
       var passportJwt = decodeJwt(passportJwtString);

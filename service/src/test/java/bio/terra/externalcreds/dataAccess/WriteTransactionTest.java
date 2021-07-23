@@ -2,14 +2,18 @@ package bio.terra.externalcreds.dataAccess;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import bio.terra.externalcreds.BaseTest;
 import java.util.concurrent.CyclicBarrier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
-public class WriteTransactionTest extends BaseTest {
+// BaseTest includes @Transactional annotation which interferes with tests in this class
+@SpringBootTest({"DATABASE_NAME=ecm_test"})
+@ActiveProfiles("human-readable-logging")
+public class WriteTransactionTest {
   @Autowired private WriteTransactionProbe writeTransactionProbe;
 
   @BeforeEach
