@@ -34,7 +34,8 @@ public class LinkedAccountServiceTest extends BaseTest {
     var savedLinkedAccount =
         linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId());
-    assertEquals(linkedAccount, savedLinkedAccount.withId(0));
+    assertPresent(savedLinkedAccount);
+    assertEquals(linkedAccount, savedLinkedAccount.get().withId(0));
   }
 
   @Test
@@ -81,9 +82,9 @@ public class LinkedAccountServiceTest extends BaseTest {
 
     var savedPassport = passportDAO.getPassport(saved.getLinkedAccount().getId());
     if (passport == null) {
-      assertTrue(savedPassport.isEmpty());
+      assertEmpty(savedPassport);
     } else {
-      assertTrue(savedPassport.isPresent());
+      assertPresent(savedPassport);
       assertEquals(passport, savedPassport.get().withId(0).withLinkedAccountId(0));
       var savedVisas = visaDAO.listVisas(savedPassport.get().getId());
       assertEquals(

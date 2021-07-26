@@ -8,6 +8,7 @@ import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.stream.Collectors;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,7 +28,7 @@ public class LinkedAccountService {
   }
 
   @ReadTransaction
-  public LinkedAccount getLinkedAccount(String userId, String providerId) {
+  public Optional<LinkedAccount> getLinkedAccount(String userId, String providerId) {
     return linkedAccountDAO.getLinkedAccount(userId, providerId);
   }
 

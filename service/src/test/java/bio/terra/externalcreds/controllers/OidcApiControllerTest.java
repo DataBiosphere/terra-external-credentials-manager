@@ -18,6 +18,7 @@ import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
@@ -99,7 +100,7 @@ public class OidcApiControllerTest extends BaseTest {
 
     when(linkedAccountService.getLinkedAccount(
             eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderId())))
-        .thenReturn(inputLinkedAccount);
+        .thenReturn(Optional.of(inputLinkedAccount));
 
     mvc.perform(
             get("/api/oidc/v1/" + inputLinkedAccount.getProviderId())
