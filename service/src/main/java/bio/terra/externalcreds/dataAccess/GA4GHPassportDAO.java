@@ -3,6 +3,7 @@ package bio.terra.externalcreds.dataAccess;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.RowMapper;
@@ -53,11 +54,12 @@ public class GA4GHPassportDAO {
     return passport.withId(generatedKeyHolder.getKey().intValue());
   }
 
-  public GA4GHPassport getPassport(int linkedAccountId) {
+  public Optional<GA4GHPassport> getPassport(int linkedAccountId) {
     var namedParameters = new MapSqlParameterSource("linkedAccountId", linkedAccountId);
     var query = "SELECT * FROM ga4gh_passport WHERE linked_account_id = :linkedAccountId";
-    return DataAccessUtils.singleResult(
-        jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper()));
+    return Optional.ofNullable(
+        DataAccessUtils.singleResult(
+            jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper())));
   }
 
   private static class GA4GHPassportRowMapper implements RowMapper<GA4GHPassport> {
