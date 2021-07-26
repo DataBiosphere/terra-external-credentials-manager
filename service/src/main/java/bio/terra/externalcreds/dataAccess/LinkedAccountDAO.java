@@ -3,6 +3,7 @@ package bio.terra.externalcreds.dataAccess;
 import bio.terra.externalcreds.models.LinkedAccount;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.RowMapper;
@@ -21,13 +22,14 @@ public class LinkedAccountDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  public LinkedAccount getLinkedAccount(String userId, String providerId) {
+  public Optional<LinkedAccount> getLinkedAccount(String userId, String providerId) {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
     var query =
         "SELECT * FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
-    return DataAccessUtils.singleResult(
-        jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper()));
+    return Optional.ofNullable(
+        DataAccessUtils.singleResult(
+            jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper())));
   }
 
   public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {

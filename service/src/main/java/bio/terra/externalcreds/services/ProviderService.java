@@ -3,6 +3,7 @@ package bio.terra.externalcreds.services;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ProviderConfig;
+import bio.terra.externalcreds.config.ProviderConfig.ProviderInfo;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -15,18 +16,23 @@ import com.nimbusds.jwt.JWTParser;
 import java.net.MalformedURLException;
 import java.sql.Timestamp;
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
@@ -120,6 +126,48 @@ public class ProviderService {
             .build();
 
     return linkedAccountService.saveLinkedAccount(extractPassport(userInfo, linkedAccount));
+  }
+
+  public void deleteLink(String providerId, String userId) {
+    ProviderConfig.ProviderInfo providerInfo = providerConfig.getServices().get(providerId);
+
+    if (providerInfo == null) {
+      throw new NotFoundException(String.format("Provider %s not found", providerId));
+    }
+
+    var linkedAccount =
+        linkedAccountService
+            .getLinkedAccount(userId, providerId)
+            .orElseThrow(() -> new NotFoundException("Link not found for user"));
+
+    revokeAccessToken(providerInfo, linkedAccount);
+
+    linkedAccountService.deleteLinkedAccount(userId, providerId);
+  }
+
+  private void revokeAccessToken(ProviderInfo providerInfo, LinkedAccount linkedAccount) {
+    // Get the endpoint URL and insert the token
+    String revokeEndpoint =
+        String.format(providerInfo.getRevokeEndpoint(), linkedAccount.getRefreshToken());
+    // Add authorization information and make request
+    WebClient.ResponseSpec response =
+        WebClient.create(revokeEndpoint)
+            .post()
+            .uri(
+                uriBuilder ->
+                    uriBuilder
+                        .queryParam("client_id", providerInfo.getClientId())
+                        .queryParam("client_secret", providerInfo.getClientSecret())
+                        .build())
+            .retrieve();
+    // handle the response
+    String responseBody =
+        response
+            .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
+            .bodyToMono(String.class)
+            .block(Duration.of(1000, ChronoUnit.MILLIS));
+
+    log.info("Token revocation request returned with the result: " + responseBody);
   }
 
   private LinkedAccountWithPassportAndVisas extractPassport(

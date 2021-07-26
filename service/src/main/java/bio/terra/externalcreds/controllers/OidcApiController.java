@@ -82,11 +82,9 @@ public class OidcApiController implements OidcApi {
   public ResponseEntity<LinkInfo> getLink(String provider) {
     var userId = getUserIdFromSam();
     var linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
-    if (linkedAccount == null) {
-      return ResponseEntity.notFound().build();
-    }
-
-    return ResponseEntity.ok(getLinkInfoFromLinkedAccount(linkedAccount));
+    return linkedAccount
+        .map(la -> ResponseEntity.ok(getLinkInfoFromLinkedAccount(la)))
+        .orElseGet(() -> ResponseEntity.notFound().build());
   }
 
   // Because we're just processing String -> json string, there shouldn't be any conversion issue.
@@ -122,10 +120,8 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<Void> deleteLink(String provider) {
-    // TODO: think about making "provider"/"providerId" phrasing consistent (change in DB?)
     String userId = getUserIdFromSam();
-    linkedAccountService.deleteLinkedAccountAndRevokeToken(userId, provider);
-
+    providerService.deleteLink(provider, userId);
     return ResponseEntity.ok().build();
   }
 }
