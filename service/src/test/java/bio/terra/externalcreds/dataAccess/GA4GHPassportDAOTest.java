@@ -2,8 +2,6 @@ package bio.terra.externalcreds.dataAccess;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,6 +11,7 @@ import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -45,8 +44,8 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
   @Test
   void testMissingPassport() {
-    var shouldBeNull = passportDAO.getPassport(-1);
-    assertNull(shouldBeNull);
+    var shouldBeEmpty = passportDAO.getPassport(-1);
+    assertEmpty(shouldBeEmpty);
   }
 
   @Test
@@ -61,7 +60,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
         savedPassport);
 
     var loadedPassport = passportDAO.getPassport(savedAccountId);
-    assertEquals(savedPassport, loadedPassport);
+    assertEquals(Optional.of(savedPassport), loadedPassport);
   }
 
   @Test
@@ -84,9 +83,9 @@ public class GA4GHPassportDAOTest extends BaseTest {
       var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
       passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
 
-      assertNotNull(passportDAO.getPassport(savedAccountId));
+      assertPresent(passportDAO.getPassport(savedAccountId));
       assertTrue(passportDAO.deletePassport(savedAccountId));
-      assertNull(passportDAO.getPassport(savedAccountId));
+      assertEmpty(passportDAO.getPassport(savedAccountId));
     }
 
     @Test

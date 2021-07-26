@@ -1,7 +1,6 @@
 package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
@@ -35,7 +34,8 @@ public class LinkedAccountServiceTest extends BaseTest {
     var savedLinkedAccount =
         linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId());
-    assertEquals(linkedAccount, savedLinkedAccount.withId(0));
+    assertPresent(savedLinkedAccount);
+    assertEquals(linkedAccount, savedLinkedAccount.get().withId(0));
   }
 
   @Test
@@ -82,10 +82,11 @@ public class LinkedAccountServiceTest extends BaseTest {
 
     var savedPassport = passportDAO.getPassport(saved.getLinkedAccount().getId());
     if (passport == null) {
-      assertNull(savedPassport);
+      assertEmpty(savedPassport);
     } else {
-      assertEquals(passport, savedPassport.withId(0).withLinkedAccountId(0));
-      var savedVisas = visaDAO.listVisas(savedPassport.getId());
+      assertPresent(savedPassport);
+      assertEquals(passport, savedPassport.get().withId(0).withLinkedAccountId(0));
+      var savedVisas = visaDAO.listVisas(savedPassport.get().getId());
       assertEquals(
           visas,
           savedVisas.stream().map(v -> v.withId(0).withPassportId(0)).collect(Collectors.toList()));
