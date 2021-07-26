@@ -1,5 +1,7 @@
 package bio.terra.externalcreds;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,10 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Rollback
 public class BaseTest {
   public void assertEmpty(Optional<?> optional) {
-    Assertions.assertTrue(optional.isEmpty(), "expected empty optional");
+    assertTrue(optional.isEmpty(), "expected empty optional");
   }
 
   public void assertPresent(Optional<?> optional) {
-    Assertions.assertTrue(optional.isPresent(), "expected non-empty optional");
+    assertTrue(optional.isPresent(), "expected non-empty optional");
   }
 }
