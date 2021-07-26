@@ -85,9 +85,8 @@ public class LinkedAccountDAOTest extends BaseTest {
               createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderId());
       assertTrue(deletionSucceeded);
       assertEmpty(
-          linkedAccountDAO
-              .getLinkedAccount(
-                  createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderId()));
+          linkedAccountDAO.getLinkedAccount(
+              createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderId()));
     }
 
     @Test
