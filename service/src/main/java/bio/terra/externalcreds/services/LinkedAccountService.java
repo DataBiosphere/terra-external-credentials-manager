@@ -7,8 +7,8 @@ import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
-import java.util.stream.Collectors;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
