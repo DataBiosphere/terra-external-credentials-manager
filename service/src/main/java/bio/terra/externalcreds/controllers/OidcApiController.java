@@ -121,7 +121,7 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<Void> deleteLink(String provider) {
     String userId = getUserIdFromSam();
-    providerService.deleteLink(provider, userId);
+    providerService.deleteLink(userId, provider);
     return ResponseEntity.ok().build();
   }
 }
