@@ -1,2 +1,2 @@
 rootProject.name = 'externalcreds'
-include 'service'
+include 'service', 'client'
