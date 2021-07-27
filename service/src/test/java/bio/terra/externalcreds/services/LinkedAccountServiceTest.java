@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.config.ProviderConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
@@ -21,11 +20,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 public class LinkedAccountServiceTest extends BaseTest {
-
-  @MockBean ProviderConfig providerConfig;
 
   @Autowired private LinkedAccountService linkedAccountService;
   @Autowired private LinkedAccountDAO linkedAccountDAO;
