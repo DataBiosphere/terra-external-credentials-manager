@@ -73,64 +73,6 @@ public class LinkedAccountServiceTest extends BaseTest {
     saveAndValidateLinkedAccount(linkedAccount, null, Collections.emptyList());
   }
 
-  //  @Test
-  //  void testDeleteLinkedAccountAndRevokeToken() {
-  //    var revocationPath = "/test/revoke/";
-  //    var mockServerPort = 50555;
-  //    var linkedAccount = createRandomLinkedAccount();
-  //    linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-  //
-  //    var providerInfo = new ProviderInfo();
-  //    providerInfo.setClientId("clientId");
-  //    providerInfo.setClientSecret("clientSecret");
-  //    providerInfo.setRevokeEndpoint(
-  //        "http://localhost:" + mockServerPort + revocationPath + "?token=%s");
-  //
-  //    var expectedParameters =
-  //        List.of(
-  //            new Parameter("token", linkedAccount.getRefreshToken()),
-  //            new Parameter("client_id", providerInfo.getClientId()),
-  //            new Parameter("client_secret", providerInfo.getClientSecret()));
-  //
-  //    when(providerConfig.getServices())
-  //        .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
-  //
-  //    //  Mock the server response
-  //    var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
-  //    mockServer
-  //        .when(
-  //            HttpRequest.request(revocationPath)
-  //                .withMethod("POST")
-  //                .withQueryStringParameters(expectedParameters))
-  //        .respond(
-  //            HttpResponse.response("{ \"result\": \"revoked\" }")
-  //                .withStatusCode(200)
-  //                .withContentType(MediaType.APPLICATION_JSON));
-  //
-  //    // Check that no errors are thrown
-  //    linkedAccountService.deleteLinkedAccountAndRevokeToken(
-  //        linkedAccount.getUserId(), linkedAccount.getProviderId());
-  //
-  //    // Check that the LinkedAccount was deleted
-  //    assertNull(
-  //        linkedAccountDAO.getLinkedAccount(
-  //            linkedAccount.getUserId(), linkedAccount.getProviderId()));
-  //
-  //    mockServer.stop();
-  //  }
-  //
-  //  @Test
-  //  void testDeleteExistingLinkedAccount() {
-  //    var linkedAccount = createRandomLinkedAccount();
-  //    linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-  //    assertTrue(
-  //        linkedAccountService.deleteLinkedAccount(
-  //            linkedAccount.getUserId(), linkedAccount.getProviderId()));
-  //    assertEmpty(
-  //        linkedAccountDAO.getLinkedAccount(
-  //            linkedAccount.getUserId(), linkedAccount.getProviderId()));
-  //  }
-
   @Test
   void testDeleteNonExistingLinkedAccount() {
     var linkedAccount = createRandomLinkedAccount();
@@ -138,57 +80,6 @@ public class LinkedAccountServiceTest extends BaseTest {
         linkedAccountService.deleteLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId()));
   }
-
-  //  @Test
-  //  void testDeleteLinkedAccountAndRevokeTokenHandlesErrorResponse() {
-  //    var revocationPath = "/test/revoke/";
-  //    var mockServerPort = 50555;
-  //    var linkedAccount = createRandomLinkedAccount();
-  //    linkedAccountDAO.upsertLinkedAccount(linkedAccount);
-  //
-  //    var providerInfo = new ProviderInfo();
-  //    providerInfo.setClientId("clientId");
-  //    providerInfo.setClientSecret("clientSecret");
-  //    providerInfo.setRevokeEndpoint(
-  //        "http://localhost:" + mockServerPort + revocationPath + "?token=%s");
-  //
-  //    var expectedParameters =
-  //        List.of(
-  //            new Parameter("token", linkedAccount.getRefreshToken()),
-  //            new Parameter("client_id", providerInfo.getClientId()),
-  //            new Parameter("client_secret", providerInfo.getClientSecret()));
-  //
-  //    when(providerConfig.getServices())
-  //        .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
-  //
-  //    //  Mock the server response
-  //    var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
-  //    mockServer
-  //        .when(
-  //            HttpRequest.request(revocationPath)
-  //                .withMethod("POST")
-  //                .withQueryStringParameters(expectedParameters))
-  //        .respond(
-  //            HttpResponse.response("Bad request")
-  //                .withStatusCode(400)
-  //                .withContentType(MediaType.APPLICATION_JSON));
-  //
-  //    // Test that the post request is formatted correctly and no errors are thrown
-  //    assertThrows(
-  //        ExternalCredsException.class,
-  //        () ->
-  //            linkedAccountService.deleteLinkedAccountAndRevokeToken(
-  //                linkedAccount.getUserId(), linkedAccount.getProviderId()));
-  //
-  //    // check that the LinkedAccount was not deleted
-  //    assertEquals(
-  //        linkedAccount,
-  //        linkedAccountDAO
-  //            .getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId())
-  //            .withId(0));
-  //
-  //    mockServer.stop();
-  //  }
 
   private LinkedAccount saveAndValidateLinkedAccount(
       LinkedAccount linkedAccount, GA4GHPassport passport, List<GA4GHVisa> visas) {

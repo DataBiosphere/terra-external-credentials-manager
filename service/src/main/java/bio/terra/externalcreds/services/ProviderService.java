@@ -128,7 +128,7 @@ public class ProviderService {
     return linkedAccountService.saveLinkedAccount(extractPassport(userInfo, linkedAccount));
   }
 
-  public void deleteLink(String providerId, String userId) {
+  public void deleteLink(String userId, String providerId) {
     ProviderConfig.ProviderInfo providerInfo = providerConfig.getServices().get(providerId);
 
     if (providerInfo == null) {
@@ -160,14 +160,18 @@ public class ProviderService {
                         .queryParam("client_secret", providerInfo.getClientSecret())
                         .build())
             .retrieve();
-    // handle the response
+
     String responseBody =
         response
             .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
             .bodyToMono(String.class)
             .block(Duration.of(1000, ChronoUnit.MILLIS));
 
-    log.info("Token revocation request returned with the result: " + responseBody);
+    log.info(
+        "Token revocation request for user [{}], provider [{}] returned with the result: [{}]",
+        linkedAccount.getUserId(),
+        linkedAccount.getProviderId(),
+        responseBody);
   }
 
   private LinkedAccountWithPassportAndVisas extractPassport(
