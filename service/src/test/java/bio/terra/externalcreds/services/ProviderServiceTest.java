@@ -4,14 +4,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ProviderConfig;
 import bio.terra.externalcreds.config.ProviderConfig.ProviderInfo;
-import bio.terra.externalcreds.models.LinkedAccount;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
@@ -39,7 +37,7 @@ public class ProviderServiceTest extends BaseTest {
   private void testWithRevokeResponseCode(HttpStatus httpStatus) {
     var revocationPath = "/test/revoke/";
     var mockServerPort = 50555;
-    var linkedAccount = createRandomLinkedAccount();
+    var linkedAccount = TestUtils.createRandomLinkedAccount();
 
     var providerInfo = new ProviderInfo();
     providerInfo.setClientId("clientId");
@@ -79,19 +77,5 @@ public class ProviderServiceTest extends BaseTest {
     } finally {
       mockServer.stop();
     }
-  }
-
-  private Timestamp getRandomTimestamp() {
-    return new Timestamp(System.currentTimeMillis());
-  }
-
-  private LinkedAccount createRandomLinkedAccount() {
-    return LinkedAccount.builder()
-        .expires(getRandomTimestamp())
-        .providerId(UUID.randomUUID().toString())
-        .refreshToken(UUID.randomUUID().toString())
-        .userId(UUID.randomUUID().toString())
-        .externalUserId(UUID.randomUUID().toString())
-        .build();
   }
 }

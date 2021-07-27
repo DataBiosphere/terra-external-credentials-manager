@@ -3,6 +3,7 @@ package bio.terra.externalcreds.controllers;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -196,6 +197,22 @@ public class OidcApiControllerTest extends BaseTest {
                         + OffsetDateTime.ofInstant(
                             inputLinkedAccount.getExpires().toInstant(), ZoneId.of("UTC"))
                         + "\"}"));
+  }
+
+  @Test
+  void testDeleteLink() throws Exception {
+    var accessToken = "testToken";
+    var userId = "userId";
+    var provider = "testProvider";
+
+    mockSamUser(userId, accessToken);
+
+    // Since the ProviderService.deleteLink() method is void, it doesn't need a mocked return val
+
+    mvc.perform(
+            delete("/api/oidc/v1/{provider}", provider)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isOk());
   }
 
   private void mockSamUser(String userId, String accessToken) throws ApiException {
