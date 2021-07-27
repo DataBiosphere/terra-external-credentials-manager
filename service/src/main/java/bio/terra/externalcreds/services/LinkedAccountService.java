@@ -10,6 +10,7 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
