@@ -2,14 +2,12 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
-import bio.terra.externalcreds.config.ProviderConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,17 +19,14 @@ public class LinkedAccountService {
   private final LinkedAccountDAO linkedAccountDAO;
   private final GA4GHPassportDAO ga4ghPassportDAO;
   private final GA4GHVisaDAO ga4ghVisaDAO;
-  private final ProviderConfig providerConfig;
 
   public LinkedAccountService(
       LinkedAccountDAO linkedAccountDAO,
       GA4GHPassportDAO ga4ghPassportDAO,
-      GA4GHVisaDAO ga4ghVisaDAO,
-      ProviderConfig providerConfig) {
+      GA4GHVisaDAO ga4ghVisaDAO) {
     this.linkedAccountDAO = linkedAccountDAO;
     this.ga4ghPassportDAO = ga4ghPassportDAO;
     this.ga4ghVisaDAO = ga4ghVisaDAO;
-    this.providerConfig = providerConfig;
   }
 
   @ReadTransaction
