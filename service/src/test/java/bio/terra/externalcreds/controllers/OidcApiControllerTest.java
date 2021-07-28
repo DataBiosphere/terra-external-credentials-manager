@@ -1,7 +1,10 @@
 package bio.terra.externalcreds.controllers;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -9,6 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
@@ -202,17 +206,35 @@ public class OidcApiControllerTest extends BaseTest {
   @Test
   void testDeleteLink() throws Exception {
     var accessToken = "testToken";
-    var userId = "userId";
-    var provider = "testProvider";
-
+    var userId = UUID.randomUUID().toString();
+    var providerId = UUID.randomUUID().toString();
     mockSamUser(userId, accessToken);
 
-    // Since the ProviderService.deleteLink() method is void, it doesn't need a mocked return val
+    doNothing().when(providerService).deleteLink(userId, providerId);
 
     mvc.perform(
-            delete("/api/oidc/v1/{provider}", provider)
+            delete("/api/oidc/v1/{provider}", providerId)
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isOk());
+
+    verify(providerService).deleteLink(userId, providerId);
+  }
+
+  @Test
+  void testDeleteLinkNotFound() throws Exception {
+    var accessToken = "testToken";
+    var userId = UUID.randomUUID().toString();
+    var providerId = UUID.randomUUID().toString();
+    mockSamUser(userId, accessToken);
+
+    doThrow(new NotFoundException("not found"))
+        .when(providerService)
+        .deleteLink(userId, providerId);
+
+    mvc.perform(
+            delete("/api/oidc/v1/{provider}", providerId)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isNotFound());
   }
 
   private void mockSamUser(String userId, String accessToken) throws ApiException {
