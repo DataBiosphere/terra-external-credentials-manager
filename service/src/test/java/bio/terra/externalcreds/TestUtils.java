@@ -1,10 +1,14 @@
 package bio.terra.externalcreds;
 
+import bio.terra.externalcreds.config.ProviderInfo;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.util.UUID;
 
 public class TestUtils {
@@ -38,5 +42,18 @@ public class TestUtils {
         .issuer(UUID.randomUUID().toString())
         .jwt(UUID.randomUUID().toString())
         .build();
+  }
+
+  public static ProviderInfo createRandomProvider() {
+    try {
+      return ProviderInfo.create()
+          .setClientId(UUID.randomUUID().toString())
+          .setClientSecret(UUID.randomUUID().toString())
+          .setIssuer(UUID.randomUUID().toString())
+          .setLinkLifespan(Duration.ofDays(SecureRandom.getInstanceStrong().nextInt(10)))
+          .setRevokeEndpoint("http://does/not/exist");
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

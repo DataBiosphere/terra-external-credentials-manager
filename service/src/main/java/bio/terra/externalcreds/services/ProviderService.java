@@ -3,7 +3,7 @@ package bio.terra.externalcreds.services;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ProviderConfig;
-import bio.terra.externalcreds.config.ProviderConfig.ProviderInfo;
+import bio.terra.externalcreds.config.ProviderInfo;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -129,7 +129,7 @@ public class ProviderService {
   }
 
   public void deleteLink(String userId, String providerId) {
-    ProviderConfig.ProviderInfo providerInfo = providerConfig.getServices().get(providerId);
+    var providerInfo = providerConfig.getServices().get(providerId);
 
     if (providerInfo == null) {
       throw new NotFoundException(String.format("Provider %s not found", providerId));

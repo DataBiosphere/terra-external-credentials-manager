@@ -5,12 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ProviderConfig;
-import bio.terra.externalcreds.config.ProviderConfig.ProviderInfo;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
+import com.google.common.collect.ImmutableMap;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -26,7 +27,6 @@ import com.nimbusds.jwt.SignedJWT;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -205,8 +205,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
       String redirectUri,
       Set<String> scopes,
       String state) {
-    var providerInfo = new ProviderInfo();
-    providerInfo.setLinkLifespan(Duration.ZERO);
+    var providerInfo = TestUtils.createRandomProvider();
     var providerClient =
         ClientRegistration.withRegistrationId(linkedAccount.getProviderId())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
@@ -225,11 +224,16 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         new DefaultOAuth2User(null, userAttributes, ProviderService.EXTERNAL_USERID_ATTR);
 
     when(providerConfig.getServices())
-        .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
+        .thenReturn(ImmutableMap.of(linkedAccount.getProviderId(), providerInfo));
     when(providerClientCache.getProviderClient(linkedAccount.getProviderId()))
         .thenReturn(providerClient);
     when(oAuth2Service.authorizationCodeExchange(
-            providerClient, authorizationCode, redirectUri, scopes, state, null))
+            providerClient,
+            authorizationCode,
+            redirectUri,
+            scopes,
+            state,
+            providerInfo.getAdditionalAuthorizationParameters()))
         .thenReturn(accessTokenResponse);
     when(oAuth2Service.getUserInfo(providerClient, accessTokenResponse.getAccessToken()))
         .thenReturn(user);

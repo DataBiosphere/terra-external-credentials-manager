@@ -5,8 +5,8 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@Value.Style(typeImmutable = "*")
-public interface AbstractLinkedAccount {
+@Value.Style(typeImmutable = "*", typeAbstract = "*Interface")
+public interface LinkedAccountInterface {
   Optional<Integer> getId();
 
   String getUserId();

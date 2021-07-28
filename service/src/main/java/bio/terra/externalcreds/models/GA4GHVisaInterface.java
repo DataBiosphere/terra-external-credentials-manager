@@ -5,8 +5,8 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@Value.Style(typeImmutable = "*")
-public interface AbstractGA4GHVisa {
+@Value.Style(typeImmutable = "*", typeAbstract = "*Interface")
+public interface GA4GHVisaInterface {
   Optional<Integer> getId();
 
   Optional<Integer> getPassportId();
