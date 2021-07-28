@@ -1,38 +1,31 @@
 dependencies {
-	implementation 'io.swagger.core.v3:swagger-annotations:2.1.9'
+	implementation 'io.swagger.core.v3:swagger-annotations'
 	runtimeOnly 'org.webjars.npm:swagger-ui-dist:3.50.0'
-	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.26'
+	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli'
 
 	// Versioned by Spring:
 	implementation 'javax.validation:validation-api'
 	implementation 'org.webjars:webjars-locator-core'
-
 }
 
-String artifactGroup = "${group}.${rootProject.getName()}"
-
-swaggerSources {
-	service {
-		inputFile = file('../common/openapi.yml')
-		code {
-			language = 'spring'
-			components = ['models', 'apis']
-			additionalProperties = [
-					modelPackage     : "${artifactGroup}.generated.model",
-					apiPackage       : "${artifactGroup}.generated.api",
-					dateLibrary      : 'java8',
-					interfaceOnly    : true,
-					useTags          : true,
-					springBootVersion: dependencyManagement.managedVersions['org.springframework.boot:spring-boot']
-			] as Map
-			rawOptions = ['--import-mappings', "VersionProperties=${artifactGroup}.config.VersionProperties"]
-		}
-	}
+generateSwaggerCode {
+	inputFile = file('../common/openapi.yml')
+	language = 'spring'
+	components = ['models', 'apis']
+	additionalProperties = [
+			modelPackage     : "${artifactGroup}.generated.model",
+			apiPackage       : "${artifactGroup}.generated.api",
+			dateLibrary      : 'java8',
+			interfaceOnly    : 'true',
+			useTags          : 'true',
+			springBootVersion: dependencyManagement.managedVersions['org.springframework.boot:spring-boot']
+	]
+	rawOptions = ['--import-mappings', "VersionProperties=${artifactGroup}.config.VersionProperties"]
 }
 
-idea.module.generatedSourceDirs = [file("${swaggerSources.service.code.outputDir}/src/main/java")]
-sourceSets.main.java.srcDir "${swaggerSources.service.code.outputDir}/src/main/java"
-compileJava.dependsOn swaggerSources.service.code
+idea.module.generatedSourceDirs = [file("${generateSwaggerCode.outputDir}/src/main/java")]
+sourceSets.main.java.srcDir "${generateSwaggerCode.outputDir}/src/main/java"
+compileJava.dependsOn generateSwaggerCode
 
 
 // see https://github.com/n0mer/gradle-git-properties

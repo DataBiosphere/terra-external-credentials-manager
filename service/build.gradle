@@ -2,15 +2,14 @@ plugins {
 	id 'idea'
 	id 'java'
 
-	id 'org.springframework.boot' version '2.5.1'
-	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'org.springframework.boot'
 
 	id 'com.diffplug.spotless' version '5.14.0'
 	id 'com.github.ben-manes.versions' version '0.39.0'
 	id 'com.google.cloud.tools.jib' version '3.1.1'
 	id 'com.gorylenko.gradle-git-properties' version '2.3.1'
 	id 'io.freefair.lombok' version '6.0.0-m2'
-	id 'org.hidetake.swagger.generator' version '2.18.2'
+	id 'org.hidetake.swagger.generator'
 }
 
 sourceCompatibility = '11'

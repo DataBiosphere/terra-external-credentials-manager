@@ -1,13 +1,33 @@
-// Spotless requires this at the root level
-buildscript { repositories { mavenCentral() } }
-
 plugins {
 	id 'idea'
+
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
+	id 'org.hidetake.swagger.generator' version '2.18.2' apply false
+	id 'org.springframework.boot' version '2.5.1' apply false
 }
+
+repositories { mavenCentral() }
 
 allprojects {
 	group = 'bio.terra'
 	version = '0.11.0-SNAPSHOT'
+
+	ext {
+		artifactGroup = "${group}.${rootProject.name}"
+	}
+
+	apply plugin: 'io.spring.dependency-management'
+
+	dependencyManagement {
+		imports {
+			mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+		}
+
+		dependencies {
+			dependency 'io.swagger.core.v3:swagger-annotations:2.1.9'
+			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.26'
+		}
+	}
 }
 
 idea.project.jdkName = '11'
