@@ -117,4 +117,11 @@ public class OidcApiController implements OidcApi {
     return ResponseEntity.ok(
         getLinkInfoFromLinkedAccount(linkedAccountWithPassportAndVisas.getLinkedAccount()));
   }
+
+  @Override
+  public ResponseEntity<Void> deleteLink(String provider) {
+    String userId = getUserIdFromSam();
+    providerService.deleteLink(userId, provider);
+    return ResponseEntity.ok().build();
+  }
 }

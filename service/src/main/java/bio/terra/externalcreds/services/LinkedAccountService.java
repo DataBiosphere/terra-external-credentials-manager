@@ -9,9 +9,11 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class LinkedAccountService {
 
   private final LinkedAccountDAO linkedAccountDAO;
@@ -43,6 +45,11 @@ public class LinkedAccountService {
 
     return savePassportIfExists(
         linkedAccountWithPassportAndVisas.withLinkedAccount(savedLinkedAccount));
+  }
+
+  @WriteTransaction
+  public boolean deleteLinkedAccount(String userId, String providerId) {
+    return linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
   }
 
   private LinkedAccountWithPassportAndVisas savePassportIfExists(
