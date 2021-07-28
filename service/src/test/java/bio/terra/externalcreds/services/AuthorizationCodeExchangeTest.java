@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
-import bio.terra.externalcreds.config.ProviderConfig;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -59,7 +59,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
 
   @MockBean OAuth2Service oAuth2Service;
   @MockBean ProviderClientCache providerClientCache;
-  @MockBean ProviderConfig providerConfig;
+  @MockBean ExternalCredsConfig externalCredsConfig;
 
   @Autowired ProviderService providerService;
 
@@ -223,7 +223,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     OAuth2User user =
         new DefaultOAuth2User(null, userAttributes, ProviderService.EXTERNAL_USERID_ATTR);
 
-    when(providerConfig.getServices())
+    when(externalCredsConfig.getProviders())
         .thenReturn(ImmutableMap.of(linkedAccount.getProviderId(), providerInfo));
     when(providerClientCache.getProviderClient(linkedAccount.getProviderId()))
         .thenReturn(providerClient);

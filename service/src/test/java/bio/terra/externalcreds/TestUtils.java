@@ -1,6 +1,6 @@
 package bio.terra.externalcreds;
 
-import bio.terra.externalcreds.config.ProviderInfo;
+import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -44,9 +44,9 @@ public class TestUtils {
         .build();
   }
 
-  public static ProviderInfo createRandomProvider() {
+  public static ProviderProperties createRandomProvider() {
     try {
-      return ProviderInfo.create()
+      return ProviderProperties.create()
           .setClientId(UUID.randomUUID().toString())
           .setClientSecret(UUID.randomUUID().toString())
           .setIssuer(UUID.randomUUID().toString())

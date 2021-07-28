@@ -2,8 +2,8 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
-import bio.terra.externalcreds.config.ProviderConfig;
-import bio.terra.externalcreds.config.ProviderInfo;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -45,29 +45,29 @@ public class ProviderService {
   public static final String JKU_HEADER = "jku";
   public static final String EXTERNAL_USERID_ATTR = "email";
 
-  private final ProviderConfig providerConfig;
+  private final ExternalCredsConfig externalCredsConfig;
   private final ProviderClientCache providerClientCache;
   private final OAuth2Service oAuth2Service;
   private final LinkedAccountService linkedAccountService;
 
   public ProviderService(
-      ProviderConfig providerConfig,
+      ExternalCredsConfig externalCredsConfig,
       ProviderClientCache providerClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService) {
-    this.providerConfig = providerConfig;
+    this.externalCredsConfig = externalCredsConfig;
     this.providerClientCache = providerClientCache;
     this.oAuth2Service = oAuth2Service;
     this.linkedAccountService = linkedAccountService;
   }
 
   public Set<String> getProviderList() {
-    return Collections.unmodifiableSet(providerConfig.getServices().keySet());
+    return Collections.unmodifiableSet(externalCredsConfig.getProviders().keySet());
   }
 
   public String getProviderAuthorizationUrl(
       String provider, String redirectUri, Set<String> scopes, String state) {
-    var providerInfo = providerConfig.getServices().get(provider);
+    var providerInfo = externalCredsConfig.getProviders().get(provider);
     if (providerInfo == null) {
       return null;
     }
@@ -90,7 +90,7 @@ public class ProviderService {
       Set<String> scopes,
       String state) {
 
-    var providerInfo = providerConfig.getServices().get(provider);
+    var providerInfo = externalCredsConfig.getProviders().get(provider);
     if (providerInfo == null) {
       throw new NotFoundException(String.format("provider %s not found", provider));
     }
@@ -129,7 +129,7 @@ public class ProviderService {
   }
 
   public void deleteLink(String userId, String providerId) {
-    var providerInfo = providerConfig.getServices().get(providerId);
+    var providerInfo = externalCredsConfig.getProviders().get(providerId);
 
     if (providerInfo == null) {
       throw new NotFoundException(String.format("Provider %s not found", providerId));
@@ -145,10 +145,11 @@ public class ProviderService {
     linkedAccountService.deleteLinkedAccount(userId, providerId);
   }
 
-  private void revokeAccessToken(ProviderInfo providerInfo, LinkedAccount linkedAccount) {
+  private void revokeAccessToken(
+      ProviderProperties providerProperties, LinkedAccount linkedAccount) {
     // Get the endpoint URL and insert the token
     String revokeEndpoint =
-        String.format(providerInfo.getRevokeEndpoint(), linkedAccount.getRefreshToken());
+        String.format(providerProperties.getRevokeEndpoint(), linkedAccount.getRefreshToken());
     // Add authorization information and make request
     WebClient.ResponseSpec response =
         WebClient.create(revokeEndpoint)
@@ -156,8 +157,8 @@ public class ProviderService {
             .uri(
                 uriBuilder ->
                     uriBuilder
-                        .queryParam("client_id", providerInfo.getClientId())
-                        .queryParam("client_secret", providerInfo.getClientSecret())
+                        .queryParam("client_id", providerProperties.getClientId())
+                        .queryParam("client_secret", providerProperties.getClientSecret())
                         .build())
             .retrieve();
 

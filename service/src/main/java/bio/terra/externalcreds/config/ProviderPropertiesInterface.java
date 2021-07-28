@@ -7,7 +7,7 @@ import org.immutables.value.Value;
 
 @Value.Modifiable
 @Value.Style(typeImmutable = "*", typeAbstract = "*Interface", typeModifiable = "*")
-public interface ProviderInfoInterface {
+public interface ProviderPropertiesInterface {
   String getClientId();
 
   String getClientSecret();

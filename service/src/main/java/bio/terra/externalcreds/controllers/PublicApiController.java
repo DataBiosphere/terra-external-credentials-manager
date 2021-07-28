@@ -1,5 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
+import bio.terra.common.exception.NotFoundException;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.VersionProperties;
 import bio.terra.externalcreds.generated.api.PublicApi;
 import bio.terra.externalcreds.generated.model.SystemStatus;
@@ -12,11 +14,11 @@ import org.springframework.stereotype.Controller;
 public class PublicApiController implements PublicApi {
 
   private final StatusService statusService;
-  private final VersionProperties versionProperties;
+  private final ExternalCredsConfig externalCredsConfig;
 
-  public PublicApiController(StatusService statusService, VersionProperties versionProperties) {
+  public PublicApiController(StatusService statusService, ExternalCredsConfig externalCredsConfig) {
     this.statusService = statusService;
-    this.versionProperties = versionProperties;
+    this.externalCredsConfig = externalCredsConfig;
   }
 
   @Override
@@ -30,6 +32,9 @@ public class PublicApiController implements PublicApi {
 
   @Override
   public ResponseEntity<VersionProperties> getVersion() {
-    return ResponseEntity.ok(versionProperties);
+    return ResponseEntity.ok(
+        externalCredsConfig
+            .getVersion()
+            .orElseThrow(() -> new NotFoundException("version not configured")));
   }
 }
