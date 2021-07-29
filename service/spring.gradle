@@ -14,6 +14,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.retry:spring-retry'
 
+	// allows mocking final classes
+	testImplementation 'org.mockito:mockito-inline'
+
 	// DB deps (still versioned by Spring):
 	implementation 'org.liquibase:liquibase-core'
 	runtimeOnly 'org.postgresql:postgresql'
