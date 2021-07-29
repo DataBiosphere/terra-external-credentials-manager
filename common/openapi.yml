@@ -213,6 +213,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VersionProperties'
+        '404':
+          description: "Version not configured"
         '500':
           $ref: '#/components/responses/ServerError'
 

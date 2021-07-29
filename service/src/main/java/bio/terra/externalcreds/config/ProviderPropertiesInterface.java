@@ -21,19 +21,11 @@ public interface ProviderPropertiesInterface {
   Map<String, Object> getAdditionalAuthorizationParameters();
 
   // optional overrides for values in provider's /.well-known/openid-configuration
-  default Optional<String> getUserInfoEndpoint() {
-    return Optional.empty();
-  }
+  Optional<String> getUserInfoEndpoint();
 
-  default Optional<String> getAuthorizationEndpoint() {
-    return Optional.empty();
-  }
+  Optional<String> getAuthorizationEndpoint();
 
-  default Optional<String> getTokenEndpoint() {
-    return Optional.empty();
-  }
+  Optional<String> getTokenEndpoint();
 
-  default Optional<String> getJwksUri() {
-    return Optional.empty();
-  }
+  Optional<String> getJwksUri();
 }
