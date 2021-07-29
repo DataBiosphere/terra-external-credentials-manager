@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.services;
 
-import bio.terra.externalcreds.config.ProviderConfig;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrations;
@@ -13,15 +13,15 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ProviderClientCache {
-  private final ProviderConfig providerConfig;
+  private final ExternalCredsConfig externalCredsConfig;
 
-  public ProviderClientCache(ProviderConfig providerConfig) {
-    this.providerConfig = providerConfig;
+  public ProviderClientCache(ExternalCredsConfig externalCredsConfig) {
+    this.externalCredsConfig = externalCredsConfig;
   }
 
   @Cacheable(cacheNames = "providerClients", sync = true)
   public ClientRegistration getProviderClient(String provider) {
-    var providerInfo = providerConfig.getServices().get(provider);
+    var providerInfo = externalCredsConfig.getProviders().get(provider);
     if (providerInfo == null) {
       return null;
     }

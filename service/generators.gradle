@@ -32,8 +32,8 @@ compileJava.dependsOn generateSwaggerCode
 gitProperties {
 	gitPropertiesName = 'rendered/version.properties'
 	keys = []
-	customProperty('version.gitTag', { it.describe(tags: true) })
-	customProperty('version.gitHash', { it.head().abbreviatedId })
-	customProperty('version.github', { "https://github.com/DataBiosphere/terra-external-credentials-manager/tree/${it.describe(tags: true)}" })
-	customProperty('version.build', version)
+	customProperty('externalcreds.version.gitTag', { it.describe(tags: true) })
+	customProperty('externalcreds.version.gitHash', { it.head().abbreviatedId })
+	customProperty('externalcreds.version.github', { "https://github.com/DataBiosphere/terra-external-credentials-manager/tree/${it.describe(tags: true)}" })
+	customProperty('externalcreds.version.build', version)
 }

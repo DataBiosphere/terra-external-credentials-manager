@@ -1,9 +1,11 @@
 package bio.terra.externalcreds.controllers;
 
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.VersionProperties;
 import bio.terra.externalcreds.generated.api.PublicApi;
 import bio.terra.externalcreds.generated.model.SystemStatus;
 import bio.terra.externalcreds.services.StatusService;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -12,11 +14,11 @@ import org.springframework.stereotype.Controller;
 public class PublicApiController implements PublicApi {
 
   private final StatusService statusService;
-  private final VersionProperties versionProperties;
+  private final ExternalCredsConfig externalCredsConfig;
 
-  public PublicApiController(StatusService statusService, VersionProperties versionProperties) {
+  public PublicApiController(StatusService statusService, ExternalCredsConfig externalCredsConfig) {
     this.statusService = statusService;
-    this.versionProperties = versionProperties;
+    this.externalCredsConfig = externalCredsConfig;
   }
 
   @Override
@@ -30,6 +32,8 @@ public class PublicApiController implements PublicApi {
 
   @Override
   public ResponseEntity<VersionProperties> getVersion() {
-    return ResponseEntity.ok(versionProperties);
+    return Optional.ofNullable(externalCredsConfig.getVersion())
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.notFound().build());
   }
 }

@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.services;
 
-import bio.terra.externalcreds.config.ProviderConfig;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import java.util.Scanner;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class OAuth2ServiceTest {
 
-  @Autowired private ProviderConfig providerConfig;
+  @Autowired private ExternalCredsConfig externalCredsConfig;
   @Autowired private OAuth2Service oAuth2Service;
   @Autowired private ProviderClientCache providerClientCache;
 
@@ -36,7 +36,7 @@ public class OAuth2ServiceTest {
     var scopes = Set.of("openid", "email", "ga4gh_passport_v1");
     String state = null;
     var authorizationParameters =
-        providerConfig.getServices().get("ras").getAdditionalAuthorizationParameters();
+        externalCredsConfig.getProviders().get("ras").getAdditionalAuthorizationParameters();
 
     // 1) test getAuthorizationRequestUri
     var authorizationRequestUri =

@@ -1,4 +1,4 @@
-externalcreds.sam-address: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
+externalcreds.sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
