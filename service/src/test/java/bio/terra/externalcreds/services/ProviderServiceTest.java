@@ -7,10 +7,9 @@ import static org.mockito.Mockito.when;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
-import bio.terra.externalcreds.config.ProviderConfig;
-import bio.terra.externalcreds.config.ProviderConfig.ProviderInfo;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
+import com.google.common.collect.ImmutableMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -25,7 +24,7 @@ import org.springframework.http.HttpStatus;
 public class ProviderServiceTest extends BaseTest {
   @Autowired private ProviderService providerService;
   @MockBean private LinkedAccountService linkedAccountService;
-  @MockBean private ProviderConfig providerConfig;
+  @MockBean private ExternalCredsConfig externalCredsConfig;
 
   @Test
   void testDeleteLinkedAccountAndRevokeToken() {
@@ -39,7 +38,7 @@ public class ProviderServiceTest extends BaseTest {
 
   @Test
   void testDeleteLinkProviderNotFound() {
-    when(providerConfig.getServices()).thenReturn(Map.of());
+    when(externalCredsConfig.getProviders()).thenReturn(ImmutableMap.of());
 
     assertThrows(
         NotFoundException.class,
@@ -51,8 +50,9 @@ public class ProviderServiceTest extends BaseTest {
   void testDeleteLinkLinkNotFound() {
     var linkedAccount = TestUtils.createRandomLinkedAccount();
 
-    when(providerConfig.getServices())
-        .thenReturn(Map.of(linkedAccount.getProviderId(), new ProviderInfo()));
+    when(externalCredsConfig.getProviders())
+        .thenReturn(
+            ImmutableMap.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
 
     when(linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId()))
@@ -68,11 +68,9 @@ public class ProviderServiceTest extends BaseTest {
     var mockServerPort = 50555;
     var linkedAccount = TestUtils.createRandomLinkedAccount();
 
-    var providerInfo = new ProviderInfo();
-    providerInfo.setClientId("clientId");
-    providerInfo.setClientSecret("clientSecret");
-    providerInfo.setRevokeEndpoint(
-        "http://localhost:" + mockServerPort + revocationPath + "?token=%s");
+    var providerInfo =
+        TestUtils.createRandomProvider()
+            .setRevokeEndpoint("http://localhost:" + mockServerPort + revocationPath + "?token=%s");
 
     var expectedParameters =
         List.of(
@@ -80,8 +78,8 @@ public class ProviderServiceTest extends BaseTest {
             new Parameter("client_id", providerInfo.getClientId()),
             new Parameter("client_secret", providerInfo.getClientSecret()));
 
-    when(providerConfig.getServices())
-        .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
+    when(externalCredsConfig.getProviders())
+        .thenReturn(ImmutableMap.of(linkedAccount.getProviderId(), providerInfo));
 
     when(linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId()))

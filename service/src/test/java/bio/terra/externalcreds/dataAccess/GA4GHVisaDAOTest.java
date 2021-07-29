@@ -11,6 +11,7 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ public class GA4GHVisaDAOTest extends BaseTest {
    *
    * @return the ID of the saved passport.
    */
-  private int insertPassportAndLinkedAccount() {
+  private GA4GHPassport insertPassportAndLinkedAccount() {
     var linkedAccount =
         LinkedAccount.builder()
             .expires(new Timestamp(100))
@@ -58,25 +59,26 @@ public class GA4GHVisaDAOTest extends BaseTest {
             .build();
     var savedPassport = passportDAO.insertPassport(passport);
 
-    return savedPassport.getId();
+    return savedPassport;
   }
 
   @Test
   @Transactional
   @Rollback
   void testInsertAndListVisa() {
-    var passportId = insertPassportAndLinkedAccount();
-    var expectedVisa1 = visa.withPassportId(passportId);
-    var expectedVisa2 = visa.withPassportId(passportId).withTokenType(TokenTypeEnum.document_token);
+    var passport = insertPassportAndLinkedAccount();
+    var expectedVisa1 = visa.withPassportId(passport.getId());
+    var expectedVisa2 =
+        visa.withPassportId(passport.getId()).withTokenType(TokenTypeEnum.document_token);
     var savedVisa1 = visaDAO.insertVisa(expectedVisa1);
     var savedVisa2 = visaDAO.insertVisa(expectedVisa2);
 
-    assertTrue(savedVisa1.getId() > 0);
-    assertTrue(savedVisa2.getId() > 0);
-    assertEquals(expectedVisa1, savedVisa1.withId(0));
-    assertEquals(expectedVisa2, savedVisa2.withId(0));
+    assertTrue(savedVisa1.getId().isPresent());
+    assertTrue(savedVisa2.getId().isPresent());
+    assertEquals(expectedVisa1, savedVisa1.withId(Optional.empty()));
+    assertEquals(expectedVisa2, savedVisa2.withId(Optional.empty()));
 
-    var loadedVisas = visaDAO.listVisas(passportId);
+    var loadedVisas = visaDAO.listVisas(passport.getId().get());
     assertEquals(loadedVisas.size(), 2);
     assertEquals(Set.of(savedVisa1, savedVisa2), Set.copyOf(loadedVisas));
   }

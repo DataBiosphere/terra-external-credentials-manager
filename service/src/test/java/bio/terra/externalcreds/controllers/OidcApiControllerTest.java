@@ -99,6 +99,7 @@ public class OidcApiControllerTest extends BaseTest {
             .providerId("testProvider")
             .externalUserId("externalUser")
             .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
+            .refreshToken("refreshToken")
             .build();
 
     mockSamUser(userId, accessToken);
@@ -165,6 +166,7 @@ public class OidcApiControllerTest extends BaseTest {
             .providerId("testProvider")
             .externalUserId("externalUser")
             .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
+            .refreshToken("refreshToken")
             .build();
 
     var scopes = new String[] {"email", "foo"};

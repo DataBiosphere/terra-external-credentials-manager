@@ -42,7 +42,7 @@ public class GA4GHPassportDAO {
 
     var namedParameters =
         new MapSqlParameterSource()
-            .addValue("linkedAccountId", passport.getLinkedAccountId())
+            .addValue("linkedAccountId", passport.getLinkedAccountId().orElseThrow())
             .addValue("jwt", passport.getJwt())
             .addValue("expires", passport.getExpires());
 

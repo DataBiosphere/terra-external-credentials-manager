@@ -51,15 +51,16 @@ public class GA4GHPassportDAOTest extends BaseTest {
   @Test
   void testCreateAndGetPassport() {
     var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
+    assertPresent(savedAccountId);
     var savedPassport = passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
-    assertTrue(savedPassport.getId() > 0);
+    assertTrue(savedPassport.getId().isPresent());
     assertEquals(
         passport
             .withId(savedPassport.getId())
             .withLinkedAccountId(savedPassport.getLinkedAccountId()),
         savedPassport);
 
-    var loadedPassport = passportDAO.getPassport(savedAccountId);
+    var loadedPassport = passportDAO.getPassport(savedAccountId.get());
     assertEquals(Optional.of(savedPassport), loadedPassport);
   }
 
@@ -81,11 +82,12 @@ public class GA4GHPassportDAOTest extends BaseTest {
     @Test
     void testDeletePassportIfExists() {
       var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
+      assertPresent(savedAccountId);
       passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
 
-      assertPresent(passportDAO.getPassport(savedAccountId));
-      assertTrue(passportDAO.deletePassport(savedAccountId));
-      assertEmpty(passportDAO.getPassport(savedAccountId));
+      assertPresent(passportDAO.getPassport(savedAccountId.get()));
+      assertTrue(passportDAO.deletePassport(savedAccountId.get()));
+      assertEmpty(passportDAO.getPassport(savedAccountId.get()));
     }
 
     @Test
@@ -109,9 +111,9 @@ public class GA4GHPassportDAOTest extends BaseTest {
               .jwt("fake-jwt")
               .build());
 
-      assertFalse(visaDAO.listVisas(savedPassport.getId()).isEmpty());
-      assertTrue(passportDAO.deletePassport(savedAccountId));
-      assertTrue(visaDAO.listVisas(savedPassport.getId()).isEmpty());
+      assertFalse(visaDAO.listVisas(savedPassport.getId().get()).isEmpty());
+      assertTrue(passportDAO.deletePassport(savedAccountId.get()));
+      assertTrue(visaDAO.listVisas(savedPassport.getId().get()).isEmpty());
     }
   }
 }

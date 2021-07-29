@@ -15,6 +15,7 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,7 @@ public class LinkedAccountServiceTest extends BaseTest {
         linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId());
     assertPresent(savedLinkedAccount);
-    assertEquals(linkedAccount, savedLinkedAccount.get().withId(0));
+    assertEquals(linkedAccount, savedLinkedAccount.get().withId(Optional.empty()));
   }
 
   @Test
@@ -89,23 +90,28 @@ public class LinkedAccountServiceTest extends BaseTest {
         linkedAccountService.saveLinkedAccount(
             LinkedAccountWithPassportAndVisas.builder()
                 .linkedAccount(linkedAccount)
-                .passport(passport)
+                .passport(Optional.ofNullable(passport))
                 .visas(visas)
                 .build());
 
-    assertEquals(linkedAccount, saved.getLinkedAccount().withId(0));
-    assertTrue(saved.getLinkedAccount().getId() > 0);
+    assertEquals(linkedAccount, saved.getLinkedAccount().withId(Optional.empty()));
+    assertTrue(saved.getLinkedAccount().getId().isPresent());
 
-    var savedPassport = passportDAO.getPassport(saved.getLinkedAccount().getId());
+    var savedPassport = passportDAO.getPassport(saved.getLinkedAccount().getId().get());
     if (passport == null) {
       assertEmpty(savedPassport);
     } else {
       assertPresent(savedPassport);
-      assertEquals(passport, savedPassport.get().withId(0).withLinkedAccountId(0));
-      var savedVisas = visaDAO.listVisas(savedPassport.get().getId());
+      assertPresent(savedPassport.get().getId());
+      assertEquals(
+          passport,
+          savedPassport.get().withId(Optional.empty()).withLinkedAccountId(Optional.empty()));
+      var savedVisas = visaDAO.listVisas(savedPassport.get().getId().get());
       assertEquals(
           visas,
-          savedVisas.stream().map(v -> v.withId(0).withPassportId(0)).collect(Collectors.toList()));
+          savedVisas.stream()
+              .map(v -> v.withId(Optional.empty()).withPassportId(Optional.empty()))
+              .collect(Collectors.toList()));
     }
 
     return saved.getLinkedAccount();
