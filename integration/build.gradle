@@ -1,0 +1,20 @@
+buildscript {
+	apply from: "../common.gradle"
+}
+
+plugins {
+	id 'java'
+	// Apply the application plugin to add support for building a CLI application in Java.
+	id 'application'
+	id 'bio.terra.test-runner-plugin' version '0.0.7-SNAPSHOT'
+}
+
+dependencies {
+	// ECM client library
+	implementation project(":client")
+
+	// Terra Test Runner Library
+	implementation "bio.terra:terra-test-runner:0.0.7-SNAPSHOT"
+}
+
+sourceCompatibility = '11'
