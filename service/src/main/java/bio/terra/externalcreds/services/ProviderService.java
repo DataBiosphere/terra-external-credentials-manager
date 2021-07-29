@@ -9,7 +9,6 @@ import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
-import com.google.common.annotations.VisibleForTesting;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.shaded.json.JSONObject;
 import com.nimbusds.jwt.JWTParser;
@@ -199,7 +198,6 @@ public class ProviderService {
     }
   }
 
-  @VisibleForTesting
   Jwt decodeJwt(String jwtString) {
     try {
       // first we need to get the issuer from the jwt, the issuer is needed to validate

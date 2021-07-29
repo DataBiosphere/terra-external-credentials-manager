@@ -48,3 +48,5 @@ jobs:
 
       - name: Build and test with Gradle
         run: ./gradlew build
+      - name: Build image locally with jib
+        run: './gradlew :service:jibDockerBuild -Djib.console=plain'
