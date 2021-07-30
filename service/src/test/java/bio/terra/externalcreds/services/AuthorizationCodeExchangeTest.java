@@ -11,7 +11,6 @@ import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
-import com.google.common.collect.ImmutableMap;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -224,7 +223,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         new DefaultOAuth2User(null, userAttributes, ProviderService.EXTERNAL_USERID_ATTR);
 
     when(externalCredsConfig.getProviders())
-        .thenReturn(ImmutableMap.of(linkedAccount.getProviderId(), providerInfo));
+        .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
     when(providerClientCache.getProviderClient(linkedAccount.getProviderId()))
         .thenReturn(providerClient);
     when(oAuth2Service.authorizationCodeExchange(
