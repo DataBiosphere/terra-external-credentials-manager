@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
@@ -52,7 +53,7 @@ public class GA4GHVisaDAOTest extends BaseTest {
             .build();
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
     var passport =
-        GA4GHPassport.builder()
+        ImmutableGA4GHPassport.builder()
             .linkedAccountId(savedLinkedAccount.getId())
             .jwt("fake-jwt")
             .expires(new Timestamp(100))

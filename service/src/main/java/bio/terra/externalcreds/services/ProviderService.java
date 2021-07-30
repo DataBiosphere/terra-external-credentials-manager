@@ -4,8 +4,8 @@ import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
-import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
@@ -245,10 +245,10 @@ public class ProviderService {
     return claim;
   }
 
-  private GA4GHPassport buildPassport(Jwt passportJwt) {
+  private ImmutableGA4GHPassport buildPassport(Jwt passportJwt) {
     var passportExpiresAt = getJwtExpires(passportJwt);
 
-    return GA4GHPassport.builder()
+    return ImmutableGA4GHPassport.builder()
         .jwt(passportJwt.getTokenValue())
         .expires(passportExpiresAt)
         .build();

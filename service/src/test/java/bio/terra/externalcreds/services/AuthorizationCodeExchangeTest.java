@@ -9,6 +9,7 @@ import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.nimbusds.jose.JOSEException;
@@ -265,7 +266,11 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     var stablePassport =
         linkedAccountWithPassportAndVisas
             .getPassport()
-            .map(p -> p.withId(Optional.empty()).withLinkedAccountId(Optional.empty()));
+            .map(
+                p ->
+                    ImmutableGA4GHPassport.copyOf(p)
+                        .withId(Optional.empty())
+                        .withLinkedAccountId(Optional.empty()));
     assertEquals(Optional.ofNullable(expectedPassport), stablePassport);
 
     var stableVisas =
@@ -319,7 +324,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   private GA4GHPassport createTestPassport(List<GA4GHVisa> visas) throws JOSEException {
     var visaJwts = visas.stream().map(GA4GHVisa::getJwt).collect(Collectors.toList());
     var jwtString = createPassportJwtString(passportExpires, visaJwts);
-    return GA4GHPassport.builder().jwt(jwtString).expires(passportExpiresTime).build();
+    return ImmutableGA4GHPassport.builder().jwt(jwtString).expires(passportExpiresTime).build();
   }
 
   private String createVisaJwtString(GA4GHVisa visa) throws URISyntaxException, JOSEException {

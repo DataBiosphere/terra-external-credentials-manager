@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
@@ -25,7 +25,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
   @Autowired private GA4GHPassportDAO passportDAO;
   @Autowired private GA4GHVisaDAO visaDAO;
 
-  private GA4GHPassport passport;
+  private ImmutableGA4GHPassport passport;
   private LinkedAccount linkedAccount;
 
   @BeforeEach
@@ -39,7 +39,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
             .externalUserId("externalUser")
             .build();
 
-    passport = GA4GHPassport.builder().jwt("fake-jwt").expires(new Timestamp(100)).build();
+    passport = ImmutableGA4GHPassport.builder().jwt("fake-jwt").expires(new Timestamp(100)).build();
   }
 
   @Test
@@ -73,7 +73,9 @@ public class GA4GHPassportDAOTest extends BaseTest {
         DuplicateKeyException.class,
         () ->
             passportDAO.insertPassport(
-                savedPassport.withExpires(new Timestamp(200)).withJwt("different-jwt")));
+                ImmutableGA4GHPassport.copyOf(savedPassport)
+                    .withExpires(new Timestamp(200))
+                    .withJwt("different-jwt")));
   }
 
   @Nested
