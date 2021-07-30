@@ -1,0 +1,25 @@
+{
+  "name": "workspace-ecmtest",
+  "description": "External Credentials Manager Test Environment",
+
+  "samUri": "https://sam.dsde-dev.broadinstitute.org",
+  "datarepoUri": "https://jade.datarepo-dev.broadinstitute.org/",
+  "workspaceManagerUri": "https://workspace.wsmtest.integ.envs.broadinstitute.org/",
+
+  "cluster": {
+    "clusterName": "gke_terra-kernel-k8s_us-central1-a_terra-integration",
+    "clusterShortName": "terra-integration",
+    "region": "us-central1",
+    "zone": "us-central1-a",
+    "project": "terra-kernel-k8s",
+    "namespace": "terra-ecmtest",
+    "containerName": "externalcreds-deployment",
+    "apiComponentLabel":  "externalcreds"
+  },
+  "deploymentScript": {},
+  "testRunnerServiceAccountFile": "testrunner-sa.json",
+  "testRunnerK8SServiceAccountFile": "testrunner-k8s-ecmtest-sa.json",
+
+  "skipDeployment": true,
+  "skipKubernetes": false
+}
