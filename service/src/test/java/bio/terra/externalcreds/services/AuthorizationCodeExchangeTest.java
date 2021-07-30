@@ -10,6 +10,8 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
+import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.nimbusds.jose.JOSEException;
@@ -171,7 +173,9 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   @Test
   void testJwtMissingIssuer() throws URISyntaxException, JOSEException {
     var jwtMissingIssuer =
-        createVisaJwtString(createTestVisa(TokenTypeEnum.access_token).withIssuer("null"));
+        createVisaJwtString(
+            ImmutableGA4GHVisa.copyOf(createTestVisa(TokenTypeEnum.access_token))
+                .withIssuer("null"));
     assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtMissingIssuer));
   }
 
@@ -179,7 +183,8 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   void testJwtIssuerNotReal() throws URISyntaxException, JOSEException {
     var jwtNotRealIssuer =
         createVisaJwtString(
-            createTestVisa(TokenTypeEnum.access_token).withIssuer("http://does.not.exist"));
+            ImmutableGA4GHVisa.copyOf(createTestVisa(TokenTypeEnum.access_token))
+                .withIssuer("http://does.not.exist"));
     assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtNotRealIssuer));
   }
 
@@ -187,14 +192,17 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   void testJwtJkuNotResponsive() throws URISyntaxException, JOSEException {
     var jwtNotResponsiveJku =
         createVisaJwtString(
-            createTestVisa(TokenTypeEnum.access_token).withIssuer("http://localhost:10"));
+            ImmutableGA4GHVisa.copyOf(createTestVisa(TokenTypeEnum.access_token))
+                .withIssuer("http://localhost:10"));
     assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtNotResponsiveJku));
   }
 
   @Test
   void testJwtJkuMalformed() throws URISyntaxException, JOSEException {
     var jwtMalformedJku =
-        createVisaJwtString(createTestVisa(TokenTypeEnum.access_token).withIssuer("foobar"));
+        createVisaJwtString(
+            ImmutableGA4GHVisa.copyOf(createTestVisa(TokenTypeEnum.access_token))
+                .withIssuer("foobar"));
     assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtMalformedJku));
   }
 
@@ -258,8 +266,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
 
     assertEquals(
         expectedLinkedAccount,
-        linkedAccountWithPassportAndVisas
-            .getLinkedAccount()
+        ImmutableLinkedAccount.copyOf(linkedAccountWithPassportAndVisas.getLinkedAccount())
             .withExpires(passportExpiresTime)
             .withId(Optional.empty()));
 
@@ -279,7 +286,8 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
             : linkedAccountWithPassportAndVisas.getVisas().stream()
                 .map(
                     visa ->
-                        visa.withLastValidated(Optional.empty())
+                        ImmutableGA4GHVisa.copyOf(visa)
+                            .withLastValidated(Optional.empty())
                             .withId(Optional.empty())
                             .withPassportId(Optional.empty()))
                 .collect(Collectors.toList());
@@ -312,7 +320,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   private LinkedAccount createTestLinkedAccount() {
-    return LinkedAccount.builder()
+    return ImmutableLinkedAccount.builder()
         .providerId(UUID.randomUUID().toString())
         .userId(UUID.randomUUID().toString())
         .refreshToken(UUID.randomUUID().toString())
@@ -357,7 +365,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   private GA4GHVisa createTestVisa(TokenTypeEnum tokenType)
       throws URISyntaxException, JOSEException {
     var visa =
-        GA4GHVisa.builder()
+        ImmutableGA4GHVisa.builder()
             .visaType(UUID.randomUUID().toString())
             .tokenType(tokenType)
             .issuer(issuer)
