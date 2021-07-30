@@ -1,3 +1,12 @@
+buildscript {
+	dependencies {
+		// this fixes the error
+		// Execution failed for task ':service:jibDockerBuild'.
+		// > 'java.util.stream.Collector com.google.common.collect.ImmutableList.toImmutableList()'
+		classpath 'com.google.guava:guava:30.1.1-jre'
+	}
+}
+
 plugins {
 	id 'idea'
 
@@ -10,7 +19,7 @@ repositories { mavenCentral() }
 
 allprojects {
 	group = 'bio.terra'
-	version = '0.13.0-SNAPSHOT'
+	version = '0.14.0-SNAPSHOT'
 
 	ext {
 		artifactGroup = "${group}.${rootProject.name}"

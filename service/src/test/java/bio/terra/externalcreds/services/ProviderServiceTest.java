@@ -8,8 +8,8 @@ import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import com.google.common.collect.ImmutableMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ public class ProviderServiceTest extends BaseTest {
 
   @Test
   void testDeleteLinkProviderNotFound() {
-    when(externalCredsConfig.getProviders()).thenReturn(ImmutableMap.of());
+    when(externalCredsConfig.getProviders()).thenReturn(Map.of());
 
     assertThrows(
         NotFoundException.class,
@@ -51,8 +51,7 @@ public class ProviderServiceTest extends BaseTest {
     var linkedAccount = TestUtils.createRandomLinkedAccount();
 
     when(externalCredsConfig.getProviders())
-        .thenReturn(
-            ImmutableMap.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
+        .thenReturn(Map.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
 
     when(linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId()))
@@ -79,7 +78,7 @@ public class ProviderServiceTest extends BaseTest {
             new Parameter("client_secret", providerInfo.getClientSecret()));
 
     when(externalCredsConfig.getProviders())
-        .thenReturn(ImmutableMap.of(linkedAccount.getProviderId(), providerInfo));
+        .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
 
     when(linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId()))
