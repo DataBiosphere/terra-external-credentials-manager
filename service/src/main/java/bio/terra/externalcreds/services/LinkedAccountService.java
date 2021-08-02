@@ -39,7 +39,7 @@ public class LinkedAccountService {
   @ReadTransaction
   public Optional<GA4GHPassport> getGA4GHPassport(String userId, String providerId) {
     var linkedAccount = linkedAccountDAO.getLinkedAccount(userId, providerId);
-    if (linkedAccount.isEmpty()) throw new NotFoundException("linked account not found");
+    if (linkedAccount.isEmpty()) throw new NotFoundException("Linked account not found");
     var linkedAccountId = linkedAccount.get().getId().orElseThrow();
     return ga4ghPassportDAO.getPassport(linkedAccountId);
   }

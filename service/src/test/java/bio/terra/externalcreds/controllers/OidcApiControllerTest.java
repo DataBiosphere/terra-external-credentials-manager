@@ -253,10 +253,24 @@ public class OidcApiControllerTest extends BaseTest {
         .thenReturn(Optional.of(passport));
 
     mvc.perform(
-            get("/api/oidc/v1/{provider/passport}", providerId)
+            get("/api/oidc/v1/{provider}/passport", providerId)
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isOk())
-        .andExpect(content().json(passport.getJwt()));
+        .andExpect(content().json("\"" + passport.getJwt() + "\""));
+  }
+
+  @Test
+  void testGetProviderPassportNotFound() throws Exception {
+    var accessToken = "testToken";
+    var userId = UUID.randomUUID().toString();
+    var providerId = UUID.randomUUID().toString();
+
+    mockSamUser(userId, accessToken);
+
+    mvc.perform(
+            get("/api/oidc/v1/{provider}/passport", providerId)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isNotFound());
   }
 
   private void mockSamUser(String userId, String accessToken) throws ApiException {

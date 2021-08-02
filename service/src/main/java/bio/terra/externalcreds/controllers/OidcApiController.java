@@ -131,7 +131,7 @@ public class OidcApiController implements OidcApi {
   public ResponseEntity<String> getProviderPassport(String provider) {
     var userId = getUserIdFromSam();
     var passport = linkedAccountService.getGA4GHPassport(userId, provider);
-    if (passport.isEmpty()) throw new NotFoundException("no passport found");
+    if (passport.isEmpty()) throw new NotFoundException("No passport found");
     return ResponseEntity.ok(mapper.writeValueAsString(passport.get().getJwt()));
   }
 }
