@@ -1,6 +1,5 @@
 package scripts.testscripts;
 
-import bio.terra.externalcreds.client.ApiClient;
 import bio.terra.externalcreds.api.PublicApi;
 import bio.terra.testrunner.runner.TestScript;
 import bio.terra.testrunner.runner.config.TestUserSpecification;
@@ -31,7 +30,6 @@ public class ServiceStatus extends TestScript {
     public void userJourney(TestUserSpecification testUser) throws Exception {
         if (delay.getSeconds() > 0) TimeUnit.SECONDS.sleep(delay.getSeconds());
 
-        // TODO: use the ECM client here
          logger.info("Checking service status endpoint now.");
          var apiClient = ClientTestUtils.getClientWithoutAccessToken(server);
          var publicApi = new PublicApi(apiClient);
