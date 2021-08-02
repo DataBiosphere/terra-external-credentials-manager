@@ -4,8 +4,11 @@ import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
-import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
+import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableLinkedAccount;
+import bio.terra.externalcreds.models.ImmutableLinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
@@ -117,7 +120,7 @@ public class ProviderService {
     var userInfo = oAuth2Service.getUserInfo(providerClient, tokenResponse.getAccessToken());
 
     var linkedAccount =
-        LinkedAccount.builder()
+        ImmutableLinkedAccount.builder()
             .providerId(provider)
             .userId(userId)
             .expires(expires)
@@ -189,13 +192,15 @@ public class ProviderService {
       var visas =
           visaJwtStrings.stream().map(s -> buildVisa(decodeJwt(s))).collect(Collectors.toList());
 
-      return LinkedAccountWithPassportAndVisas.builder()
+      return ImmutableLinkedAccountWithPassportAndVisas.builder()
           .linkedAccount(linkedAccount)
           .passport(buildPassport(passportJwt))
           .visas(visas)
           .build();
     } else {
-      return LinkedAccountWithPassportAndVisas.builder().linkedAccount(linkedAccount).build();
+      return ImmutableLinkedAccountWithPassportAndVisas.builder()
+          .linkedAccount(linkedAccount)
+          .build();
     }
   }
 
@@ -245,10 +250,10 @@ public class ProviderService {
     return claim;
   }
 
-  private GA4GHPassport buildPassport(Jwt passportJwt) {
+  private ImmutableGA4GHPassport buildPassport(Jwt passportJwt) {
     var passportExpiresAt = getJwtExpires(passportJwt);
 
-    return GA4GHPassport.builder()
+    return ImmutableGA4GHPassport.builder()
         .jwt(passportJwt.getTokenValue())
         .expires(passportExpiresAt)
         .build();
@@ -260,7 +265,7 @@ public class ProviderService {
     if (visaType == null) {
       throw new InvalidJwtException(String.format("visa missing claim [%s]", VISA_TYPE_CLAIM));
     }
-    return GA4GHVisa.builder()
+    return ImmutableGA4GHVisa.builder()
         .visaType(visaType.toString())
         .jwt(visaJwt.getTokenValue())
         .expires(getJwtExpires(visaJwt))
