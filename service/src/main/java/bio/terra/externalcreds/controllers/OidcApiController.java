@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.controllers;
 
+import bio.terra.common.exception.NotFoundException;
 import bio.terra.common.exception.UnauthorizedException;
 import bio.terra.common.iam.BearerTokenParser;
 import bio.terra.externalcreds.ExternalCredsException;
@@ -123,5 +124,14 @@ public class OidcApiController implements OidcApi {
     String userId = getUserIdFromSam();
     providerService.deleteLink(userId, provider);
     return ResponseEntity.ok().build();
+  }
+
+  @SneakyThrows(JsonProcessingException.class)
+  @Override
+  public ResponseEntity<String> getProviderPassport(String provider) {
+    var userId = getUserIdFromSam();
+    var passport = linkedAccountService.getGA4GHPassport(userId, provider);
+    if (passport.isEmpty()) throw new NotFoundException("no passport found");
+    return ResponseEntity.ok(mapper.writeValueAsString(passport.get().getJwt()));
   }
 }

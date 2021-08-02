@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
@@ -237,6 +238,25 @@ public class OidcApiControllerTest extends BaseTest {
             delete("/api/oidc/v1/{provider}", providerId)
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void testGetProviderPassport() throws Exception {
+    var accessToken = "testToken";
+    var userId = UUID.randomUUID().toString();
+    var providerId = UUID.randomUUID().toString();
+    var passport = TestUtils.createRandomPassport();
+
+    mockSamUser(userId, accessToken);
+
+    when(linkedAccountService.getGA4GHPassport(userId, providerId))
+        .thenReturn(Optional.of(passport));
+
+    mvc.perform(
+            get("/api/oidc/v1/{provider/passport}", providerId)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isOk())
+        .andExpect(content().json(passport.getJwt()));
   }
 
   private void mockSamUser(String userId, String accessToken) throws ApiException {
