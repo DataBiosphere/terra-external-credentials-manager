@@ -5,6 +5,9 @@ import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
+import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableLinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.Optional;
@@ -44,7 +47,8 @@ public class LinkedAccountService {
     ga4ghPassportDAO.deletePassport(savedLinkedAccount.getId().orElseThrow());
 
     return savePassportIfExists(
-        linkedAccountWithPassportAndVisas.withLinkedAccount(savedLinkedAccount));
+        ImmutableLinkedAccountWithPassportAndVisas.copyOf(linkedAccountWithPassportAndVisas)
+            .withLinkedAccount(savedLinkedAccount));
   }
 
   @WriteTransaction
@@ -60,16 +64,22 @@ public class LinkedAccountService {
           ga4ghPassportDAO.insertPassport(
               linkedAccountWithPassportAndVisas
                   .getPassport()
+                  .map(ImmutableGA4GHPassport::copyOf)
                   .get()
                   .withLinkedAccountId(
                       linkedAccountWithPassportAndVisas.getLinkedAccount().getId()));
 
       var savedVisas =
           linkedAccountWithPassportAndVisas.getVisas().stream()
-              .map(v -> ga4ghVisaDAO.insertVisa(v.withPassportId(savedPassport.getId())))
+              .map(
+                  v ->
+                      ga4ghVisaDAO.insertVisa(
+                          ImmutableGA4GHVisa.copyOf(v).withPassportId(savedPassport.getId())))
               .collect(Collectors.toList());
 
-      return linkedAccountWithPassportAndVisas.withPassport(savedPassport).withVisas(savedVisas);
+      return ImmutableLinkedAccountWithPassportAndVisas.copyOf(linkedAccountWithPassportAndVisas)
+          .withPassport(savedPassport)
+          .withVisas(savedVisas);
     } else {
       return linkedAccountWithPassportAndVisas;
     }

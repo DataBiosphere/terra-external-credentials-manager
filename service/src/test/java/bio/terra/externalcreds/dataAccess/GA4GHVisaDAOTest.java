@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
-import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
+import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
 import java.util.Collections;
@@ -27,7 +29,7 @@ public class GA4GHVisaDAOTest extends BaseTest {
   @Autowired private GA4GHVisaDAO visaDAO;
 
   private final GA4GHVisa visa =
-      GA4GHVisa.builder()
+      ImmutableGA4GHVisa.builder()
           .visaType("fake")
           .expires(new Timestamp(100))
           .jwt("fake-jwt")
@@ -43,7 +45,7 @@ public class GA4GHVisaDAOTest extends BaseTest {
    */
   private GA4GHPassport insertPassportAndLinkedAccount() {
     var linkedAccount =
-        LinkedAccount.builder()
+        ImmutableLinkedAccount.builder()
             .expires(new Timestamp(100))
             .providerId("provider")
             .refreshToken("refresh")
@@ -52,7 +54,7 @@ public class GA4GHVisaDAOTest extends BaseTest {
             .build();
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
     var passport =
-        GA4GHPassport.builder()
+        ImmutableGA4GHPassport.builder()
             .linkedAccountId(savedLinkedAccount.getId())
             .jwt("fake-jwt")
             .expires(new Timestamp(100))
@@ -67,16 +69,18 @@ public class GA4GHVisaDAOTest extends BaseTest {
   @Rollback
   void testInsertAndListVisa() {
     var passport = insertPassportAndLinkedAccount();
-    var expectedVisa1 = visa.withPassportId(passport.getId());
+    var expectedVisa1 = ImmutableGA4GHVisa.copyOf(visa).withPassportId(passport.getId());
     var expectedVisa2 =
-        visa.withPassportId(passport.getId()).withTokenType(TokenTypeEnum.document_token);
+        ImmutableGA4GHVisa.copyOf(visa)
+            .withPassportId(passport.getId())
+            .withTokenType(TokenTypeEnum.document_token);
     var savedVisa1 = visaDAO.insertVisa(expectedVisa1);
     var savedVisa2 = visaDAO.insertVisa(expectedVisa2);
 
     assertTrue(savedVisa1.getId().isPresent());
     assertTrue(savedVisa2.getId().isPresent());
-    assertEquals(expectedVisa1, savedVisa1.withId(Optional.empty()));
-    assertEquals(expectedVisa2, savedVisa2.withId(Optional.empty()));
+    assertEquals(expectedVisa1, ImmutableGA4GHVisa.copyOf(savedVisa1).withId(Optional.empty()));
+    assertEquals(expectedVisa2, ImmutableGA4GHVisa.copyOf(savedVisa2).withId(Optional.empty()));
 
     var loadedVisas = visaDAO.listVisas(passport.getId().get());
     assertEquals(loadedVisas.size(), 2);
@@ -87,7 +91,9 @@ public class GA4GHVisaDAOTest extends BaseTest {
   @Transactional
   @Rollback
   void testInsertInvalidForeignKey() {
-    assertThrows(DataAccessException.class, () -> visaDAO.insertVisa(visa.withPassportId(-1)));
+    assertThrows(
+        DataAccessException.class,
+        () -> visaDAO.insertVisa(ImmutableGA4GHVisa.copyOf(visa).withPassportId(-1)));
   }
 
   @Test
