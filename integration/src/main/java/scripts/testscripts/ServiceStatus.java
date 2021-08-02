@@ -1,19 +1,22 @@
 package scripts.testscripts;
 
 import bio.terra.externalcreds.client.ApiClient;
+import bio.terra.externalcreds.api.PublicApi;
 import bio.terra.testrunner.runner.TestScript;
 import bio.terra.testrunner.runner.config.TestUserSpecification;
-// import bio.terra.workspace.api.UnauthenticatedApi;
-// import bio.terra.workspace.client.ApiClient;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-// import lombok.extern.slf4j.Slf4j;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scripts.utils.ClientTestUtils;
 
-// @Slf4j
 public class ServiceStatus extends TestScript {
+    // TODO: find a way to get the annotation working so we don't need this
+    private static final Logger logger = LoggerFactory.getLogger(ServiceStatus.class);
     private Duration delay = Duration.ZERO;
+
 
     @Override
     public void setParameters(List<String> parameters) {
@@ -29,12 +32,12 @@ public class ServiceStatus extends TestScript {
         if (delay.getSeconds() > 0) TimeUnit.SECONDS.sleep(delay.getSeconds());
 
         // TODO: use the ECM client here
-        // log.info("Checking service status endpoint now.");
-        // var apiClient = ClientTestUtils.getClientWithoutAccessToken(server);
-        // var unauthenticatedApi = new UnauthenticatedApi(apiClient);
-        // unauthenticatedApi.serviceStatus();
-        // var httpCode = unauthenticatedApi.getApiClient().getStatusCode();
-        // log.info("Service status return code: {}", httpCode);
+         logger.info("Checking service status endpoint now.");
+         var apiClient = ClientTestUtils.getClientWithoutAccessToken(server);
+         var publicApi = new PublicApi(apiClient);
+         publicApi.getStatus();
+         var httpCode = publicApi.getApiClient().getStatusCode();
+         logger.info("Service status return code: {}", httpCode);
     }
 }
 

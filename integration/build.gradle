@@ -17,6 +17,7 @@ dependencies {
 
 	// Terra Test Runner Library
 	implementation "bio.terra:terra-test-runner:0.0.7-SNAPSHOT"
+	implementation "org.slf4j:slf4j-api:1.7.25" // TODO: decide whether this is needed
 
 	// Google Dependencies
 	constraints {
