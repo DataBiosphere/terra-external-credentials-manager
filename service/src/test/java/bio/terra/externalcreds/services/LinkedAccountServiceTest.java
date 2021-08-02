@@ -61,22 +61,6 @@ public class LinkedAccountServiceTest extends BaseTest {
   }
 
   @Test
-  void testGetGA4GHPassport() {
-    var linkedAccount = TestUtils.createRandomLinkedAccount();
-    var passport = TestUtils.createRandomPassport();
-
-    saveAndValidateLinkedAccount(linkedAccount, passport, Collections.emptyList());
-
-    var savedPassport =
-        linkedAccountService.getGA4GHPassport(
-            linkedAccount.getUserId(), linkedAccount.getProviderId());
-
-    assertPresent(savedPassport);
-    assertEquals(passport.getJwt(), savedPassport.get().getJwt());
-    assertEquals(passport.getExpires(), savedPassport.get().getExpires());
-  }
-
-  @Test
   void testSaveLinkedAccountWithPassportAndVisas() {
     var linkedAccount = TestUtils.createRandomLinkedAccount();
     var passport = TestUtils.createRandomPassport();
