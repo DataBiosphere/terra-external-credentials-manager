@@ -64,7 +64,7 @@ public class OidcApiControllerTest extends BaseTest {
     String state = null;
 
     when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
-        .thenReturn(result);
+        .thenReturn(Optional.of(result));
 
     var queryParams = new LinkedMultiValueMap<String, String>();
     queryParams.add("redirectUri", redirectUri);
@@ -81,7 +81,7 @@ public class OidcApiControllerTest extends BaseTest {
     String state = null;
 
     when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
-        .thenReturn(null);
+        .thenReturn(Optional.empty());
 
     var queryParams = new LinkedMultiValueMap<String, String>();
     queryParams.add("redirectUri", redirectUri);

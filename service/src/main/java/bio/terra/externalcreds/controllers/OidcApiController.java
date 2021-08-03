@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.controllers;
 
-import bio.terra.common.exception.NotFoundException;
 import bio.terra.common.exception.UnauthorizedException;
 import bio.terra.common.iam.BearerTokenParser;
 import bio.terra.externalcreds.ExternalCredsException;
@@ -83,13 +82,9 @@ public class OidcApiController implements OidcApi {
   public ResponseEntity<LinkInfo> getLink(String provider) {
     var userId = getUserIdFromSam();
     var linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
-    return linkedAccount
-        .map(la -> ResponseEntity.ok(getLinkInfoFromLinkedAccount(la)))
-        .orElseGet(() -> ResponseEntity.notFound().build());
+    return ResponseEntity.of(linkedAccount.map(this::getLinkInfoFromLinkedAccount));
   }
 
-  // Because we're just processing String -> json string, there shouldn't be any conversion issue.
-  @SneakyThrows(JsonProcessingException.class)
   @Override
   public ResponseEntity<String> getAuthUrl(
       String provider, List<String> scopes, String redirectUri, String state) {
@@ -97,13 +92,7 @@ public class OidcApiController implements OidcApi {
         providerService.getProviderAuthorizationUrl(
             provider, redirectUri, Set.copyOf(scopes), state);
 
-    if (authorizationUrl == null) {
-      return ResponseEntity.notFound().build();
-    } else {
-      // We explicitly run this through the mapper because otherwise it's treated as text/plain, and
-      // not correctly quoted to be valid json.
-      return ResponseEntity.ok(mapper.writeValueAsString(authorizationUrl));
-    }
+    return ResponseEntity.of(authorizationUrl.map(this::jsonString));
   }
 
   @Override
@@ -126,12 +115,16 @@ public class OidcApiController implements OidcApi {
     return ResponseEntity.ok().build();
   }
 
-  @SneakyThrows(JsonProcessingException.class)
   @Override
   public ResponseEntity<String> getProviderPassport(String provider) {
     var userId = getUserIdFromSam();
     var passport = linkedAccountService.getGA4GHPassport(userId, provider);
-    if (passport.isEmpty()) throw new NotFoundException("No passport found");
-    return ResponseEntity.ok(mapper.writeValueAsString(passport.get().getJwt()));
+    return ResponseEntity.of(passport.map(p -> jsonString(p.getJwt())));
+  }
+
+  /** Helper method to format a string as json. Otherwise it isn't quoted or escaped correctly. */
+  @SneakyThrows(JsonProcessingException.class)
+  private String jsonString(String s) {
+    return mapper.writeValueAsString(s);
   }
 }
