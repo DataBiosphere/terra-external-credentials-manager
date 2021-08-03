@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import java.util.Optional;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrations;
@@ -20,24 +21,22 @@ public class ProviderClientCache {
   }
 
   @Cacheable(cacheNames = "providerClients", sync = true)
-  public ClientRegistration getProviderClient(String provider) {
-    var providerInfo = externalCredsConfig.getProviders().get(provider);
-    if (providerInfo == null) {
-      return null;
-    }
+  public Optional<ClientRegistration> getProviderClient(String provider) {
+    var maybeProviderInfo = Optional.ofNullable(externalCredsConfig.getProviders().get(provider));
+    return maybeProviderInfo.map(providerInfo -> {
+      var builder =
+          ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+              .clientId(providerInfo.getClientId())
+              .clientSecret(providerInfo.getClientSecret())
+              .issuerUri(providerInfo.getIssuer());
 
-    var builder =
-        ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
-            .clientId(providerInfo.getClientId())
-            .clientSecret(providerInfo.getClientSecret())
-            .issuerUri(providerInfo.getIssuer());
+      // set optional overrides
+      providerInfo.getUserInfoEndpoint().map(builder::userInfoUri);
+      providerInfo.getAuthorizationEndpoint().map(builder::authorizationUri);
+      providerInfo.getTokenEndpoint().map(builder::tokenUri);
+      providerInfo.getJwksUri().map(builder::jwkSetUri);
 
-    // set optional overrides
-    providerInfo.getUserInfoEndpoint().map(builder::userInfoUri);
-    providerInfo.getAuthorizationEndpoint().map(builder::authorizationUri);
-    providerInfo.getTokenEndpoint().map(builder::tokenUri);
-    providerInfo.getJwksUri().map(builder::jwkSetUri);
-
-    return builder.build();
+      return builder.build();
+    });
   }
 }
