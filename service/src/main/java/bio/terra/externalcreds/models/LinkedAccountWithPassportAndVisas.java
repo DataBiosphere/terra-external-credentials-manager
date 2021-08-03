@@ -6,8 +6,7 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@Value.Style(typeImmutable = "*", typeAbstract = "*Interface")
-public interface LinkedAccountWithPassportAndVisasInterface {
+public interface LinkedAccountWithPassportAndVisas {
   LinkedAccount getLinkedAccount();
 
   Optional<GA4GHPassport> getPassport();

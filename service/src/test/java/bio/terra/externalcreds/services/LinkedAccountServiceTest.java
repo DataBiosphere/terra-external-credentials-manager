@@ -11,8 +11,11 @@ import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
+import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
+import bio.terra.externalcreds.models.ImmutableLinkedAccount;
+import bio.terra.externalcreds.models.ImmutableLinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.LinkedAccount;
-import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +39,9 @@ public class LinkedAccountServiceTest extends BaseTest {
         linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId());
     assertPresent(savedLinkedAccount);
-    assertEquals(linkedAccount, savedLinkedAccount.get().withId(Optional.empty()));
+    assertEquals(
+        linkedAccount,
+        savedLinkedAccount.map(ImmutableLinkedAccount::copyOf).get().withId(Optional.empty()));
   }
 
   @Test
@@ -88,13 +93,15 @@ public class LinkedAccountServiceTest extends BaseTest {
       LinkedAccount linkedAccount, GA4GHPassport passport, List<GA4GHVisa> visas) {
     var saved =
         linkedAccountService.saveLinkedAccount(
-            LinkedAccountWithPassportAndVisas.builder()
+            ImmutableLinkedAccountWithPassportAndVisas.builder()
                 .linkedAccount(linkedAccount)
                 .passport(Optional.ofNullable(passport))
                 .visas(visas)
                 .build());
 
-    assertEquals(linkedAccount, saved.getLinkedAccount().withId(Optional.empty()));
+    assertEquals(
+        linkedAccount,
+        ImmutableLinkedAccount.copyOf(saved.getLinkedAccount()).withId(Optional.empty()));
     assertTrue(saved.getLinkedAccount().getId().isPresent());
 
     var savedPassport = passportDAO.getPassport(saved.getLinkedAccount().getId().get());
@@ -105,12 +112,20 @@ public class LinkedAccountServiceTest extends BaseTest {
       assertPresent(savedPassport.get().getId());
       assertEquals(
           passport,
-          savedPassport.get().withId(Optional.empty()).withLinkedAccountId(Optional.empty()));
+          savedPassport
+              .map(ImmutableGA4GHPassport::copyOf)
+              .get()
+              .withId(Optional.empty())
+              .withLinkedAccountId(Optional.empty()));
       var savedVisas = visaDAO.listVisas(savedPassport.get().getId().get());
       assertEquals(
           visas,
           savedVisas.stream()
-              .map(v -> v.withId(Optional.empty()).withPassportId(Optional.empty()))
+              .map(
+                  v ->
+                      ImmutableGA4GHVisa.copyOf(v)
+                          .withId(Optional.empty())
+                          .withPassportId(Optional.empty()))
               .collect(Collectors.toList()));
     }
 
