@@ -1,26 +1,15 @@
-buildscript {
-	dependencies {
-		// this fixes the error
-		// Execution failed for task ':service:jibDockerBuild'.
-		// > 'java.util.stream.Collector com.google.common.collect.ImmutableList.toImmutableList()'
-		classpath 'com.google.guava:guava:30.1.1-jre'
-	}
-}
-
 plugins {
 	id 'idea'
 
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
-	id 'org.hidetake.swagger.generator' version '2.18.2' apply false
-	id 'org.springframework.boot' version '2.5.1' apply false
-	id 'io.freefair.lombok' version '6.1.0-m3' apply false
+	id 'org.springframework.boot' version '2.5.3' apply false
 }
 
 repositories { mavenCentral() }
 
-allprojects {
+subprojects {
 	group = 'bio.terra'
-	version = '0.15.0-SNAPSHOT'
+	version = '0.16.0-SNAPSHOT'
 
 	ext {
 		artifactGroup = "${group}.${rootProject.name}"
@@ -34,8 +23,8 @@ allprojects {
 		}
 
 		dependencies {
-			dependency 'io.swagger.core.v3:swagger-annotations:2.1.9'
-			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.26'
+			dependency 'io.swagger.core.v3:swagger-annotations:2.1.10'
+			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.27'
 		}
 	}
 }
