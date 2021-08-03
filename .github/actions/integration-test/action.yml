@@ -25,9 +25,10 @@ runs:
         ../gradlew :integration:runTest --args="${{ inputs.test }} $resultsDir" --scan
         testResult=$?
         echo "Test result is $testResult"
-        echo "Upload test results to Google Bucket"
-        ../gradlew :integration:uploadResults --args="CompressDirectoryToTerraKernelK8S.json $resultsDir"
-        echo "Upload test results to BigQuery Test Runner Dataset"
-        ../gradlew :integration:uploadResults --args="SummariesToTerraKernelK8SBigQuery.json $resultsDir"
+# TODO: decide whether we want to upload to the google bucket
+#        echo "Upload test results to Google Bucket"
+#        ../gradlew :integration:uploadResults --args="CompressDirectoryToTerraKernelK8S.json $resultsDir"
+#        echo "Upload test results to BigQuery Test Runner Dataset"
+#        ../gradlew :integration:uploadResults --args="SummariesToTerraKernelK8SBigQuery.json $resultsDir"
         exit $testResult
       shell: bash

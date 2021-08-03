@@ -41,8 +41,7 @@ jobs:
       - name: Initialize Postgres DB for local server test run
         env:
           PGPASSWORD: postgres
-        # TODO: use our init script instead
-        run: psql -h 127.0.0.1 -U postgres -f ./service/local-dev/local-postgres-init.sql
+        run: psql -h localhost -U postgres -f ./common/postgres-init.sql
 
       - name: Set up AdoptOpenJDK 11
         uses: joschi/setup-jdk@v2
@@ -77,6 +76,7 @@ jobs:
 
       - name: Write config
         id: config
+        # TODO: decide whether to use this script
         uses: ./.github/actions/write-config
         with:
           vault-token: ${{ steps.vault-token-step.outputs.vault-token }}
