@@ -18,12 +18,10 @@ import org.springframework.stereotype.Repository;
 public class GA4GHPassportDAO {
 
   final NamedParameterJdbcTemplate jdbcTemplate;
-  final LinkedAccountDAO linkedAccountDAO;
 
   public GA4GHPassportDAO(
-      NamedParameterJdbcTemplate jdbcTemplate, LinkedAccountDAO linkedAccountDAO) {
+      NamedParameterJdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
-    this.linkedAccountDAO = linkedAccountDAO;
   }
 
   /**
