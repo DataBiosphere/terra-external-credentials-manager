@@ -40,7 +40,7 @@ public class LinkedAccountService {
 
   @ReadTransaction
   public Optional<GA4GHPassport> getGA4GHPassport(String userId, String providerId) {
-    return ga4ghPassportDAO.getPassport2(userId, providerId);
+    return ga4ghPassportDAO.getPassport(userId, providerId);
   }
 
   @WriteTransaction

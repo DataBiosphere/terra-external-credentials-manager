@@ -138,7 +138,9 @@ public class LinkedAccountServiceTest extends BaseTest {
         ImmutableLinkedAccount.copyOf(saved.getLinkedAccount()).withId(Optional.empty()));
     assertTrue(saved.getLinkedAccount().getId().isPresent());
 
-    var savedPassport = passportDAO.getPassport(saved.getLinkedAccount().getId().get());
+    var savedPassport =
+        passportDAO.getPassport(
+            saved.getLinkedAccount().getUserId(), saved.getLinkedAccount().getProviderId());
     if (passport == null) {
       assertEmpty(savedPassport);
     } else {
