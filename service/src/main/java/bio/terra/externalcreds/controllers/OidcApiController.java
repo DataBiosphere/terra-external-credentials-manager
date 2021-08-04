@@ -117,7 +117,8 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<String> getProviderPassport(String provider) {
-    var userId = getUserIdFromSam();
+    // var userId = getUserIdFromSam();
+    var userId = "fake_user_id";
     var passport = linkedAccountService.getGA4GHPassport(userId, provider);
     return ResponseEntity.of(passport.map(p -> jsonString(p.getJwt())));
   }

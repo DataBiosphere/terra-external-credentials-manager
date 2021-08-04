@@ -18,9 +18,12 @@ import org.springframework.stereotype.Repository;
 public class GA4GHPassportDAO {
 
   final NamedParameterJdbcTemplate jdbcTemplate;
+  final LinkedAccountDAO linkedAccountDAO;
 
-  public GA4GHPassportDAO(NamedParameterJdbcTemplate jdbcTemplate) {
+  public GA4GHPassportDAO(
+      NamedParameterJdbcTemplate jdbcTemplate, LinkedAccountDAO linkedAccountDAO) {
     this.jdbcTemplate = jdbcTemplate;
+    this.linkedAccountDAO = linkedAccountDAO;
   }
 
   /**
@@ -58,6 +61,19 @@ public class GA4GHPassportDAO {
   public Optional<GA4GHPassport> getPassport(int linkedAccountId) {
     var namedParameters = new MapSqlParameterSource("linkedAccountId", linkedAccountId);
     var query = "SELECT * FROM ga4gh_passport WHERE linked_account_id = :linkedAccountId";
+    return Optional.ofNullable(
+        DataAccessUtils.singleResult(
+            jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper())));
+  }
+
+  public Optional<GA4GHPassport> getPassport2(String userId, String providerId) {
+    var namedParameters =
+        new MapSqlParameterSource("userId", userId).addValue("providerId", providerId);
+    var query =
+        "SELECT p.* FROM ga4gh_passport p"
+            + " INNER JOIN linked_account la ON la.id = p.linked_account_id"
+            + " WHERE la.user_id = :userId"
+            + " AND la.provider_id = :providerId";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper())));

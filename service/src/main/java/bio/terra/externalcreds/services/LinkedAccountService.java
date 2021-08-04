@@ -2,7 +2,6 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
-import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
@@ -41,9 +40,7 @@ public class LinkedAccountService {
 
   @ReadTransaction
   public Optional<GA4GHPassport> getGA4GHPassport(String userId, String providerId) {
-    var linkedAccount = linkedAccountDAO.getLinkedAccount(userId, providerId);
-    if (linkedAccount.isEmpty()) throw new NotFoundException("Linked account not found");
-    return ga4ghPassportDAO.getPassport(linkedAccount.get().getId().orElseThrow());
+    return ga4ghPassportDAO.getPassport2(userId, providerId);
   }
 
   @WriteTransaction
