@@ -110,7 +110,9 @@ public class LinkedAccountDAOTest extends BaseTest {
       passportDAO.insertPassport(passport);
       linkedAccountDAO.deleteLinkedAccountIfExists(
           savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
-      assertEmpty(passportDAO.getPassport(savedLinkedAccount.getId().get()));
+      assertEmpty(
+          passportDAO.getPassport(
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId()));
     }
   }
 }

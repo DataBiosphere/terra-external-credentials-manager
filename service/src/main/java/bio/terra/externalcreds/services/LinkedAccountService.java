@@ -5,6 +5,7 @@ import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
 import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
 import bio.terra.externalcreds.models.ImmutableLinkedAccountWithPassportAndVisas;
@@ -35,6 +36,11 @@ public class LinkedAccountService {
   @ReadTransaction
   public Optional<LinkedAccount> getLinkedAccount(String userId, String providerId) {
     return linkedAccountDAO.getLinkedAccount(userId, providerId);
+  }
+
+  @ReadTransaction
+  public Optional<GA4GHPassport> getGA4GHPassport(String userId, String providerId) {
+    return ga4ghPassportDAO.getPassport(userId, providerId);
   }
 
   @WriteTransaction

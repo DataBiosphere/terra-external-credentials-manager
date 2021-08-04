@@ -68,21 +68,22 @@ public class ProviderService {
     return Collections.unmodifiableSet(externalCredsConfig.getProviders().keySet());
   }
 
-  public String getProviderAuthorizationUrl(
+  public Optional<String> getProviderAuthorizationUrl(
       String provider, String redirectUri, Set<String> scopes, String state) {
     var providerInfo = externalCredsConfig.getProviders().get(provider);
     if (providerInfo == null) {
-      return null;
+      return Optional.empty();
     }
 
     var providerClient = providerClientCache.getProviderClient(provider);
 
-    return oAuth2Service.getAuthorizationRequestUri(
-        providerClient,
-        redirectUri,
-        scopes,
-        state,
-        providerInfo.getAdditionalAuthorizationParameters());
+    return Optional.of(
+        oAuth2Service.getAuthorizationRequestUri(
+            providerClient,
+            redirectUri,
+            scopes,
+            state,
+            providerInfo.getAdditionalAuthorizationParameters()));
   }
 
   public LinkedAccountWithPassportAndVisas createLink(
