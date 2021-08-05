@@ -185,9 +185,10 @@ public class OidcApiControllerTest extends BaseTest {
             Set.of(scopes),
             state))
         .thenReturn(
-            ImmutableLinkedAccountWithPassportAndVisas.builder()
-                .linkedAccount(inputLinkedAccount)
-                .build());
+            Optional.of(
+                ImmutableLinkedAccountWithPassportAndVisas.builder()
+                    .linkedAccount(inputLinkedAccount)
+                    .build()));
 
     mvc.perform(
             post("/api/oidc/v1/{provider}/oauthcode", inputLinkedAccount.getProviderId())

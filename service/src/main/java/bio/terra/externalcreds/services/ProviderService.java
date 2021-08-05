@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
@@ -70,23 +71,22 @@ public class ProviderService {
 
   public Optional<String> getProviderAuthorizationUrl(
       String provider, String redirectUri, Set<String> scopes, String state) {
-    var providerInfo = externalCredsConfig.getProviders().get(provider);
-    if (providerInfo == null) {
-      return Optional.empty();
-    }
+    return providerClientCache
+        .getProviderClient(provider)
+        .map(
+            providerClient -> {
+              var providerInfo = externalCredsConfig.getProviders().get(provider);
 
-    var providerClient = providerClientCache.getProviderClient(provider);
-
-    return Optional.of(
-        oAuth2Service.getAuthorizationRequestUri(
-            providerClient,
-            redirectUri,
-            scopes,
-            state,
-            providerInfo.getAdditionalAuthorizationParameters()));
+              return oAuth2Service.getAuthorizationRequestUri(
+                  providerClient,
+                  redirectUri,
+                  scopes,
+                  state,
+                  providerInfo.getAdditionalAuthorizationParameters());
+            });
   }
 
-  public LinkedAccountWithPassportAndVisas createLink(
+  public Optional<LinkedAccountWithPassportAndVisas> createLink(
       String provider,
       String userId,
       String authorizationCode,
@@ -94,12 +94,29 @@ public class ProviderService {
       Set<String> scopes,
       String state) {
 
-    var providerInfo = externalCredsConfig.getProviders().get(provider);
-    if (providerInfo == null) {
-      throw new NotFoundException(String.format("provider %s not found", provider));
-    }
+    return providerClientCache
+        .getProviderClient(provider)
+        .map(
+            providerClient ->
+                createLinkInternal(
+                    provider,
+                    userId,
+                    authorizationCode,
+                    redirectUri,
+                    scopes,
+                    state,
+                    providerClient));
+  }
 
-    var providerClient = providerClientCache.getProviderClient(provider);
+  private LinkedAccountWithPassportAndVisas createLinkInternal(
+      String provider,
+      String userId,
+      String authorizationCode,
+      String redirectUri,
+      Set<String> scopes,
+      String state,
+      ClientRegistration providerClient) {
+    var providerInfo = externalCredsConfig.getProviders().get(provider);
 
     var tokenResponse =
         oAuth2Service.authorizationCodeExchange(
