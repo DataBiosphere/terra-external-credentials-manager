@@ -179,11 +179,6 @@ vaultgetb64 "secret/dsde/terra/kernel/${fcenv}/common/testrunner/testrunner-sa" 
 tmpfile=$(mktemp)
 vaultgetb64 "secret/dsde/terra/kernel/${k8senv}/${namespace}/testrunner-k8s-sa" "${tmpfile}"
 result=$?
-if [ $result -ne 0 -a "${k8senv}" = "integration" ]; then
-    echo "No test runner credentials for target ${target}. Falling back to wsmtest credentials."
-    vaultgetb64 "secret/dsde/terra/kernel/integration/wsmtest/testrunner-k8s-sa" "${tmpfile}"
-    result=$?
-fi
 if [ $result -ne 0 ]; then
     echo "No test runner credentials for target ${target}."
 else
