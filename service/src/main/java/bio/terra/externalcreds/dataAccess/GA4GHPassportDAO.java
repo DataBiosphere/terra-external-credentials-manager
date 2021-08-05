@@ -19,8 +19,7 @@ public class GA4GHPassportDAO {
 
   final NamedParameterJdbcTemplate jdbcTemplate;
 
-  public GA4GHPassportDAO(
-      NamedParameterJdbcTemplate jdbcTemplate) {
+  public GA4GHPassportDAO(NamedParameterJdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
   }
 
