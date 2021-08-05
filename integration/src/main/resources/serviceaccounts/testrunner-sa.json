@@ -1,5 +1,5 @@
 {
-  "name": "testrunner-integration@terra-kernel-k8s.iam.gserviceaccount.com",
+  "name": "testrunner-dev@broad-dsde-dev.iam.gserviceaccount.com",
   "jsonKeyFilename": "testrunner-sa.json",
   "jsonKeyDirectoryPath": "../config"
 }
