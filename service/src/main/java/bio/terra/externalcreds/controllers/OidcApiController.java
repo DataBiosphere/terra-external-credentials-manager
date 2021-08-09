@@ -82,13 +82,9 @@ public class OidcApiController implements OidcApi {
   public ResponseEntity<LinkInfo> getLink(String provider) {
     var userId = getUserIdFromSam();
     var linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
-    return linkedAccount
-        .map(la -> ResponseEntity.ok(getLinkInfoFromLinkedAccount(la)))
-        .orElseGet(() -> ResponseEntity.notFound().build());
+    return ResponseEntity.of(linkedAccount.map(this::getLinkInfoFromLinkedAccount));
   }
 
-  // Because we're just processing String -> json string, there shouldn't be any conversion issue.
-  @SneakyThrows(JsonProcessingException.class)
   @Override
   public ResponseEntity<String> getAuthUrl(
       String provider, List<String> scopes, String redirectUri, String state) {
@@ -96,13 +92,7 @@ public class OidcApiController implements OidcApi {
         providerService.getProviderAuthorizationUrl(
             provider, redirectUri, Set.copyOf(scopes), state);
 
-    if (authorizationUrl == null) {
-      return ResponseEntity.notFound().build();
-    } else {
-      // We explicitly run this through the mapper because otherwise it's treated as text/plain, and
-      // not correctly quoted to be valid json.
-      return ResponseEntity.ok(mapper.writeValueAsString(authorizationUrl));
-    }
+    return ResponseEntity.of(authorizationUrl.map(this::jsonString));
   }
 
   @Override
@@ -123,5 +113,18 @@ public class OidcApiController implements OidcApi {
     String userId = getUserIdFromSam();
     providerService.deleteLink(userId, provider);
     return ResponseEntity.ok().build();
+  }
+
+  @Override
+  public ResponseEntity<String> getProviderPassport(String provider) {
+    var userId = getUserIdFromSam();
+    var passport = linkedAccountService.getGA4GHPassport(userId, provider);
+    return ResponseEntity.of(passport.map(p -> jsonString(p.getJwt())));
+  }
+
+  /** Helper method to format a string as json. Otherwise it isn't quoted or escaped correctly. */
+  @SneakyThrows(JsonProcessingException.class)
+  private String jsonString(String s) {
+    return mapper.writeValueAsString(s);
   }
 }

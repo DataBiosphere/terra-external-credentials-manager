@@ -45,7 +45,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
   @Test
   void testMissingPassport() {
-    var shouldBeEmpty = passportDAO.getPassport(-1);
+    var shouldBeEmpty = passportDAO.getPassport("nonexistent_user_id", "nonexistent_provider_id");
     assertEmpty(shouldBeEmpty);
   }
 
@@ -61,7 +61,8 @@ public class GA4GHPassportDAOTest extends BaseTest {
             .withLinkedAccountId(savedPassport.getLinkedAccountId()),
         savedPassport);
 
-    var loadedPassport = passportDAO.getPassport(savedAccountId.get());
+    var loadedPassport =
+        passportDAO.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderId());
     assertEquals(Optional.of(savedPassport), loadedPassport);
   }
 
@@ -88,9 +89,11 @@ public class GA4GHPassportDAOTest extends BaseTest {
       assertPresent(savedAccountId);
       passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
 
-      assertPresent(passportDAO.getPassport(savedAccountId.get()));
+      assertPresent(
+          passportDAO.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderId()));
       assertTrue(passportDAO.deletePassport(savedAccountId.get()));
-      assertEmpty(passportDAO.getPassport(savedAccountId.get()));
+      assertEmpty(
+          passportDAO.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderId()));
     }
 
     @Test

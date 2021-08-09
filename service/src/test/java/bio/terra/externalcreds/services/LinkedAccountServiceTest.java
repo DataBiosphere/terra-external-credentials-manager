@@ -45,6 +45,40 @@ public class LinkedAccountServiceTest extends BaseTest {
   }
 
   @Test
+  void testGetGA4GHPassport() {
+    var linkedAccount = TestUtils.createRandomLinkedAccount();
+    var passport = TestUtils.createRandomPassport();
+
+    saveAndValidateLinkedAccount(linkedAccount, passport, Collections.emptyList());
+
+    var savedPassport =
+        linkedAccountService.getGA4GHPassport(
+            linkedAccount.getUserId(), linkedAccount.getProviderId());
+
+    assertPresent(savedPassport);
+    assertEquals(passport.getJwt(), savedPassport.get().getJwt());
+    assertEquals(passport.getExpires(), savedPassport.get().getExpires());
+  }
+
+  @Test
+  void testGetGA4GHPassportNoLinkedAccount() {
+    var userId = "nonexistent_user_id";
+    var providerId = "fake_provider";
+
+    assertEmpty(linkedAccountService.getGA4GHPassport(userId, providerId));
+  }
+
+  @Test
+  void testGetGA4GHPassportLinkedAccountNoPassport() {
+    var linkedAccount = TestUtils.createRandomLinkedAccount();
+    saveAndValidateLinkedAccount(linkedAccount, null, Collections.emptyList());
+
+    assertEmpty(
+        linkedAccountService.getGA4GHPassport(
+            linkedAccount.getUserId(), linkedAccount.getProviderId()));
+  }
+
+  @Test
   void testSaveLinkedAccountWithPassportAndVisas() {
     var linkedAccount = TestUtils.createRandomLinkedAccount();
     var passport = TestUtils.createRandomPassport();
@@ -104,7 +138,9 @@ public class LinkedAccountServiceTest extends BaseTest {
         ImmutableLinkedAccount.copyOf(saved.getLinkedAccount()).withId(Optional.empty()));
     assertTrue(saved.getLinkedAccount().getId().isPresent());
 
-    var savedPassport = passportDAO.getPassport(saved.getLinkedAccount().getId().get());
+    var savedPassport =
+        passportDAO.getPassport(
+            saved.getLinkedAccount().getUserId(), saved.getLinkedAccount().getProviderId());
     if (passport == null) {
       assertEmpty(savedPassport);
     } else {

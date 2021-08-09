@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +48,7 @@ public class OAuth2ServiceTest {
         "Open following url, after login the browser will be redirected to a url that does not exist, copy the 'code' parameter from the URL and paste below");
     System.out.println(authorizationRequestUri);
     System.out.print("Enter authorization code: ");
-    var authCode = new Scanner(System.in).nextLine();
+    var authCode = new Scanner(System.in, StandardCharsets.UTF_8).nextLine();
 
     // 2) test authorizationCodeExchange
     var oAuth2AccessTokenResponse =

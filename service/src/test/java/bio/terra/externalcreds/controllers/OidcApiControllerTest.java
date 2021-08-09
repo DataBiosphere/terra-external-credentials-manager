@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.ImmutableLinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
@@ -63,7 +64,7 @@ public class OidcApiControllerTest extends BaseTest {
     String state = null;
 
     when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
-        .thenReturn(result);
+        .thenReturn(Optional.of(result));
 
     var queryParams = new LinkedMultiValueMap<String, String>();
     queryParams.add("redirectUri", redirectUri);
@@ -80,7 +81,7 @@ public class OidcApiControllerTest extends BaseTest {
     String state = null;
 
     when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
-        .thenReturn(null);
+        .thenReturn(Optional.empty());
 
     var queryParams = new LinkedMultiValueMap<String, String>();
     queryParams.add("redirectUri", redirectUri);
@@ -237,6 +238,39 @@ public class OidcApiControllerTest extends BaseTest {
 
     mvc.perform(
             delete("/api/oidc/v1/{provider}", providerId)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void testGetProviderPassport() throws Exception {
+    var accessToken = "testToken";
+    var userId = UUID.randomUUID().toString();
+    var providerId = UUID.randomUUID().toString();
+    var passport = TestUtils.createRandomPassport();
+
+    mockSamUser(userId, accessToken);
+
+    when(linkedAccountService.getGA4GHPassport(userId, providerId))
+        .thenReturn(Optional.of(passport));
+
+    mvc.perform(
+            get("/api/oidc/v1/{provider}/passport", providerId)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isOk())
+        .andExpect(content().json("\"" + passport.getJwt() + "\""));
+  }
+
+  @Test
+  void testGetProviderPassportNotFound() throws Exception {
+    var accessToken = "testToken";
+    var userId = UUID.randomUUID().toString();
+    var providerId = UUID.randomUUID().toString();
+
+    mockSamUser(userId, accessToken);
+
+    mvc.perform(
+            get("/api/oidc/v1/{provider}/passport", providerId)
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isNotFound());
   }

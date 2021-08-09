@@ -1,0 +1,22 @@
+jacocoTestReport {
+	reports {
+		xml.required = true
+	}
+
+	dependsOn test
+
+	// https://www.baeldung.com/jacoco-report-exclude#2-gradle-configuration
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: ['**/generated/*'])
+		}))
+	}
+}
+
+spotbugs {
+	reportLevel = 'high'
+	effort = 'max'
+	reportsDir = file("${project.reporting.baseDir}/spotbugs")
+	excludeFilter = file('../common/spotbugsExclude.xml')
+	extraArgs = ['-html', '-xml:withMessages'] // seems to be the only way to enable multiple
+}
