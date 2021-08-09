@@ -15,3 +15,10 @@ spotless {
 compileJava.dependsOn spotlessApply
 
 idea.module.downloadJavadoc = true
+
+// Immutables has incremental compilation disabled by default
+tasks {
+	compileJava {
+		options.compilerArgs.add("-Aimmutables.gradle.incremental")
+	}
+}
