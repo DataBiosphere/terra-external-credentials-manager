@@ -14,7 +14,7 @@ plugins {
 	id 'org.hidetake.swagger.generator'
 }
 
-sourceCompatibility = '11'
+compileJava { options.release = 11 }
 
 repositories {
 	mavenCentral()

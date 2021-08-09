@@ -4,40 +4,28 @@ plugins {
 	// Apply the application plugin to add support for building a CLI application in Java.
 	id 'application'
 	id 'io.freefair.lombok'
+	id 'com.github.spotbugs' version '4.7.2'
 	id 'bio.terra.test-runner-plugin' version '0.0.7-SNAPSHOT'
 }
 
-// These are applied in the buildscript block.
-def useMavenLocal = false
+compileJava { options.release = 11 }
+
 repositories {
-	if (useMavenLocal) {
-		mavenLocal()
-	}
-	maven {
-		// Terra proxy for maven central
-		url "https://broadinstitute.jfrog.io/broadinstitute/maven-central/"
-	}
 	mavenCentral()
-	maven {
-		url "https://broadinstitute.jfrog.io/broadinstitute/libs-release/"
-	}
-	maven {
-		url "https://broadinstitute.jfrog.io/broadinstitute/libs-snapshot-local/"
-	}
+	maven { url 'https://broadinstitute.jfrog.io/broadinstitute/libs-snapshot-local/' }
+	maven { url 'https://broadinstitute.jfrog.io/broadinstitute/libs-release/' }
 }
 
 dependencies {
-	implementation "org.slf4j:slf4j-api"
-	implementation "org.glassfish.jersey.inject:jersey-hk2"
+	implementation 'org.slf4j:slf4j-api'
+	implementation 'org.glassfish.jersey.inject:jersey-hk2'
 
 	// Google Dependencies
-	implementation "com.google.auth:google-auth-library-oauth2-http:0.20.0"
+	implementation 'com.google.auth:google-auth-library-oauth2-http:0.27.0'
 
 	// ECM client library
-	implementation project(":client")
+	implementation project(':client')
 
 	// Terra Test Runner Library
-	implementation "bio.terra:terra-test-runner:0.0.7-SNAPSHOT"
+	implementation 'bio.terra:terra-test-runner:0.0.7-SNAPSHOT'
 }
-
-sourceCompatibility = '11'
