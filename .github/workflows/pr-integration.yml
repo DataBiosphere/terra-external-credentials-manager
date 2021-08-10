@@ -12,17 +12,15 @@ on:
       - 'service/local-dev/**'
   pull_request:
     branches: [ '**' ]
-    # There is an issue with GitHub required checks and paths-ignore. We don't really need to
-    # run the tests if there are only irrelevant changes (see paths-ignore above). However,
-    # we require tests to pass by making a "required check" rule on the branch. If the action
-    # is not triggered, the required check never passes and you are stuck. Therefore, we have
-    # to run tests even when we only change a markdown file. So don't put a paths-ignore right here!
+    # This is a required check for all PRs, so don't add a paths-ignore here.
+    # We want this to always run so that the check passes.
 jobs:
   pr-integration-job:
 
     runs-on: ubuntu-latest
 
     services:
+      # TODO: see if there is a simpler way to do this pg check & init
       postgres:
         image: postgres:13.1
         env:
@@ -43,6 +41,7 @@ jobs:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -f ./common/postgres-init.sql
 
+      # TODO: check that this is what we do elsewhere
       - name: Set up AdoptOpenJDK 11
         uses: joschi/setup-jdk@v2
         with:
@@ -60,6 +59,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # TODO: see if there is a better way to do this (maybe Monster has one?)
       - name: Get Vault token
         id: vault-token-step
         env:
@@ -74,18 +74,20 @@ jobs:
           echo ::set-output name=vault-token::$VAULT_TOKEN
           echo ::add-mask::$VAULT_TOKEN
 
-      - name: Write config
-        id: config
-        uses: ./.github/actions/render-configs
-        with:
-          vault-token: ${{ steps.vault-token-step.outputs.vault-token }}
+      - name: Read configs from vault
+        run: ./render_config.sh dev ${{ inputs.vault-token }}
 
       - name: Launch local server
         uses: ./.github/actions/start-local-server
 
       - name: Run the integration test suite
         id: integration-test
-        uses: ./.github/actions/integration-test
-        with:
-          test-server: ecm-local.json
-          test: suites/dev/FullIntegration.json
+        run: |
+          cd integration
+          resultsDir=/tmp/results$RANDOM
+          echo "Running the FullIntegration test suite"
+          ../gradlew :integration:runTest --args="suites/FullIntegration.json $resultsDir" --scan
+          testResult=$?
+          echo "Test result is $testResult"
+          exit $testResult
+        shell: bash
