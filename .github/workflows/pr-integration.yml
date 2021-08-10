@@ -76,11 +76,9 @@ jobs:
 
       - name: Write config
         id: config
-        # TODO: decide whether to use this script
-        uses: ./.github/actions/write-config
+        uses: ./.github/actions/render-configs
         with:
           vault-token: ${{ steps.vault-token-step.outputs.vault-token }}
-          target: local
 
       - name: Launch local server
         uses: ./.github/actions/start-local-server
