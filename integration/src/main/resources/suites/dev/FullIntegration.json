@@ -1,8 +1,0 @@
-{
-  "name": "FullIntegration",
-  "description": "Integration tests (not including context/control-related tests) - to be run on dev",
-  "serverSpecificationFile": "ecm-dev.json",
-  "testConfigurationFiles": [
-    "dev/ServiceStatus.json"
-  ]
-}
