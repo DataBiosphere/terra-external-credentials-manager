@@ -89,5 +89,5 @@ jobs:
         id: integration-test
         uses: ./.github/actions/integration-test
         with:
-          test-server: workspace-local.json
+          test-server: ecm-local.json
           test: suites/dev/FullIntegration.json

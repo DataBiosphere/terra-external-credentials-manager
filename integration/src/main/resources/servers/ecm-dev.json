@@ -1,9 +1,8 @@
 {
-  "name": "workspace-ecmtest",
+  "name": "ecm-dev",
   "description": "External Credentials Manager Test Environment",
 
   "samUri": "https://sam.dsde-dev.broadinstitute.org",
-  "datarepoUri": "https://jade.datarepo-dev.broadinstitute.org/",
   "workspaceManagerUri": "https://externalcreds.dsde-dev.broadinstitute.org/",
 
   "cluster": {
