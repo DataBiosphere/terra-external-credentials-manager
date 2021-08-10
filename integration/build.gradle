@@ -4,7 +4,6 @@ plugins {
 	// Apply the application plugin to add support for building a CLI application in Java.
 	id 'application'
 	id 'io.freefair.lombok'
-	id 'com.github.spotbugs' version '4.7.2'
 	id 'bio.terra.test-runner-plugin' version '0.0.7-SNAPSHOT'
 }
 
