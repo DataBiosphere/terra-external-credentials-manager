@@ -3,7 +3,7 @@
   "description": "All integration tests - to be run on a K8s environment",
   "serverSpecificationFile": "workspace-ecmtest.json",
   "testConfigurationFiles": [
-    "integration/BasicUnauthenticated.json"
+    "integration/ServiceStatus.json"
   ]
 }
 

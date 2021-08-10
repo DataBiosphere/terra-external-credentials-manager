@@ -1,5 +1,5 @@
 {
-  "name": "BasicUnauthenticated",
+  "name": "ServiceStatus",
   "description": "Check the service status once. No authentication required.",
   "serverSpecificationFile": "workspace-ecmtest.json",
   "kubernetes": {},

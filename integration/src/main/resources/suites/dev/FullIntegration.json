@@ -3,6 +3,6 @@
   "description": "Integration tests (not including context/control-related tests) - to be run on dev",
   "serverSpecificationFile": "workspace-ecmtest.json",
   "testConfigurationFiles": [
-    "dev/BasicUnauthenticated.json"
+    "dev/ServiceStatus.json"
   ]
 }
