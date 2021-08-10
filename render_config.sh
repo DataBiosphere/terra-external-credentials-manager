@@ -17,4 +17,3 @@ $VAULT_COMMAND -field=providers "$VAULT_PATH/providers" >"$SERVICE_OUTPUT_LOCATI
 $VAULT_COMMAND -field=swagger-client-id "$VAULT_PATH/swagger-client-id" >"$SERVICE_OUTPUT_LOCATION/swagger-client-id"
 
 $VAULT_COMMAND -field=data -format=json "secret/dsde/firecloud/$ENV/common/firecloud-account.json" >"$INTEGRATION_OUTPUT_LOCATION/user-delegated-sa.json"
-$VAULT_COMMAND -field=key "secret/dsde/terra/kernel/$ENV/common/testrunner/testrunner-sa" | base64 -d >"$INTEGRATION_OUTPUT_LOCATION/testrunner-sa.json"
