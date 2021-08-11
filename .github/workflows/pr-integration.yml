@@ -20,32 +20,21 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      # TODO: see if there is a simpler way to do this pg check & init
       postgres:
-        image: postgres:13.1
+        image: postgres:13
         env:
           POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports:
           - 5432:5432
+        # Give Postgres time to start by doing the health check later.
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: Initialize Postgres DB for local server test run
-        env:
-          PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -f ./common/postgres-init.sql
-
-      # TODO: check that this is what we do elsewhere
-      - name: Set up AdoptOpenJDK 11
-        uses: joschi/setup-jdk@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
         with:
-          java-version: 11
+          java-version: '11'
+          distribution: 'adopt'
 
       - name: Cache Gradle packages
         uses: actions/cache@v2
@@ -56,12 +45,15 @@ jobs:
           key: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}-${{ hashFiles('**/*.gradle') }}
           restore-keys: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Make sure Postgres is ready and init
+        env:
+          PGPASSWORD: postgres
+        run: |
+          pg_isready -h localhost -t 10
+          psql -h localhost -U postgres -f ./common/postgres-init.sql
 
-      # TODO: see if there is a better way to do this (maybe Monster has one?)
       - name: Get Vault token
-        id: vault-token-step
+        id: vault-token
         env:
           VAULT_ADDR: https://clotho.broadinstitute.org:8200
         run: |
@@ -90,4 +82,3 @@ jobs:
           testResult=$?
           echo "Test result is $testResult"
           exit $testResult
-        shell: bash
