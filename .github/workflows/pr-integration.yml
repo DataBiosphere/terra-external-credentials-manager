@@ -61,9 +61,6 @@ jobs:
         run:
           echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
 
-      - name: Read configs from vault
-        run: ./render_config.sh dev ${{ inputs.vault-token }}
-
       - name: Launch local server
         uses: ./.github/actions/start-local-server
 
