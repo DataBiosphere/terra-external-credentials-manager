@@ -52,19 +52,14 @@ jobs:
           pg_isready -h localhost -t 10
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
-      - name: Get Vault token
-        id: vault-token
+      - name: Render GitHub Secrets
+        id: github-secrets
+        shell: bash
         env:
-          VAULT_ADDR: https://clotho.broadinstitute.org:8200
-        run: |
-          VAULT_TOKEN=$(docker run --rm --cap-add IPC_LOCK \
-            -e "VAULT_ADDR=${VAULT_ADDR}" \
-            vault:1.1.0 \
-            vault write -field token \
-              auth/approle/login role_id=${{ secrets.VAULT_APPROLE_ROLE_ID }} \
-              secret_id=${{ secrets.VAULT_APPROLE_SECRET_ID }})
-          echo ::set-output name=vault-token::$VAULT_TOKEN
-          echo ::add-mask::$VAULT_TOKEN
+          # Copied to GH from vault location: "secret/dsde/firecloud/dev/common/firecloud-account.json"
+          DEV_FIRECLOUD_ACCOUNT: ${{ secrets.DEV_FIRECLOUD_ACCOUNT }}
+        run:
+          echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
 
       - name: Read configs from vault
         run: ./render_config.sh dev ${{ inputs.vault-token }}
