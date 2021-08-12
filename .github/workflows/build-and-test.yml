@@ -47,7 +47,7 @@ jobs:
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
       - name: Build and test with coverage
-        run: ./gradlew build jacocoTestReport
+        run: ./gradlew :service:build jacocoTestReport
 
       - name: Codacy Coverage Reporter
         uses: codacy/codacy-coverage-reporter-action@v1
