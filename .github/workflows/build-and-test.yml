@@ -46,8 +46,15 @@ jobs:
           pg_isready -h localhost -t 10
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
-      - name: Build and test with Gradle
-        run: ./gradlew build
+      - name: Build and test with coverage
+        run: ./gradlew build jacocoTestReport
+
+      - name: Codacy Coverage Reporter
+        uses: codacy/codacy-coverage-reporter-action@1.0.0
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: service/build/reports/jacoco/test/jacocoTestReport.xml
+
       - name: Build image locally with jib
         # build the docker image to make sure it does not error
         run: './gradlew :service:jibDockerBuild -Djib.console=plain'
