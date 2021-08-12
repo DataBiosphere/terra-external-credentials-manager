@@ -13,7 +13,7 @@ public class ClientTestUtils {
     private ClientTestUtils() {}
 
     /**
-     * Build the Workspace Manager API client object for the server specifications. No access token is
+     * Build the ECM API client object for the server specifications. No access token is
      * needed for this API client.
      *
      * @param server the server we are testing against
@@ -26,7 +26,7 @@ public class ClientTestUtils {
 
     private static ApiClient buildClient(@Nullable AccessToken accessToken, ServerSpecification server) throws IOException {
         if (Strings.isNullOrEmpty(server.workspaceManagerUri)) {
-            throw new IllegalArgumentException("Workspace Manager Service URI cannot be empty");
+            throw new IllegalArgumentException("Service URI cannot be empty");
         }
 
         // build the client object
