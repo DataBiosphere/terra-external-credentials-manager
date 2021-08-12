@@ -1,6 +1,6 @@
 {
   "name": "FullIntegration",
-  "description": "All integration tests - to be run on a K8s environment",
+  "description": "All integration tests",
   "serverSpecificationFile": "ecm-local.json",
   "testConfigurationFiles": [
     "integration/ServiceStatus.json"
