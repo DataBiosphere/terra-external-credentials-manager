@@ -53,7 +53,6 @@ jobs:
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
       - name: Render GitHub Secrets
-        id: github-secrets
         shell: bash
         env:
           # Copied to GH from vault location: "secret/dsde/firecloud/dev/common/firecloud-account.json"
@@ -62,14 +61,12 @@ jobs:
           echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
 
       - name: Launch the background process
-        id: launch-service
-        uses: BerniWittmann/background-server-action@latest
+        uses: BerniWittmann/background-server-action@v1
         with:
           start: ./gradlew :service:bootRun
           wait-on: http://localhost:8080
 
       - name: Run the integration test suite
-        id: integration-test
         run: |
           resultsDir=../tmp/results$RANDOM
           echo "Running the FullIntegration test suite"
