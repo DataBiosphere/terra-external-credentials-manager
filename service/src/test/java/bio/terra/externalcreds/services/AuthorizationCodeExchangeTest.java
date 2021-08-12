@@ -234,7 +234,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     when(externalCredsConfig.getProviders())
         .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
     when(providerClientCache.getProviderClient(linkedAccount.getProviderId()))
-        .thenReturn(providerClient);
+        .thenReturn(Optional.of(providerClient));
     when(oAuth2Service.authorizationCodeExchange(
             providerClient,
             authorizationCode,
@@ -264,14 +264,17 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
             scopes,
             state);
 
+    assertPresent(linkedAccountWithPassportAndVisas);
+
     assertEquals(
         expectedLinkedAccount,
-        ImmutableLinkedAccount.copyOf(linkedAccountWithPassportAndVisas.getLinkedAccount())
+        ImmutableLinkedAccount.copyOf(linkedAccountWithPassportAndVisas.get().getLinkedAccount())
             .withExpires(passportExpiresTime)
             .withId(Optional.empty()));
 
     var stablePassport =
         linkedAccountWithPassportAndVisas
+            .get()
             .getPassport()
             .map(
                 p ->
@@ -281,9 +284,9 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     assertEquals(Optional.ofNullable(expectedPassport), stablePassport);
 
     var stableVisas =
-        linkedAccountWithPassportAndVisas.getVisas() == null
+        linkedAccountWithPassportAndVisas.get().getVisas() == null
             ? null
-            : linkedAccountWithPassportAndVisas.getVisas().stream()
+            : linkedAccountWithPassportAndVisas.get().getVisas().stream()
                 .map(
                     visa ->
                         ImmutableGA4GHVisa.copyOf(visa)

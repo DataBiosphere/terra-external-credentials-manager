@@ -31,7 +31,7 @@ public class OAuth2ServiceTest {
    * to the identity provider.
    */
   void test() {
-    var providerClient = providerClientCache.getProviderClient("ras");
+    var providerClient = providerClientCache.getProviderClient("ras").orElseThrow();
 
     var redirectUri = "http://localhost:9000/fence-callback";
     var scopes = Set.of("openid", "email", "ga4gh_passport_v1");
