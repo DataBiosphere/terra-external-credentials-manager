@@ -13,11 +13,3 @@ jacocoTestReport {
 		}))
 	}
 }
-
-spotbugs {
-	reportLevel = 'high'
-	effort = 'max'
-	reportsDir = file("${project.reporting.baseDir}/spotbugs")
-	excludeFilter = file('../common/spotbugsExclude.xml')
-	extraArgs = ['-html', '-xml:withMessages'] // seems to be the only way to enable multiple
-}

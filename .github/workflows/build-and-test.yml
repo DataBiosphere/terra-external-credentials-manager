@@ -50,10 +50,18 @@ jobs:
         run: ./gradlew build jacocoTestReport
 
       - name: Codacy Coverage Reporter
-        uses: codacy/codacy-coverage-reporter-action@1.0.0
+        uses: codacy/codacy-coverage-reporter-action@v1
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: service/build/reports/jacoco/test/jacocoTestReport.xml
+
+      - name: Codacy Spotbugs analysis
+        uses: codacy/codacy-analysis-cli-action@master
+        with:
+          tool: spotbugs
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          upload: true
+          max-allowed-issues: 2147483647
 
       - name: Build image locally with jib
         # build the docker image to make sure it does not error
