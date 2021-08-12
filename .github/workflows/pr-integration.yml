@@ -61,10 +61,10 @@ jobs:
           echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
 
       - name: Launch the background process
-        uses: BerniWittmann/background-server-action@v1
+        uses: BerniWittmann/background-server-action@v1.0.4
         with:
           start: ./gradlew :service:bootRun
-          wait-on: http://localhost:8080
+          wait-on: http://localhost:8080/status
 
       - name: Run the integration test suite
         run: |
