@@ -17,6 +17,7 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.shaded.json.JSONObject;
 import com.nimbusds.jwt.JWTParser;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Duration;
@@ -235,12 +236,22 @@ public class ProviderService {
       if (jkuOption.isPresent()) {
         // presence of the jku header means the url it specifies contains the key set that must be
         // used validate the signature
-        return ExternalCredsJwtDecoders.fromJku(jkuOption.get()).decode(jwtString);
+        URI jku = jkuOption.get();
+        if (externalCredsConfig.getAllowedJwksUris().contains(jku)) {
+          return ExternalCredsJwtDecoders.fromJku(jku).decode(jwtString);
+        } else {
+          throw new InvalidJwtException(
+              String.format("URI [%s] specified by jku header not on allowed list", jku));
+        }
       } else {
         // no jku means use the issuer to lookup configuration and location of key set
         return JwtDecoders.fromIssuerLocation(issuer).decode(jwtString);
       }
-    } catch (ParseException | JwtException | MalformedURLException | IllegalArgumentException e) {
+    } catch (ParseException
+        | JwtException
+        | MalformedURLException
+        | IllegalArgumentException
+        | IllegalStateException e) {
       throw new InvalidJwtException(e);
     }
   }
