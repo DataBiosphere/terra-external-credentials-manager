@@ -63,3 +63,13 @@ jobs:
           repository: broadinstitute/terra-helmfile
           event-type: update-service
           client-payload: '{"service": "externalcreds", "version": "${{ steps.tag.outputs.tag }}", "dev_only": false}'
+      - uses: 8398a7/action-slack@v3
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        with:
+          status: ${{ job.status }}
+          author_name: Publish to dev
+          fields: repo,job
+          text: 'Publish failed :sadpanda:'
+
