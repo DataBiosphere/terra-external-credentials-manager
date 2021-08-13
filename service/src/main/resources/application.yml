@@ -27,6 +27,11 @@ spring:
 
   main.banner-mode: off
 
+---
+spring:
+  config:
+    activate:
+      on-profile: web-app
   web:
     resources:
       cache:
@@ -34,3 +39,11 @@ spring:
           max-age: 0
           must-revalidate: true
         use-last-modified: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: cron-app
+  main:
+    web-application-type: none
