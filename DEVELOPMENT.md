@@ -65,7 +65,7 @@ psql -h 127.0.0.1 -U postgres -f ./common/postgres-init.sql
 
 ### Running Tests
 
-Unit tests will run on build. 
+Unit tests will run on build.  Integration tests can be run by following the instructions in the [integration README](/integration/README.md). 
 
 ### Running ECM Locally
 
