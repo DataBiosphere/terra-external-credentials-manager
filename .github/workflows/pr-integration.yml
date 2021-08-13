@@ -60,16 +60,15 @@ jobs:
         run:
           echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
 
-      - name: Launch background task and run the integration test suite
-        uses: BerniWittmann/background-server-action@v1.0.4
-        with:
-          command: |
-            resultsDir=../tmp/results$RANDOM
-            echo "Running the FullIntegration test suite"
-            ./gradlew :integration:runTest --args="suites/FullIntegration.json $resultsDir"
-            testResult=$?
-            echo "Test result is $testResult"
-            exit $testResult
-          build: echo "hello"
-          start: ./gradlew :service:bootRun
-          wait-on: 'http://localhost:8080/status'
+      - name: Launch local server
+        uses: ./.github/actions/start-local-server
+
+      - name: Run the integration test suite
+        id: integration-test
+        run: |
+          resultsDir=../tmp/results$RANDOM
+          echo "Running the FullIntegration test suite"
+          ./gradlew :integration:runTest --args="suites/FullIntegration.json $resultsDir"
+          testResult=$?
+          echo "Test result is $testResult"
+          exit $testResult
