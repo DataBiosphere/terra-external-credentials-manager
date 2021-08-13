@@ -1,5 +1,6 @@
 jacocoTestReport {
 	reports {
+		html.required = true
 		xml.required = true
 	}
 
@@ -8,7 +9,7 @@ jacocoTestReport {
 	// https://www.baeldung.com/jacoco-report-exclude#2-gradle-configuration
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
-			fileTree(dir: it, exclude: ['**/generated/*'])
+			fileTree(dir: it, exclude: ['bio/terra/externalcreds/generated/**'])
 		}))
 	}
 }
@@ -18,5 +19,12 @@ spotbugs {
 	effort = 'max'
 	reportsDir = file("${project.reporting.baseDir}/spotbugs")
 	excludeFilter = file('../common/spotbugsExclude.xml')
-	extraArgs = ['-html', '-xml:withMessages'] // seems to be the only way to enable multiple
 }
+
+spotbugsMain {
+	reports {
+		sarif { enabled = true }
+	}
+}
+
+spotbugsTest { enabled = false }
