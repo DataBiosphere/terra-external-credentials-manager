@@ -6,5 +6,6 @@ jib {
 	}
 	container {
 		filesModificationTime = ZonedDateTime.now().toString() // to prevent ui caching
+		mainClass = 'bio.terra.externalcreds.ExternalCredsWebApplication'
 	}
 }
