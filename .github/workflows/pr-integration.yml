@@ -60,9 +60,6 @@ jobs:
         run:
           echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
 
-      - name: See if this step works
-        run: ./gradlew build
-
       - name: Launch background task and run the integration test suite
         uses: BerniWittmann/background-server-action@v1.0.4
         with:
@@ -73,6 +70,9 @@ jobs:
             testResult=$?
             echo "Test result is $testResult"
             exit $testResult
-          build: ./gradlew build
+          build: |
+          pwd
+          ls
+          ./gradlew build
           start: ./gradlew :service:bootRun
           wait-on: 'http://localhost:8080/status'
