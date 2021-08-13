@@ -71,8 +71,8 @@ jobs:
             echo "Test result is $testResult"
             exit $testResult
           build: |
-          pwd
-          ls
-          ./gradlew build
+            pwd
+            ls
+            ./gradlew build
           start: ./gradlew :service:bootRun
           wait-on: 'http://localhost:8080/status'
