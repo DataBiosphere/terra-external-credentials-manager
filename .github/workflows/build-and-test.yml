@@ -47,7 +47,7 @@ jobs:
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
       - name: Build and test with coverage
-        run: ./gradlew :service:build jacocoTestReport
+        run: ./gradlew build jacocoTestReport
 
       - name: Codacy Coverage Reporter
         uses: codacy/codacy-coverage-reporter-action@v1
@@ -55,13 +55,10 @@ jobs:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: service/build/reports/jacoco/test/jacocoTestReport.xml
 
-      - name: Codacy Spotbugs analysis
-        uses: codacy/codacy-analysis-cli-action@master
+      - name: Upload SARIF results file
+        uses: github/codeql-action/upload-sarif@main
         with:
-          tool: spotbugs
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          upload: true
-          max-allowed-issues: 2147483647
+          sarif_file: service/build/reports/spotbugs/main.sarif
 
       - name: Build image locally with jib
         # build the docker image to make sure it does not error
