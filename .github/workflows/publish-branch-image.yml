@@ -1,7 +1,5 @@
 name: Publish branch image
-on:
-  pull_request:
-    branches: [ '**' ]
+on: workflow_dispatch
 
 env:
   SERVICE_NAME: ${{ github.event.repository.name }}
