@@ -63,12 +63,13 @@ jobs:
         # build the docker image to make sure it does not error
         run: './gradlew :service:jibDockerBuild -Djib.console=plain'
 
-      - uses: 8398a7/action-slack@v3
-        if: always()
+      - name: Notify slack on failure
+        uses: 8398a7/action-slack@v3
+        if: ${{ failure() && github.ref == 'refs/heads/dev' }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
         with:
           status: ${{ job.status }}
           author_name: Build on dev
-          fields: job
-          text: 'This is a test :wave:'
+          fields: job,message
+          text: 'Build failed :sadpanda:'
