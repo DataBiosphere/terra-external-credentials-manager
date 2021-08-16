@@ -67,7 +67,7 @@ jobs:
         uses: 8398a7/action-slack@v3
         if: failure()
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+          SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
         with:
           status: ${{ job.status }}
           author_name: Publish to dev
