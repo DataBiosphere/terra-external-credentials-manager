@@ -22,7 +22,6 @@ public class ExternalCredsWebApplication {
   public static void main(String[] args) {
     new SpringApplicationBuilder(ExternalCredsWebApplication.class)
         .initializers(new LoggingInitializer())
-        .profiles("web-app")
         .run(args);
   }
 }
