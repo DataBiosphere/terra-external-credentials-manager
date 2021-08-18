@@ -37,7 +37,7 @@ public class ExternalCredsCronApplication {
     this.providerService = providerService;
   }
 
-  @Scheduled(fixedRate = 1000 * 60 * 10) // 10 minutes
+  @Scheduled(fixedRateString = "#{${externalcreds.background-job-interval-mins} * 60 * 1000}")
   public void checkForExpiringCredentials() {
     // TODO: put real code here, this log message is just to verify that this is running
     log.info(providerService.getProviderList().toString());
