@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -45,9 +45,10 @@ public class ProviderServiceTest extends BaseTest {
       when(externalCredsConfig.getProviders()).thenReturn(Map.of());
 
       assertThrows(
-              NotFoundException.class,
-              () ->
-                      providerService.deleteLink(UUID.randomUUID().toString(), UUID.randomUUID().toString()));
+          NotFoundException.class,
+          () ->
+              providerService.deleteLink(
+                  UUID.randomUUID().toString(), UUID.randomUUID().toString()));
     }
 
     @Test
@@ -55,17 +56,17 @@ public class ProviderServiceTest extends BaseTest {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
 
       when(externalCredsConfig.getProviders())
-              .thenReturn(Map.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
+          .thenReturn(Map.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
 
       when(linkedAccountService.getLinkedAccount(
               linkedAccount.getUserId(), linkedAccount.getProviderId()))
-              .thenReturn(Optional.empty());
+          .thenReturn(Optional.empty());
 
       assertThrows(
-              NotFoundException.class,
-              () -> providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderId()));
+          NotFoundException.class,
+          () ->
+              providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderId()));
     }
-
   }
 
   private void testWithRevokeResponseCode(HttpStatus httpStatus) {

@@ -23,8 +23,11 @@ public class GA4GHVisaDAOTest extends BaseTest {
 
   @Test
   void testInsertAndListVisa() {
-    linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
-    var savedPassport = passportDAO.insertPassport(TestUtils.createRandomPassport());
+    var savedLinkedAccount =
+        linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+    var savedPassport =
+        passportDAO.insertPassport(
+            TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
 
     var immutableVisa = TestUtils.createRandomVisa();
     var expectedVisa1 = immutableVisa.withPassportId(savedPassport.getId());
