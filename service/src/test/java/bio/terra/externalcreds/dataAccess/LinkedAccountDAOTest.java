@@ -6,12 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
-import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import java.sql.Timestamp;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,28 +20,15 @@ public class LinkedAccountDAOTest extends BaseTest {
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
 
-  private ImmutableLinkedAccount linkedAccount;
-
-  @BeforeEach
-  void setup() {
-    linkedAccount =
-        ImmutableLinkedAccount.builder()
-            .expires(new Timestamp(100))
-            .providerId("provider")
-            .refreshToken("refresh")
-            .userId(UUID.randomUUID().toString())
-            .externalUserId("externalUser")
-            .build();
-  }
-
   @Test
-  void testMissingLinkedAccount() {
+  void testGetMissingLinkedAccount() {
     var shouldBeEmpty = linkedAccountDAO.getLinkedAccount("", "");
     assertEmpty(shouldBeEmpty);
   }
 
   @Test
-  void testCreateAndGetLinkedAccount() {
+  void testInsertAndGetLinkedAccount() {
+    var linkedAccount = TestUtils.createRandomLinkedAccount();
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
     assertTrue(savedLinkedAccount.getId().isPresent());
     assertEquals(linkedAccount.withId(savedLinkedAccount.getId()), savedLinkedAccount);
@@ -53,7 +39,8 @@ public class LinkedAccountDAOTest extends BaseTest {
   }
 
   @Test
-  void testUpsertLinkedAccounts() {
+  void testUpsertUpdatedLinkedAccount() {
+    var linkedAccount = TestUtils.createRandomLinkedAccount();
     var createdLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     var updatedLinkedAccount =
@@ -79,7 +66,8 @@ public class LinkedAccountDAOTest extends BaseTest {
 
     @Test
     void testDeleteLinkedAccountIfExists() {
-      var createdLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+      var createdLinkedAccount =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
       var deletionSucceeded =
           linkedAccountDAO.deleteLinkedAccountIfExists(
               createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderId());
@@ -99,7 +87,8 @@ public class LinkedAccountDAOTest extends BaseTest {
 
     @Test
     void testAlsoDeletesPassport() {
-      var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+      var savedLinkedAccount =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
       assertPresent(savedLinkedAccount.getId());
       var passport =
           ImmutableGA4GHPassport.builder()

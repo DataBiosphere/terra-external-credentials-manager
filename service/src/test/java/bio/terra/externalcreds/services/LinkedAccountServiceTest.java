@@ -82,7 +82,7 @@ public class LinkedAccountServiceTest extends BaseTest {
   void testSaveLinkedAccountWithPassportAndVisas() {
     var linkedAccount = TestUtils.createRandomLinkedAccount();
     var passport = TestUtils.createRandomPassport();
-    var visas =
+    List<GA4GHVisa> visas =
         List.of(
             TestUtils.createRandomVisa(),
             TestUtils.createRandomVisa(),
@@ -91,7 +91,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
     // save again with new passport and visas to test overwrite
     var passport2 = TestUtils.createRandomPassport();
-    var visas2 =
+    List<GA4GHVisa> visas2 =
         List.of(
             TestUtils.createRandomVisa(),
             TestUtils.createRandomVisa(),
