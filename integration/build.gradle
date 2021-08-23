@@ -4,7 +4,7 @@ plugins {
 	// Apply the application plugin to add support for building a CLI application in Java.
 	id 'application'
 	id 'io.freefair.lombok'
-	id 'bio.terra.test-runner-plugin' version '0.0.7-SNAPSHOT'
+	id 'bio.terra.test-runner-plugin' version '0.0.8-SNAPSHOT'
 }
 
 compileJava { options.release = 11 }
@@ -27,5 +27,5 @@ dependencies {
 	implementation project(':client')
 
 	// Terra Test Runner Library
-	implementation 'bio.terra:terra-test-runner:0.0.7-SNAPSHOT'
+	implementation 'bio.terra:terra-test-runner:0.0.8-SNAPSHOT'
 }

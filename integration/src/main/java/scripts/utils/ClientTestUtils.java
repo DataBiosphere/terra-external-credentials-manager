@@ -25,13 +25,13 @@ public class ClientTestUtils {
     }
 
     private static ApiClient buildClient(@Nullable AccessToken accessToken, ServerSpecification server) throws IOException {
-        if (Strings.isNullOrEmpty(server.workspaceManagerUri)) {
+        if (Strings.isNullOrEmpty(server.policyManagerUri)) {
             throw new IllegalArgumentException("Service URI cannot be empty");
         }
 
         // build the client object
         ApiClient apiClient = new ApiClient();
-        apiClient.setBasePath(server.workspaceManagerUri);
+        apiClient.setBasePath(server.policyManagerUri);
 
         if (accessToken != null) {
             apiClient.setAccessToken(accessToken.getTokenValue());
