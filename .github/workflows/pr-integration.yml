@@ -5,10 +5,8 @@
 name: PR Integration Tests
 on:
   push:
-    branches: [ dev ]
     paths-ignore:
       - 'README.md'
-      - '.github/**'
       - 'service/local-dev/**'
   pull_request:
     branches: [ '**' ]
