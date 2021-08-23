@@ -1,12 +1,9 @@
 package bio.terra.externalcreds;
 
 import bio.terra.externalcreds.config.ProviderProperties;
-import bio.terra.externalcreds.models.GA4GHPassport;
-import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
 import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
 import bio.terra.externalcreds.models.ImmutableLinkedAccount;
-import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -20,7 +17,7 @@ public class TestUtils {
     return new Timestamp(System.currentTimeMillis());
   }
 
-  public static LinkedAccount createRandomLinkedAccount() {
+  public static ImmutableLinkedAccount createRandomLinkedAccount() {
     return ImmutableLinkedAccount.builder()
         .expires(getRandomTimestamp())
         .providerId(UUID.randomUUID().toString())
@@ -30,14 +27,14 @@ public class TestUtils {
         .build();
   }
 
-  public static GA4GHPassport createRandomPassport() {
+  public static ImmutableGA4GHPassport createRandomPassport() {
     return ImmutableGA4GHPassport.builder()
         .jwt(UUID.randomUUID().toString())
         .expires(getRandomTimestamp())
         .build();
   }
 
-  public static GA4GHVisa createRandomVisa() {
+  public static ImmutableGA4GHVisa createRandomVisa() {
     return ImmutableGA4GHVisa.builder()
         .visaType(UUID.randomUUID().toString())
         .tokenType(TokenTypeEnum.access_token)

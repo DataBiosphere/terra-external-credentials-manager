@@ -10,7 +10,6 @@ import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
-import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
 import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
 import bio.terra.externalcreds.models.ImmutableLinkedAccount;
@@ -124,7 +123,7 @@ public class LinkedAccountServiceTest extends BaseTest {
   }
 
   private LinkedAccount saveAndValidateLinkedAccount(
-      LinkedAccount linkedAccount, GA4GHPassport passport, List<GA4GHVisa> visas) {
+      LinkedAccount linkedAccount, GA4GHPassport passport, List<ImmutableGA4GHVisa> visas) {
     var saved =
         linkedAccountService.saveLinkedAccount(
             ImmutableLinkedAccountWithPassportAndVisas.builder()

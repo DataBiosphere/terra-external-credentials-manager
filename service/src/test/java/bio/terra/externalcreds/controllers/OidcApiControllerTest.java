@@ -30,6 +30,7 @@ import java.util.UUID;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.broadinstitute.dsde.workbench.client.sam.api.UsersApi;
 import org.broadinstitute.dsde.workbench.client.sam.model.UserStatusInfo;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -55,106 +56,119 @@ public class OidcApiControllerTest extends BaseTest {
         .andExpect(content().json("[\"fake-provider1\",\"fake-provider2\"]"));
   }
 
-  @Test
-  void testGetAuthUrl() throws Exception {
-    var result = "https://test/authorization/uri";
-    var provider = "fake";
-    var redirectUri = "fakeuri";
-    var scopes = Set.of("openid", "email");
-    String state = null;
+  @Nested
+  class GetAuthUrl {
 
-    when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
-        .thenReturn(Optional.of(result));
+    @Test
+    void testGetAuthUrl() throws Exception {
+      var result = "https://test/authorization/uri";
+      var provider = "fake";
+      var redirectUri = "fakeuri";
+      var scopes = Set.of("openid", "email");
+      String state = null;
 
-    var queryParams = new LinkedMultiValueMap<String, String>();
-    queryParams.add("redirectUri", redirectUri);
-    queryParams.addAll("scopes", List.copyOf(scopes));
-    mvc.perform(get("/api/oidc/v1/{provider}/authorization-url", provider).queryParams(queryParams))
-        .andExpect(content().json("\"" + result + "\""));
+      when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
+          .thenReturn(Optional.of(result));
+
+      var queryParams = new LinkedMultiValueMap<String, String>();
+      queryParams.add("redirectUri", redirectUri);
+      queryParams.addAll("scopes", List.copyOf(scopes));
+      mvc.perform(
+              get("/api/oidc/v1/{provider}/authorization-url", provider).queryParams(queryParams))
+          .andExpect(content().json("\"" + result + "\""));
+    }
+
+    @Test
+    void testGetAuthUrl404() throws Exception {
+      var provider = "fake";
+      var redirectUri = "fakeuri";
+      var scopes = Set.of("openid", "email");
+      String state = null;
+
+      when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
+          .thenReturn(Optional.empty());
+
+      var queryParams = new LinkedMultiValueMap<String, String>();
+      queryParams.add("redirectUri", redirectUri);
+      queryParams.addAll("scopes", List.copyOf(scopes));
+      mvc.perform(
+              get("/api/oidc/v1/{provider}/authorization-url", provider).queryParams(queryParams))
+          .andExpect(status().isNotFound());
+    }
   }
 
-  @Test
-  void testGetAuthUrl404() throws Exception {
-    var provider = "fake";
-    var redirectUri = "fakeuri";
-    var scopes = Set.of("openid", "email");
-    String state = null;
+  @Nested
+  class GetLink {
 
-    when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
-        .thenReturn(Optional.empty());
+    @Test
+    void testGetLink() throws Exception {
+      var accessToken = "testToken";
+      var userId = UUID.randomUUID().toString();
+      var inputLinkedAccount =
+          ImmutableLinkedAccount.builder()
+              .userId(userId)
+              .providerId("testProvider")
+              .externalUserId("externalUser")
+              .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
+              .refreshToken("refreshToken")
+              .build();
 
-    var queryParams = new LinkedMultiValueMap<String, String>();
-    queryParams.add("redirectUri", redirectUri);
-    queryParams.addAll("scopes", List.copyOf(scopes));
-    mvc.perform(get("/api/oidc/v1/{provider}/authorization-url", provider).queryParams(queryParams))
-        .andExpect(status().isNotFound());
-  }
+      mockSamUser(userId, accessToken);
 
-  @Test
-  void testGetLink() throws Exception {
-    var accessToken = "testToken";
-    var userId = UUID.randomUUID().toString();
-    var inputLinkedAccount =
-        ImmutableLinkedAccount.builder()
-            .userId(userId)
-            .providerId("testProvider")
-            .externalUserId("externalUser")
-            .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
-            .refreshToken("refreshToken")
-            .build();
+      when(linkedAccountService.getLinkedAccount(
+              eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderId())))
+          .thenReturn(Optional.of(inputLinkedAccount));
 
-    mockSamUser(userId, accessToken);
+      mvc.perform(
+              get("/api/oidc/v1/" + inputLinkedAccount.getProviderId())
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(
+              content()
+                  .json(
+                      "{\"externalUserId\":\""
+                          + inputLinkedAccount.getExternalUserId()
+                          + "\", \"expirationTimestamp\":\""
+                          + OffsetDateTime.ofInstant(
+                              inputLinkedAccount.getExpires().toInstant(), ZoneId.of("UTC"))
+                          + "\"}"));
+    }
 
-    when(linkedAccountService.getLinkedAccount(
-            eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderId())))
-        .thenReturn(Optional.of(inputLinkedAccount));
+    @Test
+    void testGetLink404() throws Exception {
+      var userId = "non-existent-user";
+      var providerId = "non-existent-provider";
+      var accessToken = "testToken";
 
-    mvc.perform(
-            get("/api/oidc/v1/" + inputLinkedAccount.getProviderId())
-                .header("authorization", "Bearer " + accessToken))
-        .andExpect(
-            content()
-                .json(
-                    "{\"externalUserId\":\""
-                        + inputLinkedAccount.getExternalUserId()
-                        + "\", \"expirationTimestamp\":\""
-                        + OffsetDateTime.ofInstant(
-                            inputLinkedAccount.getExpires().toInstant(), ZoneId.of("UTC"))
-                        + "\"}"));
-  }
+      mockSamUser(userId, accessToken);
 
-  @Test
-  void testGetLinkedAccount404() throws Exception {
-    var userId = "non-existent-user";
-    var providerId = "non-existent-provider";
-    var accessToken = "testToken";
+      mvc.perform(
+              get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isNotFound());
+    }
 
-    mockSamUser(userId, accessToken);
+    @Test
+    void testGetLink403() throws Exception {
+      var providerId = "provider";
+      var accessToken = "testToken";
 
-    mvc.perform(get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
-        .andExpect(status().isNotFound());
-  }
+      mockSamUserError(accessToken, HttpStatus.NOT_FOUND);
 
-  @Test
-  void testGetLinkedAccount403() throws Exception {
-    var providerId = "provider";
-    var accessToken = "testToken";
+      mvc.perform(
+              get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isForbidden());
+    }
 
-    mockSamUserError(accessToken, HttpStatus.NOT_FOUND);
+    @Test
+    void testGetLink500() throws Exception {
+      String providerId = "provider";
+      String accessToken = "testToken";
 
-    mvc.perform(get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
-        .andExpect(status().isForbidden());
-  }
+      mockSamUserError(accessToken, HttpStatus.NO_CONTENT);
 
-  @Test
-  void testGetLinkedAccount500() throws Exception {
-    String providerId = "provider";
-    String accessToken = "testToken";
-
-    mockSamUserError(accessToken, HttpStatus.NO_CONTENT);
-
-    mvc.perform(get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
-        .andExpect(status().isInternalServerError());
+      mvc.perform(
+              get("/api/oidc/v1/" + providerId).header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isInternalServerError());
+    }
   }
 
   @Test
@@ -209,71 +223,79 @@ public class OidcApiControllerTest extends BaseTest {
                         + "\"}"));
   }
 
-  @Test
-  void testDeleteLink() throws Exception {
-    var accessToken = "testToken";
-    var userId = UUID.randomUUID().toString();
-    var providerId = UUID.randomUUID().toString();
-    mockSamUser(userId, accessToken);
+  @Nested
+  class DeleteLink {
 
-    doNothing().when(providerService).deleteLink(userId, providerId);
+    @Test
+    void testDeleteLink() throws Exception {
+      var accessToken = "testToken";
+      var userId = UUID.randomUUID().toString();
+      var providerId = UUID.randomUUID().toString();
+      mockSamUser(userId, accessToken);
 
-    mvc.perform(
-            delete("/api/oidc/v1/{provider}", providerId)
-                .header("authorization", "Bearer " + accessToken))
-        .andExpect(status().isOk());
+      doNothing().when(providerService).deleteLink(userId, providerId);
 
-    verify(providerService).deleteLink(userId, providerId);
+      mvc.perform(
+              delete("/api/oidc/v1/{provider}", providerId)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isOk());
+
+      verify(providerService).deleteLink(userId, providerId);
+    }
+
+    @Test
+    void testDeleteLink404() throws Exception {
+      var accessToken = "testToken";
+      var userId = UUID.randomUUID().toString();
+      var providerId = UUID.randomUUID().toString();
+      mockSamUser(userId, accessToken);
+
+      doThrow(new NotFoundException("not found"))
+          .when(providerService)
+          .deleteLink(userId, providerId);
+
+      mvc.perform(
+              delete("/api/oidc/v1/{provider}", providerId)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isNotFound());
+    }
   }
 
-  @Test
-  void testDeleteLinkNotFound() throws Exception {
-    var accessToken = "testToken";
-    var userId = UUID.randomUUID().toString();
-    var providerId = UUID.randomUUID().toString();
-    mockSamUser(userId, accessToken);
+  @Nested
+  class GetProviderPassport {
 
-    doThrow(new NotFoundException("not found"))
-        .when(providerService)
-        .deleteLink(userId, providerId);
+    @Test
+    void testGetProviderPassport() throws Exception {
+      var accessToken = "testToken";
+      var userId = UUID.randomUUID().toString();
+      var providerId = UUID.randomUUID().toString();
+      var passport = TestUtils.createRandomPassport();
 
-    mvc.perform(
-            delete("/api/oidc/v1/{provider}", providerId)
-                .header("authorization", "Bearer " + accessToken))
-        .andExpect(status().isNotFound());
-  }
+      mockSamUser(userId, accessToken);
 
-  @Test
-  void testGetProviderPassport() throws Exception {
-    var accessToken = "testToken";
-    var userId = UUID.randomUUID().toString();
-    var providerId = UUID.randomUUID().toString();
-    var passport = TestUtils.createRandomPassport();
+      when(linkedAccountService.getGA4GHPassport(userId, providerId))
+          .thenReturn(Optional.of(passport));
 
-    mockSamUser(userId, accessToken);
+      mvc.perform(
+              get("/api/oidc/v1/{provider}/passport", providerId)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isOk())
+          .andExpect(content().json("\"" + passport.getJwt() + "\""));
+    }
 
-    when(linkedAccountService.getGA4GHPassport(userId, providerId))
-        .thenReturn(Optional.of(passport));
+    @Test
+    void testGetProviderPassport404() throws Exception {
+      var accessToken = "testToken";
+      var userId = UUID.randomUUID().toString();
+      var providerId = UUID.randomUUID().toString();
 
-    mvc.perform(
-            get("/api/oidc/v1/{provider}/passport", providerId)
-                .header("authorization", "Bearer " + accessToken))
-        .andExpect(status().isOk())
-        .andExpect(content().json("\"" + passport.getJwt() + "\""));
-  }
+      mockSamUser(userId, accessToken);
 
-  @Test
-  void testGetProviderPassportNotFound() throws Exception {
-    var accessToken = "testToken";
-    var userId = UUID.randomUUID().toString();
-    var providerId = UUID.randomUUID().toString();
-
-    mockSamUser(userId, accessToken);
-
-    mvc.perform(
-            get("/api/oidc/v1/{provider}/passport", providerId)
-                .header("authorization", "Bearer " + accessToken))
-        .andExpect(status().isNotFound());
+      mvc.perform(
+              get("/api/oidc/v1/{provider}/passport", providerId)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isNotFound());
+    }
   }
 
   private void mockSamUser(String userId, String accessToken) throws ApiException {
