@@ -5,7 +5,7 @@ plugins {
 
 	id 'org.springframework.boot'
 
-	id 'com.diffplug.spotless' version '5.14.2'
+	id 'com.diffplug.spotless'
 	id 'com.github.ben-manes.versions' version '0.39.0'
 	id 'com.github.spotbugs' version '4.7.2'
 	id 'com.google.cloud.tools.jib' version '3.1.2'

@@ -4,6 +4,7 @@ plugins {
 	// Apply the application plugin to add support for building a CLI application in Java.
 	id 'application'
 	id 'io.freefair.lombok'
+	id 'com.diffplug.spotless'
 	id 'bio.terra.test-runner-plugin' version '0.0.8-SNAPSHOT'
 }
 
@@ -29,3 +30,11 @@ dependencies {
 	// Terra Test Runner Library
 	implementation 'bio.terra:terra-test-runner:0.0.8-SNAPSHOT'
 }
+
+spotless {
+	java {
+		googleJavaFormat()
+	}
+}
+
+compileJava.dependsOn spotlessApply
