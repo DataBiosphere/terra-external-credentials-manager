@@ -6,7 +6,7 @@ This Gradle project contains Test Runner integration tests for the External Cred
 ### Adding New Tests
 
 1. Create a new script in the [test scripts directory](src/main/java/scripts/testscripts). 
-2. Reference the script from any test suites that you would like the test to be included in (this probably at least includes the [full default suite](src/main/resources/suites/FullIntegration.json) and the [full dev suite](src/main/resources/suites/dev/FullIntegration.json)).
+2. Add a reference to the test script in our FullIntegration test suite [here](src/main/resources/suites/FullIntegration.json).
 3. Debug the test locally using the instructions below. 
 
 
