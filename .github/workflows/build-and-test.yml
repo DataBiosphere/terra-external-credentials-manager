@@ -46,7 +46,7 @@ jobs:
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
       - name: Build and test with coverage
-        run: ./gradlew :service:build jacocoTestReport
+        run: ./gradlew build jacocoTestReport
 
       - name: Codecov
         uses: codecov/codecov-action@v2.0.2
@@ -64,8 +64,8 @@ jobs:
           DEV_FIRECLOUD_ACCOUNT: ${{ secrets.DEV_FIRECLOUD_ACCOUNT }}
         run: echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
 
-      - name: Prep integration and launch the background process for integration tests
-        run: ./gradlew --no-daemon :integration:build :service:bootRunDev | tee bootrun.log &
+      - name: Launch the background process for integration tests
+        run: ./gradlew :service:bootRunDev | tee bootrun.log &
         # Starting this now so it has time to initialize while we jib
 
       - name: Build image locally with jib
