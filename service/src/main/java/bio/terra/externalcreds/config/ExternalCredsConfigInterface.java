@@ -1,5 +1,7 @@
 package bio.terra.externalcreds.config;
 
+import java.net.URI;
+import java.util.Collection;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -16,4 +18,7 @@ public interface ExternalCredsConfigInterface {
   VersionProperties getVersion();
 
   String getSamBasePath();
+
+  /** List of URIs that are allowable in jku headers of JWTs */
+  Collection<URI> getAllowedJwksUris();
 }

@@ -17,6 +17,7 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.shaded.json.JSONObject;
 import com.nimbusds.jwt.JWTParser;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Duration;
@@ -29,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
@@ -70,23 +72,22 @@ public class ProviderService {
 
   public Optional<String> getProviderAuthorizationUrl(
       String provider, String redirectUri, Set<String> scopes, String state) {
-    var providerInfo = externalCredsConfig.getProviders().get(provider);
-    if (providerInfo == null) {
-      return Optional.empty();
-    }
+    return providerClientCache
+        .getProviderClient(provider)
+        .map(
+            providerClient -> {
+              var providerInfo = externalCredsConfig.getProviders().get(provider);
 
-    var providerClient = providerClientCache.getProviderClient(provider);
-
-    return Optional.of(
-        oAuth2Service.getAuthorizationRequestUri(
-            providerClient,
-            redirectUri,
-            scopes,
-            state,
-            providerInfo.getAdditionalAuthorizationParameters()));
+              return oAuth2Service.getAuthorizationRequestUri(
+                  providerClient,
+                  redirectUri,
+                  scopes,
+                  state,
+                  providerInfo.getAdditionalAuthorizationParameters());
+            });
   }
 
-  public LinkedAccountWithPassportAndVisas createLink(
+  public Optional<LinkedAccountWithPassportAndVisas> createLink(
       String provider,
       String userId,
       String authorizationCode,
@@ -94,12 +95,29 @@ public class ProviderService {
       Set<String> scopes,
       String state) {
 
-    var providerInfo = externalCredsConfig.getProviders().get(provider);
-    if (providerInfo == null) {
-      throw new NotFoundException(String.format("provider %s not found", provider));
-    }
+    return providerClientCache
+        .getProviderClient(provider)
+        .map(
+            providerClient ->
+                createLinkInternal(
+                    provider,
+                    userId,
+                    authorizationCode,
+                    redirectUri,
+                    scopes,
+                    state,
+                    providerClient));
+  }
 
-    var providerClient = providerClientCache.getProviderClient(provider);
+  private LinkedAccountWithPassportAndVisas createLinkInternal(
+      String provider,
+      String userId,
+      String authorizationCode,
+      String redirectUri,
+      Set<String> scopes,
+      String state,
+      ClientRegistration providerClient) {
+    var providerInfo = externalCredsConfig.getProviders().get(provider);
 
     var tokenResponse =
         oAuth2Service.authorizationCodeExchange(
@@ -218,12 +236,22 @@ public class ProviderService {
       if (jkuOption.isPresent()) {
         // presence of the jku header means the url it specifies contains the key set that must be
         // used validate the signature
-        return ExternalCredsJwtDecoders.fromJku(jkuOption.get()).decode(jwtString);
+        URI jku = jkuOption.get();
+        if (externalCredsConfig.getAllowedJwksUris().contains(jku)) {
+          return ExternalCredsJwtDecoders.fromJku(jku).decode(jwtString);
+        } else {
+          throw new InvalidJwtException(
+              String.format("URI [%s] specified by jku header not on allowed list", jku));
+        }
       } else {
         // no jku means use the issuer to lookup configuration and location of key set
         return JwtDecoders.fromIssuerLocation(issuer).decode(jwtString);
       }
-    } catch (ParseException | JwtException | MalformedURLException | IllegalArgumentException e) {
+    } catch (ParseException
+        | JwtException
+        | MalformedURLException
+        | IllegalArgumentException
+        | IllegalStateException e) {
       throw new InvalidJwtException(e);
     }
   }

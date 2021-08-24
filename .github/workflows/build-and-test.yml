@@ -45,8 +45,18 @@ jobs:
           pg_isready -h localhost -t 10
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
-      - name: Build and test with Gradle
-        run: ./gradlew build
+      - name: Build and test with coverage
+        run: ./gradlew build jacocoTestReport
+
+      - name: Codecov
+        uses: codecov/codecov-action@v2.0.2
+        with:
+          files: ./service/build/reports/jacoco/test/jacocoTestReport.xml
+
+      - name: Upload spotbugs results
+        uses: github/codeql-action/upload-sarif@main
+        with:
+          sarif_file: service/build/reports/spotbugs/main.sarif
 
       - name: Render GitHub Secrets
         env:
@@ -76,3 +86,14 @@ jobs:
 
       - name: Run the integration test suite
         run: ./gradlew :integration:runTest --args="suites/FullIntegration.json /dev/null"
+
+      - name: Notify slack on failure
+        uses: 8398a7/action-slack@v3
+        if: ${{ failure() && github.ref == 'refs/heads/dev' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
+        with:
+          status: ${{ job.status }}
+          author_name: Build on dev
+          fields: job,message
+          text: 'Build failed :sadpanda:'

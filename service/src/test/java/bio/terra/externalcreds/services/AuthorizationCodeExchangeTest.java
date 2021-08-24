@@ -2,6 +2,7 @@ package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
@@ -123,7 +124,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   @Test
-  void testNoVisas() throws JOSEException {
+  void testNoVisas() throws JOSEException, URISyntaxException {
     var expectedPassport = createTestPassport(Collections.emptyList());
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, expectedPassport, Collections.emptyList());
@@ -159,7 +160,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   @Test
-  void testNoPassport() {
+  void testNoPassport() throws URISyntaxException {
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, null, Collections.emptyList());
   }
@@ -189,21 +190,46 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   @Test
+  void testJwtJkuNotOnAllowList() throws URISyntaxException, JOSEException {
+    var exception =
+        assertThrows(
+            InvalidJwtException.class,
+            () -> providerService.decodeJwt(createTestVisa(TokenTypeEnum.document_token).getJwt()));
+
+    assertTrue(exception.getMessage().contains("not on allowed list"));
+  }
+
+  @Test
   void testJwtJkuNotResponsive() throws URISyntaxException, JOSEException {
+    String testIssuer = "http://localhost:10";
+    when(externalCredsConfig.getAllowedJwksUris())
+        .thenReturn(List.of(new URI(testIssuer + JKU_PATH)));
+
     var jwtNotResponsiveJku =
         createVisaJwtString(
-            ImmutableGA4GHVisa.copyOf(createTestVisa(TokenTypeEnum.access_token))
-                .withIssuer("http://localhost:10"));
-    assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtNotResponsiveJku));
+            ImmutableGA4GHVisa.copyOf(createTestVisa(TokenTypeEnum.document_token))
+                .withIssuer(testIssuer));
+
+    var exception =
+        assertThrows(
+            InvalidJwtException.class, () -> providerService.decodeJwt(jwtNotResponsiveJku));
+    assertTrue(exception.getMessage().contains("Connection refused"));
   }
 
   @Test
   void testJwtJkuMalformed() throws URISyntaxException, JOSEException {
+    String testIssuer = "foobar";
+    when(externalCredsConfig.getAllowedJwksUris())
+        .thenReturn(List.of(new URI(testIssuer + JKU_PATH)));
+
     var jwtMalformedJku =
         createVisaJwtString(
-            ImmutableGA4GHVisa.copyOf(createTestVisa(TokenTypeEnum.access_token))
-                .withIssuer("foobar"));
-    assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtMalformedJku));
+            ImmutableGA4GHVisa.copyOf(createTestVisa(TokenTypeEnum.document_token))
+                .withIssuer(testIssuer));
+
+    var exception =
+        assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtMalformedJku));
+    assertTrue(exception.getMessage().contains("URI is not absolute"));
   }
 
   private void setupMocks(
@@ -212,7 +238,8 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
       String authorizationCode,
       String redirectUri,
       Set<String> scopes,
-      String state) {
+      String state)
+      throws URISyntaxException {
     var providerInfo = TestUtils.createRandomProvider();
     var providerClient =
         ClientRegistration.withRegistrationId(linkedAccount.getProviderId())
@@ -233,8 +260,9 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
 
     when(externalCredsConfig.getProviders())
         .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
+    when(externalCredsConfig.getAllowedJwksUris()).thenReturn(List.of(new URI(issuer + JKU_PATH)));
     when(providerClientCache.getProviderClient(linkedAccount.getProviderId()))
-        .thenReturn(providerClient);
+        .thenReturn(Optional.of(providerClient));
     when(oAuth2Service.authorizationCodeExchange(
             providerClient,
             authorizationCode,
@@ -250,7 +278,8 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   private void runTest(
       LinkedAccount expectedLinkedAccount,
       GA4GHPassport expectedPassport,
-      List<GA4GHVisa> expectedVisas) {
+      List<GA4GHVisa> expectedVisas)
+      throws URISyntaxException {
 
     setupMocks(
         expectedLinkedAccount, expectedPassport, authorizationCode, redirectUri, scopes, state);
@@ -264,14 +293,17 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
             scopes,
             state);
 
+    assertPresent(linkedAccountWithPassportAndVisas);
+
     assertEquals(
         expectedLinkedAccount,
-        ImmutableLinkedAccount.copyOf(linkedAccountWithPassportAndVisas.getLinkedAccount())
+        ImmutableLinkedAccount.copyOf(linkedAccountWithPassportAndVisas.get().getLinkedAccount())
             .withExpires(passportExpiresTime)
             .withId(Optional.empty()));
 
     var stablePassport =
         linkedAccountWithPassportAndVisas
+            .get()
             .getPassport()
             .map(
                 p ->
@@ -281,9 +313,9 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     assertEquals(Optional.ofNullable(expectedPassport), stablePassport);
 
     var stableVisas =
-        linkedAccountWithPassportAndVisas.getVisas() == null
+        linkedAccountWithPassportAndVisas.get().getVisas() == null
             ? null
-            : linkedAccountWithPassportAndVisas.getVisas().stream()
+            : linkedAccountWithPassportAndVisas.get().getVisas().stream()
                 .map(
                     visa ->
                         ImmutableGA4GHVisa.copyOf(visa)

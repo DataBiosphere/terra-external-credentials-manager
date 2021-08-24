@@ -1,6 +1,8 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.config.ProviderProperties;
+import java.util.Optional;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrations;
@@ -20,12 +22,12 @@ public class ProviderClientCache {
   }
 
   @Cacheable(cacheNames = "providerClients", sync = true)
-  public ClientRegistration getProviderClient(String provider) {
-    var providerInfo = externalCredsConfig.getProviders().get(provider);
-    if (providerInfo == null) {
-      return null;
-    }
+  public Optional<ClientRegistration> getProviderClient(String provider) {
+    return Optional.ofNullable(externalCredsConfig.getProviders().get(provider))
+        .map(this::buildClientRegistration);
+  }
 
+  private ClientRegistration buildClientRegistration(ProviderProperties providerInfo) {
     var builder =
         ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
             .clientId(providerInfo.getClientId())

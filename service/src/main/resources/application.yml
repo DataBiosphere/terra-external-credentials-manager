@@ -13,7 +13,7 @@ server:
 spring:
   application.name: externalcreds
 
-  config.import: optional:classpath:rendered/providers.yaml;classpath:rendered/version.properties
+  config.import: optional:classpath:rendered/providers.yaml;classpath:rendered/version.properties;classpath:rendered/allowed_jwks.yaml
 
   datasource:
     hikari:

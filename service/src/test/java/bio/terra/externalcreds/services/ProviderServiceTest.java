@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
@@ -26,40 +27,46 @@ public class ProviderServiceTest extends BaseTest {
   @MockBean private LinkedAccountService linkedAccountService;
   @MockBean private ExternalCredsConfig externalCredsConfig;
 
-  @Test
-  void testDeleteLinkedAccountAndRevokeToken() {
-    testWithRevokeResponseCode(HttpStatus.OK);
-  }
+  @Nested
+  class DeleteLink {
 
-  @Test
-  void testRevokeTokenError() {
-    testWithRevokeResponseCode(HttpStatus.BAD_REQUEST);
-  }
+    @Test
+    void testDeleteLinkedAccountAndRevokeToken() {
+      testWithRevokeResponseCode(HttpStatus.OK);
+    }
 
-  @Test
-  void testDeleteLinkProviderNotFound() {
-    when(externalCredsConfig.getProviders()).thenReturn(Map.of());
+    @Test
+    void testRevokeTokenError() {
+      testWithRevokeResponseCode(HttpStatus.BAD_REQUEST);
+    }
 
-    assertThrows(
-        NotFoundException.class,
-        () ->
-            providerService.deleteLink(UUID.randomUUID().toString(), UUID.randomUUID().toString()));
-  }
+    @Test
+    void testDeleteLinkProviderNotFound() {
+      when(externalCredsConfig.getProviders()).thenReturn(Map.of());
 
-  @Test
-  void testDeleteLinkLinkNotFound() {
-    var linkedAccount = TestUtils.createRandomLinkedAccount();
+      assertThrows(
+          NotFoundException.class,
+          () ->
+              providerService.deleteLink(
+                  UUID.randomUUID().toString(), UUID.randomUUID().toString()));
+    }
 
-    when(externalCredsConfig.getProviders())
-        .thenReturn(Map.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
+    @Test
+    void testDeleteLinkLinkNotFound() {
+      var linkedAccount = TestUtils.createRandomLinkedAccount();
 
-    when(linkedAccountService.getLinkedAccount(
-            linkedAccount.getUserId(), linkedAccount.getProviderId()))
-        .thenReturn(Optional.empty());
+      when(externalCredsConfig.getProviders())
+          .thenReturn(Map.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
 
-    assertThrows(
-        NotFoundException.class,
-        () -> providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderId()));
+      when(linkedAccountService.getLinkedAccount(
+              linkedAccount.getUserId(), linkedAccount.getProviderId()))
+          .thenReturn(Optional.empty());
+
+      assertThrows(
+          NotFoundException.class,
+          () ->
+              providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderId()));
+    }
   }
 
   private void testWithRevokeResponseCode(HttpStatus httpStatus) {

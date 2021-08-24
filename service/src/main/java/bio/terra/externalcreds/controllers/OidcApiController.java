@@ -104,8 +104,9 @@ public class OidcApiController implements OidcApi {
         providerService.createLink(
             provider, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
 
-    return ResponseEntity.ok(
-        getLinkInfoFromLinkedAccount(linkedAccountWithPassportAndVisas.getLinkedAccount()));
+    return ResponseEntity.of(
+        linkedAccountWithPassportAndVisas.map(
+            x -> getLinkInfoFromLinkedAccount(x.getLinkedAccount())));
   }
 
   @Override
