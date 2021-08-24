@@ -85,7 +85,7 @@ jobs:
           fi
 
       - name: Run the integration test suite
-        run: ./gradlew :integration:runTest --args="suites/FullIntegration.json /dev/null"
+        run: ./gradlew :integration:runTest --args="suites/FullIntegration.json /tmp/foo"
 
       - name: Notify slack on failure
         uses: 8398a7/action-slack@v3
