@@ -17,7 +17,7 @@ jobs:
         image: postgres:13
         env:
           POSTGRES_PASSWORD: postgres
-        ports: [ 5432:5432 ]
+        ports: [ "5432:5432" ]
         # Rather than specifying the health check here, we do it manually later to give Postgres
         # time to start while we restore dependencies.
 
