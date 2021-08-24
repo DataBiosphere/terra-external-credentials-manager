@@ -17,8 +17,7 @@ jobs:
         image: postgres:13
         env:
           POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
+        ports: [ "5432:5432" ]
         # Rather than specifying the health check here, we do it manually later to give Postgres
         # time to start while we restore dependencies.
 
@@ -59,9 +58,34 @@ jobs:
         with:
           sarif_file: service/build/reports/spotbugs/main.sarif
 
+      - name: Render GitHub Secrets
+        env:
+          # Copied to GH from vault location: "secret/dsde/firecloud/dev/common/firecloud-account.json"
+          DEV_FIRECLOUD_ACCOUNT: ${{ secrets.DEV_FIRECLOUD_ACCOUNT }}
+        run: echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
+
+      - name: Launch the background process for integration tests
+        run: ./gradlew :service:bootRunDev | tee bootrun.log &
+        # Starting this now so it has time to initialize while we jib
+
       - name: Build image locally with jib
         # build the docker image to make sure it does not error
-        run: './gradlew :service:jibDockerBuild -Djib.console=plain'
+        run: ./gradlew :service:jibDockerBuild -Djib.console=plain
+
+      - name: Wait for boot run to be ready
+        run: |
+          timeout 60 bash -c 'until echo > /dev/tcp/localhost/8080; do sleep 1; done'
+          resultStatus=$(echo > /dev/tcp/localhost/8080; echo $?)
+          if [[ $resultStatus == 0 ]]; then
+            echo "Server started successfully"
+          else
+            echo "Server did not start successfully. Dumping log file"
+            cat bootrun.log
+            exit 1
+          fi
+
+      - name: Run the integration test suite
+        run: ./gradlew :integration:runTest --args="suites/FullIntegration.json /tmp/foo"
 
       - name: Notify slack on failure
         uses: 8398a7/action-slack@v3

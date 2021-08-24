@@ -1,0 +1,40 @@
+plugins {
+	id 'java'
+	id 'idea'
+	// Apply the application plugin to add support for building a CLI application in Java.
+	id 'application'
+	id 'io.freefair.lombok'
+	id 'com.diffplug.spotless'
+	id 'bio.terra.test-runner-plugin' version '0.0.8-SNAPSHOT'
+}
+
+compileJava { options.release = 11 }
+
+repositories {
+	mavenCentral()
+	maven { url 'https://broadinstitute.jfrog.io/broadinstitute/libs-snapshot-local/' }
+	maven { url 'https://broadinstitute.jfrog.io/broadinstitute/libs-release/' }
+}
+
+dependencies {
+	implementation 'org.slf4j:slf4j-api'
+	implementation 'org.glassfish.jersey.inject:jersey-hk2'
+	implementation group: 'org.junit.jupiter', name: 'junit-jupiter-api'
+
+	// Google Dependencies
+	implementation 'com.google.auth:google-auth-library-oauth2-http:0.27.0'
+
+	// ECM client library
+	implementation project(':client')
+
+	// Terra Test Runner Library
+	implementation 'bio.terra:terra-test-runner:0.0.8-SNAPSHOT'
+}
+
+spotless {
+	java {
+		googleJavaFormat()
+	}
+}
+
+compileJava.dependsOn spotlessApply

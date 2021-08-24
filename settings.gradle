@@ -1,8 +1,23 @@
 pluginManagement {
+	repositories {
+		resolutionStrategy {
+			eachPlugin {
+				if (requested.id.id == 'bio.terra.test-runner-plugin') {
+					useModule("bio.terra:terra-test-runner:" + requested.version)
+				}
+			}
+		}
+		maven {
+			url "https://broadinstitute.jfrog.io/broadinstitute/libs-snapshot-local/"
+		}
+		gradlePluginPortal()
+	}
+
 	plugins {
+		id 'io.freefair.lombok' version '6.1.0'
 		id 'org.hidetake.swagger.generator' version '2.18.2'
 	}
 }
 
 rootProject.name = 'externalcreds'
-include 'service', 'client'
+include 'service', 'client', 'integration'
