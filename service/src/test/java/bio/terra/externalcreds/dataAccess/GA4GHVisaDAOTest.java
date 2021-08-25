@@ -28,12 +28,10 @@ public class GA4GHVisaDAOTest extends BaseTest {
         passportDAO.insertPassport(
             TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
 
-    var immutableVisa = TestUtils.createRandomVisa();
-    var expectedVisa1 = immutableVisa.withPassportId(savedPassport.getId());
+    var baseVisa = TestUtils.createRandomVisa();
+    var expectedVisa1 = baseVisa.withPassportId(savedPassport.getId());
     var expectedVisa2 =
-        immutableVisa
-            .withPassportId(savedPassport.getId())
-            .withTokenType(TokenTypeEnum.document_token);
+        baseVisa.withPassportId(savedPassport.getId()).withTokenType(TokenTypeEnum.document_token);
     var savedVisa1 = visaDAO.insertVisa(expectedVisa1);
     var savedVisa2 = visaDAO.insertVisa(expectedVisa2);
 

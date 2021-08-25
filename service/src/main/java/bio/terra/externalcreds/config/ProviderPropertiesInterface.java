@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Modifiable
-@Value.Style(typeImmutable = "*", typeAbstract = "*Interface", typeModifiable = "*")
+@PropertiesInterfaceStyle
 public interface ProviderPropertiesInterface {
   String getClientId();
 

@@ -6,7 +6,6 @@ import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
-import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.Optional;
@@ -67,7 +66,6 @@ public class LinkedAccountService {
           ga4ghPassportDAO.insertPassport(
               linkedAccountWithPassportAndVisas
                   .getPassport()
-                  .map(ImmutableGA4GHPassport::copyOf)
                   .get()
                   .withLinkedAccountId(
                       linkedAccountWithPassportAndVisas.getLinkedAccount().getId()));

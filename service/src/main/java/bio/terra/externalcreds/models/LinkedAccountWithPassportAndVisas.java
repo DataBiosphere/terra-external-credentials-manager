@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.models;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -11,10 +10,7 @@ public interface LinkedAccountWithPassportAndVisas extends WithLinkedAccountWith
 
   Optional<GA4GHPassport> getPassport();
 
-  @Value.Default
-  default List<GA4GHVisa> getVisas() {
-    return Collections.emptyList();
-  }
+  List<GA4GHVisa> getVisas();
 
   class Builder extends ImmutableLinkedAccountWithPassportAndVisas.Builder {}
 }

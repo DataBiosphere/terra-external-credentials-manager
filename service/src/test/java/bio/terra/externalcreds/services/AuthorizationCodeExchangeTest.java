@@ -301,15 +301,13 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     assertEquals(Optional.ofNullable(expectedPassport), stablePassport);
 
     var stableVisas =
-        linkedAccountWithPassportAndVisas.get().getVisas() == null
-            ? null
-            : linkedAccountWithPassportAndVisas.get().getVisas().stream()
-                .map(
-                    visa ->
-                        visa.withLastValidated(Optional.empty())
-                            .withId(Optional.empty())
-                            .withPassportId(Optional.empty()))
-                .collect(Collectors.toList());
+        linkedAccountWithPassportAndVisas.get().getVisas().stream()
+            .map(
+                visa ->
+                    visa.withLastValidated(Optional.empty())
+                        .withId(Optional.empty())
+                        .withPassportId(Optional.empty()))
+            .collect(Collectors.toList());
     assertEquals(expectedVisas, stableVisas);
   }
 

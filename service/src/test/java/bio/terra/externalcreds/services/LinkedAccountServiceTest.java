@@ -11,8 +11,6 @@ import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
-import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
-import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.Collections;
@@ -38,9 +36,7 @@ public class LinkedAccountServiceTest extends BaseTest {
         linkedAccountService.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId());
     assertPresent(savedLinkedAccount);
-    assertEquals(
-        linkedAccount,
-        savedLinkedAccount.map(ImmutableLinkedAccount::copyOf).get().withId(Optional.empty()));
+    assertEquals(linkedAccount, savedLinkedAccount.get().withId(Optional.empty()));
   }
 
   @Test
@@ -145,11 +141,7 @@ public class LinkedAccountServiceTest extends BaseTest {
       assertPresent(savedPassport.get().getId());
       assertEquals(
           passport,
-          savedPassport
-              .map(ImmutableGA4GHPassport::copyOf)
-              .get()
-              .withId(Optional.empty())
-              .withLinkedAccountId(Optional.empty()));
+          savedPassport.get().withId(Optional.empty()).withLinkedAccountId(Optional.empty()));
       var savedVisas = visaDAO.listVisas(savedPassport.get().getId().get());
       assertEquals(
           visas,
