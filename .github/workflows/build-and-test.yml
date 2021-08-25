@@ -99,7 +99,7 @@ jobs:
           arguments: spotbugsMain test
 
       - name: Build and test with coverage
-        run: ./gradlew build jacocoTestReport
+        run: ./gradlew jacocoTestReport
 
       - name: Codecov
         uses: codecov/codecov-action@v2.0.2
@@ -147,7 +147,7 @@ jobs:
       - name: Launch the background process for integration tests
         uses: gradle/gradle-build-action@v1.5.1
         with:
-          arguments: ./gradlew :service:bootRunDev | tee bootrun.log &
+          arguments: :service:bootRunDev | tee bootrun.log &
 
       - name: Wait for boot run to be ready
         run: |
