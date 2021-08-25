@@ -19,17 +19,17 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
 
-      - name: Cache Gradle Build
+      - name: Gradle cache
         uses: actions/cache@v2
         with:
-          path: '**/build/**'
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
           key: v1-${{ runner.os }}-gradle-${{ github.ref }}-${{ github.sha }}
           restore-keys: v1-${{ runner.os }}-gradle-${{ github.ref }}
 
-      - name: Gradle Build Action
-        uses: gradle/gradle-build-action@v1.5.1
-        with:
-          arguments: build -x test
+      - name: Gradle build spotbugsMain
+        run: ./gradlew --build-cache build -x test
 
       - name: Upload spotbugs results
         uses: github/codeql-action/upload-sarif@main
@@ -48,17 +48,17 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
 
-      - name: Cache Gradle Build
+      - name: Gradle cache
         uses: actions/cache@v2
         with:
-          path: '**/build/**'
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
           key: v1-${{ runner.os }}-gradle-${{ github.ref }}-${{ github.sha }}
 
       - name: Build image locally with jib
-        uses: gradle/gradle-build-action@v1.5.1
         # build the docker image to make sure it does not error
-        with:
-          arguments: :service:jibDockerBuild -Djib.console=plain
+        run: ./gradlew --build-cache :service:jibDockerBuild -Djib.console=plain
 
 
   unit-tests:
@@ -80,10 +80,12 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
 
-      - name: Cache Gradle Build
+      - name: Gradle cache
         uses: actions/cache@v2
         with:
-          path: '**/build/**'
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
           key: v1-${{ runner.os }}-gradle-${{ github.ref }}-${{ github.sha }}
 
       - name: Make sure Postgres is ready and init
@@ -93,13 +95,8 @@ jobs:
           pg_isready -h localhost -t 10
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
-      - name: Gradle Build Action
-        uses: gradle/gradle-build-action@v1.5.1
-        with:
-          arguments: spotbugsMain test
-
       - name: Build and test with coverage
-        run: ./gradlew jacocoTestReport
+        run: ./gradlew --build-cache jacocoTestReport
 
       - name: Codecov
         uses: codecov/codecov-action@v2.0.2
@@ -125,10 +122,12 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
 
-      - name: Cache Gradle Build
+      - name: Gradle cache
         uses: actions/cache@v2
         with:
-          path: '**/build/**'
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
           key: v1-${{ runner.os }}-gradle-${{ github.ref }}-${{ github.sha }}
 
       - name: Make sure Postgres is ready and init
@@ -145,9 +144,7 @@ jobs:
         run: echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
 
       - name: Launch the background process for integration tests
-        uses: gradle/gradle-build-action@v1.5.1
-        with:
-          arguments: :service:bootRunDev | tee bootrun.log &
+        run: ./gradlew --build-cache :service:bootRunDev | tee bootrun.log &
 
       - name: Wait for boot run to be ready
         run: |
@@ -162,9 +159,7 @@ jobs:
           fi
 
       - name: Run the integration test suite
-        uses: gradle/gradle-build-action@v1.5.1
-        with:
-          arguments: :integration:runTest --args="suites/FullIntegration.json /tmp/foo"
+        run: ./gradlew --build-cache :integration:runTest --args="suites/FullIntegration.json /tmp/foo"
 
   notify-slack:
     needs: [ build, jib, unit-tests, integration-tests ]
