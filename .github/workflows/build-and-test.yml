@@ -95,7 +95,7 @@ jobs:
           pg_isready -h localhost -t 10
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
-      - name: Build and test with coverage
+      - name: Test with coverage
         run: ./gradlew --build-cache jacocoTestReport
 
       - name: Codecov
@@ -180,3 +180,16 @@ jobs:
           author_name: Build on dev
           fields: workflow,message
           text: 'Build failed :sadpanda:'
+
+  dispatch-tag:
+    needs: [ build, jib, unit-tests, integration-tests ]
+    runs-on: ubuntu-latest
+
+    if: success() && github.ref == 'refs/heads/dev'
+
+    steps:
+      - name: Fire off tag action
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Tag
+          token: ${{ secrets.BROADBOT_TOKEN }}

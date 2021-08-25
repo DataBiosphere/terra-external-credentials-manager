@@ -1,6 +1,5 @@
 name: Publish and deploy
-on:
-  create
+on: create
 
 env:
   SERVICE_NAME: ${{ github.event.repository.name }}
@@ -8,35 +7,35 @@ env:
 
 jobs:
   publish-job:
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Parse tag
-        id: tag
-        run: echo ::set-output name=tag::$(git describe --tags)
+      - uses: actions/checkout@v2
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
           java-version: '11'
           distribution: 'adopt'
+
       - name: Cache Gradle packages
         uses: actions/cache@v2
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}-${{ hashFiles('**/*.gradle') }}
-          restore-keys: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+          key: v1-${{ runner.os }}-gradle-refs/heads/dev-${{ github.sha }}
+
+      - name: Parse tag
+        id: tag
+        run: echo ::set-output name=tag::$(git describe --tags)
+
       #    - name: "Publish to Artifactory"
       #      run: ./gradlew :client:artifactoryPublish
       #      env:
       #        ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
       #        ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
       #        ARTIFACTORY_REPO_KEY: "libs-snapshot-local"
+
       - name: Auth to GCR
         uses: google-github-actions/setup-gcloud@master
         with:
@@ -44,18 +43,23 @@ jobs:
           service_account_key: ${{ secrets.GCR_PUBLISH_KEY }}
       - name: Explicitly auth Docker for GCR
         run: gcloud auth configure-docker --quiet
+
       - name: Construct docker image name and tag
         id: image-name
         run: echo ::set-output name=name::gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }}
+
       - name: Build image locally with jib
-        run: './gradlew :service:jibDockerBuild --image=${{ steps.image-name.outputs.name }} -Djib.console=plain'
+        run: ./gradlew :service:jibDockerBuild --image=${{ steps.image-name.outputs.name }} -Djib.console=plain
+
       - name: Run Trivy vulnerability scanner
         # Link to the github location of the action https://github.com/broadinstitute/dsp-appsec-trivy-action
         uses: broadinstitute/dsp-appsec-trivy-action@v1
         with:
           image: ${{ steps.image-name.outputs.name }}
+
       - name: Push GCR image
         run: 'docker push ${{ steps.image-name.outputs.name }}'
+
       - name: Deploy to Terra Dev environment
         uses: broadinstitute/repository-dispatch@master
         with:
@@ -63,6 +67,7 @@ jobs:
           repository: broadinstitute/terra-helmfile
           event-type: update-service
           client-payload: '{"service": "externalcreds", "version": "${{ steps.tag.outputs.tag }}", "dev_only": false}'
+
       - name: Notify slack on failure
         uses: 8398a7/action-slack@v3
         if: failure()
