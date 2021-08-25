@@ -7,8 +7,6 @@ import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
-import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
-import bio.terra.externalcreds.models.ImmutableLinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.util.Optional;
@@ -53,8 +51,7 @@ public class LinkedAccountService {
     ga4ghPassportDAO.deletePassport(savedLinkedAccount.getId().orElseThrow());
 
     return savePassportIfExists(
-        ImmutableLinkedAccountWithPassportAndVisas.copyOf(linkedAccountWithPassportAndVisas)
-            .withLinkedAccount(savedLinkedAccount));
+        linkedAccountWithPassportAndVisas.withLinkedAccount(savedLinkedAccount));
   }
 
   @WriteTransaction
@@ -77,15 +74,10 @@ public class LinkedAccountService {
 
       var savedVisas =
           linkedAccountWithPassportAndVisas.getVisas().stream()
-              .map(
-                  v ->
-                      ga4ghVisaDAO.insertVisa(
-                          ImmutableGA4GHVisa.copyOf(v).withPassportId(savedPassport.getId())))
+              .map(v -> ga4ghVisaDAO.insertVisa(v.withPassportId(savedPassport.getId())))
               .collect(Collectors.toList());
 
-      return ImmutableLinkedAccountWithPassportAndVisas.copyOf(linkedAccountWithPassportAndVisas)
-          .withPassport(savedPassport)
-          .withVisas(savedVisas);
+      return linkedAccountWithPassportAndVisas.withPassport(savedPassport).withVisas(savedVisas);
     } else {
       return linkedAccountWithPassportAndVisas;
     }

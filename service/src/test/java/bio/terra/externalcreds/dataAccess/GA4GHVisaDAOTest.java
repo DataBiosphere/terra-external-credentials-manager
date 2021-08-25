@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
-import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.util.Collections;
 import java.util.Optional;
@@ -40,8 +39,8 @@ public class GA4GHVisaDAOTest extends BaseTest {
 
     assertTrue(savedVisa1.getId().isPresent());
     assertTrue(savedVisa2.getId().isPresent());
-    assertEquals(expectedVisa1, ImmutableGA4GHVisa.copyOf(savedVisa1).withId(Optional.empty()));
-    assertEquals(expectedVisa2, ImmutableGA4GHVisa.copyOf(savedVisa2).withId(Optional.empty()));
+    assertEquals(expectedVisa1, savedVisa1.withId(Optional.empty()));
+    assertEquals(expectedVisa2, savedVisa2.withId(Optional.empty()));
 
     var loadedVisas = visaDAO.listVisas(savedPassport.getId().get());
     assertEquals(loadedVisas.size(), 2);

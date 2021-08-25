@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface LinkedAccountWithPassportAndVisas {
+public interface LinkedAccountWithPassportAndVisas extends WithLinkedAccountWithPassportAndVisas {
   LinkedAccount getLinkedAccount();
 
   Optional<GA4GHPassport> getPassport();
@@ -15,4 +15,6 @@ public interface LinkedAccountWithPassportAndVisas {
   default List<GA4GHVisa> getVisas() {
     return Collections.emptyList();
   }
+
+  class Builder extends ImmutableLinkedAccountWithPassportAndVisas.Builder {}
 }
