@@ -145,8 +145,9 @@ jobs:
         run: echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
 
       - name: Launch the background process for integration tests
-        run: ./gradlew :service:bootRunDev | tee bootrun.log &
-        # Starting this now so it has time to initialize while we jib
+        uses: gradle/gradle-build-action@v1.5.1
+        with:
+          arguments: ./gradlew :service:bootRunDev | tee bootrun.log &
 
       - name: Wait for boot run to be ready
         run: |
@@ -169,12 +170,11 @@ jobs:
     needs: [ build, jib, unit-tests, integration-tests ]
     runs-on: ubuntu-latest
 
-    if: failure()
+    if: failure() && github.ref == 'refs/heads/dev'
 
     steps:
       - name: Notify slack on failure
         uses: 8398a7/action-slack@v3
-        if: ${{ failure() && github.ref == 'refs/heads/dev' }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
         with:
