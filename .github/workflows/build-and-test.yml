@@ -28,7 +28,7 @@ jobs:
           key: v1-${{ runner.os }}-gradle-${{ github.ref }}-${{ github.sha }}
           restore-keys: v1-${{ runner.os }}-gradle-${{ github.ref }}
 
-      - name: Gradle build spotbugsMain
+      - name: Gradle :service:build spotbugsMain
         run: ./gradlew --build-cache build -x test
 
       - name: Upload spotbugs results
