@@ -1,9 +1,5 @@
 name: Tag
-on:
-  workflow_dispatch:
-  push:
-    branches: [ dev ]
-    paths-ignore: [ '*.md', '.github/**' ]
+on: workflow_dispatch
 
 jobs:
   tag-job:
