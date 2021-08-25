@@ -146,6 +146,9 @@ jobs:
       - name: Launch the background process for integration tests
         run: ./gradlew --build-cache :service:bootRunDev | tee bootrun.log &
 
+      - name: Prep the integration project
+        run: ./gradlew --build-cache :integration:classes
+
       - name: Wait for boot run to be ready
         run: |
           timeout 60 bash -c 'until echo > /dev/tcp/localhost/8080; do sleep 1; done'
