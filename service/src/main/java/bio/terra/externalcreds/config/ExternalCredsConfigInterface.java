@@ -20,6 +20,8 @@ public interface ExternalCredsConfigInterface {
 
   String getSamBasePath();
 
+  Duration getTokenValidationFrequency();
+
   Duration getVisaAndPassportRefreshInterval();
 
   /** List of URIs that are allowable in jku headers of JWTs */

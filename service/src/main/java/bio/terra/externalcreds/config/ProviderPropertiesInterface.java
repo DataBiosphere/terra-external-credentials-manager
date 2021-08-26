@@ -28,4 +28,6 @@ public interface ProviderPropertiesInterface {
   Optional<String> getTokenEndpoint();
 
   Optional<String> getJwksUri();
+
+  Optional<String> getValidationEndpoint();
 }

@@ -1,8 +1,14 @@
 package bio.terra.externalcreds.dataAccess;
 
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHPassport;
+import bio.terra.externalcreds.models.PassportVerificationDetails;
+import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
@@ -16,10 +22,13 @@ import org.springframework.stereotype.Repository;
 @Slf4j
 public class GA4GHPassportDAO {
 
-  final NamedParameterJdbcTemplate jdbcTemplate;
+  private final NamedParameterJdbcTemplate jdbcTemplate;
+  private final ExternalCredsConfig externalCredsConfig;
 
-  public GA4GHPassportDAO(NamedParameterJdbcTemplate jdbcTemplate) {
+  public GA4GHPassportDAO(
+      NamedParameterJdbcTemplate jdbcTemplate, ExternalCredsConfig externalCredsConfig) {
     this.jdbcTemplate = jdbcTemplate;
+    this.externalCredsConfig = externalCredsConfig;
   }
 
   /**
@@ -67,6 +76,25 @@ public class GA4GHPassportDAO {
             jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper())));
   }
 
+  public List<PassportVerificationDetails> getPassportsWithUnvalidatedTokenVisas() {
+    var validationCutoff =
+        new Timestamp(
+            Instant.now().minus(externalCredsConfig.getTokenValidationFrequency()).toEpochMilli());
+    var namedParameters = new MapSqlParameterSource("validationCutoff", validationCutoff);
+
+    var query =
+        "SELECT DISTINCT la.id as linked_account_id, la.provider_id, p.jwt as passport_jwt FROM linked_account la"
+            + " JOIN ga4gh_passport p"
+            + " ON p.linked_account_id = la.id"
+            + " LEFT JOIN ga4gh_visa v"
+            + " ON v.passport_id = p.id"
+            + " WHERE token_type = "
+            + TokenTypeEnum.access_token
+            + " AND last_validated <= :validationCutoff";
+
+    return jdbcTemplate.query(query, namedParameters, new PassportVerificationDetailsRowMapper());
+  }
+
   private static class GA4GHPassportRowMapper implements RowMapper<GA4GHPassport> {
 
     @Override
@@ -76,6 +104,19 @@ public class GA4GHPassportDAO {
           .linkedAccountId(rs.getInt("linked_account_id"))
           .jwt(rs.getString("jwt"))
           .expires(rs.getTimestamp("expires"))
+          .build();
+    }
+  }
+
+  private static class PassportVerificationDetailsRowMapper
+      implements RowMapper<PassportVerificationDetails> {
+
+    @Override
+    public PassportVerificationDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new PassportVerificationDetails.Builder()
+          .linkedAccountId(rs.getInt("linked_account_id"))
+          .providerId(rs.getString("provider_id"))
+          .passportJwt(rs.getString("passport_jwt"))
           .build();
     }
   }
