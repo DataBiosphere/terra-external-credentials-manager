@@ -1,0 +1,15 @@
+databaseChangeLog:
+ - changeSet:
+     id: "index_passports_by_expiration"
+     author: swessel, kfeldman
+     changes:
+       - sql:
+           sql: >
+             CREATE INDEX ON ga4gh_passport (expires);
+ - changeSet:
+     id: "index_visas_by_expiration"
+     author: swessel, kfeldman
+     changes:
+       - sql:
+           sql: >
+             CREATE INDEX ON ga4gh_visa (expires);

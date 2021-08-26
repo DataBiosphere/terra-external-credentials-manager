@@ -5,9 +5,10 @@ import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
-import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import java.sql.Timestamp;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -35,13 +36,8 @@ public class LinkedAccountService {
     return linkedAccountDAO.getLinkedAccount(userId, providerId);
   }
 
-  @ReadTransaction
-  public Optional<GA4GHPassport> getGA4GHPassport(String userId, String providerId) {
-    return ga4ghPassportDAO.getPassport(userId, providerId);
-  }
-
   @WriteTransaction
-  public LinkedAccountWithPassportAndVisas saveLinkedAccount(
+  public LinkedAccountWithPassportAndVisas upsertLinkedAccountWithPassportAndVisas(
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
     var savedLinkedAccount =
         linkedAccountDAO.upsertLinkedAccount(linkedAccountWithPassportAndVisas.getLinkedAccount());
@@ -49,7 +45,7 @@ public class LinkedAccountService {
     // clear out any passport and visas that may exist and save the new one
     ga4ghPassportDAO.deletePassport(savedLinkedAccount.getId().orElseThrow());
 
-    return savePassportIfExists(
+    return savePassportAndVisasIfPresent(
         linkedAccountWithPassportAndVisas.withLinkedAccount(savedLinkedAccount));
   }
 
@@ -58,7 +54,17 @@ public class LinkedAccountService {
     return linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
   }
 
-  private LinkedAccountWithPassportAndVisas savePassportIfExists(
+  @WriteTransaction
+  public List<LinkedAccount> getExpiringLinkedAccounts(Timestamp expirationCutoff) {
+    return linkedAccountDAO.getExpiringLinkedAccounts(expirationCutoff);
+  }
+
+  @WriteTransaction
+  public boolean updateLinkAuthenticationStatus(int linkedAccountId, boolean isAuthenticated) {
+    return linkedAccountDAO.updateLinkAuthenticationStatus(linkedAccountId, isAuthenticated);
+  }
+
+  private LinkedAccountWithPassportAndVisas savePassportAndVisasIfPresent(
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
     if (linkedAccountWithPassportAndVisas.getPassport().isPresent()) {
 

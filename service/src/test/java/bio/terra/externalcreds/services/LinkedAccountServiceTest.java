@@ -40,40 +40,6 @@ public class LinkedAccountServiceTest extends BaseTest {
   }
 
   @Test
-  void testGetGA4GHPassport() {
-    var linkedAccount = TestUtils.createRandomLinkedAccount();
-    var passport = TestUtils.createRandomPassport();
-
-    saveAndValidateLinkedAccount(linkedAccount, passport, Collections.emptyList());
-
-    var savedPassport =
-        linkedAccountService.getGA4GHPassport(
-            linkedAccount.getUserId(), linkedAccount.getProviderId());
-
-    assertPresent(savedPassport);
-    assertEquals(passport.getJwt(), savedPassport.get().getJwt());
-    assertEquals(passport.getExpires(), savedPassport.get().getExpires());
-  }
-
-  @Test
-  void testGetGA4GHPassportNoLinkedAccount() {
-    var userId = "nonexistent_user_id";
-    var providerId = "fake_provider";
-
-    assertEmpty(linkedAccountService.getGA4GHPassport(userId, providerId));
-  }
-
-  @Test
-  void testGetGA4GHPassportLinkedAccountNoPassport() {
-    var linkedAccount = TestUtils.createRandomLinkedAccount();
-    saveAndValidateLinkedAccount(linkedAccount, null, Collections.emptyList());
-
-    assertEmpty(
-        linkedAccountService.getGA4GHPassport(
-            linkedAccount.getUserId(), linkedAccount.getProviderId()));
-  }
-
-  @Test
   void testSaveLinkedAccountWithPassportAndVisas() {
     var linkedAccount = TestUtils.createRandomLinkedAccount();
     var passport = TestUtils.createRandomPassport();
@@ -121,7 +87,7 @@ public class LinkedAccountServiceTest extends BaseTest {
   private LinkedAccount saveAndValidateLinkedAccount(
       LinkedAccount linkedAccount, GA4GHPassport passport, List<GA4GHVisa> visas) {
     var saved =
-        linkedAccountService.saveLinkedAccount(
+        linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
             new LinkedAccountWithPassportAndVisas.Builder()
                 .linkedAccount(linkedAccount)
                 .passport(Optional.ofNullable(passport))
@@ -151,5 +117,27 @@ public class LinkedAccountServiceTest extends BaseTest {
     }
 
     return saved.getLinkedAccount();
+  }
+
+  @Test
+  void testUpdateLinkAuthenticationStatus() {
+    var savedLinkedAccount =
+        linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+
+    // check that no errors are thrown when the status is set to its existing value
+    linkedAccountService.updateLinkAuthenticationStatus(savedLinkedAccount.getId().get(), true);
+    assertTrue(
+        linkedAccountService
+            .getLinkedAccount(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId())
+            .get()
+            .isAuthenticated());
+
+    // check that the value can be updated correctly
+    linkedAccountService.updateLinkAuthenticationStatus(savedLinkedAccount.getId().get(), false);
+    assertFalse(
+        linkedAccountService
+            .getLinkedAccount(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId())
+            .get()
+            .isAuthenticated());
   }
 }

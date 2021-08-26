@@ -110,7 +110,7 @@ public class OAuth2Service {
   }
 
   /**
-   * Given an refresh token, get an access token
+   * Given a refresh token, get an access token
    *
    * @param providerClient identity provider client, see {@link ProviderClientCache}
    * @param refreshToken

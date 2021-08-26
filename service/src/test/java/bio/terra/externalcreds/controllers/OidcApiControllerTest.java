@@ -18,6 +18,7 @@ import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
+import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
 import java.sql.Timestamp;
@@ -47,6 +48,7 @@ public class OidcApiControllerTest extends BaseTest {
   @MockBean private LinkedAccountService linkedAccountService;
   @MockBean private ProviderService providerService;
   @MockBean private SamService samService;
+  @MockBean private PassportService passportService;
 
   @Test
   void testListProviders() throws Exception {
@@ -273,8 +275,7 @@ public class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(linkedAccountService.getGA4GHPassport(userId, providerId))
-          .thenReturn(Optional.of(passport));
+      when(passportService.getPassport(userId, providerId)).thenReturn(Optional.of(passport));
 
       mvc.perform(
               get("/api/oidc/v1/{provider}/passport", providerId)

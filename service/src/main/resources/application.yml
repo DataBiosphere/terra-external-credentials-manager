@@ -1,4 +1,6 @@
-externalcreds.sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
+externalcreds:
+  sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
+  visa-and-passport-refresh-interval: 30m
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}

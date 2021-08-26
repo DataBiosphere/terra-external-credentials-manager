@@ -3,6 +3,8 @@ package bio.terra.externalcreds.dataAccess;
 import bio.terra.externalcreds.models.LinkedAccount;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
@@ -32,10 +34,23 @@ public class LinkedAccountDAO {
             jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper())));
   }
 
+  public List<LinkedAccount> getExpiringLinkedAccounts(Timestamp expirationCutoff) {
+    var namedParameters = new MapSqlParameterSource("expirationCutoff", expirationCutoff);
+    var query =
+        "SELECT DISTINCT la.* FROM linked_account la"
+            + " JOIN ga4gh_passport passport"
+            + " ON passport.linked_account_id = la.id"
+            + " LEFT JOIN ga4gh_visa visa"
+            + " ON visa.passport_id = passport.id"
+            + " WHERE passport.expires <= :expirationCutoff"
+            + " OR visa.expires <= :expirationCutoff";
+    return jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper());
+  }
+
   public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
     var query =
-        "INSERT INTO linked_account (user_id, provider_id, refresh_token, expires, external_user_id)"
-            + " VALUES (:userId, :providerId, :refreshToken, :expires, :externalUserId)"
+        "INSERT INTO linked_account (user_id, provider_id, refresh_token, expires, external_user_id, is_authenticated)"
+            + " VALUES (:userId, :providerId, :refreshToken, :expires, :externalUserId, :isAuthenticated)"
             + " ON CONFLICT (user_id, provider_id) DO UPDATE SET"
             + " refresh_token = excluded.refresh_token,"
             + " expires = excluded.expires,"
@@ -48,7 +63,8 @@ public class LinkedAccountDAO {
             .addValue("providerId", linkedAccount.getProviderId())
             .addValue("refreshToken", linkedAccount.getRefreshToken())
             .addValue("expires", linkedAccount.getExpires())
-            .addValue("externalUserId", linkedAccount.getExternalUserId());
+            .addValue("externalUserId", linkedAccount.getExternalUserId())
+            .addValue("isAuthenticated", linkedAccount.isAuthenticated());
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
@@ -71,6 +87,17 @@ public class LinkedAccountDAO {
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
+  public boolean updateLinkAuthenticationStatus(int linkedAccountId, boolean isAuthenticated) {
+    var query =
+        "UPDATE linked_account SET is_authenticated = :isAuthenticated WHERE id = :linkedAccountId";
+    var namedParameters =
+        new MapSqlParameterSource()
+            .addValue("linkedAccountId", linkedAccountId)
+            .addValue("isAuthenticated", isAuthenticated);
+
+    return jdbcTemplate.update(query, namedParameters) > 0;
+  }
+
   private static class LinkedAccountRowMapper implements RowMapper<LinkedAccount> {
 
     @Override
@@ -82,6 +109,7 @@ public class LinkedAccountDAO {
           .refreshToken(rs.getString("refresh_token"))
           .expires(rs.getTimestamp("expires"))
           .externalUserId(rs.getString("external_user_id"))
+          .isAuthenticated(rs.getBoolean("is_authenticated"))
           .build();
     }
   }

@@ -62,6 +62,8 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   @MockBean ExternalCredsConfig externalCredsConfig;
 
   @Autowired ProviderService providerService;
+  @Autowired PassportService passportService;
+  @Autowired JwtUtils jwtUtils;
 
   private static ClientAndServer mockServer;
   private static RSAKey accessTokenRsaJWK;
@@ -165,14 +167,14 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   @Test
   void testInvalidJwtSignature() throws URISyntaxException, JOSEException {
     var invalidJwt = createTestVisa(TokenTypeEnum.access_token).getJwt() + "foo";
-    assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(invalidJwt));
+    assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(invalidJwt));
   }
 
   @Test
   void testJwtMissingIssuer() throws URISyntaxException, JOSEException {
     var jwtMissingIssuer =
         createVisaJwtString(createTestVisa(TokenTypeEnum.access_token).withIssuer("null"));
-    assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtMissingIssuer));
+    assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtMissingIssuer));
   }
 
   @Test
@@ -180,7 +182,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     var jwtNotRealIssuer =
         createVisaJwtString(
             createTestVisa(TokenTypeEnum.access_token).withIssuer("http://does.not.exist"));
-    assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtNotRealIssuer));
+    assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtNotRealIssuer));
   }
 
   @Test
@@ -188,7 +190,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     var exception =
         assertThrows(
             InvalidJwtException.class,
-            () -> providerService.decodeJwt(createTestVisa(TokenTypeEnum.document_token).getJwt()));
+            () -> jwtUtils.decodeJwt(createTestVisa(TokenTypeEnum.document_token).getJwt()));
 
     assertTrue(exception.getMessage().contains("not on allowed list"));
   }
@@ -203,8 +205,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         createVisaJwtString(createTestVisa(TokenTypeEnum.document_token).withIssuer(testIssuer));
 
     var exception =
-        assertThrows(
-            InvalidJwtException.class, () -> providerService.decodeJwt(jwtNotResponsiveJku));
+        assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtNotResponsiveJku));
     assertTrue(exception.getMessage().contains("Connection refused"));
   }
 
@@ -218,7 +219,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         createVisaJwtString(createTestVisa(TokenTypeEnum.document_token).withIssuer(testIssuer));
 
     var exception =
-        assertThrows(InvalidJwtException.class, () -> providerService.decodeJwt(jwtMalformedJku));
+        assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtMalformedJku));
     assertTrue(exception.getMessage().contains("URI is not absolute"));
   }
 
@@ -243,7 +244,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     var userAttributes = new HashMap<String, Object>();
     userAttributes.put(ProviderService.EXTERNAL_USERID_ATTR, linkedAccount.getExternalUserId());
     if (passport != null) {
-      userAttributes.put(ProviderService.PASSPORT_JWT_V11_CLAIM, passport.getJwt());
+      userAttributes.put(JwtUtils.PASSPORT_JWT_V11_CLAIM, passport.getJwt());
     }
     OAuth2User user =
         new DefaultOAuth2User(null, userAttributes, ProviderService.EXTERNAL_USERID_ATTR);
@@ -321,7 +322,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
             .expirationTime(expires);
 
     if (!visaJwts.isEmpty()) {
-      passportClaimSetBuilder.claim(ProviderService.GA4GH_PASSPORT_V1_CLAIM, visaJwts);
+      passportClaimSetBuilder.claim(JwtUtils.GA4GH_PASSPORT_V1_CLAIM, visaJwts);
     }
 
     var claimsSet = passportClaimSetBuilder.build();
@@ -356,10 +357,9 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     var visaClaimSet =
         new JWTClaimsSet.Builder()
             .expirationTime(visa.getExpires())
-            .issuer(visa.getIssuer() == "null" ? null : visa.getIssuer())
+            .issuer(visa.getIssuer().equals("null") ? null : visa.getIssuer())
             .claim(
-                ProviderService.GA4GH_VISA_V1_CLAIM,
-                Map.of(ProviderService.VISA_TYPE_CLAIM, visa.getVisaType()))
+                JwtUtils.GA4GH_VISA_V1_CLAIM, Map.of(JwtUtils.VISA_TYPE_CLAIM, visa.getVisaType()))
             .build();
 
     var jwtHeaderBuilder = new Builder(JWSAlgorithm.RS256);

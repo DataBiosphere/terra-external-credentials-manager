@@ -49,7 +49,7 @@ public class TestUtils {
       return ProviderProperties.create()
           .setClientId(UUID.randomUUID().toString())
           .setClientSecret(UUID.randomUUID().toString())
-          .setIssuer(UUID.randomUUID().toString())
+          .setIssuer("http://does/not/exist")
           .setLinkLifespan(Duration.ofDays(SecureRandom.getInstanceStrong().nextInt(10)))
           .setRevokeEndpoint("http://does/not/exist");
     } catch (NoSuchAlgorithmException e) {
