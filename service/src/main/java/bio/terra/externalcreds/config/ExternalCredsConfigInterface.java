@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Modifiable
-@Value.Style(typeImmutable = "*", typeAbstract = "*Interface", typeModifiable = "*")
+@PropertiesInterfaceStyle
 public interface ExternalCredsConfigInterface {
   Map<String, ProviderProperties> getProviders();
 

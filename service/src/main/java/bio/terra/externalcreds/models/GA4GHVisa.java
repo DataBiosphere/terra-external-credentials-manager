@@ -5,7 +5,7 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface GA4GHVisa {
+public interface GA4GHVisa extends WithGA4GHVisa {
   Optional<Integer> getId();
 
   Optional<Integer> getPassportId();
@@ -21,4 +21,6 @@ public interface GA4GHVisa {
   TokenTypeEnum getTokenType();
 
   Optional<Timestamp> getLastValidated();
+
+  class Builder extends ImmutableGA4GHVisa.Builder {}
 }

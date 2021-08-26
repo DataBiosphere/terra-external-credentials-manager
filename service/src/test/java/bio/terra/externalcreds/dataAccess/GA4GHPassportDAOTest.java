@@ -7,8 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
-import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
-import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
+import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
 import java.util.Optional;
@@ -66,9 +65,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
           DuplicateKeyException.class,
           () ->
               passportDAO.insertPassport(
-                  ImmutableGA4GHPassport.copyOf(savedPassport)
-                      .withExpires(new Timestamp(200))
-                      .withJwt("different-jwt")));
+                  savedPassport.withExpires(new Timestamp(200)).withJwt("different-jwt")));
     }
   }
 
@@ -103,7 +100,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
               TestUtils.createRandomPassport().withLinkedAccountId(savedAccountId));
 
       visaDAO.insertVisa(
-          ImmutableGA4GHVisa.builder()
+          new GA4GHVisa.Builder()
               .visaType("fake")
               .passportId(savedPassport.getId())
               .tokenType(TokenTypeEnum.access_token)

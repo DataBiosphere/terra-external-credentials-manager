@@ -15,8 +15,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
-import bio.terra.externalcreds.models.ImmutableLinkedAccount;
-import bio.terra.externalcreds.models.ImmutableLinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
@@ -105,7 +105,7 @@ public class OidcApiControllerTest extends BaseTest {
       var accessToken = "testToken";
       var userId = UUID.randomUUID().toString();
       var inputLinkedAccount =
-          ImmutableLinkedAccount.builder()
+          new LinkedAccount.Builder()
               .userId(userId)
               .providerId("testProvider")
               .externalUserId("externalUser")
@@ -176,7 +176,7 @@ public class OidcApiControllerTest extends BaseTest {
     var accessToken = "testToken";
     var userId = UUID.randomUUID().toString();
     var inputLinkedAccount =
-        ImmutableLinkedAccount.builder()
+        new LinkedAccount.Builder()
             .userId(userId)
             .providerId("testProvider")
             .externalUserId("externalUser")
@@ -200,7 +200,7 @@ public class OidcApiControllerTest extends BaseTest {
             state))
         .thenReturn(
             Optional.of(
-                ImmutableLinkedAccountWithPassportAndVisas.builder()
+                new LinkedAccountWithPassportAndVisas.Builder()
                     .linkedAccount(inputLinkedAccount)
                     .build()));
 

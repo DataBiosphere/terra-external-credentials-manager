@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.dataAccess;
 
-import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -56,8 +55,7 @@ public class LinkedAccountDAO {
     var generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
-    return ImmutableLinkedAccount.copyOf(linkedAccount)
-        .withId(generatedKeyHolder.getKey().intValue());
+    return linkedAccount.withId(generatedKeyHolder.getKey().intValue());
   }
 
   /**
@@ -77,7 +75,7 @@ public class LinkedAccountDAO {
 
     @Override
     public LinkedAccount mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return ImmutableLinkedAccount.builder()
+      return new LinkedAccount.Builder()
           .id(rs.getInt("id"))
           .userId(rs.getString("user_id"))
           .providerId(rs.getString("provider_id"))

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import org.immutables.value.Value;
 
 @Value.Modifiable
-@Value.Style(typeImmutable = "*", typeAbstract = "*Interface", typeModifiable = "*")
+@PropertiesInterfaceStyle
 @JsonIncludeProperties({"gitTag", "gitHash", "github", "build"})
 public interface VersionPropertiesInterface {
   String getGitTag();
