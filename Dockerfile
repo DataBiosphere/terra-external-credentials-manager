@@ -1,7 +1,7 @@
 # Set the blessed image as the base/parent image
 #ARG PARENT_IMAGE
 #FROM $PARENT_IMAGE
-FROM service:latest
+FROM externalcreds:local
 # copied from publish:
 #          ./gradlew --build-cache :service:jibDockerBuild --image=${{ steps.image-name.outputs.name }} -Djib.console=plain
 #          name = name::gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }}
@@ -11,5 +11,5 @@ FROM service:latest
 
 # download and untar the cloud profiler
 RUN mkdir -p /opt/cprof && \
-  wget -q -O- https://storage.googleapis.com/cloud-profiler/java/latest/profiler_java_agent.tar.gz \
+  curl -q O https://storage.googleapis.com/cloud-profiler/java/latest/profiler_java_agent.tar.gz \
   | tar xzv -C /opt/cprof
