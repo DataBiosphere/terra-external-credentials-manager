@@ -52,7 +52,7 @@ jobs:
         run: ./gradlew --build-cache :service:jibDockerBuild -Djib.console=plain
 
       - name: Add Google Cloud Profiler to Docker Image
-        run: docker build . -t ${{ steps.image-name.outputs.name }}
+        run: docker build ./service -t ${{ steps.image-name.outputs.name }}
 
       - name: Run Trivy vulnerability scanner
         # Link to the github location of the action https://github.com/broadinstitute/dsp-appsec-trivy-action
