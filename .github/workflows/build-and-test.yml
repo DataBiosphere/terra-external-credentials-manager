@@ -36,6 +36,8 @@ jobs:
         with:
           sarif_file: service/build/reports/spotbugs/main.sarif
 
+  # add new step to build the base image from the docker file
+
   jib:
     needs: [ build ]
     runs-on: ubuntu-latest
