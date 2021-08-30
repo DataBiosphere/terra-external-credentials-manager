@@ -35,7 +35,6 @@ spring:
           must-revalidate: true
         use-last-modified: false
 
-# test
 terra.common:
   tracing:
     stackdriverExportEnabled: ${CLOUD_TRACE_ENABLED:false}
