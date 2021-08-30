@@ -1,12 +1,11 @@
 name: dsp-appsec-trivy
-on: [pull_request]
+on: [push]
 
 jobs:
   cloudsql-proxy-trivy:
      runs-on: ubuntu-latest
      steps:
     # Scan GCP cloudsql proxy image since blessed image is not used
-    # Taken from
     - name: Trivy vulnerability scanner on GCP cloudsql image
       # Link to the github location of the action https://github.com/broadinstitute/dsp-appsec-trivy-action
       uses: broadinstitute/dsp-appsec-trivy-action@v1
