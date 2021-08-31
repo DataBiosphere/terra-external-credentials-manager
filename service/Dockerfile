@@ -1,5 +1,7 @@
 # Set the base/parent image
-FROM externalcreds:local
+# see https://github.com/broadinstitute/dsp-appsec-blessed-images/tree/main/jre
+# Google's distroless images are openjdk, this is the simplest with adoptopenjdk
+FROM us.gcr.io/broad-dsp-gcr-public/base/jre:11-debian
 
 # download and untar the cloud profiler
 RUN mkdir -p /opt/cprof && \
