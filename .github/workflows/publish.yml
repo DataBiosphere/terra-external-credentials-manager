@@ -48,11 +48,15 @@ jobs:
         id: image-name
         run: echo ::set-output name=name::gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }}
 
-      - name: Build image locally with jib
-        run: ./gradlew --build-cache :service:jibDockerBuild -Djib.console=plain
-
       - name: Add Google Cloud Profiler to Docker Image
-        run: docker build ./service -t ${{ steps.image-name.outputs.name }}
+        run: docker build ./service -t externalcreds:local
+
+      - name: Build image locally with jib
+        run: |
+          ./gradlew --build-cache :service:jibDockerBuild \
+          --image=${{ steps.image-name.outputs.name }} \
+          -Djib.from.image=externalcreds:local \
+          -Djib.console=plain
 
       - name: Run Trivy vulnerability scanner
         # Link to the github location of the action https://github.com/broadinstitute/dsp-appsec-trivy-action
