@@ -1,4 +1,7 @@
 jib {
+	to {
+		image = 'externalcreds:local'
+	}
 	from {
 		// see https://github.com/broadinstitute/dsp-appsec-blessed-images/tree/main/jre
 		// Google's distroless images are openjdk, this is the simplest with adoptopenjdk
