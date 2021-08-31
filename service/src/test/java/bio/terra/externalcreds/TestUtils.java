@@ -24,6 +24,7 @@ public class TestUtils {
         .refreshToken(UUID.randomUUID().toString())
         .userId(UUID.randomUUID().toString())
         .externalUserId(UUID.randomUUID().toString())
+        .isAuthenticated(true)
         .build();
   }
 

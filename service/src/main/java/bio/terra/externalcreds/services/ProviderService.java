@@ -131,6 +131,7 @@ public class ProviderService {
             .expires(expires)
             .externalUserId(userInfo.getAttribute(EXTERNAL_USERID_ATTR))
             .refreshToken(refreshToken.getTokenValue())
+            .isAuthenticated(true)
             .build();
 
     return linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
