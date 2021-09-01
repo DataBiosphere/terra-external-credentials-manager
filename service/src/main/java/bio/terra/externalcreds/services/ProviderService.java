@@ -172,8 +172,6 @@ public class ProviderService {
             oAuth2Service.getUserInfo(
                 clientRegistration.orElseThrow(), accessTokenResponse.getAccessToken());
 
-        // TODO: do we actually need to update the refresh token? If we do, test if it's updated
-        // correctly
         // save the linked account with the new refresh token and extracted passport
         var linkedAccountWithRefreshToken =
             linkedAccount.withRefreshToken(accessTokenResponse.getRefreshToken().getTokenValue());
@@ -182,7 +180,9 @@ public class ProviderService {
 
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
-            String.format("Could not contact issuer for provider %s", linkedAccount.getProviderId()), iae);
+            String.format(
+                "Could not contact issuer for provider %s", linkedAccount.getProviderId()),
+            iae);
       } catch (OAuth2AuthorizationException oauthEx) {
         // if the cause is a 4xx response, delete the passport
         if (oauthEx.getCause() instanceof HttpClientErrorException) {

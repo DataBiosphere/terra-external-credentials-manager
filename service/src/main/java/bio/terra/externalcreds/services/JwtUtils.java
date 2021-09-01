@@ -49,11 +49,13 @@ public class JwtUtils {
 
       List<String> visaJwtStrings =
           Objects.requireNonNullElse(
-              passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM),
-              Collections.emptyList());
+              passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM), Collections.emptyList());
 
       var visas =
-          visaJwtStrings.stream().map(this::decodeJwt).map(JwtUtils::buildVisa).collect(Collectors.toList());
+          visaJwtStrings.stream()
+              .map(this::decodeJwt)
+              .map(JwtUtils::buildVisa)
+              .collect(Collectors.toList());
 
       return new LinkedAccountWithPassportAndVisas.Builder()
           .linkedAccount(linkedAccount)
@@ -100,8 +102,9 @@ public class JwtUtils {
 
   private static <T> T getJwtClaim(Jwt jwt, String claimName) {
     T claim = jwt.getClaim(claimName);
-    return Optional.ofNullable(claim).orElseThrow(() ->
-            new InvalidJwtException(String.format("jwt missing claim [%s]", claimName)));
+    return Optional.ofNullable(claim)
+        .orElseThrow(
+            () -> new InvalidJwtException(String.format("jwt missing claim [%s]", claimName)));
   }
 
   private static TokenTypeEnum determineTokenType(Jwt visaJwt) {
