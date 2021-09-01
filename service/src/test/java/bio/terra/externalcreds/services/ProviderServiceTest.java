@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.services;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,8 +24,8 @@ import org.springframework.http.HttpStatus;
 
 public class ProviderServiceTest extends BaseTest {
   @Autowired private ProviderService providerService;
-  @MockBean private LinkedAccountService linkedAccountService;
-  @MockBean private ExternalCredsConfig externalCredsConfig;
+  @MockBean private LinkedAccountService linkedAccountServiceMock;
+  @MockBean private ExternalCredsConfig externalCredsConfigMock;
 
   @Nested
   class DeleteLink {
@@ -42,7 +42,7 @@ public class ProviderServiceTest extends BaseTest {
 
     @Test
     void testDeleteLinkProviderNotFound() {
-      when(externalCredsConfig.getProviders()).thenReturn(Map.of());
+      when(externalCredsConfigMock.getProviders()).thenReturn(Map.of());
 
       assertThrows(
           NotFoundException.class,
@@ -55,10 +55,10 @@ public class ProviderServiceTest extends BaseTest {
     void testDeleteLinkLinkNotFound() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
 
-      when(externalCredsConfig.getProviders())
+      when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
 
-      when(linkedAccountService.getLinkedAccount(
+      when(linkedAccountServiceMock.getLinkedAccount(
               linkedAccount.getUserId(), linkedAccount.getProviderId()))
           .thenReturn(Optional.empty());
 
@@ -84,13 +84,13 @@ public class ProviderServiceTest extends BaseTest {
             new Parameter("client_id", providerInfo.getClientId()),
             new Parameter("client_secret", providerInfo.getClientSecret()));
 
-    when(externalCredsConfig.getProviders())
+    when(externalCredsConfigMock.getProviders())
         .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
 
-    when(linkedAccountService.getLinkedAccount(
+    when(linkedAccountServiceMock.getLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId()))
         .thenReturn(Optional.of(linkedAccount));
-    when(linkedAccountService.deleteLinkedAccount(
+    when(linkedAccountServiceMock.deleteLinkedAccount(
             linkedAccount.getUserId(), linkedAccount.getProviderId()))
         .thenReturn(true);
 
@@ -105,7 +105,7 @@ public class ProviderServiceTest extends BaseTest {
           .respond(HttpResponse.response().withStatusCode(httpStatus.value()));
 
       providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderId());
-      verify(linkedAccountService)
+      verify(linkedAccountServiceMock)
           .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
     } finally {
       mockServer.stop();
