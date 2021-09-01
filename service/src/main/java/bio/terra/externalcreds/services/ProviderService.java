@@ -182,7 +182,7 @@ public class ProviderService {
 
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
-            "Could not contact issuer for provider " + linkedAccount.getProviderId(), iae);
+            String.format("Could not contact issuer for provider %s", linkedAccount.getProviderId()), iae);
       } catch (OAuth2AuthorizationException oauthEx) {
         // if the cause is a 4xx response, delete the passport
         if (oauthEx.getCause() instanceof HttpClientErrorException) {

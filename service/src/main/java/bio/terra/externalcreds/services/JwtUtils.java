@@ -17,6 +17,7 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -46,10 +47,10 @@ public class JwtUtils {
     if (passportJwtString != null) {
       var passportJwt = decodeJwt(passportJwtString);
 
-      var visaJwtStrings =
+      List<String> visaJwtStrings =
           Objects.requireNonNullElse(
               passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM),
-              Collections.<String>emptyList());
+              Collections.emptyList());
 
       var visas =
           visaJwtStrings.stream().map(s -> buildVisa(decodeJwt(s))).collect(Collectors.toList());
