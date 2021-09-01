@@ -99,7 +99,7 @@ public class JwtUtils {
   }
 
   private static <T> T getJwtClaim(Jwt jwt, String claimName) {
-    return Optional.ofNullable(jwt.getClaim(claimName)).orElseThrow(() -> new InvalidJwtException(String.format("jwt missing claim [%s]", claimName)));
+    T claim = jwt.getClaim(claimName);
     if (claim == null) {
       throw new InvalidJwtException(String.format("jwt missing claim [%s]", claimName));
     }
