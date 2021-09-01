@@ -52,7 +52,7 @@ public class JwtUtils {
               Collections.<String>emptyList());
 
       var visas =
-          visaJwtStrings.stream().map(s -> buildVisa(decodeJwt(s))).collect(Collectors.toList());
+          visaJwtStrings.stream().map(this::decodeJwt).map(this::buildVisa).collect(Collectors.toList());
 
       return new LinkedAccountWithPassportAndVisas.Builder()
           .linkedAccount(linkedAccount)
