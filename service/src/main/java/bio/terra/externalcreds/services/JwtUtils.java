@@ -42,7 +42,7 @@ public class JwtUtils {
 
   public LinkedAccountWithPassportAndVisas enrichAccountWithPassportAndVisas(
       LinkedAccount linkedAccount, OAuth2User userInfo) {
-    var passportJwtString = userInfo.<String>getAttribute(PASSPORT_JWT_V11_CLAIM);
+    String passportJwtString = userInfo.getAttribute(PASSPORT_JWT_V11_CLAIM);
     if (passportJwtString != null) {
       var passportJwt = decodeJwt(passportJwtString);
 
