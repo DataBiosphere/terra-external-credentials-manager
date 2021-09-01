@@ -100,10 +100,8 @@ public class JwtUtils {
 
   private static <T> T getJwtClaim(Jwt jwt, String claimName) {
     T claim = jwt.getClaim(claimName);
-    if (claim == null) {
-      throw new InvalidJwtException(String.format("jwt missing claim [%s]", claimName));
-    }
-    return claim;
+    return Optional.ofNullable(claim).orElseThrow(() ->
+            new InvalidJwtException(String.format("jwt missing claim [%s]", claimName)));
   }
 
   private static TokenTypeEnum determineTokenType(Jwt visaJwt) {
