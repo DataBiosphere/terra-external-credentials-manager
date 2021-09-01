@@ -53,7 +53,7 @@ public class JwtUtils {
               Collections.emptyList());
 
       var visas =
-          visaJwtStrings.stream().map(this::decodeJwt).map(this::buildVisa).collect(Collectors.toList());
+          visaJwtStrings.stream().map(s -> buildVisa(decodeJwt(s))).collect(Collectors.toList());
 
       return new LinkedAccountWithPassportAndVisas.Builder()
           .linkedAccount(linkedAccount)
@@ -123,14 +123,7 @@ public class JwtUtils {
         throw new InvalidJwtException("jwt missing issuer (iss) claim");
       }
       var jkuOption = Optional.ofNullable(((JWSHeader) jwt.getHeader()).getJWKURL());
-      return jkuOption.map(jku ->
       if (jkuOption.isPresent()) {
-        if (externalCredsConfig.getAllowedJwksUris().contains(jku)) {
-          return ExternalCredsJwtDecoders.fromJku(jku).decode(jwtString);
-        } else {
-          throw new InvalidJwtException(
-              String.format("URI [%s] specified by jku header not on allowed list", jku));
-        }).orElseGet(() -> JwtDecoders.fromIssuerLocation(issuer).decode(jwtString))
         // presence of the jku header means the url it specifies contains the key set that must be
         // used validate the signature
         URI jku = jkuOption.get();
