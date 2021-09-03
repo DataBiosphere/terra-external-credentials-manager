@@ -155,12 +155,14 @@ public class ProviderService {
     linkedAccountService.deleteLinkedAccount(userId, providerId);
   }
 
+  // TODO: couldn't find the old version of this so made a new one, needs try/catch for error handling
   public void authAndRefreshPassports() {
     var refreshInterval = new Timestamp(Instant.now().
         plus(externalCredsConfig.getVisaAndPassportRefreshInterval())
         .toEpochMilli());
     var expiringLinkedAccounts = linkedAccountService.getExpiringLinkedAccounts(refreshInterval);
     for (LinkedAccount la : expiringLinkedAccounts) {
+      // TODO: decide how we want to handle exceptions in a try catch here
       authAndRefreshPassport(la);
     }
   }
