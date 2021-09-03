@@ -5,10 +5,15 @@ import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
@@ -33,18 +38,33 @@ public class PassportService {
   }
 
   @ReadTransaction
-  public void validatePassportsWithTokenVisas() {
-    var passportDetailsList = passportDAO.getPassportsWithUnvalidatedTokenVisas();
+  public void validatePassportsWithAccessTokenVisas() {
+    var passportDetailsList = passportDAO.getPassportsWithUnvalidatedAccessTokenVisas();
 
     passportDetailsList.forEach(
         pd -> {
           var validationEndpoint =
-              externalCredsConfig.getProviders().get(pd.getProviderId()).getValidationEndpoint().get();
+              externalCredsConfig
+                  .getProviders()
+                  .get(pd.getProviderId())
+                  .getValidationEndpoint()
+                  .get();
 
-          var response = WebClient.create(validationEndpoint)
-              .post()
-              .bodyValue(pd.getPassportJwt())
-              .retrieve();
+          var response =
+              WebClient.create(validationEndpoint).post().bodyValue(pd.getPassportJwt()).retrieve();
+
+          var responseBody =
+              response
+                  .bodyToMono(String.class)
+                  .block(Duration.of(1000, ChronoUnit.MILLIS));
+
+          // TODO: figure out what to do when it's invalid and what details to log
+          if (responseBody.equalsIgnoreCase("invalid")) {
+            log.info("visa is invalid");
+
+          } else if (!responseBody.toLowerCase().equals("valid")) {
+            log.info(String.format("unexpected response when validating visa: %s", responseBody));
+          }
 
           /*
           // Get the endpoint URL and insert the token
