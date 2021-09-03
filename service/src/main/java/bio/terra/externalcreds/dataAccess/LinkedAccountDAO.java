@@ -34,6 +34,16 @@ public class LinkedAccountDAO {
             jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper())));
   }
 
+  public Optional<LinkedAccount> getLinkedAccount(int linkedAccountId) {
+    var namedParameters =
+        new MapSqlParameterSource().addValue("linkedAccountId", linkedAccountId);
+    var query =
+        "SELECT * FROM linked_account WHERE id = :linkedAccountId";
+    return Optional.ofNullable(
+        DataAccessUtils.singleResult(
+            jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper())));
+  }
+
   public List<LinkedAccount> getExpiringLinkedAccounts(Timestamp expirationCutoff) {
     var namedParameters = new MapSqlParameterSource("expirationCutoff", expirationCutoff);
     var query =

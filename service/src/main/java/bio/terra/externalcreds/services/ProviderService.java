@@ -162,22 +162,8 @@ public class ProviderService {
       linkedAccountService.updateLinkAuthenticationStatus(linkedAccount.getId().get(), false);
     } else {
       try {
-        var clientRegistration =
-            providerClientCache.getProviderClient(linkedAccount.getProviderId());
-        var accessTokenResponse =
-            oAuth2Service.authorizeWithRefreshToken(
-                clientRegistration.orElseThrow(),
-                new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
-        var userInfo =
-            oAuth2Service.getUserInfo(
-                clientRegistration.orElseThrow(), accessTokenResponse.getAccessToken());
-
         // save the linked account with the new refresh token and extracted passport
-        var linkedAccountWithRefreshToken =
-            linkedAccount.withRefreshToken(accessTokenResponse.getRefreshToken().getTokenValue());
-        linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-            jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo));
-
+        linkedAccountService.upsertLinkedAccountWithPassportAndVisas(getRefreshedPassportsAndVisas(linkedAccount));
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
             String.format(
@@ -194,6 +180,23 @@ public class ProviderService {
         }
       }
     }
+  }
+
+  public LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(LinkedAccount linkedAccount) {
+    var clientRegistration =
+        providerClientCache.getProviderClient(linkedAccount.getProviderId());
+    var accessTokenResponse =
+        oAuth2Service.authorizeWithRefreshToken(
+            clientRegistration.orElseThrow(),
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+    var userInfo =
+        oAuth2Service.getUserInfo(
+            clientRegistration.orElseThrow(), accessTokenResponse.getAccessToken());
+
+    var linkedAccountWithRefreshToken =
+        linkedAccount.withRefreshToken(accessTokenResponse.getRefreshToken().getTokenValue());
+
+    return jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo);
   }
 
   private void revokeAccessToken(

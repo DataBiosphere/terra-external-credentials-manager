@@ -4,6 +4,7 @@ import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
+import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -20,11 +21,15 @@ import reactor.core.publisher.Mono;
 public class PassportService {
 
   private final GA4GHPassportDAO passportDAO;
+  private final LinkedAccountDAO linkedAccountDAO;
   private final ExternalCredsConfig externalCredsConfig;
+  private final ProviderService providerService;
 
-  public PassportService(GA4GHPassportDAO passportDAO, ExternalCredsConfig externalCredsConfig) {
+  public PassportService(GA4GHPassportDAO passportDAO, ExternalCredsConfig externalCredsConfig, LinkedAccountDAO linkedAccountDAO, ProviderService providerService) {
     this.passportDAO = passportDAO;
+    this.linkedAccountDAO = linkedAccountDAO;
     this.externalCredsConfig = externalCredsConfig;
+    this.providerService = providerService;
   }
 
   @ReadTransaction
@@ -58,9 +63,14 @@ public class PassportService {
                   .bodyToMono(String.class)
                   .block(Duration.of(1000, ChronoUnit.MILLIS));
 
-          // TODO: figure out what to do when it's invalid and what details to log
           if (responseBody.equalsIgnoreCase("invalid")) {
-            log.info("visa is invalid");
+            var linkedAccount = linkedAccountDAO.getLinkedAccount(pd.getLinkedAccountId());
+            log.info("found invalid visa, refreshing");
+            try {
+              providerService.authAndRefreshPassport(linkedAccount.get());
+            } catch  {
+
+            }
 
           } else if (!responseBody.toLowerCase().equals("valid")) {
             log.info(String.format("unexpected response when validating visa: %s", responseBody));
