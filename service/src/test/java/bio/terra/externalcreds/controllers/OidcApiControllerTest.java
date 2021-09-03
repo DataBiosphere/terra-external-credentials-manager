@@ -15,13 +15,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
-import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
-import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -105,17 +103,9 @@ public class OidcApiControllerTest extends BaseTest {
     @Test
     void testGetLink() throws Exception {
       var accessToken = "testToken";
-      var userId = UUID.randomUUID().toString();
-      var inputLinkedAccount =
-          new LinkedAccount.Builder()
-              .userId(userId)
-              .providerId("testProvider")
-              .externalUserId("externalUser")
-              .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
-              .refreshToken("refreshToken")
-              .build();
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
 
-      mockSamUser(userId, accessToken);
+      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
       when(linkedAccountService.getLinkedAccount(
               eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderId())))
@@ -176,22 +166,14 @@ public class OidcApiControllerTest extends BaseTest {
   @Test
   void testCreateLink() throws Exception {
     var accessToken = "testToken";
-    var userId = UUID.randomUUID().toString();
-    var inputLinkedAccount =
-        new LinkedAccount.Builder()
-            .userId(userId)
-            .providerId("testProvider")
-            .externalUserId("externalUser")
-            .expires(Timestamp.valueOf("2007-09-23 10:10:10.0"))
-            .refreshToken("refreshToken")
-            .build();
+    var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
 
     var scopes = new String[] {"email", "foo"};
     var redirectUri = "http://redirect";
     var state = UUID.randomUUID().toString();
     var oauthcode = UUID.randomUUID().toString();
 
-    mockSamUser(userId, accessToken);
+    mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
     when(providerService.createLink(
             inputLinkedAccount.getProviderId(),

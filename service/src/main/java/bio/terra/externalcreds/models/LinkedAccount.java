@@ -18,10 +18,7 @@ public interface LinkedAccount extends WithLinkedAccount {
 
   String getExternalUserId();
 
-  @Value.Default
-  default boolean isAuthenticated() {
-    return true;
-  }
+  boolean isAuthenticated();
 
   class Builder extends ImmutableLinkedAccount.Builder {}
 }

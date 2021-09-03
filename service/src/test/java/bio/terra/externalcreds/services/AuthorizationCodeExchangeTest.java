@@ -338,13 +338,9 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   private LinkedAccount createTestLinkedAccount() {
-    return new LinkedAccount.Builder()
-        .providerId(UUID.randomUUID().toString())
-        .userId(UUID.randomUUID().toString())
-        .refreshToken(UUID.randomUUID().toString())
-        .externalUserId(userEmail)
-        .expires(passportExpiresTime)
-        .build();
+    return TestUtils.createRandomLinkedAccount()
+        .withExternalUserId(userEmail)
+        .withExpires(passportExpiresTime);
   }
 
   private GA4GHPassport createTestPassport(List<GA4GHVisa> visas) throws JOSEException {

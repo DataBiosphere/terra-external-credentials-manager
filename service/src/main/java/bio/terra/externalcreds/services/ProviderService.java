@@ -131,6 +131,7 @@ public class ProviderService {
             .expires(expires)
             .externalUserId(userInfo.getAttribute(EXTERNAL_USERID_ATTR))
             .refreshToken(refreshToken.getTokenValue())
+            .isAuthenticated(true)
             .build();
 
     return linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
@@ -171,8 +172,6 @@ public class ProviderService {
             oAuth2Service.getUserInfo(
                 clientRegistration.orElseThrow(), accessTokenResponse.getAccessToken());
 
-        // TODO: do we actually need to update the refresh token? If we do, test if it's updated
-        // correctly
         // save the linked account with the new refresh token and extracted passport
         var linkedAccountWithRefreshToken =
             linkedAccount.withRefreshToken(accessTokenResponse.getRefreshToken().getTokenValue());
@@ -181,7 +180,9 @@ public class ProviderService {
 
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
-            "Could not contact issuer for provider " + linkedAccount.getProviderId(), iae);
+            String.format(
+                "Could not contact issuer for provider %s", linkedAccount.getProviderId()),
+            iae);
       } catch (OAuth2AuthorizationException oauthEx) {
         // if the cause is a 4xx response, delete the passport
         if (oauthEx.getCause() instanceof HttpClientErrorException) {

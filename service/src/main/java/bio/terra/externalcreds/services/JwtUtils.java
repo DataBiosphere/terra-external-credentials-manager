@@ -17,6 +17,7 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -42,17 +43,19 @@ public class JwtUtils {
 
   public LinkedAccountWithPassportAndVisas enrichAccountWithPassportAndVisas(
       LinkedAccount linkedAccount, OAuth2User userInfo) {
-    var passportJwtString = userInfo.<String>getAttribute(PASSPORT_JWT_V11_CLAIM);
+    String passportJwtString = userInfo.getAttribute(PASSPORT_JWT_V11_CLAIM);
     if (passportJwtString != null) {
       var passportJwt = decodeJwt(passportJwtString);
 
-      var visaJwtStrings =
+      List<String> visaJwtStrings =
           Objects.requireNonNullElse(
-              passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM),
-              Collections.<String>emptyList());
+              passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM), Collections.emptyList());
 
       var visas =
-          visaJwtStrings.stream().map(s -> buildVisa(decodeJwt(s))).collect(Collectors.toList());
+          visaJwtStrings.stream()
+              .map(this::decodeJwt)
+              .map(JwtUtils::buildVisa)
+              .collect(Collectors.toList());
 
       return new LinkedAccountWithPassportAndVisas.Builder()
           .linkedAccount(linkedAccount)
@@ -99,10 +102,9 @@ public class JwtUtils {
 
   private static <T> T getJwtClaim(Jwt jwt, String claimName) {
     T claim = jwt.getClaim(claimName);
-    if (claim == null) {
-      throw new InvalidJwtException(String.format("jwt missing claim [%s]", claimName));
-    }
-    return claim;
+    return Optional.ofNullable(claim)
+        .orElseThrow(
+            () -> new InvalidJwtException(String.format("jwt missing claim [%s]", claimName)));
   }
 
   private static TokenTypeEnum determineTokenType(Jwt visaJwt) {

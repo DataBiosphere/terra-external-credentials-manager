@@ -282,6 +282,8 @@ public class ProviderServiceTest extends BaseTest {
 
     @Test
     void testSuccessfulAuthAndRefresh() {
+      var updatedRefreshToken = "newRefreshToken";
+
       // save a non-expired linked account and nearly-expired passport and visa
       var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
       var savedLinkedAccount =
@@ -302,7 +304,7 @@ public class ProviderServiceTest extends BaseTest {
       // mock the OAuth2Authorization response
       var oAuth2TokenResponse =
           OAuth2AccessTokenResponse.withToken("tokenValue")
-              .refreshToken(savedLinkedAccount.getRefreshToken())
+              .refreshToken(updatedRefreshToken)
               .tokenType(TokenType.BEARER)
               .build();
       when(mockOAuth2Service.authorizeWithRefreshToken(
@@ -317,10 +319,11 @@ public class ProviderServiceTest extends BaseTest {
       var refreshedPassport =
           TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId());
       var refreshedVisa = TestUtils.createRandomVisa();
-      when(jwtUtils.enrichAccountWithPassportAndVisas(eq(savedLinkedAccount), Mockito.any()))
+      when(jwtUtils.enrichAccountWithPassportAndVisas(
+              eq(savedLinkedAccount.withRefreshToken(updatedRefreshToken)), Mockito.any()))
           .thenReturn(
               new LinkedAccountWithPassportAndVisas.Builder()
-                  .linkedAccount(savedLinkedAccount)
+                  .linkedAccount(savedLinkedAccount.withRefreshToken(updatedRefreshToken))
                   .passport(refreshedPassport)
                   .visas(List.of(refreshedVisa))
                   .build());
@@ -333,7 +336,13 @@ public class ProviderServiceTest extends BaseTest {
           passportDAO
               .getPassport(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId())
               .get();
+      var actualUpdatedLinkedAccount =
+          linkedAccountDAO.getLinkedAccount(
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
       var actualUpdatedVisas = visaDAO.listVisas(actualUpdatedPassport.getId().get());
+      assertEquals(
+          savedLinkedAccount.withRefreshToken(updatedRefreshToken),
+          actualUpdatedLinkedAccount.get());
       assertEquals(refreshedPassport.withId(actualUpdatedPassport.getId()), actualUpdatedPassport);
       assertEquals(1, actualUpdatedVisas.size());
       assertEquals(
