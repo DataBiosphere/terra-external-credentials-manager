@@ -80,8 +80,11 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<LinkInfo> getLink(String provider) {
+    System.out.println("_________Getting the user id from SAM");
     var userId = getUserIdFromSam();
     var linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
+    System.out.println(
+        "_________Got the linkedAccount, and it's empty???:" + linkedAccount.isEmpty());
     return ResponseEntity.of(linkedAccount.map(this::getLinkInfoFromLinkedAccount));
   }
 

@@ -17,7 +17,9 @@ public class ServiceStatus extends TestScript {
     log.info("Checking the service status endpoint.");
     var apiClient = ClientTestUtils.getClientWithoutAccessToken(server);
     var publicApi = new PublicApi(apiClient);
+
     publicApi.getStatus();
+
     var httpCode = publicApi.getApiClient().getStatusCode();
     assertEquals(HttpStatusCodes.STATUS_CODE_OK, httpCode);
     log.info("Service status return code: {}", httpCode);

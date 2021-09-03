@@ -1,0 +1,17 @@
+{
+  "name": "GetLink404ForAuthenticatedUser",
+  "description": "Check that the test user is authenticated through Sam.",
+  "serverSpecificationFile": "ecm-local.json",
+  "kubernetes": {},
+  "application": {},
+  "testScripts": [
+    {
+      "name": "GetLink404ForAuthenticatedUser",
+      "numberOfUserJourneyThreadsToRun": 1,
+      "userJourneyThreadPoolSize": 2,
+      "expectedTimeForEach": 5,
+      "expectedTimeForEachUnit": "SECONDS"
+    }
+  ],
+  "testUserFiles": ["bella.json"]
+}
