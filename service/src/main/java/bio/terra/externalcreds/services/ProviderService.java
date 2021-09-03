@@ -155,6 +155,16 @@ public class ProviderService {
     linkedAccountService.deleteLinkedAccount(userId, providerId);
   }
 
+  public void authAndRefreshPassports() {
+    var refreshInterval = new Timestamp(Instant.now().
+        plus(externalCredsConfig.getVisaAndPassportRefreshInterval())
+        .toEpochMilli());
+    var expiringLinkedAccounts = linkedAccountService.getExpiringLinkedAccounts(refreshInterval);
+    for (LinkedAccount la : expiringLinkedAccounts) {
+      authAndRefreshPassport(la);
+    }
+  }
+
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
     if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
