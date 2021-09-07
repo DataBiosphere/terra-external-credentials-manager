@@ -6,8 +6,10 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
+import bio.terra.externalcreds.models.PassportVerificationDetails;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -43,69 +45,7 @@ public class PassportService {
   }
 
   @ReadTransaction
-  public void validatePassportsWithAccessTokenVisas() {
-    var passportDetailsList = passportDAO.getPassportsWithUnvalidatedAccessTokenVisas();
-
-    passportDetailsList.forEach(
-        pd -> {
-          var validationEndpoint =
-              externalCredsConfig
-                  .getProviders()
-                  .get(pd.getProviderId())
-                  .getValidationEndpoint()
-                  .get();
-
-          var response =
-              WebClient.create(validationEndpoint).post().bodyValue(pd.getPassportJwt()).retrieve();
-
-          var responseBody =
-              response
-                  .bodyToMono(String.class)
-                  .block(Duration.of(1000, ChronoUnit.MILLIS));
-
-          if (responseBody.equalsIgnoreCase("invalid")) {
-            var linkedAccount = linkedAccountDAO.getLinkedAccount(pd.getLinkedAccountId());
-            log.info("found invalid visa, refreshing");
-            try {
-              providerService.authAndRefreshPassport(linkedAccount.get());
-            } catch  {
-
-            }
-
-          } else if (!responseBody.toLowerCase().equals("valid")) {
-            log.info(String.format("unexpected response when validating visa: %s", responseBody));
-          }
-
-          /*
-          // Get the endpoint URL and insert the token
-          String revokeEndpoint =
-              String.format(providerProperties.getRevokeEndpoint(), linkedAccount.getRefreshToken());
-          // Add authorization information and make request
-          WebClient.ResponseSpec response =
-              WebClient.create(revokeEndpoint)
-                  .post()
-                  .uri(
-                      uriBuilder ->
-                          uriBuilder
-                              .queryParam("client_id", providerProperties.getClientId())
-                              .queryParam("client_secret", providerProperties.getClientSecret())
-                              .build())
-                  .retrieve();
-
-          String responseBody =
-              response
-                  .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
-                  .bodyToMono(String.class)
-                  .block(Duration.of(1000, ChronoUnit.MILLIS));
-
-          log.info(
-              "Token revocation request for user [{}], provider [{}] returned with the result: [{}]",
-              linkedAccount.getUserId(),
-              linkedAccount.getProviderId(),
-              responseBody);
-
-                */
-
-        });
+  public List<PassportVerificationDetails> getPassportsWithUnvalidatedAccessTokenVisas() {
+    return passportDAO.getPassportsWithUnvalidatedAccessTokenVisas();
   }
 }

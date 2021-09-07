@@ -6,6 +6,7 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.models.PassportVerificationDetails;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -167,6 +168,30 @@ public class ProviderService {
     }
   }
 
+  public void validatePassportsWithAccessTokenVisas() {
+    var passportDetailsList = passportService.getPassportsWithUnvalidatedAccessTokenVisas();
+
+    passportDetailsList.forEach(
+        pd -> {
+          var responseBody = validatePassportWithProvider(pd);
+
+          // If the response is invalid, get a new passport.
+          if (responseBody.equalsIgnoreCase("invalid")) {
+            log.info("found invalid visa, refreshing");
+            var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
+            try {
+              authAndRefreshPassport(linkedAccount.get());
+            } catch (Exception e) {
+              log.info("Failed to refresh passport, will try again at the next interval.", e);
+            }
+          }
+          // For all other non-valid statuses, log and try again later.
+          else if (!responseBody.equalsIgnoreCase("valid")) {
+            log.info(String.format("unexpected response when validating visa: %s", responseBody));
+          }
+        });
+  }
+
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
     if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
@@ -209,6 +234,25 @@ public class ProviderService {
         linkedAccount.withRefreshToken(accessTokenResponse.getRefreshToken().getTokenValue());
 
     return jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo);
+  }
+
+  private String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
+      var validationEndpoint =
+          externalCredsConfig
+              .getProviders()
+              .get(passportDetails.getProviderId())
+              .getValidationEndpoint()
+              .get();
+
+      var response =
+          WebClient.create(validationEndpoint).post().bodyValue(passportDetails.getPassportJwt()).retrieve();
+
+      var responseBody =
+          response
+              .bodyToMono(String.class)
+              .block(Duration.of(1000, ChronoUnit.MILLIS));
+
+      return responseBody;
   }
 
   private void revokeAccessToken(

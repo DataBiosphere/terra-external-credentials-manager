@@ -394,4 +394,13 @@ public class ProviderServiceTest extends BaseTest {
       // assertEquals(0, failedRefreshAccountCount);
     }
   }
+
+  @Nested
+  @TestComponent
+  class ValidatePassportsWithAccessTokenVisas {
+    @Autowired private ProviderService providerService;
+
+    @Test
+    
+  }
 }
