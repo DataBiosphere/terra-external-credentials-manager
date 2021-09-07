@@ -2,36 +2,22 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
-import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
-import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.PassportVerificationDetails;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
 public class PassportService {
 
   private final GA4GHPassportDAO passportDAO;
-  private final LinkedAccountDAO linkedAccountDAO;
-  private final ExternalCredsConfig externalCredsConfig;
-  private final ProviderService providerService;
 
-  public PassportService(GA4GHPassportDAO passportDAO, ExternalCredsConfig externalCredsConfig, LinkedAccountDAO linkedAccountDAO, ProviderService providerService) {
+  public PassportService(GA4GHPassportDAO passportDAO) {
     this.passportDAO = passportDAO;
-    this.linkedAccountDAO = linkedAccountDAO;
-    this.externalCredsConfig = externalCredsConfig;
-    this.providerService = providerService;
   }
 
   @ReadTransaction

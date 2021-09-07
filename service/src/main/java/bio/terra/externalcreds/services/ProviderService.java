@@ -156,11 +156,14 @@ public class ProviderService {
     linkedAccountService.deleteLinkedAccount(userId, providerId);
   }
 
-  // TODO: couldn't find the old version of this so made a new one, needs try/catch for error handling
+  // TODO: couldn't find the old version of this so made a new one, needs try/catch for error
+  // handling
   public void authAndRefreshPassports() {
-    var refreshInterval = new Timestamp(Instant.now().
-        plus(externalCredsConfig.getVisaAndPassportRefreshInterval())
-        .toEpochMilli());
+    var refreshInterval =
+        new Timestamp(
+            Instant.now()
+                .plus(externalCredsConfig.getVisaAndPassportRefreshInterval())
+                .toEpochMilli());
     var expiringLinkedAccounts = linkedAccountService.getExpiringLinkedAccounts(refreshInterval);
     for (LinkedAccount la : expiringLinkedAccounts) {
       // TODO: decide how we want to handle exceptions in a try catch here
@@ -200,7 +203,8 @@ public class ProviderService {
     } else {
       try {
         // save the linked account with the new refresh token and extracted passport
-        linkedAccountService.upsertLinkedAccountWithPassportAndVisas(getRefreshedPassportsAndVisas(linkedAccount));
+        linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+            getRefreshedPassportsAndVisas(linkedAccount));
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
             String.format(
@@ -219,9 +223,9 @@ public class ProviderService {
     }
   }
 
-  public LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(LinkedAccount linkedAccount) {
-    var clientRegistration =
-        providerClientCache.getProviderClient(linkedAccount.getProviderId());
+  public LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
+      LinkedAccount linkedAccount) {
+    var clientRegistration = providerClientCache.getProviderClient(linkedAccount.getProviderId());
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
             clientRegistration.orElseThrow(),
@@ -237,22 +241,23 @@ public class ProviderService {
   }
 
   private String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
-      var validationEndpoint =
-          externalCredsConfig
-              .getProviders()
-              .get(passportDetails.getProviderId())
-              .getValidationEndpoint()
-              .get();
+    var validationEndpoint =
+        externalCredsConfig
+            .getProviders()
+            .get(passportDetails.getProviderId())
+            .getValidationEndpoint()
+            .get();
 
-      var response =
-          WebClient.create(validationEndpoint).post().bodyValue(passportDetails.getPassportJwt()).retrieve();
+    var response =
+        WebClient.create(validationEndpoint)
+            .post()
+            .bodyValue(passportDetails.getPassportJwt())
+            .retrieve();
 
-      var responseBody =
-          response
-              .bodyToMono(String.class)
-              .block(Duration.of(1000, ChronoUnit.MILLIS));
+    var responseBody =
+        response.bodyToMono(String.class).block(Duration.of(1000, ChronoUnit.MILLIS));
 
-      return responseBody;
+    return responseBody;
   }
 
   private void revokeAccessToken(
