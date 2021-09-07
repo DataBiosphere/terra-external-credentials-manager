@@ -44,13 +44,14 @@ public class OidcApiControllerTest extends BaseTest {
 
   @Autowired private MockMvc mvc;
 
-  @MockBean private LinkedAccountService linkedAccountService;
-  @MockBean private ProviderService providerService;
-  @MockBean private SamService samService;
+  @MockBean private LinkedAccountService linkedAccountServiceMock;
+  @MockBean private ProviderService providerServiceMock;
+  @MockBean private SamService samServiceMock;
 
   @Test
   void testListProviders() throws Exception {
-    when(providerService.getProviderList()).thenReturn(Set.of("fake-provider2", "fake-provider1"));
+    when(providerServiceMock.getProviderList())
+        .thenReturn(Set.of("fake-provider2", "fake-provider1"));
 
     mvc.perform(get("/api/oidc/v1/providers"))
         .andExpect(content().json("[\"fake-provider1\",\"fake-provider2\"]"));
@@ -67,7 +68,7 @@ public class OidcApiControllerTest extends BaseTest {
       var scopes = Set.of("openid", "email");
       String state = null;
 
-      when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
+      when(providerServiceMock.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
           .thenReturn(Optional.of(result));
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -85,7 +86,7 @@ public class OidcApiControllerTest extends BaseTest {
       var scopes = Set.of("openid", "email");
       String state = null;
 
-      when(providerService.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
+      when(providerServiceMock.getProviderAuthorizationUrl(provider, redirectUri, scopes, state))
           .thenReturn(Optional.empty());
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -115,7 +116,7 @@ public class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(linkedAccountService.getLinkedAccount(
+      when(linkedAccountServiceMock.getLinkedAccount(
               eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderId())))
           .thenReturn(Optional.of(inputLinkedAccount));
 
@@ -191,7 +192,7 @@ public class OidcApiControllerTest extends BaseTest {
 
     mockSamUser(userId, accessToken);
 
-    when(providerService.createLink(
+    when(providerServiceMock.createLink(
             inputLinkedAccount.getProviderId(),
             inputLinkedAccount.getUserId(),
             oauthcode,
@@ -233,14 +234,14 @@ public class OidcApiControllerTest extends BaseTest {
       var providerId = UUID.randomUUID().toString();
       mockSamUser(userId, accessToken);
 
-      doNothing().when(providerService).deleteLink(userId, providerId);
+      doNothing().when(providerServiceMock).deleteLink(userId, providerId);
 
       mvc.perform(
               delete("/api/oidc/v1/{provider}", providerId)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isOk());
 
-      verify(providerService).deleteLink(userId, providerId);
+      verify(providerServiceMock).deleteLink(userId, providerId);
     }
 
     @Test
@@ -251,7 +252,7 @@ public class OidcApiControllerTest extends BaseTest {
       mockSamUser(userId, accessToken);
 
       doThrow(new NotFoundException("not found"))
-          .when(providerService)
+          .when(providerServiceMock)
           .deleteLink(userId, providerId);
 
       mvc.perform(
@@ -273,7 +274,7 @@ public class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(linkedAccountService.getGA4GHPassport(userId, providerId))
+      when(linkedAccountServiceMock.getGA4GHPassport(userId, providerId))
           .thenReturn(Optional.of(passport));
 
       mvc.perform(
@@ -301,13 +302,13 @@ public class OidcApiControllerTest extends BaseTest {
   private void mockSamUser(String userId, String accessToken) throws ApiException {
     var usersApiMock = mock(UsersApi.class);
     var userStatusInfo = new UserStatusInfo().userSubjectId(userId);
-    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
   }
 
   private void mockSamUserError(String accessToken, HttpStatus notFound) throws ApiException {
     var usersApiMock = mock(UsersApi.class);
-    when(samService.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo())
         .thenThrow(new ApiException(notFound.value(), "Not Found"));
   }
