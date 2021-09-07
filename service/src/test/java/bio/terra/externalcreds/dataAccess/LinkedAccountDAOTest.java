@@ -181,7 +181,6 @@ public class LinkedAccountDAOTest extends BaseTest {
 
   @Test
   void testUpdateLinkAuthenticationStatus() {
-    // TODO make sure this still works if column is renamed
     var savedLinkedAccount =
         linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
 

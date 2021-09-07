@@ -3,8 +3,8 @@ package bio.terra.externalcreds.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,7 +31,6 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.Parameter;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -363,6 +362,47 @@ public class ProviderServiceTest extends BaseTest {
       return ClientRegistration.withRegistrationId(providerId)
           .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
           .build();
+    }
+  }
+
+  @Nested
+  @TestComponent
+  class RefreshExpiringPassports {
+    @Autowired private GA4GHPassportDAO passportDAO;
+    @Autowired private LinkedAccountDAO linkedAccountDAO;
+    @Autowired private ProviderService providerService;
+
+    @MockBean private ExternalCredsConfig externalCredsConfig;
+
+    @Test
+    void testOnlyExpiringPassportsAreRefreshed() {
+      // insert two linked accounts, one with an expiring passport, one with non-expiring passport
+      var ExpiringLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var savedExpiringLinkedAccount = linkedAccountDAO.upsertLinkedAccount(ExpiringLinkedAccount);
+      var nonExpiringLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var savedNonExpiringLinkedAccount =
+          linkedAccountDAO.upsertLinkedAccount(nonExpiringLinkedAccount);
+
+      var expiringPassport =
+          TestUtils.createRandomPassport()
+              .withExpires(new Timestamp(Instant.now().toEpochMilli()))
+              .withLinkedAccountId(savedExpiringLinkedAccount.getId());
+      var notExpiringPassport =
+          TestUtils.createRandomPassport()
+              .withExpires(new Timestamp(Instant.now().plus(Duration.ofMinutes(60)).toEpochMilli()))
+              .withLinkedAccountId(savedNonExpiringLinkedAccount.getId());
+      passportDAO.insertPassport(expiringPassport);
+      passportDAO.insertPassport(notExpiringPassport);
+
+      // mock the configs
+      when(externalCredsConfig.getVisaAndPassportRefreshInterval())
+          .thenReturn(Duration.ofMinutes(30));
+
+      // check that authAndRefreshPassport is called exactly once with the expiring linked account
+      var providerServiceSpy = Mockito.spy(providerService);
+      providerServiceSpy.refreshExpiringPassports();
+      verify(providerServiceSpy).authAndRefreshPassport(any());
+      verify(providerServiceSpy).authAndRefreshPassport(savedExpiringLinkedAccount);
     }
   }
 }
