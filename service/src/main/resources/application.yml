@@ -36,3 +36,8 @@ spring:
           max-age: 0
           must-revalidate: true
         use-last-modified: false
+
+terra.common:
+  tracing:
+    stackdriverExportEnabled: ${CLOUD_TRACE_ENABLED:false}
+    samplingRate: ${SAMPLING_PROBABILITY:0}

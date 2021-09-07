@@ -52,8 +52,8 @@ public class ProviderServiceTest extends BaseTest {
 
     @Autowired private ProviderService providerService;
 
-    @MockBean private LinkedAccountService mockLinkedAccountService;
-    @MockBean private ExternalCredsConfig mockExternalCredsConfig;
+    @MockBean private LinkedAccountService linkedAccountServiceMock;
+    @MockBean private ExternalCredsConfig externalCredsConfigMock;
 
     @Test
     void testDeleteLinkedAccountAndRevokeToken() {
@@ -67,7 +67,7 @@ public class ProviderServiceTest extends BaseTest {
 
     @Test
     void testDeleteLinkProviderNotFound() {
-      when(mockExternalCredsConfig.getProviders()).thenReturn(Map.of());
+      when(externalCredsConfigMock.getProviders()).thenReturn(Map.of());
 
       assertThrows(
           NotFoundException.class,
@@ -80,10 +80,10 @@ public class ProviderServiceTest extends BaseTest {
     void testDeleteLinkLinkNotFound() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
 
-      when(mockExternalCredsConfig.getProviders())
+      when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
 
-      when(mockLinkedAccountService.getLinkedAccount(
+      when(linkedAccountServiceMock.getLinkedAccount(
               linkedAccount.getUserId(), linkedAccount.getProviderId()))
           .thenReturn(Optional.empty());
 
@@ -109,13 +109,13 @@ public class ProviderServiceTest extends BaseTest {
               new Parameter("client_id", providerInfo.getClientId()),
               new Parameter("client_secret", providerInfo.getClientSecret()));
 
-      when(mockExternalCredsConfig.getProviders())
+      when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
 
-      when(mockLinkedAccountService.getLinkedAccount(
+      when(linkedAccountServiceMock.getLinkedAccount(
               linkedAccount.getUserId(), linkedAccount.getProviderId()))
           .thenReturn(Optional.of(linkedAccount));
-      when(mockLinkedAccountService.deleteLinkedAccount(
+      when(linkedAccountServiceMock.deleteLinkedAccount(
               linkedAccount.getUserId(), linkedAccount.getProviderId()))
           .thenReturn(true);
 
@@ -130,7 +130,7 @@ public class ProviderServiceTest extends BaseTest {
             .respond(HttpResponse.response().withStatusCode(httpStatus.value()));
 
         providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderId());
-        verify(mockLinkedAccountService)
+        verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
       } finally {
         mockServer.stop();
@@ -147,7 +147,7 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired private LinkedAccountDAO linkedAccountDAO;
     @Autowired private GA4GHVisaDAO visaDAO;
 
-    @MockBean private ExternalCredsConfig mockExternalCredsConfig;
+    @MockBean private ExternalCredsConfig externalCredsConfigMock;
     @MockBean private ProviderClientCache mockProviderClientCache;
     @MockBean private OAuth2Service mockOAuth2Service;
     @MockBean private JwtUtils jwtUtils;
@@ -192,7 +192,7 @@ public class ProviderServiceTest extends BaseTest {
               .withIssuer("BadIssuer"));
 
       // mock configs
-      when(mockExternalCredsConfig.getProviders())
+      when(externalCredsConfigMock.getProviders())
           .thenReturn(
               Map.of(
                   savedLinkedAccount.getProviderId(),
@@ -354,7 +354,7 @@ public class ProviderServiceTest extends BaseTest {
     }
 
     private void mockProviderConfigs(String providerId) {
-      when(mockExternalCredsConfig.getProviders())
+      when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(providerId, TestUtils.createRandomProvider()));
     }
 

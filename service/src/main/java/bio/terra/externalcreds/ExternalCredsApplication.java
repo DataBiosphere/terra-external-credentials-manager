@@ -8,7 +8,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
     scanBasePackages = {
       "bio.terra.externalcreds",
       "bio.terra.common.logging",
-      "bio.terra.common.retry.transaction"
+      "bio.terra.common.retry.transaction",
+      "bio.terra.common.tracing"
     })
 public class ExternalCredsApplication {
 

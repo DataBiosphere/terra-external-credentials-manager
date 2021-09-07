@@ -3,12 +3,12 @@ pluginManagement {
 		resolutionStrategy {
 			eachPlugin {
 				if (requested.id.id == 'bio.terra.test-runner-plugin') {
-					useModule("bio.terra:terra-test-runner:" + requested.version)
+					useModule("bio.terra:terra-test-runner:${requested.version}")
 				}
 			}
 		}
 		maven {
-			url "https://broadinstitute.jfrog.io/broadinstitute/libs-snapshot-local/"
+			url 'https://broadinstitute.jfrog.io/artifactory/plugins-snapshot'
 		}
 		gradlePluginPortal()
 	}
