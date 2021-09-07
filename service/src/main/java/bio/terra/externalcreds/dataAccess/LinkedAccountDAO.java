@@ -42,8 +42,9 @@ public class LinkedAccountDAO {
             + " ON passport.linked_account_id = la.id"
             + " LEFT JOIN ga4gh_visa visa"
             + " ON visa.passport_id = passport.id"
-            + " WHERE passport.expires <= :expirationCutoff"
-            + " OR visa.expires <= :expirationCutoff";
+            + " WHERE (passport.expires <= :expirationCutoff"
+            + " OR visa.expires <= :expirationCutoff)"
+            + " AND la.is_authenticated = true";
     return jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper());
   }
 
@@ -54,7 +55,8 @@ public class LinkedAccountDAO {
             + " ON CONFLICT (user_id, provider_id) DO UPDATE SET"
             + " refresh_token = excluded.refresh_token,"
             + " expires = excluded.expires,"
-            + " external_user_id = excluded.external_user_id"
+            + " external_user_id = excluded.external_user_id,"
+            + " is_authenticated = excluded.is_authenticated"
             + " RETURNING id";
 
     var namedParameters =
@@ -83,17 +85,6 @@ public class LinkedAccountDAO {
     var query = "DELETE FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
-
-    return jdbcTemplate.update(query, namedParameters) > 0;
-  }
-
-  public boolean updateLinkAuthenticationStatus(int linkedAccountId, boolean isAuthenticated) {
-    var query =
-        "UPDATE linked_account SET is_authenticated = :isAuthenticated WHERE id = :linkedAccountId";
-    var namedParameters =
-        new MapSqlParameterSource()
-            .addValue("linkedAccountId", linkedAccountId)
-            .addValue("isAuthenticated", isAuthenticated);
 
     return jdbcTemplate.update(query, namedParameters) > 0;
   }

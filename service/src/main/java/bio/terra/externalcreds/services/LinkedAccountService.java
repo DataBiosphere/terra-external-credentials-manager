@@ -50,18 +50,18 @@ public class LinkedAccountService {
   }
 
   @WriteTransaction
+  public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
+    return linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+  }
+
+  @WriteTransaction
   public boolean deleteLinkedAccount(String userId, String providerId) {
     return linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
   }
 
-  @WriteTransaction
+  @ReadTransaction
   public List<LinkedAccount> getExpiringLinkedAccounts(Timestamp expirationCutoff) {
     return linkedAccountDAO.getExpiringLinkedAccounts(expirationCutoff);
-  }
-
-  @WriteTransaction
-  public boolean updateLinkAuthenticationStatus(int linkedAccountId, boolean isAuthenticated) {
-    return linkedAccountDAO.updateLinkAuthenticationStatus(linkedAccountId, isAuthenticated);
   }
 
   private LinkedAccountWithPassportAndVisas savePassportAndVisasIfPresent(

@@ -172,23 +172,36 @@ public class ProviderService {
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
     if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
-      passportService.deletePassport(linkedAccount.getId().get());
-      linkedAccountService.updateLinkAuthenticationStatus(linkedAccount.getId().get(), false);
+      var linkedAccountId =
+          linkedAccount
+              .getId()
+              .orElseThrow(() -> new ExternalCredsException("linked account id missing"));
+      passportService.deletePassport(linkedAccountId);
+      linkedAccountService.upsertLinkedAccount(linkedAccount.withIsAuthenticated(false));
     } else {
       try {
         var clientRegistration =
-            providerClientCache.getProviderClient(linkedAccount.getProviderId());
+            providerClientCache
+                .getProviderClient(linkedAccount.getProviderId())
+                .orElseThrow(
+                    () ->
+                        new ExternalCredsException(
+                            String.format(
+                                "Unable to find configs for the provider: %s",
+                                linkedAccount.getProviderId())));
         var accessTokenResponse =
             oAuth2Service.authorizeWithRefreshToken(
-                clientRegistration.orElseThrow(),
-                new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
-        var userInfo =
-            oAuth2Service.getUserInfo(
-                clientRegistration.orElseThrow(), accessTokenResponse.getAccessToken());
+                clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
 
         // save the linked account with the new refresh token and extracted passport
         var linkedAccountWithRefreshToken =
-            linkedAccount.withRefreshToken(accessTokenResponse.getRefreshToken().getTokenValue());
+            linkedAccountService.upsertLinkedAccount(
+                linkedAccount.withRefreshToken(
+                    accessTokenResponse.getRefreshToken().getTokenValue()));
+
+        // update the passport and visas
+        var userInfo =
+            oAuth2Service.getUserInfo(clientRegistration, accessTokenResponse.getAccessToken());
         linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
             jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo));
 
@@ -200,8 +213,12 @@ public class ProviderService {
       } catch (OAuth2AuthorizationException oauthEx) {
         // if the cause is a 4xx response, delete the passport
         if (oauthEx.getCause() instanceof HttpClientErrorException) {
-          passportService.deletePassport(linkedAccount.getId().get());
-          linkedAccountService.updateLinkAuthenticationStatus(linkedAccount.getId().get(), false);
+          var linkedAccountId =
+              linkedAccount
+                  .getId()
+                  .orElseThrow(() -> new ExternalCredsException("linked account id missing"));
+          passportService.deletePassport(linkedAccountId);
+          linkedAccountService.upsertLinkedAccount(linkedAccount.withIsAuthenticated(false));
         } else {
           // log and try again later
           throw new ExternalCredsException("Failed to refresh passport: ", oauthEx);

@@ -118,26 +118,4 @@ public class LinkedAccountServiceTest extends BaseTest {
 
     return saved.getLinkedAccount();
   }
-
-  @Test
-  void testUpdateLinkAuthenticationStatus() {
-    var savedLinkedAccount =
-        linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
-
-    // check that no errors are thrown when the status is set to its existing value
-    linkedAccountService.updateLinkAuthenticationStatus(savedLinkedAccount.getId().get(), true);
-    assertTrue(
-        linkedAccountService
-            .getLinkedAccount(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId())
-            .get()
-            .isAuthenticated());
-
-    // check that the value can be updated correctly
-    linkedAccountService.updateLinkAuthenticationStatus(savedLinkedAccount.getId().get(), false);
-    assertFalse(
-        linkedAccountService
-            .getLinkedAccount(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId())
-            .get()
-            .isAuthenticated());
-  }
 }
