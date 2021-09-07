@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +31,7 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.Parameter;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -361,37 +363,6 @@ public class ProviderServiceTest extends BaseTest {
       return ClientRegistration.withRegistrationId(providerId)
           .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
           .build();
-    }
-  }
-
-  @Nested
-  @TestComponent
-  class CheckAndRefreshPassportsAndVisas {
-
-    @Autowired private GA4GHPassportDAO passportDAO;
-    @Autowired private LinkedAccountDAO linkedAccountDAO;
-
-    @Test
-    void testExpiredPassportsAreRefreshed() {
-      // TODO: make sure authAndRefreshPassport is called once
-      var expiredLinkedAccount = TestUtils.createRandomLinkedAccount();
-      var savedExpiredLinkedAccount = linkedAccountDAO.upsertLinkedAccount(expiredLinkedAccount);
-      var nonExpiredLinkedAccount = TestUtils.createRandomLinkedAccount();
-      var savedNonExpiredLinkedAccount =
-          linkedAccountDAO.upsertLinkedAccount(nonExpiredLinkedAccount);
-
-      var expiredPassport =
-          TestUtils.createRandomPassport()
-              .withExpires(new Timestamp(Instant.now().toEpochMilli()))
-              .withLinkedAccountId(savedExpiredLinkedAccount.getId());
-      var notExpiredPassport =
-          TestUtils.createRandomPassport()
-              .withExpires(new Timestamp(Instant.now().plus(Duration.ofMinutes(20)).toEpochMilli()))
-              .withLinkedAccountId(savedNonExpiredLinkedAccount.getId());
-      passportDAO.insertPassport(expiredPassport);
-      passportDAO.insertPassport(notExpiredPassport);
-
-      // assertEquals(0, failedRefreshAccountCount);
     }
   }
 }

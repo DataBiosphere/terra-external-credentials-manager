@@ -56,6 +56,20 @@ public class ProviderService {
     return Collections.unmodifiableSet(externalCredsConfig.getProviders().keySet());
   }
 
+  public void refreshExpiringPassports() {
+    var refreshInterval = externalCredsConfig.getVisaAndPassportRefreshInterval();
+    var expirationCutoff = new Timestamp(Instant.now().plus(refreshInterval).toEpochMilli());
+    var expiringLinkedAccounts = linkedAccountService.getExpiringLinkedAccounts(expirationCutoff);
+
+    for (LinkedAccount linkedAccount : expiringLinkedAccounts) {
+      try {
+        authAndRefreshPassport(linkedAccount);
+      } catch (Exception e) {
+        log.info("Failed to refresh passport, will try again at the next interval.", e);
+      }
+    }
+  }
+
   public Optional<String> getProviderAuthorizationUrl(
       String provider, String redirectUri, Set<String> scopes, String state) {
     return providerClientCache
