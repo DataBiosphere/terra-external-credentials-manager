@@ -1,7 +1,6 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
-import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.PassportVerificationDetails;

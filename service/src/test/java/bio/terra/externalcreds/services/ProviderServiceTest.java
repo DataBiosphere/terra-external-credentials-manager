@@ -148,9 +148,9 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired private GA4GHVisaDAO visaDAO;
 
     @MockBean private ExternalCredsConfig externalCredsConfigMock;
-    @MockBean private ProviderClientCache mockProviderClientCache;
-    @MockBean private OAuth2Service mockOAuth2Service;
-    @MockBean private JwtUtils jwtUtils;
+    @MockBean private ProviderClientCache providerClientCacheMock;
+    @MockBean private OAuth2Service oAuth2ServiceMock;
+    @MockBean private JwtUtils jwtUtilsMock;
 
     @Test
     void testExpiredLinkedAccountIsMarkedInvalid() {
@@ -197,7 +197,7 @@ public class ProviderServiceTest extends BaseTest {
               Map.of(
                   savedLinkedAccount.getProviderId(),
                   TestUtils.createRandomProvider().setIssuer("BadIssuer")));
-      when(mockProviderClientCache.getProviderClient(savedLinkedAccount.getProviderId()))
+      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderId()))
           .thenThrow(new IllegalArgumentException());
 
       // check that an exception is thrown
@@ -223,11 +223,11 @@ public class ProviderServiceTest extends BaseTest {
 
       // mock the ClientRegistration
       var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderId());
-      when(mockProviderClientCache.getProviderClient(savedLinkedAccount.getProviderId()))
+      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderId()))
           .thenReturn(Optional.of(clientRegistration));
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
-      when(mockOAuth2Service.authorizeWithRefreshToken(
+      when(oAuth2ServiceMock.authorizeWithRefreshToken(
               clientRegistration,
               new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
           .thenThrow(
@@ -265,11 +265,11 @@ public class ProviderServiceTest extends BaseTest {
 
       // mock the ClientRegistration
       var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderId());
-      when(mockProviderClientCache.getProviderClient(savedLinkedAccount.getProviderId()))
+      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderId()))
           .thenReturn(Optional.of(clientRegistration));
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
-      when(mockOAuth2Service.authorizeWithRefreshToken(
+      when(oAuth2ServiceMock.authorizeWithRefreshToken(
               clientRegistration,
               new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
           .thenThrow(
@@ -299,7 +299,7 @@ public class ProviderServiceTest extends BaseTest {
 
       // mock the ClientRegistration
       var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderId());
-      when(mockProviderClientCache.getProviderClient(savedLinkedAccount.getProviderId()))
+      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderId()))
           .thenReturn(Optional.of(clientRegistration));
 
       // mock the OAuth2Authorization response
@@ -308,19 +308,19 @@ public class ProviderServiceTest extends BaseTest {
               .refreshToken(updatedRefreshToken)
               .tokenType(TokenType.BEARER)
               .build();
-      when(mockOAuth2Service.authorizeWithRefreshToken(
+      when(oAuth2ServiceMock.authorizeWithRefreshToken(
               clientRegistration,
               new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
           .thenReturn(oAuth2TokenResponse);
 
       // returning null here because it's passed to another mocked function and isn't worth mocking
-      when(mockOAuth2Service.getUserInfo(eq(clientRegistration), Mockito.any())).thenReturn(null);
+      when(oAuth2ServiceMock.getUserInfo(eq(clientRegistration), Mockito.any())).thenReturn(null);
 
       // mock the LinkedAccountWithPassportAndVisas that would normally be read from a JWT
       var refreshedPassport =
           TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId());
       var refreshedVisa = TestUtils.createRandomVisa();
-      when(jwtUtils.enrichAccountWithPassportAndVisas(
+      when(jwtUtilsMock.enrichAccountWithPassportAndVisas(
               eq(savedLinkedAccount.withRefreshToken(updatedRefreshToken)), Mockito.any()))
           .thenReturn(
               new LinkedAccountWithPassportAndVisas.Builder()
@@ -371,8 +371,10 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired private GA4GHPassportDAO passportDAO;
     @Autowired private LinkedAccountDAO linkedAccountDAO;
     @Autowired private ProviderService providerService;
+    @Autowired private GA4GHVisaDAO visaDAO;
 
-    @MockBean private ExternalCredsConfig externalCredsConfig;
+    @MockBean private ExternalCredsConfig externalCredsConfigMock;
+    @MockBean private ProviderClientCache providerClientCacheMock;
 
     @Test
     void testOnlyExpiringPassportsAreRefreshed() {
@@ -395,7 +397,7 @@ public class ProviderServiceTest extends BaseTest {
       passportDAO.insertPassport(notExpiringPassport);
 
       // mock the configs
-      when(externalCredsConfig.getVisaAndPassportRefreshInterval())
+      when(externalCredsConfigMock.getVisaAndPassportRefreshInterval())
           .thenReturn(Duration.ofMinutes(30));
 
       // check that authAndRefreshPassport is called exactly once with the expiring linked account
@@ -404,161 +406,5 @@ public class ProviderServiceTest extends BaseTest {
       verify(providerServiceSpy).authAndRefreshPassport(any());
       verify(providerServiceSpy).authAndRefreshPassport(savedExpiringLinkedAccount);
     }
-
-    @Test
-    void testOtherOauthException() {
-
-      // save a non-expired linked account and nearly-expired passport and visa
-      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
-      var savedLinkedAccount =
-          linkedAccountDAO.upsertLinkedAccount(
-              TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
-      var savedPassport =
-          passportDAO.insertPassport(
-              TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
-      visaDAO.insertVisa(TestUtils.createRandomVisa().withPassportId(savedPassport.getId()));
-
-      mockProviderConfigs(savedLinkedAccount.getProviderId());
-
-      // mock the ClientRegistration
-      var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderId());
-      when(mockProviderClientCache.getProviderClient(savedLinkedAccount.getProviderId()))
-          .thenReturn(Optional.of(clientRegistration));
-
-      // mock the OAuth2AuthorizationException error thrown by the Oath2Service
-      when(mockOAuth2Service.authorizeWithRefreshToken(
-              clientRegistration,
-              new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
-          .thenThrow(
-              new OAuth2AuthorizationException(new OAuth2Error(HttpStatus.BAD_REQUEST.toString())));
-
-      // check that the expected exception is thrown
-      assertThrows(
-          ExternalCredsException.class,
-          () -> providerService.authAndRefreshPassport(savedLinkedAccount));
-    }
-
-    @Test
-    void testSuccessfulAuthAndRefresh() {
-      var updatedRefreshToken = "newRefreshToken";
-
-      // save a non-expired linked account and nearly-expired passport and visa
-      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
-      var savedLinkedAccount =
-          linkedAccountDAO.upsertLinkedAccount(
-              TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
-      var savedPassport =
-          passportDAO.insertPassport(
-              TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
-      visaDAO.insertVisa(TestUtils.createRandomVisa().withPassportId(savedPassport.getId()));
-
-      mockProviderConfigs(savedLinkedAccount.getProviderId());
-
-      // mock the ClientRegistration
-      var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderId());
-      when(mockProviderClientCache.getProviderClient(savedLinkedAccount.getProviderId()))
-          .thenReturn(Optional.of(clientRegistration));
-
-      // mock the OAuth2Authorization response
-      var oAuth2TokenResponse =
-          OAuth2AccessTokenResponse.withToken("tokenValue")
-              .refreshToken(updatedRefreshToken)
-              .tokenType(TokenType.BEARER)
-              .build();
-      when(mockOAuth2Service.authorizeWithRefreshToken(
-              clientRegistration,
-              new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
-          .thenReturn(oAuth2TokenResponse);
-
-      // returning null here because it's passed to another mocked function and isn't worth mocking
-      when(mockOAuth2Service.getUserInfo(eq(clientRegistration), Mockito.any())).thenReturn(null);
-
-      // mock the LinkedAccountWithPassportAndVisas that would normally be read from a JWT
-      var refreshedPassport =
-          TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId());
-      var refreshedVisa = TestUtils.createRandomVisa();
-      when(jwtUtils.enrichAccountWithPassportAndVisas(
-              eq(savedLinkedAccount.withRefreshToken(updatedRefreshToken)), Mockito.any()))
-          .thenReturn(
-              new LinkedAccountWithPassportAndVisas.Builder()
-                  .linkedAccount(savedLinkedAccount.withRefreshToken(updatedRefreshToken))
-                  .passport(refreshedPassport)
-                  .visas(List.of(refreshedVisa))
-                  .build());
-
-      // attempt to auth and refresh
-      providerService.authAndRefreshPassport(savedLinkedAccount);
-
-      // check that the passport and visa were updated in the DB
-      var actualUpdatedPassport =
-          passportDAO
-              .getPassport(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId())
-              .get();
-      var actualUpdatedLinkedAccount =
-          linkedAccountDAO.getLinkedAccount(
-              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
-      var actualUpdatedVisas = visaDAO.listVisas(actualUpdatedPassport.getId().get());
-      assertEquals(
-          savedLinkedAccount.withRefreshToken(updatedRefreshToken),
-          actualUpdatedLinkedAccount.get());
-      assertEquals(refreshedPassport.withId(actualUpdatedPassport.getId()), actualUpdatedPassport);
-      assertEquals(1, actualUpdatedVisas.size());
-      assertEquals(
-          refreshedVisa
-              .withId(actualUpdatedVisas.get(0).getId())
-              .withPassportId(actualUpdatedPassport.getId()),
-          actualUpdatedVisas.get(0));
-    }
-
-    private void mockProviderConfigs(String providerId) {
-      when(mockExternalCredsConfig.getProviders())
-          .thenReturn(Map.of(providerId, TestUtils.createRandomProvider()));
-    }
-
-    private ClientRegistration createClientRegistration(String providerId) {
-      return ClientRegistration.withRegistrationId(providerId)
-          .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-          .build();
-    }
-  }
-
-  @Nested
-  @TestComponent
-  class CheckAndRefreshPassportsAndVisas {
-
-    @Autowired private GA4GHPassportDAO passportDAO;
-    @Autowired private LinkedAccountDAO linkedAccountDAO;
-
-    @Test
-    void testExpiredPassportsAreRefreshed() {
-      // TODO: make sure authAndRefreshPassport is called once
-      var expiredLinkedAccount = TestUtils.createRandomLinkedAccount();
-      var savedExpiredLinkedAccount = linkedAccountDAO.upsertLinkedAccount(expiredLinkedAccount);
-      var nonExpiredLinkedAccount = TestUtils.createRandomLinkedAccount();
-      var savedNonExpiredLinkedAccount =
-          linkedAccountDAO.upsertLinkedAccount(nonExpiredLinkedAccount);
-
-      var expiredPassport =
-          TestUtils.createRandomPassport()
-              .withExpires(new Timestamp(Instant.now().toEpochMilli()))
-              .withLinkedAccountId(savedExpiredLinkedAccount.getId());
-      var notExpiredPassport =
-          TestUtils.createRandomPassport()
-              .withExpires(new Timestamp(Instant.now().plus(Duration.ofMinutes(20)).toEpochMilli()))
-              .withLinkedAccountId(savedNonExpiredLinkedAccount.getId());
-      passportDAO.insertPassport(expiredPassport);
-      passportDAO.insertPassport(notExpiredPassport);
-
-      // assertEquals(0, failedRefreshAccountCount);
-    }
-  }
-
-  @Nested
-  @TestComponent
-  class ValidatePassportsWithAccessTokenVisas {
-    @Autowired private ProviderService providerService;
-
-    @Test
-    
   }
 }

@@ -170,29 +170,29 @@ public class ProviderService {
     linkedAccountService.deleteLinkedAccount(userId, providerId);
   }
 
-public void validatePassportsWithAccessTokenVisas() {
-  var passportDetailsList = passportService.getPassportsWithUnvalidatedAccessTokenVisas();
+  public void validatePassportsWithAccessTokenVisas() {
+    var passportDetailsList = passportService.getPassportsWithUnvalidatedAccessTokenVisas();
 
-  passportDetailsList.forEach(
-      pd -> {
-        var responseBody = validatePassportWithProvider(pd);
+    passportDetailsList.forEach(
+        pd -> {
+          var responseBody = validatePassportWithProvider(pd);
 
-        // If the response is invalid, get a new passport.
-        if (responseBody.equalsIgnoreCase("invalid")) {
-          log.info("found invalid visa, refreshing");
-          var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
-          try {
-            authAndRefreshPassport(linkedAccount.get());
-          } catch (Exception e) {
-            log.info("Failed to refresh passport, will try again at the next interval.", e);
+          // If the response is invalid, get a new passport.
+          if (responseBody.equalsIgnoreCase("invalid")) {
+            log.info("found invalid visa, refreshing");
+            var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
+            try {
+              authAndRefreshPassport(linkedAccount.get());
+            } catch (Exception e) {
+              log.info("Failed to refresh passport, will try again at the next interval.", e);
+            }
           }
-        }
-        // For all other non-valid statuses, log and try again later.
-        else if (!responseBody.equalsIgnoreCase("valid")) {
-          log.info(String.format("unexpected response when validating visa: %s", responseBody));
-        }
-      });
-}
+          // For all other non-valid statuses, log and try again later.
+          else if (!responseBody.equalsIgnoreCase("valid")) {
+            log.info(String.format("unexpected response when validating visa: %s", responseBody));
+          }
+        });
+  }
 
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
