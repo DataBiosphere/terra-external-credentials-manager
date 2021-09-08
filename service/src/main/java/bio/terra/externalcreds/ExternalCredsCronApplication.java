@@ -2,6 +2,7 @@ package bio.terra.externalcreds;
 
 import bio.terra.common.logging.LoggingInitializer;
 import bio.terra.externalcreds.services.ProviderService;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -40,7 +41,10 @@ public class ExternalCredsCronApplication {
 
   @Scheduled(fixedRateString = "#{${externalcreds.background-job-interval-mins} * 60 * 1000}")
   public void checkForExpiringCredentials() {
-    // TODO: put real code here, this log message is just to verify that this is running
-    log.info(providerService.getProviderList().toString());
+    log.info("beginning checkForExpiringCredentials");
+    var expiringPassportCount = providerService.refreshExpiringPassports();
+    log.info(
+        "completed checkForExpiringCredentials",
+        Map.of("expiring_passport_count", expiringPassportCount));
   }
 }
