@@ -25,11 +25,6 @@ public class PassportService {
     return passportDAO.getPassport(userId, providerId);
   }
 
-  @WriteTransaction
-  public boolean deletePassport(int linkedAccountId) {
-    return passportDAO.deletePassport(linkedAccountId);
-  }
-
   @ReadTransaction
   public List<PassportVerificationDetails> getPassportsWithUnvalidatedAccessTokenVisas() {
     return passportDAO.getPassportsWithUnvalidatedAccessTokenVisas();

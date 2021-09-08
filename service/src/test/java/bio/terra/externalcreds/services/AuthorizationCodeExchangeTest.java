@@ -57,9 +57,9 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   public static final String JWKS_PATH = "/openid/connect/jwks.json";
   public static final String JKU_PATH = "/jku.json";
 
-  @MockBean OAuth2Service oAuth2Service;
-  @MockBean ProviderClientCache providerClientCache;
-  @MockBean ExternalCredsConfig externalCredsConfig;
+  @MockBean OAuth2Service oAuth2ServiceMock;
+  @MockBean ProviderClientCache providerClientCacheMock;
+  @MockBean ExternalCredsConfig externalCredsConfigMock;
 
   @Autowired ProviderService providerService;
   @Autowired PassportService passportService;
@@ -198,7 +198,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   @Test
   void testJwtJkuNotResponsive() throws URISyntaxException, JOSEException {
     String testIssuer = "http://localhost:10";
-    when(externalCredsConfig.getAllowedJwksUris())
+    when(externalCredsConfigMock.getAllowedJwksUris())
         .thenReturn(List.of(new URI(testIssuer + JKU_PATH)));
 
     var jwtNotResponsiveJku =
@@ -212,7 +212,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   @Test
   void testJwtJkuMalformed() throws URISyntaxException, JOSEException {
     String testIssuer = "foobar";
-    when(externalCredsConfig.getAllowedJwksUris())
+    when(externalCredsConfigMock.getAllowedJwksUris())
         .thenReturn(List.of(new URI(testIssuer + JKU_PATH)));
 
     var jwtMalformedJku =
@@ -249,12 +249,13 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     OAuth2User user =
         new DefaultOAuth2User(null, userAttributes, ProviderService.EXTERNAL_USERID_ATTR);
 
-    when(externalCredsConfig.getProviders())
+    when(externalCredsConfigMock.getProviders())
         .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
-    when(externalCredsConfig.getAllowedJwksUris()).thenReturn(List.of(new URI(issuer + JKU_PATH)));
-    when(providerClientCache.getProviderClient(linkedAccount.getProviderId()))
+    when(externalCredsConfigMock.getAllowedJwksUris())
+        .thenReturn(List.of(new URI(issuer + JKU_PATH)));
+    when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderId()))
         .thenReturn(Optional.of(providerClient));
-    when(oAuth2Service.authorizationCodeExchange(
+    when(oAuth2ServiceMock.authorizationCodeExchange(
             providerClient,
             authorizationCode,
             redirectUri,
@@ -262,7 +263,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
             state,
             providerInfo.getAdditionalAuthorizationParameters()))
         .thenReturn(accessTokenResponse);
-    when(oAuth2Service.getUserInfo(providerClient, accessTokenResponse.getAccessToken()))
+    when(oAuth2ServiceMock.getUserInfo(providerClient, accessTokenResponse.getAccessToken()))
         .thenReturn(user);
   }
 

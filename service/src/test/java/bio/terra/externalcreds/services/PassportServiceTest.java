@@ -1,7 +1,6 @@
 package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
@@ -48,19 +47,5 @@ public class PassportServiceTest extends BaseTest {
 
     assertEmpty(
         passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderId()));
-  }
-
-  @Test
-  void testDeletePassport() {
-    var savedAccount = linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
-    assertPresent(savedAccount.getId());
-    passportDAO.insertPassport(
-        TestUtils.createRandomPassport().withLinkedAccountId(savedAccount.getId()));
-
-    assertPresent(
-        passportService.getPassport(savedAccount.getUserId(), savedAccount.getProviderId()));
-    assertTrue(passportService.deletePassport(savedAccount.getId().get()));
-    assertEmpty(
-        passportService.getPassport(savedAccount.getUserId(), savedAccount.getProviderId()));
   }
 }

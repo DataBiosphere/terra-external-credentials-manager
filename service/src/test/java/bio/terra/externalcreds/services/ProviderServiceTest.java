@@ -3,6 +3,7 @@ package bio.terra.externalcreds.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -51,8 +52,8 @@ public class ProviderServiceTest extends BaseTest {
 
     @Autowired private ProviderService providerService;
 
-    @MockBean private LinkedAccountService mockLinkedAccountService;
-    @MockBean private ExternalCredsConfig mockExternalCredsConfig;
+    @MockBean private LinkedAccountService linkedAccountServiceMock;
+    @MockBean private ExternalCredsConfig externalCredsConfigMock;
 
     @Test
     void testDeleteLinkedAccountAndRevokeToken() {
@@ -66,7 +67,7 @@ public class ProviderServiceTest extends BaseTest {
 
     @Test
     void testDeleteLinkProviderNotFound() {
-      when(mockExternalCredsConfig.getProviders()).thenReturn(Map.of());
+      when(externalCredsConfigMock.getProviders()).thenReturn(Map.of());
 
       assertThrows(
           NotFoundException.class,
@@ -79,10 +80,10 @@ public class ProviderServiceTest extends BaseTest {
     void testDeleteLinkLinkNotFound() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
 
-      when(mockExternalCredsConfig.getProviders())
+      when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
 
-      when(mockLinkedAccountService.getLinkedAccount(
+      when(linkedAccountServiceMock.getLinkedAccount(
               linkedAccount.getUserId(), linkedAccount.getProviderId()))
           .thenReturn(Optional.empty());
 
@@ -108,13 +109,13 @@ public class ProviderServiceTest extends BaseTest {
               new Parameter("client_id", providerInfo.getClientId()),
               new Parameter("client_secret", providerInfo.getClientSecret()));
 
-      when(mockExternalCredsConfig.getProviders())
+      when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
 
-      when(mockLinkedAccountService.getLinkedAccount(
+      when(linkedAccountServiceMock.getLinkedAccount(
               linkedAccount.getUserId(), linkedAccount.getProviderId()))
           .thenReturn(Optional.of(linkedAccount));
-      when(mockLinkedAccountService.deleteLinkedAccount(
+      when(linkedAccountServiceMock.deleteLinkedAccount(
               linkedAccount.getUserId(), linkedAccount.getProviderId()))
           .thenReturn(true);
 
@@ -129,7 +130,7 @@ public class ProviderServiceTest extends BaseTest {
             .respond(HttpResponse.response().withStatusCode(httpStatus.value()));
 
         providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderId());
-        verify(mockLinkedAccountService)
+        verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
       } finally {
         mockServer.stop();
@@ -146,7 +147,7 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired private LinkedAccountDAO linkedAccountDAO;
     @Autowired private GA4GHVisaDAO visaDAO;
 
-    @MockBean private ExternalCredsConfig mockExternalCredsConfig;
+    @MockBean private ExternalCredsConfig externalCredsConfigMock;
     @MockBean private ProviderClientCache mockProviderClientCache;
     @MockBean private OAuth2Service mockOAuth2Service;
     @MockBean private JwtUtils jwtUtils;
@@ -191,7 +192,7 @@ public class ProviderServiceTest extends BaseTest {
               .withIssuer("BadIssuer"));
 
       // mock configs
-      when(mockExternalCredsConfig.getProviders())
+      when(externalCredsConfigMock.getProviders())
           .thenReturn(
               Map.of(
                   savedLinkedAccount.getProviderId(),
@@ -245,6 +246,163 @@ public class ProviderServiceTest extends BaseTest {
           linkedAccountDAO.getLinkedAccount(
               savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
       assertFalse(updatedLinkedAccount.get().isAuthenticated());
+    }
+
+    @Test
+    void testOtherOauthException() {
+
+      // save a non-expired linked account and nearly-expired passport and visa
+      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
+      var savedLinkedAccount =
+          linkedAccountDAO.upsertLinkedAccount(
+              TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
+      var savedPassport =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
+      visaDAO.insertVisa(TestUtils.createRandomVisa().withPassportId(savedPassport.getId()));
+
+      mockProviderConfigs(savedLinkedAccount.getProviderId());
+
+      // mock the ClientRegistration
+      var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderId());
+      when(mockProviderClientCache.getProviderClient(savedLinkedAccount.getProviderId()))
+          .thenReturn(Optional.of(clientRegistration));
+
+      // mock the OAuth2AuthorizationException error thrown by the Oath2Service
+      when(mockOAuth2Service.authorizeWithRefreshToken(
+              clientRegistration,
+              new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
+          .thenThrow(
+              new OAuth2AuthorizationException(new OAuth2Error(HttpStatus.BAD_REQUEST.toString())));
+
+      // check that the expected exception is thrown
+      assertThrows(
+          ExternalCredsException.class,
+          () -> providerService.authAndRefreshPassport(savedLinkedAccount));
+    }
+
+    @Test
+    void testSuccessfulAuthAndRefresh() {
+      var updatedRefreshToken = "newRefreshToken";
+
+      // save a non-expired linked account and nearly-expired passport and visa
+      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
+      var savedLinkedAccount =
+          linkedAccountDAO.upsertLinkedAccount(
+              TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
+      var savedPassport =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
+      visaDAO.insertVisa(TestUtils.createRandomVisa().withPassportId(savedPassport.getId()));
+
+      mockProviderConfigs(savedLinkedAccount.getProviderId());
+
+      // mock the ClientRegistration
+      var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderId());
+      when(mockProviderClientCache.getProviderClient(savedLinkedAccount.getProviderId()))
+          .thenReturn(Optional.of(clientRegistration));
+
+      // mock the OAuth2Authorization response
+      var oAuth2TokenResponse =
+          OAuth2AccessTokenResponse.withToken("tokenValue")
+              .refreshToken(updatedRefreshToken)
+              .tokenType(TokenType.BEARER)
+              .build();
+      when(mockOAuth2Service.authorizeWithRefreshToken(
+              clientRegistration,
+              new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
+          .thenReturn(oAuth2TokenResponse);
+
+      // returning null here because it's passed to another mocked function and isn't worth mocking
+      when(mockOAuth2Service.getUserInfo(eq(clientRegistration), Mockito.any())).thenReturn(null);
+
+      // mock the LinkedAccountWithPassportAndVisas that would normally be read from a JWT
+      var refreshedPassport =
+          TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId());
+      var refreshedVisa = TestUtils.createRandomVisa();
+      when(jwtUtils.enrichAccountWithPassportAndVisas(
+              eq(savedLinkedAccount.withRefreshToken(updatedRefreshToken)), Mockito.any()))
+          .thenReturn(
+              new LinkedAccountWithPassportAndVisas.Builder()
+                  .linkedAccount(savedLinkedAccount.withRefreshToken(updatedRefreshToken))
+                  .passport(refreshedPassport)
+                  .visas(List.of(refreshedVisa))
+                  .build());
+
+      // attempt to auth and refresh
+      providerService.authAndRefreshPassport(savedLinkedAccount);
+
+      // check that the passport and visa were updated in the DB
+      var actualUpdatedPassport =
+          passportDAO
+              .getPassport(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId())
+              .get();
+      var actualUpdatedLinkedAccount =
+          linkedAccountDAO.getLinkedAccount(
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
+      var actualUpdatedVisas = visaDAO.listVisas(actualUpdatedPassport.getId().get());
+      assertEquals(
+          savedLinkedAccount.withRefreshToken(updatedRefreshToken),
+          actualUpdatedLinkedAccount.get());
+      assertEquals(refreshedPassport.withId(actualUpdatedPassport.getId()), actualUpdatedPassport);
+      assertEquals(1, actualUpdatedVisas.size());
+      assertEquals(
+          refreshedVisa
+              .withId(actualUpdatedVisas.get(0).getId())
+              .withPassportId(actualUpdatedPassport.getId()),
+          actualUpdatedVisas.get(0));
+    }
+
+    private void mockProviderConfigs(String providerId) {
+      when(externalCredsConfigMock.getProviders())
+          .thenReturn(Map.of(providerId, TestUtils.createRandomProvider()));
+    }
+
+    private ClientRegistration createClientRegistration(String providerId) {
+      return ClientRegistration.withRegistrationId(providerId)
+          .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+          .build();
+    }
+  }
+
+  @Nested
+  @TestComponent
+  class RefreshExpiringPassports {
+    @Autowired private GA4GHPassportDAO passportDAO;
+    @Autowired private LinkedAccountDAO linkedAccountDAO;
+    @Autowired private ProviderService providerService;
+
+    @MockBean private ExternalCredsConfig externalCredsConfig;
+
+    @Test
+    void testOnlyExpiringPassportsAreRefreshed() {
+      // insert two linked accounts, one with an expiring passport, one with non-expiring passport
+      var ExpiringLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var savedExpiringLinkedAccount = linkedAccountDAO.upsertLinkedAccount(ExpiringLinkedAccount);
+      var nonExpiringLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var savedNonExpiringLinkedAccount =
+          linkedAccountDAO.upsertLinkedAccount(nonExpiringLinkedAccount);
+
+      var expiringPassport =
+          TestUtils.createRandomPassport()
+              .withExpires(new Timestamp(Instant.now().toEpochMilli()))
+              .withLinkedAccountId(savedExpiringLinkedAccount.getId());
+      var notExpiringPassport =
+          TestUtils.createRandomPassport()
+              .withExpires(new Timestamp(Instant.now().plus(Duration.ofMinutes(60)).toEpochMilli()))
+              .withLinkedAccountId(savedNonExpiringLinkedAccount.getId());
+      passportDAO.insertPassport(expiringPassport);
+      passportDAO.insertPassport(notExpiringPassport);
+
+      // mock the configs
+      when(externalCredsConfig.getVisaAndPassportRefreshInterval())
+          .thenReturn(Duration.ofMinutes(30));
+
+      // check that authAndRefreshPassport is called exactly once with the expiring linked account
+      var providerServiceSpy = Mockito.spy(providerService);
+      providerServiceSpy.refreshExpiringPassports();
+      verify(providerServiceSpy).authAndRefreshPassport(any());
+      verify(providerServiceSpy).authAndRefreshPassport(savedExpiringLinkedAccount);
     }
 
     @Test

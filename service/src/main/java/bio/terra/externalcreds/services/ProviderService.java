@@ -57,6 +57,20 @@ public class ProviderService {
     return Collections.unmodifiableSet(externalCredsConfig.getProviders().keySet());
   }
 
+  public void refreshExpiringPassports() {
+    var refreshInterval = externalCredsConfig.getVisaAndPassportRefreshInterval();
+    var expirationCutoff = new Timestamp(Instant.now().plus(refreshInterval).toEpochMilli());
+    var expiringLinkedAccounts = linkedAccountService.getExpiringLinkedAccounts(expirationCutoff);
+
+    for (LinkedAccount linkedAccount : expiringLinkedAccounts) {
+      try {
+        authAndRefreshPassport(linkedAccount);
+      } catch (Exception e) {
+        log.info("Failed to refresh passport, will try again at the next interval.", e);
+      }
+    }
+  }
+
   public Optional<String> getProviderAuthorizationUrl(
       String provider, String redirectUri, Set<String> scopes, String state) {
     return providerClientCache
@@ -156,55 +170,64 @@ public class ProviderService {
     linkedAccountService.deleteLinkedAccount(userId, providerId);
   }
 
-  // TODO: couldn't find the old version of this so made a new one, needs try/catch for error
-  // handling
-  public void authAndRefreshPassports() {
-    var refreshInterval =
-        new Timestamp(
-            Instant.now()
-                .plus(externalCredsConfig.getVisaAndPassportRefreshInterval())
-                .toEpochMilli());
-    var expiringLinkedAccounts = linkedAccountService.getExpiringLinkedAccounts(refreshInterval);
-    for (LinkedAccount la : expiringLinkedAccounts) {
-      // TODO: decide how we want to handle exceptions in a try catch here
-      authAndRefreshPassport(la);
-    }
-  }
+public void validatePassportsWithAccessTokenVisas() {
+  var passportDetailsList = passportService.getPassportsWithUnvalidatedAccessTokenVisas();
 
-  public void validatePassportsWithAccessTokenVisas() {
-    var passportDetailsList = passportService.getPassportsWithUnvalidatedAccessTokenVisas();
+  passportDetailsList.forEach(
+      pd -> {
+        var responseBody = validatePassportWithProvider(pd);
 
-    passportDetailsList.forEach(
-        pd -> {
-          var responseBody = validatePassportWithProvider(pd);
-
-          // If the response is invalid, get a new passport.
-          if (responseBody.equalsIgnoreCase("invalid")) {
-            log.info("found invalid visa, refreshing");
-            var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
-            try {
-              authAndRefreshPassport(linkedAccount.get());
-            } catch (Exception e) {
-              log.info("Failed to refresh passport, will try again at the next interval.", e);
-            }
+        // If the response is invalid, get a new passport.
+        if (responseBody.equalsIgnoreCase("invalid")) {
+          log.info("found invalid visa, refreshing");
+          var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
+          try {
+            authAndRefreshPassport(linkedAccount.get());
+          } catch (Exception e) {
+            log.info("Failed to refresh passport, will try again at the next interval.", e);
           }
-          // For all other non-valid statuses, log and try again later.
-          else if (!responseBody.equalsIgnoreCase("valid")) {
-            log.info(String.format("unexpected response when validating visa: %s", responseBody));
-          }
-        });
-  }
+        }
+        // For all other non-valid statuses, log and try again later.
+        else if (!responseBody.equalsIgnoreCase("valid")) {
+          log.info(String.format("unexpected response when validating visa: %s", responseBody));
+        }
+      });
+}
 
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
     if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
-      passportService.deletePassport(linkedAccount.getId().get());
-      linkedAccountService.updateLinkAuthenticationStatus(linkedAccount.getId().get(), false);
+      invalidateLinkedAccount(linkedAccount);
     } else {
       try {
+        var clientRegistration =
+            providerClientCache
+                .getProviderClient(linkedAccount.getProviderId())
+                .orElseThrow(
+                    () ->
+                        new ExternalCredsException(
+                            String.format(
+                                "Unable to find configs for the provider: %s",
+                                linkedAccount.getProviderId())));
+        var accessTokenResponse =
+            oAuth2Service.authorizeWithRefreshToken(
+                clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+
         // save the linked account with the new refresh token and extracted passport
+        var linkedAccountWithRefreshToken =
+            Optional.ofNullable(accessTokenResponse.getRefreshToken())
+                .map(
+                    refreshToken ->
+                        linkedAccountService.upsertLinkedAccount(
+                            linkedAccount.withRefreshToken(refreshToken.getTokenValue())))
+                .orElse(linkedAccount);
+
+        // update the passport and visas
+        var userInfo =
+            oAuth2Service.getUserInfo(clientRegistration, accessTokenResponse.getAccessToken());
         linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-            getRefreshedPassportsAndVisas(linkedAccount));
+            jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo));
+
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
             String.format(
@@ -213,31 +236,17 @@ public class ProviderService {
       } catch (OAuth2AuthorizationException oauthEx) {
         // if the cause is a 4xx response, delete the passport
         if (oauthEx.getCause() instanceof HttpClientErrorException) {
-          passportService.deletePassport(linkedAccount.getId().get());
-          linkedAccountService.updateLinkAuthenticationStatus(linkedAccount.getId().get(), false);
+          var linkedAccountId =
+              linkedAccount
+                  .getId()
+                  .orElseThrow(() -> new ExternalCredsException("linked account id missing"));
+          invalidateLinkedAccount(linkedAccount);
         } else {
           // log and try again later
           throw new ExternalCredsException("Failed to refresh passport: ", oauthEx);
         }
       }
     }
-  }
-
-  public LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
-      LinkedAccount linkedAccount) {
-    var clientRegistration = providerClientCache.getProviderClient(linkedAccount.getProviderId());
-    var accessTokenResponse =
-        oAuth2Service.authorizeWithRefreshToken(
-            clientRegistration.orElseThrow(),
-            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
-    var userInfo =
-        oAuth2Service.getUserInfo(
-            clientRegistration.orElseThrow(), accessTokenResponse.getAccessToken());
-
-    var linkedAccountWithRefreshToken =
-        linkedAccount.withRefreshToken(accessTokenResponse.getRefreshToken().getTokenValue());
-
-    return jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo);
   }
 
   private String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
@@ -258,6 +267,14 @@ public class ProviderService {
         response.bodyToMono(String.class).block(Duration.of(1000, ChronoUnit.MILLIS));
 
     return responseBody;
+  }
+
+  private void invalidateLinkedAccount(LinkedAccount linkedAccount) {
+    linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+        new LinkedAccountWithPassportAndVisas.Builder()
+            .linkedAccount(linkedAccount.withIsAuthenticated(false))
+            .passport(Optional.empty()) // explicitly set to empty to be clear about intent
+            .build());
   }
 
   private void revokeAccessToken(
