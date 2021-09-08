@@ -3,9 +3,6 @@ package bio.terra.externalcreds;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
-import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
-import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
-import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.security.NoSuchAlgorithmException;
@@ -21,24 +18,25 @@ public class TestUtils {
   }
 
   public static LinkedAccount createRandomLinkedAccount() {
-    return ImmutableLinkedAccount.builder()
+    return new LinkedAccount.Builder()
         .expires(getRandomTimestamp())
         .providerId(UUID.randomUUID().toString())
         .refreshToken(UUID.randomUUID().toString())
         .userId(UUID.randomUUID().toString())
         .externalUserId(UUID.randomUUID().toString())
+        .isAuthenticated(true)
         .build();
   }
 
   public static GA4GHPassport createRandomPassport() {
-    return ImmutableGA4GHPassport.builder()
+    return new GA4GHPassport.Builder()
         .jwt(UUID.randomUUID().toString())
         .expires(getRandomTimestamp())
         .build();
   }
 
   public static GA4GHVisa createRandomVisa() {
-    return ImmutableGA4GHVisa.builder()
+    return new GA4GHVisa.Builder()
         .visaType(UUID.randomUUID().toString())
         .tokenType(TokenTypeEnum.access_token)
         .expires(getRandomTimestamp())
@@ -52,7 +50,7 @@ public class TestUtils {
       return ProviderProperties.create()
           .setClientId(UUID.randomUUID().toString())
           .setClientSecret(UUID.randomUUID().toString())
-          .setIssuer(UUID.randomUUID().toString())
+          .setIssuer("http://does/not/exist")
           .setLinkLifespan(Duration.ofDays(SecureRandom.getInstanceStrong().nextInt(10)))
           .setRevokeEndpoint("http://does/not/exist");
     } catch (NoSuchAlgorithmException e) {

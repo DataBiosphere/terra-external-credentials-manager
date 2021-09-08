@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_authenticated_column_linked_account"
+      author: swessel, kfeldman
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE linked_account ADD is_authenticated boolean;

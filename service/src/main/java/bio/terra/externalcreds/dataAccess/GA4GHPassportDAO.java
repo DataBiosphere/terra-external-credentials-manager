@@ -1,7 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.models.GA4GHPassport;
-import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
@@ -52,7 +51,7 @@ public class GA4GHPassportDAO {
     var generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
-    return ImmutableGA4GHPassport.copyOf(passport).withId(generatedKeyHolder.getKey().intValue());
+    return passport.withId(generatedKeyHolder.getKey().intValue());
   }
 
   public Optional<GA4GHPassport> getPassport(String userId, String providerId) {
@@ -72,7 +71,7 @@ public class GA4GHPassportDAO {
 
     @Override
     public GA4GHPassport mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return ImmutableGA4GHPassport.builder()
+      return new GA4GHPassport.Builder()
           .id(rs.getInt("id"))
           .linkedAccountId(rs.getInt("linked_account_id"))
           .jwt(rs.getString("jwt"))

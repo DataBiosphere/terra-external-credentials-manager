@@ -1,7 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.models.GA4GHVisa;
-import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -49,7 +48,7 @@ public class GA4GHVisaDAO {
     var generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
-    return ImmutableGA4GHVisa.copyOf(visa).withId(generatedKeyHolder.getKey().intValue());
+    return visa.withId(generatedKeyHolder.getKey().intValue());
   }
 
   public List<GA4GHVisa> listVisas(int passportId) {
@@ -62,7 +61,7 @@ public class GA4GHVisaDAO {
 
     @Override
     public GA4GHVisa mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return ImmutableGA4GHVisa.builder()
+      return new GA4GHVisa.Builder()
           .id(rs.getInt("id"))
           .passportId(rs.getInt("passport_id"))
           .jwt(rs.getString("jwt"))

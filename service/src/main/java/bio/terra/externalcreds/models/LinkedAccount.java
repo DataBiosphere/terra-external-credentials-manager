@@ -5,7 +5,7 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface LinkedAccount {
+public interface LinkedAccount extends WithLinkedAccount {
   Optional<Integer> getId();
 
   String getUserId();
@@ -17,4 +17,8 @@ public interface LinkedAccount {
   Timestamp getExpires();
 
   String getExternalUserId();
+
+  boolean isAuthenticated();
+
+  class Builder extends ImmutableLinkedAccount.Builder {}
 }

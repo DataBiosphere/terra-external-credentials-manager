@@ -1,6 +1,7 @@
 externalcreds:
-  background-job-interval-mins: 5
   sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
+  background-job-interval-mins: 5
+  visa-and-passport-refresh-interval: 30m
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
@@ -36,3 +37,8 @@ spring:
           max-age: 0
           must-revalidate: true
         use-last-modified: false
+
+terra.common:
+  tracing:
+    stackdriverExportEnabled: ${CLOUD_TRACE_ENABLED:false}
+    samplingRate: ${SAMPLING_PROBABILITY:0}

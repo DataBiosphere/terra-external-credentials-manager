@@ -8,3 +8,9 @@ databaseChangeLog:
   - include:
       file: changesets/20210709_cascading_deletes.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/20210812_index_by_expiration.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changesets/20210820_add_is_authenticated_column.yaml
+      relativeToChangelogFile: true

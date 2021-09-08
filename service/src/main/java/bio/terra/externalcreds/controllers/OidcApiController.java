@@ -7,6 +7,7 @@ import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
+import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,16 +33,19 @@ public class OidcApiController implements OidcApi {
   private final ObjectMapper mapper;
   private final ProviderService providerService;
   private final SamService samService;
+  private final PassportService passportService;
 
   public OidcApiController(
       HttpServletRequest request,
       LinkedAccountService linkedAccountService,
       ObjectMapper mapper,
+      PassportService passportService,
       ProviderService providerService,
       SamService samService) {
     this.request = request;
     this.linkedAccountService = linkedAccountService;
     this.mapper = mapper;
+    this.passportService = passportService;
     this.providerService = providerService;
     this.samService = samService;
   }
@@ -119,7 +123,7 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<String> getProviderPassport(String provider) {
     var userId = getUserIdFromSam();
-    var passport = linkedAccountService.getGA4GHPassport(userId, provider);
+    var passport = passportService.getPassport(userId, provider);
     return ResponseEntity.of(passport.map(p -> jsonString(p.getJwt())));
   }
 

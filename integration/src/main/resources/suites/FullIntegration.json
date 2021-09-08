@@ -1,0 +1,9 @@
+{
+  "name": "FullIntegration",
+  "description": "All integration tests",
+  "serverSpecificationFile": "ecm-local.json",
+  "testConfigurationFiles": [
+    "integration/ServiceStatus.json"
+  ]
+}
+

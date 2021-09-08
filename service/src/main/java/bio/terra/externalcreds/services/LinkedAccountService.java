@@ -5,12 +5,10 @@ import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
-import bio.terra.externalcreds.models.GA4GHPassport;
-import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
-import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
-import bio.terra.externalcreds.models.ImmutableLinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import java.sql.Timestamp;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -38,13 +36,8 @@ public class LinkedAccountService {
     return linkedAccountDAO.getLinkedAccount(userId, providerId);
   }
 
-  @ReadTransaction
-  public Optional<GA4GHPassport> getGA4GHPassport(String userId, String providerId) {
-    return ga4ghPassportDAO.getPassport(userId, providerId);
-  }
-
   @WriteTransaction
-  public LinkedAccountWithPassportAndVisas saveLinkedAccount(
+  public LinkedAccountWithPassportAndVisas upsertLinkedAccountWithPassportAndVisas(
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
     var savedLinkedAccount =
         linkedAccountDAO.upsertLinkedAccount(linkedAccountWithPassportAndVisas.getLinkedAccount());
@@ -52,9 +45,13 @@ public class LinkedAccountService {
     // clear out any passport and visas that may exist and save the new one
     ga4ghPassportDAO.deletePassport(savedLinkedAccount.getId().orElseThrow());
 
-    return savePassportIfExists(
-        ImmutableLinkedAccountWithPassportAndVisas.copyOf(linkedAccountWithPassportAndVisas)
-            .withLinkedAccount(savedLinkedAccount));
+    return savePassportAndVisasIfPresent(
+        linkedAccountWithPassportAndVisas.withLinkedAccount(savedLinkedAccount));
+  }
+
+  @WriteTransaction
+  public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
+    return linkedAccountDAO.upsertLinkedAccount(linkedAccount);
   }
 
   @WriteTransaction
@@ -62,7 +59,12 @@ public class LinkedAccountService {
     return linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
   }
 
-  private LinkedAccountWithPassportAndVisas savePassportIfExists(
+  @ReadTransaction
+  public List<LinkedAccount> getExpiringLinkedAccounts(Timestamp expirationCutoff) {
+    return linkedAccountDAO.getExpiringLinkedAccounts(expirationCutoff);
+  }
+
+  private LinkedAccountWithPassportAndVisas savePassportAndVisasIfPresent(
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
     if (linkedAccountWithPassportAndVisas.getPassport().isPresent()) {
 
@@ -70,22 +72,16 @@ public class LinkedAccountService {
           ga4ghPassportDAO.insertPassport(
               linkedAccountWithPassportAndVisas
                   .getPassport()
-                  .map(ImmutableGA4GHPassport::copyOf)
                   .get()
                   .withLinkedAccountId(
                       linkedAccountWithPassportAndVisas.getLinkedAccount().getId()));
 
       var savedVisas =
           linkedAccountWithPassportAndVisas.getVisas().stream()
-              .map(
-                  v ->
-                      ga4ghVisaDAO.insertVisa(
-                          ImmutableGA4GHVisa.copyOf(v).withPassportId(savedPassport.getId())))
+              .map(v -> ga4ghVisaDAO.insertVisa(v.withPassportId(savedPassport.getId())))
               .collect(Collectors.toList());
 
-      return ImmutableLinkedAccountWithPassportAndVisas.copyOf(linkedAccountWithPassportAndVisas)
-          .withPassport(savedPassport)
-          .withVisas(savedVisas);
+      return linkedAccountWithPassportAndVisas.withPassport(savedPassport).withVisas(savedVisas);
     } else {
       return linkedAccountWithPassportAndVisas;
     }

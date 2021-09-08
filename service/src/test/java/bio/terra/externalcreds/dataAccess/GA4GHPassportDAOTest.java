@@ -6,15 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.models.ImmutableGA4GHPassport;
-import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
-import bio.terra.externalcreds.models.ImmutableLinkedAccount;
-import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
 import java.util.Optional;
-import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,58 +22,51 @@ public class GA4GHPassportDAOTest extends BaseTest {
   @Autowired private GA4GHPassportDAO passportDAO;
   @Autowired private GA4GHVisaDAO visaDAO;
 
-  private ImmutableGA4GHPassport passport;
-  private LinkedAccount linkedAccount;
-
-  @BeforeEach
-  void setup() {
-    linkedAccount =
-        ImmutableLinkedAccount.builder()
-            .expires(new Timestamp(100))
-            .providerId("provider")
-            .refreshToken("refresh")
-            .userId(UUID.randomUUID().toString())
-            .externalUserId("externalUser")
-            .build();
-
-    passport = ImmutableGA4GHPassport.builder().jwt("fake-jwt").expires(new Timestamp(100)).build();
-  }
-
   @Test
-  void testMissingPassport() {
+  void testGetMissingPassport() {
     var shouldBeEmpty = passportDAO.getPassport("nonexistent_user_id", "nonexistent_provider_id");
     assertEmpty(shouldBeEmpty);
   }
 
-  @Test
-  void testCreateAndGetPassport() {
-    var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
-    assertPresent(savedAccountId);
-    var savedPassport = passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
-    assertTrue(savedPassport.getId().isPresent());
-    assertEquals(
-        passport
-            .withId(savedPassport.getId())
-            .withLinkedAccountId(savedPassport.getLinkedAccountId()),
-        savedPassport);
+  @Nested
+  class CreatePassport {
 
-    var loadedPassport =
-        passportDAO.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderId());
-    assertEquals(Optional.of(savedPassport), loadedPassport);
-  }
+    @Test
+    void testCreateAndGetPassport() {
+      var savedAccount =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      assertPresent(savedAccount.getId());
 
-  @Test
-  void testPassportIsUniqueForLinkedAccount() {
-    var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
-    var savedPassport = passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
+      var passport = TestUtils.createRandomPassport();
+      var savedPassport =
+          passportDAO.insertPassport(passport.withLinkedAccountId(savedAccount.getId()));
 
-    assertThrows(
-        DuplicateKeyException.class,
-        () ->
-            passportDAO.insertPassport(
-                ImmutableGA4GHPassport.copyOf(savedPassport)
-                    .withExpires(new Timestamp(200))
-                    .withJwt("different-jwt")));
+      assertTrue(savedPassport.getId().isPresent());
+      assertEquals(
+          passport
+              .withId(savedPassport.getId())
+              .withLinkedAccountId(savedPassport.getLinkedAccountId()),
+          savedPassport);
+
+      var loadedPassport =
+          passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderId());
+      assertEquals(Optional.of(savedPassport), loadedPassport);
+    }
+
+    @Test
+    void testCreateDuplicatePassportThrows() {
+      var savedAccountId =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount()).getId();
+      var savedPassport =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedAccountId));
+
+      assertThrows(
+          DuplicateKeyException.class,
+          () ->
+              passportDAO.insertPassport(
+                  savedPassport.withExpires(new Timestamp(200)).withJwt("different-jwt")));
+    }
   }
 
   @Nested
@@ -85,15 +74,16 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
     @Test
     void testDeletePassportIfExists() {
-      var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
-      assertPresent(savedAccountId);
-      passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
+      var savedAccount =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      assertPresent(savedAccount.getId());
+      passportDAO.insertPassport(
+          TestUtils.createRandomPassport().withLinkedAccountId(savedAccount.getId()));
 
       assertPresent(
-          passportDAO.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderId()));
-      assertTrue(passportDAO.deletePassport(savedAccountId.get()));
-      assertEmpty(
-          passportDAO.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderId()));
+          passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderId()));
+      assertTrue(passportDAO.deletePassport(savedAccount.getId().get()));
+      assertEmpty(passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderId()));
     }
 
     @Test
@@ -103,11 +93,14 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
     @Test
     void testAlsoDeletesVisa() {
-      var savedAccountId = linkedAccountDAO.upsertLinkedAccount(linkedAccount).getId();
-      var savedPassport = passportDAO.insertPassport(passport.withLinkedAccountId(savedAccountId));
+      var savedAccountId =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount()).getId();
+      var savedPassport =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedAccountId));
 
       visaDAO.insertVisa(
-          ImmutableGA4GHVisa.builder()
+          new GA4GHVisa.Builder()
               .visaType("fake")
               .passportId(savedPassport.getId())
               .tokenType(TokenTypeEnum.access_token)

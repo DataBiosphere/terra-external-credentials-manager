@@ -2,14 +2,16 @@ plugins {
 	id 'idea'
 
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
-	id 'org.springframework.boot' version '2.5.3' apply false
+	id 'org.springframework.boot' version '2.5.4' apply false
+	id 'com.diffplug.spotless' version '5.14.2'apply false
+	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
 }
 
 repositories { mavenCentral() }
 
 subprojects {
 	group = 'bio.terra'
-	version = '0.20.0-SNAPSHOT'
+	version = '0.30.0-SNAPSHOT'
 
 	ext {
 		artifactGroup = "${group}.${rootProject.name}"
