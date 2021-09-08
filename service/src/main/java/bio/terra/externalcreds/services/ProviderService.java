@@ -172,12 +172,7 @@ public class ProviderService {
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
     if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
-      var linkedAccountId =
-          linkedAccount
-              .getId()
-              .orElseThrow(() -> new ExternalCredsException("linked account id missing"));
-      passportService.deletePassport(linkedAccountId);
-      linkedAccountService.upsertLinkedAccount(linkedAccount.withIsAuthenticated(false));
+      invalidateLinkedAccount(linkedAccount);
     } else {
       try {
         var clientRegistration =
@@ -195,9 +190,12 @@ public class ProviderService {
 
         // save the linked account with the new refresh token and extracted passport
         var linkedAccountWithRefreshToken =
-            linkedAccountService.upsertLinkedAccount(
-                linkedAccount.withRefreshToken(
-                    accessTokenResponse.getRefreshToken().getTokenValue()));
+            Optional.ofNullable(accessTokenResponse.getRefreshToken())
+                .map(
+                    refreshToken ->
+                        linkedAccountService.upsertLinkedAccount(
+                            linkedAccount.withRefreshToken(refreshToken.getTokenValue())))
+                .orElse(linkedAccount);
 
         // update the passport and visas
         var userInfo =
@@ -217,14 +215,21 @@ public class ProviderService {
               linkedAccount
                   .getId()
                   .orElseThrow(() -> new ExternalCredsException("linked account id missing"));
-          passportService.deletePassport(linkedAccountId);
-          linkedAccountService.upsertLinkedAccount(linkedAccount.withIsAuthenticated(false));
+          invalidateLinkedAccount(linkedAccount);
         } else {
           // log and try again later
           throw new ExternalCredsException("Failed to refresh passport: ", oauthEx);
         }
       }
     }
+  }
+
+  private void invalidateLinkedAccount(LinkedAccount linkedAccount) {
+    linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+        new LinkedAccountWithPassportAndVisas.Builder()
+            .linkedAccount(linkedAccount.withIsAuthenticated(false))
+            .passport(Optional.empty()) // explicitly set to empty to be clear about intent
+            .build());
   }
 
   private void revokeAccessToken(
