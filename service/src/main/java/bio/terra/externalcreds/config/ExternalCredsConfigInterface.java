@@ -24,4 +24,6 @@ public interface ExternalCredsConfigInterface {
 
   /** List of URIs that are allowable in jku headers of JWTs */
   Collection<URI> getAllowedJwksUris();
+
+  int getBackgroundJobIntervalMins();
 }

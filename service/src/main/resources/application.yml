@@ -1,5 +1,6 @@
 externalcreds:
   sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
+  background-job-interval-mins: 5
   visa-and-passport-refresh-interval: 30m
 
 logging:

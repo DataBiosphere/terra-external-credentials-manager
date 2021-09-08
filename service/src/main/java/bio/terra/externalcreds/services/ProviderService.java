@@ -56,7 +56,12 @@ public class ProviderService {
     return Collections.unmodifiableSet(externalCredsConfig.getProviders().keySet());
   }
 
-  public void refreshExpiringPassports() {
+  /**
+   * Get a new passport for each linked accounts with visas or passports expiring within
+   * externalCredsConfig.getVisaAndPassportRefreshInterval time from now
+   * @return the number of linked accounts with expiring visas or passports
+   */
+  public int refreshExpiringPassports() {
     var refreshInterval = externalCredsConfig.getVisaAndPassportRefreshInterval();
     var expirationCutoff = new Timestamp(Instant.now().plus(refreshInterval).toEpochMilli());
     var expiringLinkedAccounts = linkedAccountService.getExpiringLinkedAccounts(expirationCutoff);
@@ -68,6 +73,8 @@ public class ProviderService {
         log.info("Failed to refresh passport, will try again at the next interval.", e);
       }
     }
+
+    return expiringLinkedAccounts.size();
   }
 
   public Optional<String> getProviderAuthorizationUrl(

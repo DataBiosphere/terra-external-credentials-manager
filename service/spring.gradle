@@ -28,3 +28,8 @@ task bootRunDev {
 	bootRun.configure { systemProperty 'spring.profiles.active', 'human-readable-logging' }
 	finalizedBy(bootRun)
 }
+
+springBoot {
+	mainClass = 'bio.terra.externalcreds.ExternalCredsWebApplication'
+}
+

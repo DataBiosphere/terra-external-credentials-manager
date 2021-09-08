@@ -1,6 +1,7 @@
 jib {
 	container {
 		filesModificationTime = ZonedDateTime.now().toString() // to prevent ui caching
+		mainClass = 'bio.terra.externalcreds.ExternalCredsWebApplication'
 		jvmFlags = [
 				"-agentpath:/opt/cprof/profiler_java_agent.so=" +
 						"-cprof_service=bio.terra.externalcreds" +
