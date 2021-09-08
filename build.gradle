@@ -11,7 +11,7 @@ repositories { mavenCentral() }
 
 subprojects {
 	group = 'bio.terra'
-	version = '0.29.0-SNAPSHOT'
+	version = '0.30.0-SNAPSHOT'
 
 	ext {
 		artifactGroup = "${group}.${rootProject.name}"
