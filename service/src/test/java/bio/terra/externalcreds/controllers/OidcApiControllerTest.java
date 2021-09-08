@@ -20,6 +20,8 @@ import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -167,7 +169,8 @@ public class OidcApiControllerTest extends BaseTest {
   @Test
   void testCreateLink() throws Exception {
     var accessToken = "testToken";
-    var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
+    var inputLinkedAccount =
+        TestUtils.createRandomLinkedAccount().withExpires(Timestamp.from(Instant.MIN));
 
     var scopes = new String[] {"email", "foo"};
     var redirectUri = "http://redirect";
