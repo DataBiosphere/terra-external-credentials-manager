@@ -18,5 +18,7 @@ public interface LinkedAccount extends WithLinkedAccount {
 
   String getExternalUserId();
 
+  boolean isAuthenticated();
+
   class Builder extends ImmutableLinkedAccount.Builder {}
 }
