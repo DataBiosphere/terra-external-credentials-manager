@@ -249,7 +249,25 @@ public class ProviderService {
     }
   }
 
-  private String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
+  public LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
+      LinkedAccount linkedAccount) {
+    var clientRegistration = providerClientCache.getProviderClient(linkedAccount.getProviderId());
+    var accessTokenResponse =
+        oAuth2Service.authorizeWithRefreshToken(
+            clientRegistration.orElseThrow(),
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+    var userInfo =
+        oAuth2Service.getUserInfo(
+            clientRegistration.orElseThrow(), accessTokenResponse.getAccessToken());
+
+    var linkedAccountWithRefreshToken =
+        linkedAccount.withRefreshToken(accessTokenResponse.getRefreshToken().getTokenValue());
+
+    return jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo);
+  }
+
+  @VisibleForTesting
+  String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
     var validationEndpoint =
         externalCredsConfig
             .getProviders()
@@ -264,8 +282,10 @@ public class ProviderService {
             .retrieve();
 
     var responseBody =
-        response.bodyToMono(String.class).block(Duration.of(1000, ChronoUnit.MILLIS));
-
+        response
+            .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
+            .bodyToMono(String.class)
+            .block(Duration.of(1000, ChronoUnit.MILLIS));
     return responseBody;
   }
 
