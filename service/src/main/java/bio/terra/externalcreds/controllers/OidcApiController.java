@@ -3,6 +3,9 @@ package bio.terra.externalcreds.controllers;
 import bio.terra.common.exception.UnauthorizedException;
 import bio.terra.common.iam.BearerTokenParser;
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.auditLogging.AuditLogEvent;
+import bio.terra.externalcreds.auditLogging.AuditLogEventType;
+import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -35,6 +38,7 @@ public class OidcApiController implements OidcApi {
   private final ProviderService providerService;
   private final SamService samService;
   private final PassportService passportService;
+  private final AuditLogger auditLogger;
 
   public OidcApiController(
       HttpServletRequest request,
@@ -42,13 +46,15 @@ public class OidcApiController implements OidcApi {
       ObjectMapper mapper,
       PassportService passportService,
       ProviderService providerService,
-      SamService samService) {
+      SamService samService,
+      AuditLogger auditLogger) {
     this.request = request;
     this.linkedAccountService = linkedAccountService;
     this.mapper = mapper;
     this.passportService = passportService;
     this.providerService = providerService;
     this.samService = samService;
+    this.auditLogger = auditLogger;
   }
 
   private String getUserIdFromSam() {
@@ -106,19 +112,47 @@ public class OidcApiController implements OidcApi {
       String provider, List<String> scopes, String redirectUri, String state, String oauthcode) {
     var userId = getUserIdFromSam();
 
-    var linkedAccountWithPassportAndVisas =
-        providerService.createLink(
-            provider, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
+    try {
+      var linkedAccountWithPassportAndVisas =
+          providerService.createLink(
+              provider, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
 
-    return ResponseEntity.of(
-        linkedAccountWithPassportAndVisas.map(
-            x -> getLinkInfoFromLinkedAccount(x.getLinkedAccount())));
+      auditLogger.logEvent(
+          new AuditLogEvent.Builder()
+              .eventType(AuditLogEventType.LinkCreated)
+              .provider(provider)
+              .userId(userId)
+              .clientIP(request.getRemoteAddr())
+              .build());
+
+      return ResponseEntity.of(
+          linkedAccountWithPassportAndVisas.map(
+              x -> getLinkInfoFromLinkedAccount(x.getLinkedAccount())));
+    } catch (Exception e) {
+      auditLogger.logEvent(
+          new AuditLogEvent.Builder()
+              .eventType(AuditLogEventType.LinkCreationFailed)
+              .provider(provider)
+              .userId(userId)
+              .clientIP(request.getRemoteAddr())
+              .build());
+      throw e;
+    }
   }
 
   @Override
   public ResponseEntity<Void> deleteLink(String provider) {
     String userId = getUserIdFromSam();
     providerService.deleteLink(userId, provider);
+
+    auditLogger.logEvent(
+        new AuditLogEvent.Builder()
+            .eventType(AuditLogEventType.LinkDeleted)
+            .provider(provider)
+            .userId(userId)
+            .clientIP(request.getRemoteAddr())
+            .build());
+
     return ResponseEntity.ok().build();
   }
 
@@ -126,6 +160,15 @@ public class OidcApiController implements OidcApi {
   public ResponseEntity<String> getProviderPassport(String provider) {
     var userId = getUserIdFromSam();
     var passport = passportService.getPassport(userId, provider);
+
+    auditLogger.logEvent(
+        new AuditLogEvent.Builder()
+            .eventType(AuditLogEventType.GetPassport)
+            .provider(provider)
+            .userId(userId)
+            .clientIP(request.getRemoteAddr())
+            .build());
+
     return ResponseEntity.of(passport.map(p -> jsonString(p.getJwt())));
   }
 
