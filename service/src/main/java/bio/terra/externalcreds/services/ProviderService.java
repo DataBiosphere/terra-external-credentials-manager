@@ -59,6 +59,7 @@ public class ProviderService {
   /**
    * Get a new passport for each linked accounts with visas or passports expiring within
    * externalCredsConfig.getVisaAndPassportRefreshInterval time from now
+   *
    * @return the number of linked accounts with expiring visas or passports
    */
   public int refreshExpiringPassports() {

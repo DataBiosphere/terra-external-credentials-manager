@@ -20,8 +20,7 @@ import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -41,7 +40,10 @@ import org.springframework.util.LinkedMultiValueMap;
 @AutoConfigureMockMvc
 public class OidcApiControllerTest extends BaseTest {
 
+  @Autowired private ObjectMapper mapper;
+
   @Autowired private MockMvc mvc;
+  @Autowired private OidcApiController oidcApiController;
 
   @MockBean private LinkedAccountService linkedAccountServiceMock;
   @MockBean private ProviderService providerServiceMock;
@@ -118,12 +120,8 @@ public class OidcApiControllerTest extends BaseTest {
           .andExpect(
               content()
                   .json(
-                      "{\"externalUserId\":\""
-                          + inputLinkedAccount.getExternalUserId()
-                          + "\", \"expirationTimestamp\":\""
-                          + OffsetDateTime.ofInstant(
-                              inputLinkedAccount.getExpires().toInstant(), ZoneId.of("UTC"))
-                          + "\"}"));
+                      mapper.writeValueAsString(
+                          oidcApiController.getLinkInfoFromLinkedAccount(inputLinkedAccount))));
     }
 
     @Test
@@ -200,12 +198,8 @@ public class OidcApiControllerTest extends BaseTest {
         .andExpect(
             content()
                 .json(
-                    "{\"externalUserId\":\""
-                        + inputLinkedAccount.getExternalUserId()
-                        + "\", \"expirationTimestamp\":\""
-                        + OffsetDateTime.ofInstant(
-                            inputLinkedAccount.getExpires().toInstant(), ZoneId.of("UTC"))
-                        + "\"}"));
+                    mapper.writeValueAsString(
+                        oidcApiController.getLinkInfoFromLinkedAccount(inputLinkedAccount))));
   }
 
   @Nested
