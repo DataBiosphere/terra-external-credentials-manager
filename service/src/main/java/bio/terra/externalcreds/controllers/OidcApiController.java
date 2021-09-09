@@ -12,6 +12,7 @@ import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -66,7 +67,8 @@ public class OidcApiController implements OidcApi {
     }
   }
 
-  private LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
+  @VisibleForTesting
+  LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
     var expTime =
         OffsetDateTime.ofInstant(linkedAccount.getExpires().toInstant(), ZoneId.of("UTC"));
     return new LinkInfo()
