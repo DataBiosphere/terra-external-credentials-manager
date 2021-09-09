@@ -17,6 +17,7 @@ import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.models.PassportVerificationDetails;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -405,6 +406,113 @@ public class ProviderServiceTest extends BaseTest {
       providerServiceSpy.refreshExpiringPassports();
       verify(providerServiceSpy).authAndRefreshPassport(any());
       verify(providerServiceSpy).authAndRefreshPassport(savedExpiringLinkedAccount);
+    }
+  }
+
+  @Nested
+  @TestComponent
+  class ValidatePassportsWithAccessTokenVisas {
+    @Autowired private ProviderService providerService;
+    @Autowired private LinkedAccountDAO linkedAccountDAO;
+
+    @MockBean ExternalCredsConfig externalCredsConfigMock;
+
+    @Test
+    void testSuccessfullyValidatePassportWithProvider() {
+      // create and insert a linked account, create a passport, and passportVerificationDetails
+      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+      var passport =
+          TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId());
+      var passportVerificationDetails =
+          new PassportVerificationDetails.Builder()
+              .linkedAccountId(passport.getLinkedAccountId().get())
+              .providerId(savedLinkedAccount.getProviderId())
+              .passportJwt(passport.getJwt())
+              .build();
+
+      // mock validation endpoint
+      var mockServerPort = 50555;
+      var validationEndpoint = "/fake-validation-endpoint";
+
+      when(externalCredsConfigMock.getProviders())
+          .thenReturn(
+              Map.of(
+                  passportVerificationDetails.getProviderId(),
+                  TestUtils.createRandomProvider()
+                      .setValidationEndpoint(
+                          "http://localhost:" + mockServerPort + validationEndpoint)));
+
+      //  Mock the server response
+      var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
+      try {
+        var response =
+            mockServer
+                .when(
+                    HttpRequest.request(validationEndpoint)
+                        .withMethod("POST")
+                        .withBody(passportVerificationDetails.getPassportJwt()))
+                .respond(
+                    HttpResponse.response()
+                        .withStatusCode(HttpStatus.OK.value())
+                        .withBody("valid"));
+
+        var responseBody =
+            providerService.validatePassportWithProvider(passportVerificationDetails);
+        assertEquals("valid", responseBody);
+
+      } finally {
+        mockServer.stop();
+      }
+    }
+
+    @Test
+    void testValidateInvalidPassportWithProvider() {
+      // create and insert a linked account, create a passport, and passportVerificationDetails
+      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+      var passport =
+          TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId());
+      var passportVerificationDetails =
+          new PassportVerificationDetails.Builder()
+              .linkedAccountId(passport.getLinkedAccountId().get())
+              .providerId(savedLinkedAccount.getProviderId())
+              .passportJwt(passport.getJwt())
+              .build();
+
+      // mock validation endpoint
+      var mockServerPort = 50555;
+      var validationEndpoint = "/fake-validation-endpoint";
+
+      when(externalCredsConfigMock.getProviders())
+          .thenReturn(
+              Map.of(
+                  passportVerificationDetails.getProviderId(),
+                  TestUtils.createRandomProvider()
+                      .setValidationEndpoint(
+                          "http://localhost:" + mockServerPort + validationEndpoint)));
+
+      //  Mock the server response with 400 response code for invalid passport format
+      var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
+      try {
+        var response =
+            mockServer
+                .when(
+                    HttpRequest.request(validationEndpoint)
+                        .withMethod("POST")
+                        .withBody(passportVerificationDetails.getPassportJwt()))
+                .respond(
+                    HttpResponse.response()
+                        .withStatusCode(HttpStatus.BAD_REQUEST.value())
+                        .withBody("invalid passport"));
+
+        var responseBody =
+            providerService.validatePassportWithProvider(passportVerificationDetails);
+        assertEquals("invalid passport", responseBody);
+
+      } finally {
+        mockServer.stop();
+      }
     }
   }
 }
