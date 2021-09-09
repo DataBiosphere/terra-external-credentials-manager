@@ -12,7 +12,6 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +30,17 @@ public class LinkedAccountDAOTest extends BaseTest {
   }
 
   @Test
+  void testGetLinkedAccountById() {
+    var linkedAccount = TestUtils.createRandomLinkedAccount();
+    var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+    var loadedLinkedAccount = linkedAccountDAO.getLinkedAccount(savedLinkedAccount.getId().get());
+
+    // test that retrieved account matches saved account
+    assertEquals(
+        savedLinkedAccount.withId(loadedLinkedAccount.get().getId()), loadedLinkedAccount.get());
+  }
+
+  @Test
   void testInsertAndGetLinkedAccount() {
     var linkedAccount = TestUtils.createRandomLinkedAccount();
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
@@ -39,7 +49,7 @@ public class LinkedAccountDAOTest extends BaseTest {
 
     var loadedLinkedAccount =
         linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
-    assertEquals(Optional.of(savedLinkedAccount), loadedLinkedAccount);
+    assertEquals(savedLinkedAccount, loadedLinkedAccount.get());
   }
 
   @Test
@@ -62,7 +72,7 @@ public class LinkedAccountDAOTest extends BaseTest {
 
     var loadedLinkedAccount =
         linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
-    assertEquals(Optional.of(updatedLinkedAccount), loadedLinkedAccount);
+    assertEquals(updatedLinkedAccount, loadedLinkedAccount.get());
   }
 
   @Nested
