@@ -14,6 +14,6 @@ public class AuditLogger {
   }
 
   public void logEvent(AuditLogEvent event) {
-    log.info(event.getEventType().toString(), mapper.valueToTree(event));
+    log.info(event.getAuditLogEventType().toString(), mapper.valueToTree(event));
   }
 }

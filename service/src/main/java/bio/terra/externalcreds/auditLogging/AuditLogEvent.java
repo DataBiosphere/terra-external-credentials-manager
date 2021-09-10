@@ -16,7 +16,7 @@ public interface AuditLogEvent extends WithAuditLogEvent {
 
   String getProvider();
 
-  AuditLogEventType getEventType();
+  AuditLogEventType getAuditLogEventType();
 
   class Builder extends ImmutableAuditLogEvent.Builder {}
 }

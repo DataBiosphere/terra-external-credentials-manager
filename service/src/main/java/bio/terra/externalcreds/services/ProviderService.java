@@ -241,7 +241,7 @@ public class ProviderService {
   private void invalidateLinkedAccount(LinkedAccount linkedAccount) {
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
-            .eventType(AuditLogEventType.LinkExpired)
+            .auditLogEventType(AuditLogEventType.LinkExpired)
             .provider(linkedAccount.getProviderId())
             .userId(linkedAccount.getUserId())
             .build());

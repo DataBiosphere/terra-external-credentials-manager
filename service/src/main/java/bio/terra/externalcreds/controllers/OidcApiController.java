@@ -112,17 +112,23 @@ public class OidcApiController implements OidcApi {
       String provider, List<String> scopes, String redirectUri, String state, String oauthcode) {
     var userId = getUserIdFromSam();
 
+    var auditLogEventBuilder =
+        new AuditLogEvent.Builder()
+            .provider(provider)
+            .userId(userId)
+            .clientIP(request.getRemoteAddr());
+
     try {
       var linkedAccountWithPassportAndVisas =
           providerService.createLink(
               provider, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
 
       auditLogger.logEvent(
-          new AuditLogEvent.Builder()
-              .eventType(AuditLogEventType.LinkCreated)
-              .provider(provider)
-              .userId(userId)
-              .clientIP(request.getRemoteAddr())
+          auditLogEventBuilder
+              .auditLogEventType(
+                  linkedAccountWithPassportAndVisas
+                      .map(x -> AuditLogEventType.LinkCreated)
+                      .orElse(AuditLogEventType.LinkCreationFailed))
               .build());
 
       return ResponseEntity.of(
@@ -130,12 +136,7 @@ public class OidcApiController implements OidcApi {
               x -> getLinkInfoFromLinkedAccount(x.getLinkedAccount())));
     } catch (Exception e) {
       auditLogger.logEvent(
-          new AuditLogEvent.Builder()
-              .eventType(AuditLogEventType.LinkCreationFailed)
-              .provider(provider)
-              .userId(userId)
-              .clientIP(request.getRemoteAddr())
-              .build());
+          auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());
       throw e;
     }
   }
@@ -147,7 +148,7 @@ public class OidcApiController implements OidcApi {
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
-            .eventType(AuditLogEventType.LinkDeleted)
+            .auditLogEventType(AuditLogEventType.LinkDeleted)
             .provider(provider)
             .userId(userId)
             .clientIP(request.getRemoteAddr())
@@ -163,7 +164,7 @@ public class OidcApiController implements OidcApi {
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
-            .eventType(AuditLogEventType.GetPassport)
+            .auditLogEventType(AuditLogEventType.GetPassport)
             .provider(provider)
             .userId(userId)
             .clientIP(request.getRemoteAddr())
