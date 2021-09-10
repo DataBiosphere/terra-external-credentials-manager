@@ -88,9 +88,9 @@ public class GA4GHPassportDAO {
             + " ON p.linked_account_id = la.id"
             + " LEFT JOIN ga4gh_visa v"
             + " ON v.passport_id = p.id"
-            + " WHERE token_type = "
-            + TokenTypeEnum.access_token
-            + " AND last_validated <= :validationCutoff";
+            + " WHERE v.token_type = "
+            + String.format("'%s'", TokenTypeEnum.access_token)
+            + " AND v.last_validated <= :validationCutoff";
 
     return jdbcTemplate.query(query, namedParameters, new PassportVerificationDetailsRowMapper());
   }
