@@ -200,34 +200,9 @@ public class ProviderService {
       invalidateLinkedAccount(linkedAccount);
     } else {
       try {
-        var clientRegistration =
-            providerClientCache
-                .getProviderClient(linkedAccount.getProviderId())
-                .orElseThrow(
-                    () ->
-                        new ExternalCredsException(
-                            String.format(
-                                "Unable to find configs for the provider: %s",
-                                linkedAccount.getProviderId())));
-        var accessTokenResponse =
-            oAuth2Service.authorizeWithRefreshToken(
-                clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
-
-        // save the linked account with the new refresh token and extracted passport
-        var linkedAccountWithRefreshToken =
-            Optional.ofNullable(accessTokenResponse.getRefreshToken())
-                .map(
-                    refreshToken ->
-                        linkedAccountService.upsertLinkedAccount(
-                            linkedAccount.withRefreshToken(refreshToken.getTokenValue())))
-                .orElse(linkedAccount);
-
-        // update the passport and visas
-        var userInfo =
-            oAuth2Service.getUserInfo(clientRegistration, accessTokenResponse.getAccessToken());
+        var linkedAccountWithRefreshedPassport = getRefreshedPassportsAndVisas(linkedAccount);
         linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-            jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo));
-
+            linkedAccountWithRefreshedPassport);
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
             String.format(
@@ -236,10 +211,9 @@ public class ProviderService {
       } catch (OAuth2AuthorizationException oauthEx) {
         // if the cause is a 4xx response, delete the passport
         if (oauthEx.getCause() instanceof HttpClientErrorException) {
-          var linkedAccountId =
-              linkedAccount
-                  .getId()
-                  .orElseThrow(() -> new ExternalCredsException("linked account id missing"));
+          linkedAccount
+              .getId()
+              .orElseThrow(() -> new ExternalCredsException("linked account id missing"));
           invalidateLinkedAccount(linkedAccount);
         } else {
           // log and try again later
@@ -251,18 +225,31 @@ public class ProviderService {
 
   public LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
       LinkedAccount linkedAccount) {
-    var clientRegistration = providerClientCache.getProviderClient(linkedAccount.getProviderId());
+    var clientRegistration =
+        providerClientCache
+            .getProviderClient(linkedAccount.getProviderId())
+            .orElseThrow(
+                () ->
+                    new ExternalCredsException(
+                        String.format(
+                            "Unable to find configs for the provider: %s",
+                            linkedAccount.getProviderId())));
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
-            clientRegistration.orElseThrow(),
-            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
-    var userInfo =
-        oAuth2Service.getUserInfo(
-            clientRegistration.orElseThrow(), accessTokenResponse.getAccessToken());
+            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
 
+    // save the linked account with the new refresh token and extracted passport
     var linkedAccountWithRefreshToken =
-        linkedAccount.withRefreshToken(accessTokenResponse.getRefreshToken().getTokenValue());
+        Optional.ofNullable(accessTokenResponse.getRefreshToken())
+            .map(
+                refreshToken ->
+                    linkedAccountService.upsertLinkedAccount(
+                        linkedAccount.withRefreshToken(refreshToken.getTokenValue())))
+            .orElse(linkedAccount);
 
+    // update the passport and visas
+    var userInfo =
+        oAuth2Service.getUserInfo(clientRegistration, accessTokenResponse.getAccessToken());
     return jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo);
   }
 
