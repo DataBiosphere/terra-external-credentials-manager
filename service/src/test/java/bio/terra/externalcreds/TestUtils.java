@@ -42,6 +42,7 @@ public class TestUtils {
         .expires(getRandomTimestamp())
         .issuer(UUID.randomUUID().toString())
         .jwt(UUID.randomUUID().toString())
+        .lastValidated(getRandomTimestamp())
         .build();
   }
 
