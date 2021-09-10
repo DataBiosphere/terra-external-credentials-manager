@@ -8,8 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.PassportVerificationDetails;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,6 +30,47 @@ public class GA4GHPassportDAOTest extends BaseTest {
   void testGetMissingPassport() {
     var shouldBeEmpty = passportDAO.getPassport("nonexistent_user_id", "nonexistent_provider_id");
     assertEmpty(shouldBeEmpty);
+  }
+
+  @Test
+  void testGetPassportsWithUnvalidatedAccessTokenVisas() {
+    // create linked account with passport and visa that was validated in the validation window
+    var savedLinkedAccount =
+        linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+    var savedPassport =
+        passportDAO.insertPassport(
+            TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
+    var savedValidatedVisa =
+        visaDAO.insertVisa(
+            TestUtils.createRandomVisa()
+                .withLastValidated(new Timestamp(Instant.now().toEpochMilli()))
+                .withPassportId(savedPassport.getId()));
+
+    // create linked account with passport and visa that was NOT validated in the validation window
+    var savedLinkedAccountUnvalidatedVisa =
+        linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+    var savedPassportUnvalidatedVisa =
+        passportDAO.insertPassport(
+            TestUtils.createRandomPassport()
+                .withLinkedAccountId(savedLinkedAccountUnvalidatedVisa.getId()));
+    var savedUnvalidatedVisa =
+        visaDAO.insertVisa(
+            TestUtils.createRandomVisa()
+                .withLastValidated(
+                    new Timestamp(Instant.now().minus(Duration.ofDays(1)).toEpochMilli()))
+                .withPassportId(savedPassportUnvalidatedVisa.getId()));
+
+    // create verified visa's passport details to check unvalidated visa details against
+    var passportWithUnvalidatedVisaDetails =
+        new PassportVerificationDetails.Builder()
+            .linkedAccountId(savedLinkedAccountUnvalidatedVisa.getId().get())
+            .providerId(savedLinkedAccountUnvalidatedVisa.getProviderId())
+            .passportJwt(savedPassportUnvalidatedVisa.getJwt())
+            .build();
+
+    assertEquals(
+        List.of(passportWithUnvalidatedVisaDetails),
+        passportDAO.getPassportsWithUnvalidatedAccessTokenVisas());
   }
 
   @Nested
