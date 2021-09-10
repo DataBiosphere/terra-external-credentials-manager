@@ -32,6 +32,10 @@ public class GA4GHPassportDAOTest extends BaseTest {
     assertEmpty(shouldBeEmpty);
   }
 
+
+  // TODO: create nested test class here
+  // TODO: look at the tests for getExpiringLinkedAccounts() to see what other test cases to cover for this
+
   @Test
   void testGetPassportsWithUnvalidatedAccessTokenVisas() {
     // create linked account with passport and visa that was validated in the validation window
