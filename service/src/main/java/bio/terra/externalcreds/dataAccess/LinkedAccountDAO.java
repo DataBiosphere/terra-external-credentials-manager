@@ -97,17 +97,6 @@ public class LinkedAccountDAO {
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
-  public boolean updateLinkAuthenticationStatus(int linkedAccountId, boolean isAuthenticated) {
-    var query =
-        "UPDATE linked_account SET is_authenticated = :isAuthenticated WHERE id = :linkedAccountId";
-    var namedParameters =
-        new MapSqlParameterSource()
-            .addValue("linkedAccountId", linkedAccountId)
-            .addValue("isAuthenticated", isAuthenticated);
-
-    return jdbcTemplate.update(query, namedParameters) > 0;
-  }
-
   private static class LinkedAccountRowMapper implements RowMapper<LinkedAccount> {
 
     @Override
