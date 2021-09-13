@@ -86,7 +86,7 @@ public class GA4GHPassportDAO {
         "SELECT DISTINCT la.id as linked_account_id, la.provider_id, p.jwt as passport_jwt FROM linked_account la"
             + " JOIN ga4gh_passport p"
             + " ON p.linked_account_id = la.id"
-            + " LEFT JOIN ga4gh_visa v"
+            + " JOIN ga4gh_visa v"
             + " ON v.passport_id = p.id"
             + " WHERE v.token_type = "
             + String.format("'%s'", TokenTypeEnum.access_token)
