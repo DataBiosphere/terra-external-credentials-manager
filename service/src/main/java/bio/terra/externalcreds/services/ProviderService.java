@@ -199,7 +199,11 @@ public class ProviderService {
                     responseBody));
             var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
             try {
-              authAndRefreshPassport(linkedAccount.get());
+              if (linkedAccount.isEmpty()) {
+                log.info("No linked account found when trying to validate passport.");
+              } else {
+                authAndRefreshPassport(linkedAccount.get());
+              }
             } catch (Exception e) {
               log.info("Failed to refresh passport, will try again at the next interval.", e);
             }
