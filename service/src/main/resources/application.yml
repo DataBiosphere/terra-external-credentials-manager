@@ -1,6 +1,7 @@
 externalcreds:
   sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
   token-validation-frequency: 1h
+  background-job-interval-mins: 5
   visa-and-passport-refresh-interval: 30m
 
 logging:

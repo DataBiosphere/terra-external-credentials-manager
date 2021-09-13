@@ -2,6 +2,9 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.auditLogging.AuditLogEvent;
+import bio.terra.externalcreds.auditLogging.AuditLogEventType;
+import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -37,6 +40,7 @@ public class ProviderService {
   private final LinkedAccountService linkedAccountService;
   private final PassportService passportService;
   private final JwtUtils jwtUtils;
+  private final AuditLogger auditLogger;
 
   public ProviderService(
       ExternalCredsConfig externalCredsConfig,
@@ -44,20 +48,28 @@ public class ProviderService {
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
       PassportService passportService,
-      JwtUtils jwtUtils) {
+      JwtUtils jwtUtils,
+      AuditLogger auditLogger) {
     this.externalCredsConfig = externalCredsConfig;
     this.providerClientCache = providerClientCache;
     this.oAuth2Service = oAuth2Service;
     this.linkedAccountService = linkedAccountService;
     this.passportService = passportService;
     this.jwtUtils = jwtUtils;
+    this.auditLogger = auditLogger;
   }
 
   public Set<String> getProviderList() {
     return Collections.unmodifiableSet(externalCredsConfig.getProviders().keySet());
   }
 
-  public void refreshExpiringPassports() {
+  /**
+   * Get a new passport for each linked accounts with visas or passports expiring within
+   * externalCredsConfig.getVisaAndPassportRefreshInterval time from now
+   *
+   * @return the number of linked accounts with expiring visas or passports
+   */
+  public int refreshExpiringPassports() {
     var refreshInterval = externalCredsConfig.getVisaAndPassportRefreshInterval();
     var expirationCutoff = new Timestamp(Instant.now().plus(refreshInterval).toEpochMilli());
     var expiringLinkedAccounts = linkedAccountService.getExpiringLinkedAccounts(expirationCutoff);
@@ -69,6 +81,8 @@ public class ProviderService {
         log.info("Failed to refresh passport, will try again at the next interval.", e);
       }
     }
+
+    return expiringLinkedAccounts.size();
   }
 
   public Optional<String> getProviderAuthorizationUrl(
@@ -277,6 +291,13 @@ public class ProviderService {
   }
 
   private void invalidateLinkedAccount(LinkedAccount linkedAccount) {
+    auditLogger.logEvent(
+        new AuditLogEvent.Builder()
+            .auditLogEventType(AuditLogEventType.LinkExpired)
+            .provider(linkedAccount.getProviderId())
+            .userId(linkedAccount.getUserId())
+            .build());
+
     linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
         new LinkedAccountWithPassportAndVisas.Builder()
             .linkedAccount(linkedAccount.withIsAuthenticated(false))
