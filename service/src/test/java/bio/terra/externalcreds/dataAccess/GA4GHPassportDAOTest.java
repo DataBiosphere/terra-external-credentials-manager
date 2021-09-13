@@ -32,49 +32,123 @@ public class GA4GHPassportDAOTest extends BaseTest {
     assertEmpty(shouldBeEmpty);
   }
 
+  @Nested
+  class GetPassportsWithUnvalidatedAccessTokenVisas {
 
-  // TODO: create nested test class here
-  // TODO: look at the tests for getExpiringLinkedAccounts() to see what other test cases to cover for this
+    @Test
+    void testGetPassportsWithUnvalidatedAccessTokenVisas() {
+      // create linked account with passport and visa that was validated in the validation window
+      var savedLinkedAccount =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      var savedPassport =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
+      var savedValidatedVisa =
+          visaDAO.insertVisa(
+              TestUtils.createRandomVisa()
+                  .withLastValidated(new Timestamp(Instant.now().toEpochMilli()))
+                  .withPassportId(savedPassport.getId()));
 
-  @Test
-  void testGetPassportsWithUnvalidatedAccessTokenVisas() {
-    // create linked account with passport and visa that was validated in the validation window
-    var savedLinkedAccount =
-        linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
-    var savedPassport =
-        passportDAO.insertPassport(
-            TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
-    var savedValidatedVisa =
-        visaDAO.insertVisa(
-            TestUtils.createRandomVisa()
-                .withLastValidated(new Timestamp(Instant.now().toEpochMilli()))
-                .withPassportId(savedPassport.getId()));
+      // create linked account with passport and one visa that was NOT validated in the validation
+      // window
+      var savedLinkedAccountUnvalidatedVisa =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      var savedPassportUnvalidatedVisa =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport()
+                  .withLinkedAccountId(savedLinkedAccountUnvalidatedVisa.getId()));
+      var savedUnvalidatedVisa =
+          visaDAO.insertVisa(
+              TestUtils.createRandomVisa()
+                  .withLastValidated(
+                      new Timestamp(Instant.now().minus(Duration.ofDays(1)).toEpochMilli()))
+                  .withPassportId(savedPassportUnvalidatedVisa.getId()));
 
-    // create linked account with passport and visa that was NOT validated in the validation window
-    var savedLinkedAccountUnvalidatedVisa =
-        linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
-    var savedPassportUnvalidatedVisa =
-        passportDAO.insertPassport(
-            TestUtils.createRandomPassport()
-                .withLinkedAccountId(savedLinkedAccountUnvalidatedVisa.getId()));
-    var savedUnvalidatedVisa =
-        visaDAO.insertVisa(
-            TestUtils.createRandomVisa()
-                .withLastValidated(
-                    new Timestamp(Instant.now().minus(Duration.ofDays(1)).toEpochMilli()))
-                .withPassportId(savedPassportUnvalidatedVisa.getId()));
+      // create linked account with passport and one visa that was NOT validated in the validation
+      // window and one that was to make sure it still returns the account
+      var savedLinkedAccountUnvalidatedVisa2 =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      var savedPassportUnvalidatedVisa2 =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport()
+                  .withLinkedAccountId(savedLinkedAccountUnvalidatedVisa2.getId()));
+      var savedUnvalidatedVisa2 =
+          visaDAO.insertVisa(
+              TestUtils.createRandomVisa()
+                  .withLastValidated(
+                      new Timestamp(Instant.now().minus(Duration.ofDays(1)).toEpochMilli()))
+                  .withPassportId(savedPassportUnvalidatedVisa2.getId()));
+      var savedValidatedVisa2 =
+          visaDAO.insertVisa(
+              TestUtils.createRandomVisa()
+                  .withLastValidated(new Timestamp(Instant.now().toEpochMilli()))
+                  .withPassportId(savedPassportUnvalidatedVisa2.getId()));
 
-    // create verified visa's passport details to check unvalidated visa details against
-    var passportWithUnvalidatedVisaDetails =
-        new PassportVerificationDetails.Builder()
-            .linkedAccountId(savedLinkedAccountUnvalidatedVisa.getId().get())
-            .providerId(savedLinkedAccountUnvalidatedVisa.getProviderId())
-            .passportJwt(savedPassportUnvalidatedVisa.getJwt())
-            .build();
+      // create verified visa passport details to check unvalidated visa details against
+      var passportWithUnvalidatedVisaDetails =
+          new PassportVerificationDetails.Builder()
+              .linkedAccountId(savedLinkedAccountUnvalidatedVisa.getId().get())
+              .providerId(savedLinkedAccountUnvalidatedVisa.getProviderId())
+              .passportJwt(savedPassportUnvalidatedVisa.getJwt())
+              .build();
 
-    assertEquals(
-        List.of(passportWithUnvalidatedVisaDetails),
-        passportDAO.getPassportsWithUnvalidatedAccessTokenVisas());
+      var passportWithUnvalidatedVisaDetails2 =
+          new PassportVerificationDetails.Builder()
+              .linkedAccountId(savedLinkedAccountUnvalidatedVisa2.getId().get())
+              .providerId(savedLinkedAccountUnvalidatedVisa2.getProviderId())
+              .passportJwt(savedPassportUnvalidatedVisa2.getJwt())
+              .build();
+
+      assertEquals(
+          List.of(passportWithUnvalidatedVisaDetails, passportWithUnvalidatedVisaDetails2),
+          passportDAO.getPassportsWithUnvalidatedAccessTokenVisas());
+    }
+
+    @Test
+    void testGetsOnlyTokenTypeVisas() {
+      // create linked account with passport and one token type visa NOT validated in the validation
+      // window
+      var savedLinkedAccountUnvalidatedVisa =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      var savedPassportUnvalidatedVisa =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport()
+                  .withLinkedAccountId(savedLinkedAccountUnvalidatedVisa.getId()));
+      var savedUnvalidatedVisa =
+          visaDAO.insertVisa(
+              TestUtils.createRandomVisa()
+                  .withLastValidated(
+                      new Timestamp(Instant.now().minus(Duration.ofDays(1)).toEpochMilli()))
+                  .withPassportId(savedPassportUnvalidatedVisa.getId()));
+
+      // create linked account with passport and one document type visa NOT validated in the
+      // validation window
+      var savedLinkedAccountUnvalidatedDocumentVisa =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      var savedPassportUnvalidatedDocumentVisa =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport()
+                  .withLinkedAccountId(savedLinkedAccountUnvalidatedDocumentVisa.getId()));
+      var savedUnvalidatedDocumentVisa =
+          visaDAO.insertVisa(
+              TestUtils.createRandomVisa()
+                  .withLastValidated(
+                      new Timestamp(Instant.now().minus(Duration.ofDays(1)).toEpochMilli()))
+                  .withPassportId(savedPassportUnvalidatedDocumentVisa.getId())
+                  .withTokenType(TokenTypeEnum.document_token));
+
+      // create verified visa passport details to check unvalidated visa details against
+      var passportWithUnvalidatedVisaDetails =
+          new PassportVerificationDetails.Builder()
+              .linkedAccountId(savedLinkedAccountUnvalidatedVisa.getId().get())
+              .providerId(savedLinkedAccountUnvalidatedVisa.getProviderId())
+              .passportJwt(savedPassportUnvalidatedVisa.getJwt())
+              .build();
+
+      assertEquals(
+          List.of(passportWithUnvalidatedVisaDetails),
+          passportDAO.getPassportsWithUnvalidatedAccessTokenVisas());
+    }
   }
 
   @Nested
