@@ -272,12 +272,15 @@ public class ProviderService {
 
   @VisibleForTesting
   String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
-    var validationEndpoint =
-        externalCredsConfig
-            .getProviders()
-            .get(passportDetails.getProviderId())
-            .getValidationEndpoint()
-            .get();
+    var providerProperties = externalCredsConfig.getProviders().get(passportDetails.getProviderId());
+    if (providerProperties == null) {
+      throw new NotFoundException(String.format("Provider %s not found", passportDetails.getProviderId()));
+    }
+
+    var validationEndpoint = providerProperties.getValidationEndpoint().orElseThrow(
+        () -> new NotFoundException(
+            String.format("Validation endpoint for provider %s not found",
+            passportDetails.getProviderId())));
 
     var response =
         WebClient.create(validationEndpoint)
@@ -285,12 +288,10 @@ public class ProviderService {
             .bodyValue(passportDetails.getPassportJwt())
             .retrieve();
 
-    var responseBody =
-        response
+    return response
             .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
             .bodyToMono(String.class)
             .block(Duration.of(1000, ChronoUnit.MILLIS));
-    return responseBody;
   }
 
   private void invalidateLinkedAccount(LinkedAccount linkedAccount) {
