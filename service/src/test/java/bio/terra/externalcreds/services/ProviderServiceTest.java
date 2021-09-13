@@ -504,8 +504,6 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired private ProviderService providerService;
     @Autowired private LinkedAccountService linkedAccountService;
 
-    @MockBean private ExternalCredsConfig externalCredsConfigMock;
-
     @Test
     void testValidResponse() {
       var providerServiceSpy = spy(providerService);
@@ -525,7 +523,7 @@ public class ProviderServiceTest extends BaseTest {
 
       var expectedPassportDetails =
           getExpectedPassportVerificationDetails(savedLinkedAccountWithPassportAndVisa);
-      doReturn("valid")
+      doReturn("Valid")
           .when(providerServiceSpy)
           .validatePassportWithProvider(expectedPassportDetails);
 
@@ -570,35 +568,6 @@ public class ProviderServiceTest extends BaseTest {
       // check that authAndRefreshPassport was also called once
       verify(providerServiceSpy)
           .authAndRefreshPassport(savedLinkedAccountWithPassportAndVisa.getLinkedAccount());
-    }
-
-    @Test
-    void testOtherResponse() {
-      var providerServiceSpy = spy(providerService);
-      // insert a linkedAccount, passport and visa
-      var visaNeedingVerification =
-          TestUtils.createRandomVisa()
-              .withTokenType(TokenTypeEnum.access_token)
-              .withLastValidated(
-                  new Timestamp(Instant.now().minus(Duration.ofDays(50)).toEpochMilli()));
-      var savedLinkedAccountWithPassportAndVisa =
-          linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-              new LinkedAccountWithPassportAndVisas.Builder()
-                  .linkedAccount(TestUtils.createRandomLinkedAccount())
-                  .passport(TestUtils.createRandomPassport())
-                  .visas(List.of(visaNeedingVerification))
-                  .build());
-
-      var expectedPassportDetails =
-          getExpectedPassportVerificationDetails(savedLinkedAccountWithPassportAndVisa);
-      doReturn("Expiration Error")
-          .when(providerServiceSpy)
-          .validatePassportWithProvider(expectedPassportDetails);
-
-      // check that validatePassportWithProvider is called once and no exceptions are thrown
-      providerServiceSpy.validatePassportsWithAccessTokenVisas();
-      verify(providerServiceSpy).validatePassportWithProvider(any());
-      verify(providerServiceSpy).validatePassportWithProvider(expectedPassportDetails);
     }
 
     private PassportVerificationDetails getExpectedPassportVerificationDetails(

@@ -191,19 +191,18 @@ public class ProviderService {
         pd -> {
           var responseBody = validatePassportWithProvider(pd);
 
-          // If the response is invalid, get a new passport.
-          if (responseBody.equalsIgnoreCase("invalid")) {
-            log.info("found invalid visa, refreshing");
+          // If the response is not "valid", get a new passport.
+          if (!responseBody.equalsIgnoreCase("valid")) {
+            log.info(
+                String.format(
+                    "Found a visa that is not valid, with validation response '%s'. Refreshing passport.",
+                    responseBody));
             var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
             try {
               authAndRefreshPassport(linkedAccount.get());
             } catch (Exception e) {
               log.info("Failed to refresh passport, will try again at the next interval.", e);
             }
-          }
-          // For all other non-valid statuses, log and try again later.
-          else if (!responseBody.equalsIgnoreCase("valid")) {
-            log.info(String.format("unexpected response when validating visa: %s", responseBody));
           }
         });
   }
