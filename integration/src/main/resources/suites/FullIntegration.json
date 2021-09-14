@@ -3,7 +3,8 @@
   "description": "All integration tests",
   "serverSpecificationFile": "ecm-local.json",
   "testConfigurationFiles": [
-    "integration/ServiceStatus.json"
+    "integration/GetStatus.json",
+    "integration/GetVersion.json"
   ]
 }
 
