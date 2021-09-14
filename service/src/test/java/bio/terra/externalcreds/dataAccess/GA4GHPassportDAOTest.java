@@ -54,9 +54,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
           visaDAO.insertVisa(
               TestUtils.createRandomVisa()
                   .withLastValidated(
-                      new Timestamp(Instant.now()
-                          .plus(Duration.ofMinutes(60))
-                          .toEpochMilli()))
+                      new Timestamp(Instant.now().plus(Duration.ofMinutes(60)).toEpochMilli()))
                   .withPassportId(savedPassport.getId()));
 
       // create linked account with passport and one visa that was NOT validated in the validation

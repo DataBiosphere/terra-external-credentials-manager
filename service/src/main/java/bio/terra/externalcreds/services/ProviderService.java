@@ -199,11 +199,9 @@ public class ProviderService {
                     responseBody));
             var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
             try {
-              if (linkedAccount.isEmpty()) {
-                log.info("No linked account found when trying to validate passport.");
-              } else {
-                authAndRefreshPassport(linkedAccount.get());
-              }
+              linkedAccount.ifPresentOrElse(
+                this::authAndRefreshPassport,
+                () -> log.info("No linked account found when trying to validate passport."));
             } catch (Exception e) {
               log.info("Failed to refresh passport, will try again at the next interval.", e);
             }
