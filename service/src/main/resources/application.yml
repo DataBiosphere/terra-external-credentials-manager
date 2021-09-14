@@ -1,8 +1,9 @@
 externalcreds:
   sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
-  token-validation-frequency: 1h
-  background-job-interval-mins: 5
-  visa-and-passport-refresh-interval: 30m
+  token-validation-duration: 1h
+  validation-background-job-interval-mins: 60
+  visa-and-passport-refresh-duration: 30m
+  refresh-background-job-interval-mins: 5
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}

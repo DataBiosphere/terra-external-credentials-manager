@@ -7,7 +7,6 @@ import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -76,7 +75,8 @@ public class GA4GHPassportDAO {
             jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper())));
   }
 
-  public List<PassportVerificationDetails> getPassportsWithUnvalidatedAccessTokenVisas(Timestamp validationCutoff) {
+  public List<PassportVerificationDetails> getPassportsWithUnvalidatedAccessTokenVisas(
+      Timestamp validationCutoff) {
     var namedParameters = new MapSqlParameterSource("validationCutoff", validationCutoff);
 
     var query =

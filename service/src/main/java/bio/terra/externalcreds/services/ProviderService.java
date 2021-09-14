@@ -70,7 +70,7 @@ public class ProviderService {
    * @return the number of linked accounts with expiring visas or passports
    */
   public int refreshExpiringPassports() {
-    var refreshInterval = externalCredsConfig.getVisaAndPassportRefreshInterval();
+    var refreshInterval = externalCredsConfig.getVisaAndPassportRefreshDuration();
     var expirationCutoff = new Timestamp(Instant.now().plus(refreshInterval).toEpochMilli());
     var expiringLinkedAccounts = linkedAccountService.getExpiringLinkedAccounts(expirationCutoff);
 
@@ -184,7 +184,7 @@ public class ProviderService {
     linkedAccountService.deleteLinkedAccount(userId, providerId);
   }
 
-  public void validatePassportsWithAccessTokenVisas() {
+  public int validatePassportsWithAccessTokenVisas() {
     var passportDetailsList = passportService.getPassportsWithUnvalidatedAccessTokenVisas();
 
     passportDetailsList.forEach(
@@ -209,6 +209,7 @@ public class ProviderService {
             }
           }
         });
+    return passportDetailsList.size();
   }
 
   @VisibleForTesting
@@ -272,15 +273,22 @@ public class ProviderService {
 
   @VisibleForTesting
   String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
-    var providerProperties = externalCredsConfig.getProviders().get(passportDetails.getProviderId());
+    var providerProperties =
+        externalCredsConfig.getProviders().get(passportDetails.getProviderId());
     if (providerProperties == null) {
-      throw new NotFoundException(String.format("Provider %s not found", passportDetails.getProviderId()));
+      throw new NotFoundException(
+          String.format("Provider %s not found", passportDetails.getProviderId()));
     }
 
-    var validationEndpoint = providerProperties.getValidationEndpoint().orElseThrow(
-        () -> new NotFoundException(
-            String.format("Validation endpoint for provider %s not found",
-            passportDetails.getProviderId())));
+    var validationEndpoint =
+        providerProperties
+            .getValidationEndpoint()
+            .orElseThrow(
+                () ->
+                    new NotFoundException(
+                        String.format(
+                            "Validation endpoint for provider %s not found",
+                            passportDetails.getProviderId())));
 
     var response =
         WebClient.create(validationEndpoint)
@@ -289,9 +297,9 @@ public class ProviderService {
             .retrieve();
 
     return response
-            .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
-            .bodyToMono(String.class)
-            .block(Duration.of(1000, ChronoUnit.MILLIS));
+        .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
+        .bodyToMono(String.class)
+        .block(Duration.of(1000, ChronoUnit.MILLIS));
   }
 
   private void invalidateLinkedAccount(LinkedAccount linkedAccount) {

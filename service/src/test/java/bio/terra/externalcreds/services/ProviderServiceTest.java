@@ -400,7 +400,7 @@ public class ProviderServiceTest extends BaseTest {
       passportDAO.insertPassport(notExpiringPassport);
 
       // mock the configs
-      when(externalCredsConfigMock.getVisaAndPassportRefreshInterval())
+      when(externalCredsConfigMock.getVisaAndPassportRefreshDuration())
           .thenReturn(Duration.ofMinutes(30));
 
       // check that authAndRefreshPassport is called exactly once with the expiring linked account

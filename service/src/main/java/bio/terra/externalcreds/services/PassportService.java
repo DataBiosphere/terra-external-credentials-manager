@@ -33,7 +33,7 @@ public class PassportService {
   public List<PassportVerificationDetails> getPassportsWithUnvalidatedAccessTokenVisas() {
     var validationCutoff =
         new Timestamp(
-            Instant.now().minus(externalCredsConfig.getTokenValidationFrequency()).toEpochMilli());
+            Instant.now().minus(externalCredsConfig.getTokenValidationDuration()).toEpochMilli());
     return passportDAO.getPassportsWithUnvalidatedAccessTokenVisas(validationCutoff);
   }
 }
