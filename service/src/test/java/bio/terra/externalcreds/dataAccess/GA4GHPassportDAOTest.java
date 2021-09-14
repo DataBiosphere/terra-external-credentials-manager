@@ -44,7 +44,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
     @Test
     void testGetPassportsWithUnvalidatedAccessTokenVisas() {
-      // create linked account with passport and visa that was validated in the validation window
+      // create linked account with passport and visa that does not need validation
       var savedLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
       var savedPassport =
@@ -53,7 +53,10 @@ public class GA4GHPassportDAOTest extends BaseTest {
       var savedValidatedVisa =
           visaDAO.insertVisa(
               TestUtils.createRandomVisa()
-                  .withLastValidated(new Timestamp(Instant.now().toEpochMilli()))
+                  .withLastValidated(
+                      new Timestamp(Instant.now()
+                          .plus(Duration.ofMinutes(60))
+                          .toEpochMilli()))
                   .withPassportId(savedPassport.getId()));
 
       // create linked account with passport and one visa that was NOT validated in the validation
