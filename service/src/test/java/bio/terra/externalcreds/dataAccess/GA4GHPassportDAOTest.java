@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.PassportVerificationDetails;
 import bio.terra.externalcreds.models.TokenTypeEnum;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DuplicateKeyException;
 
 public class GA4GHPassportDAOTest extends BaseTest {
@@ -25,6 +27,8 @@ public class GA4GHPassportDAOTest extends BaseTest {
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
   @Autowired private GA4GHVisaDAO visaDAO;
+
+  @MockBean private ExternalCredsConfig externalCredsConfig;
 
   @Test
   void testGetMissingPassport() {
@@ -34,6 +38,9 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
   @Nested
   class GetPassportsWithUnvalidatedAccessTokenVisas {
+
+    private final Timestamp validationCutoff =
+        new Timestamp(Instant.now().plus(Duration.ofMinutes(60)).toEpochMilli());
 
     @Test
     void testGetPassportsWithUnvalidatedAccessTokenVisas() {
@@ -101,7 +108,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
       assertEquals(
           List.of(passportWithUnvalidatedVisaDetails, passportWithUnvalidatedVisaDetails2),
-          passportDAO.getPassportsWithUnvalidatedAccessTokenVisas());
+          passportDAO.getPassportsWithUnvalidatedAccessTokenVisas(validationCutoff));
     }
 
     @Test
@@ -147,7 +154,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
       assertEquals(
           List.of(passportWithUnvalidatedVisaDetails),
-          passportDAO.getPassportsWithUnvalidatedAccessTokenVisas());
+          passportDAO.getPassportsWithUnvalidatedAccessTokenVisas(validationCutoff));
     }
   }
 

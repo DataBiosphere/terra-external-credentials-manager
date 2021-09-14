@@ -76,10 +76,7 @@ public class GA4GHPassportDAO {
             jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper())));
   }
 
-  public List<PassportVerificationDetails> getPassportsWithUnvalidatedAccessTokenVisas() {
-    var validationCutoff =
-        new Timestamp(
-            Instant.now().minus(externalCredsConfig.getTokenValidationFrequency()).toEpochMilli());
+  public List<PassportVerificationDetails> getPassportsWithUnvalidatedAccessTokenVisas(Timestamp validationCutoff) {
     var namedParameters = new MapSqlParameterSource("validationCutoff", validationCutoff);
 
     var query =
