@@ -39,19 +39,16 @@ public class ExternalCredsCronApplication {
     this.providerService = providerService;
   }
 
-  @Scheduled(
-      fixedRateString = "#{${externalcreds.refresh-background-job-interval-mins} * 60 * 1000}")
+  @Scheduled(fixedRateString = "#{${externalcreds.background-job-interval-mins} * 60 * 1000}")
   public void checkForExpiringCredentials() {
+    // check and refresh expiring visas and passports
     log.info("beginning checkForExpiringCredentials");
     var expiringPassportCount = providerService.refreshExpiringPassports();
     log.info(
         "completed checkForExpiringCredentials",
         Map.of("expiring_passport_count", expiringPassportCount));
-  }
 
-  @Scheduled(
-      fixedRateString = "#{${externalcreds.validation-background-job-interval-mins} * 60 * 1000}")
-  public void validateVisas() {
+    // check and validate visas not validated since job was last run
     log.info("beginning validateVisas");
     var checkedPassportCount = providerService.validatePassportsWithAccessTokenVisas();
     log.info("completed validateVisas", Map.of("checked_passport_count", checkedPassportCount));
