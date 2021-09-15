@@ -32,6 +32,11 @@ public class LinkedAccountService {
   }
 
   @ReadTransaction
+  public Optional<LinkedAccount> getLinkedAccount(int linkedAccountId) {
+    return linkedAccountDAO.getLinkedAccount(linkedAccountId);
+  }
+
+  @ReadTransaction
   public Optional<LinkedAccount> getLinkedAccount(String userId, String providerId) {
     return linkedAccountDAO.getLinkedAccount(userId, providerId);
   }

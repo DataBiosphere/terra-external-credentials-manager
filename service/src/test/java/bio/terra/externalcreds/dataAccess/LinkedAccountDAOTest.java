@@ -31,6 +31,18 @@ public class LinkedAccountDAOTest extends BaseTest {
   }
 
   @Test
+  void testGetLinkedAccountById() {
+    var linkedAccount = TestUtils.createRandomLinkedAccount();
+    var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+    var loadedLinkedAccount = linkedAccountDAO.getLinkedAccount(savedLinkedAccount.getId().get());
+
+    // test that retrieved account matches saved account
+    assertEquals(
+        Optional.of(savedLinkedAccount.withId(loadedLinkedAccount.get().getId())),
+        loadedLinkedAccount);
+  }
+
+  @Test
   void testInsertAndGetLinkedAccount() {
     var linkedAccount = TestUtils.createRandomLinkedAccount();
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);

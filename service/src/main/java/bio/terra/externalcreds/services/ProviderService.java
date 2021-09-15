@@ -9,6 +9,7 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.models.PassportVerificationDetails;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -69,7 +70,7 @@ public class ProviderService {
    * @return the number of linked accounts with expiring visas or passports
    */
   public int refreshExpiringPassports() {
-    var refreshInterval = externalCredsConfig.getVisaAndPassportRefreshInterval();
+    var refreshInterval = externalCredsConfig.getVisaAndPassportRefreshDuration();
     var expirationCutoff = new Timestamp(Instant.now().plus(refreshInterval).toEpochMilli());
     var expiringLinkedAccounts = linkedAccountService.getExpiringLinkedAccounts(expirationCutoff);
 
@@ -183,40 +184,41 @@ public class ProviderService {
     linkedAccountService.deleteLinkedAccount(userId, providerId);
   }
 
+  public int validatePassportsWithAccessTokenVisas() {
+    var passportDetailsList = passportService.getPassportsWithUnvalidatedAccessTokenVisas();
+
+    passportDetailsList.forEach(
+        pd -> {
+          var responseBody = validatePassportWithProvider(pd);
+
+          // If the response is not "valid", get a new passport.
+          if (!responseBody.equalsIgnoreCase("valid")) {
+            log.info(
+                String.format(
+                    "Found a visa that is not valid, with validation response '%s'. Refreshing passport.",
+                    responseBody));
+            var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
+            try {
+              linkedAccount.ifPresentOrElse(
+                  this::authAndRefreshPassport,
+                  () -> log.info("No linked account found when trying to validate passport."));
+            } catch (Exception e) {
+              log.info("Failed to refresh passport, will try again at the next interval.", e);
+            }
+          }
+        });
+    return passportDetailsList.size();
+  }
+
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
     if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
       invalidateLinkedAccount(linkedAccount);
     } else {
       try {
-        var clientRegistration =
-            providerClientCache
-                .getProviderClient(linkedAccount.getProviderId())
-                .orElseThrow(
-                    () ->
-                        new ExternalCredsException(
-                            String.format(
-                                "Unable to find configs for the provider: %s",
-                                linkedAccount.getProviderId())));
-        var accessTokenResponse =
-            oAuth2Service.authorizeWithRefreshToken(
-                clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
-
-        // save the linked account with the new refresh token and extracted passport
-        var linkedAccountWithRefreshToken =
-            Optional.ofNullable(accessTokenResponse.getRefreshToken())
-                .map(
-                    refreshToken ->
-                        linkedAccountService.upsertLinkedAccount(
-                            linkedAccount.withRefreshToken(refreshToken.getTokenValue())))
-                .orElse(linkedAccount);
-
-        // update the passport and visas
-        var userInfo =
-            oAuth2Service.getUserInfo(clientRegistration, accessTokenResponse.getAccessToken());
+        var linkedAccountWithRefreshedPassport = getRefreshedPassportsAndVisas(linkedAccount);
         linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-            jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo));
-
+            linkedAccountWithRefreshedPassport);
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
             String.format(
@@ -225,10 +227,9 @@ public class ProviderService {
       } catch (OAuth2AuthorizationException oauthEx) {
         // if the cause is a 4xx response, delete the passport
         if (oauthEx.getCause() instanceof HttpClientErrorException) {
-          var linkedAccountId =
-              linkedAccount
-                  .getId()
-                  .orElseThrow(() -> new ExternalCredsException("linked account id missing"));
+          linkedAccount
+              .getId()
+              .orElseThrow(() -> new ExternalCredsException("linked account id missing"));
           invalidateLinkedAccount(linkedAccount);
         } else {
           // log and try again later
@@ -236,6 +237,67 @@ public class ProviderService {
         }
       }
     }
+  }
+
+  public LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
+      LinkedAccount linkedAccount) {
+    var clientRegistration =
+        providerClientCache
+            .getProviderClient(linkedAccount.getProviderId())
+            .orElseThrow(
+                () ->
+                    new ExternalCredsException(
+                        String.format(
+                            "Unable to find configs for the provider: %s",
+                            linkedAccount.getProviderId())));
+    var accessTokenResponse =
+        oAuth2Service.authorizeWithRefreshToken(
+            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+
+    // save the linked account with the new refresh token and extracted passport
+    var linkedAccountWithRefreshToken =
+        Optional.ofNullable(accessTokenResponse.getRefreshToken())
+            .map(
+                refreshToken ->
+                    linkedAccountService.upsertLinkedAccount(
+                        linkedAccount.withRefreshToken(refreshToken.getTokenValue())))
+            .orElse(linkedAccount);
+
+    // update the passport and visas
+    var userInfo =
+        oAuth2Service.getUserInfo(clientRegistration, accessTokenResponse.getAccessToken());
+    return jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo);
+  }
+
+  @VisibleForTesting
+  String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
+    var providerProperties =
+        externalCredsConfig.getProviders().get(passportDetails.getProviderId());
+    if (providerProperties == null) {
+      throw new NotFoundException(
+          String.format("Provider %s not found", passportDetails.getProviderId()));
+    }
+
+    var validationEndpoint =
+        providerProperties
+            .getValidationEndpoint()
+            .orElseThrow(
+                () ->
+                    new NotFoundException(
+                        String.format(
+                            "Validation endpoint for provider %s not found",
+                            passportDetails.getProviderId())));
+
+    var response =
+        WebClient.create(validationEndpoint)
+            .post()
+            .bodyValue(passportDetails.getPassportJwt())
+            .retrieve();
+
+    return response
+        .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
+        .bodyToMono(String.class)
+        .block(Duration.of(1000, ChronoUnit.MILLIS));
   }
 
   private void invalidateLinkedAccount(LinkedAccount linkedAccount) {
