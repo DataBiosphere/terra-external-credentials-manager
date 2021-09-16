@@ -4,6 +4,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -28,4 +29,6 @@ public interface ExternalCredsConfigInterface {
 
   /** List of URIs that are allowable in jku headers of JWTs */
   Collection<URI> getAllowedJwksUris();
+
+  Optional<String> getAuthorizationChangeEventTopicName();
 }
