@@ -1,12 +1,12 @@
 {
-  "name": "ServiceStatus",
+  "name": "GetStatus",
   "description": "Check the service status once. No authentication required.",
   "serverSpecificationFile": "ecm-local.json",
   "kubernetes": {},
   "application": {},
   "testScripts": [
     {
-      "name": "ServiceStatus",
+      "name": "GetStatus",
       "numberOfUserJourneyThreadsToRun": 1,
       "userJourneyThreadPoolSize": 2,
       "expectedTimeForEach": 5,
