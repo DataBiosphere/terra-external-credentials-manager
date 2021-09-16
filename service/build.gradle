@@ -29,6 +29,10 @@ apply from: 'tooling.gradle'
 apply from: 'analysis.gradle'
 
 dependencies {
+	// google
+	implementation platform('com.google.cloud:libraries-bom:22.0.0')
+	implementation 'com.google.cloud:google-cloud-pubsub'
+
 	annotationProcessor 'org.immutables:value:2.8.8'
 	implementation 'bio.terra:terra-common-lib:0.0.49-SNAPSHOT'
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-fa74f75'
