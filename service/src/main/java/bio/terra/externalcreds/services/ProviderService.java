@@ -75,7 +75,7 @@ public class ProviderService {
     this.auditLogger = auditLogger;
     this.objectMapper = objectMapper;
 
-    // note that Publisher authenticates to Google use the env var GOOGLE_APPLICATION_CREDENTIALS
+    // note that Publisher authenticates to Google using the env var GOOGLE_APPLICATION_CREDENTIALS
     this.authorizationChangeEventPublisher =
         externalCredsConfig
             .getAuthorizationChangeEventTopicName()
