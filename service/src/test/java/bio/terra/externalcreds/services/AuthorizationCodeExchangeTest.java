@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.JwtSigningTestUtils;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHPassport;
@@ -17,11 +18,6 @@ import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSHeader.Builder;
 import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
-import com.nimbusds.jose.util.JSONObjectUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import java.net.URI;
@@ -39,10 +35,6 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.model.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -53,10 +45,6 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 public class AuthorizationCodeExchangeTest extends BaseTest {
-
-  public static final String JWKS_PATH = "/openid/connect/jwks.json";
-  public static final String JKU_PATH = "/jku.json";
-
   @MockBean OAuth2Service oAuth2ServiceMock;
   @MockBean ProviderClientCache providerClientCacheMock;
   @MockBean ExternalCredsConfig externalCredsConfigMock;
@@ -65,12 +53,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   @Autowired PassportService passportService;
   @Autowired JwtUtils jwtUtils;
 
-  private static ClientAndServer mockServer;
-  private static RSAKey accessTokenRsaJWK;
-  private static JWSSigner accessTokenSigner;
-  private static RSAKey documentTokenRsaJWK;
-  private static JWSSigner documentTokenSigner;
-  private static String issuer;
+  private static JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
 
   private final String authorizationCode = UUID.randomUUID().toString();
   private final String redirectUri = "https://test/redirect/uri";
@@ -83,43 +66,12 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
 
   @BeforeAll
   static void setUpJwtVerification() throws JOSEException {
-    accessTokenRsaJWK = new RSAKeyGenerator(2048).keyID("123").generate();
-    documentTokenRsaJWK = new RSAKeyGenerator(2048).keyID("456").generate();
-
-    // Create RSA-signer with the private key
-    accessTokenSigner = new RSASSASigner(accessTokenRsaJWK);
-    documentTokenSigner = new RSASSASigner(documentTokenRsaJWK);
-
-    mockServer = ClientAndServer.startClientAndServer(50555);
-
-    issuer = "http://localhost:" + mockServer.getPort();
-    var wellKnownConfigMap = Map.of("issuer", issuer, "jwks_uri", issuer + JWKS_PATH);
-
-    mockServer
-        .when(HttpRequest.request("/.well-known/openid-configuration").withMethod("GET"))
-        .respond(
-            HttpResponse.response(JSONObjectUtils.toJSONString(wellKnownConfigMap))
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON));
-
-    mockServer
-        .when(HttpRequest.request(JWKS_PATH).withMethod("GET"))
-        .respond(
-            HttpResponse.response(new JWKSet(accessTokenRsaJWK).toString())
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON));
-
-    mockServer
-        .when(HttpRequest.request(JKU_PATH).withMethod("GET"))
-        .respond(
-            HttpResponse.response(new JWKSet(documentTokenRsaJWK).toString())
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON));
+    jwtSigningTestUtils.setUpJwtVerification();
   }
 
   @AfterAll
   static void tearDown() {
-    mockServer.stop();
+    jwtSigningTestUtils.tearDown();
   }
 
   @Test
@@ -199,7 +151,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   void testJwtJkuNotResponsive() throws URISyntaxException, JOSEException {
     String testIssuer = "http://localhost:10";
     when(externalCredsConfigMock.getAllowedJwksUris())
-        .thenReturn(List.of(new URI(testIssuer + JKU_PATH)));
+        .thenReturn(List.of(new URI(testIssuer + JwtSigningTestUtils.JKU_PATH)));
 
     var jwtNotResponsiveJku =
         createVisaJwtString(createTestVisa(TokenTypeEnum.document_token).withIssuer(testIssuer));
@@ -213,7 +165,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   void testJwtJkuMalformed() throws URISyntaxException, JOSEException {
     String testIssuer = "foobar";
     when(externalCredsConfigMock.getAllowedJwksUris())
-        .thenReturn(List.of(new URI(testIssuer + JKU_PATH)));
+        .thenReturn(List.of(new URI(testIssuer + JwtSigningTestUtils.JKU_PATH)));
 
     var jwtMalformedJku =
         createVisaJwtString(createTestVisa(TokenTypeEnum.document_token).withIssuer(testIssuer));
@@ -252,7 +204,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     when(externalCredsConfigMock.getProviders())
         .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
     when(externalCredsConfigMock.getAllowedJwksUris())
-        .thenReturn(List.of(new URI(issuer + JKU_PATH)));
+        .thenReturn(List.of(new URI(jwtSigningTestUtils.issuer + JwtSigningTestUtils.JKU_PATH)));
     when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderId()))
         .thenReturn(Optional.of(providerClient));
     when(oAuth2ServiceMock.authorizationCodeExchange(
@@ -319,7 +271,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         new JWTClaimsSet.Builder()
             .subject(UUID.randomUUID().toString())
             .claim(ProviderService.EXTERNAL_USERID_ATTR, userEmail)
-            .issuer(issuer)
+            .issuer(jwtSigningTestUtils.issuer)
             .expirationTime(expires);
 
     if (!visaJwts.isEmpty()) {
@@ -330,10 +282,12 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
 
     var signedJWT =
         new SignedJWT(
-            new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(accessTokenRsaJWK.getKeyID()).build(),
+            new JWSHeader.Builder(JWSAlgorithm.RS256)
+                .keyID(jwtSigningTestUtils.accessTokenRsaJWK.getKeyID())
+                .build(),
             claimsSet);
 
-    signedJWT.sign(accessTokenSigner);
+    signedJWT.sign(jwtSigningTestUtils.accessTokenSigner);
 
     return signedJWT.serialize();
   }
@@ -364,12 +318,12 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     JWSSigner signer;
     if (visa.getTokenType() == TokenTypeEnum.document_token) {
       jwtHeaderBuilder
-          .jwkURL(new URI(visa.getIssuer() + JKU_PATH))
-          .keyID(documentTokenRsaJWK.getKeyID());
-      signer = documentTokenSigner;
+          .jwkURL(new URI(visa.getIssuer() + JwtSigningTestUtils.JKU_PATH))
+          .keyID(jwtSigningTestUtils.documentTokenRsaJWK.getKeyID());
+      signer = jwtSigningTestUtils.documentTokenSigner;
     } else {
-      jwtHeaderBuilder.keyID(accessTokenRsaJWK.getKeyID());
-      signer = accessTokenSigner;
+      jwtHeaderBuilder.keyID(jwtSigningTestUtils.accessTokenRsaJWK.getKeyID());
+      signer = jwtSigningTestUtils.accessTokenSigner;
     }
     var signedVisaJwt = new SignedJWT(jwtHeaderBuilder.build(), visaClaimSet);
     signedVisaJwt.sign(signer);
@@ -382,7 +336,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         new GA4GHVisa.Builder()
             .visaType(UUID.randomUUID().toString())
             .tokenType(tokenType)
-            .issuer(issuer)
+            .issuer(jwtSigningTestUtils.issuer)
             .expires(new Timestamp(passportExpires.getTime()))
             .jwt("temp")
             .build();

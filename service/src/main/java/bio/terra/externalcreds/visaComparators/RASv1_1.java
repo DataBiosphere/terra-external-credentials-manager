@@ -14,12 +14,12 @@ public class RASv1_1 implements VisaComparator {
 
   @Override
   public boolean authorizationsDiffer(GA4GHVisa visa1, GA4GHVisa visa2) {
+    if (!visa1.getVisaType().equalsIgnoreCase(visa2.getVisaType())) {
+      return false;
+    }
     if (!visaTypeSupported(visa1)) {
       throw new IllegalArgumentException(
           String.format("visa type not supported: [%s]", visa1.getVisaType()));
-    }
-    if (!visa1.getVisaType().equalsIgnoreCase(visa2.getVisaType())) {
-      return false;
     }
 
     try {
