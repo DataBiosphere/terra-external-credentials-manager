@@ -7,7 +7,9 @@ import java.text.ParseException;
 import org.json.JSONException;
 import org.skyscreamer.jsonassert.JSONCompare;
 import org.skyscreamer.jsonassert.JSONCompareMode;
+import org.springframework.stereotype.Component;
 
+@Component
 public class RASv1_1 implements VisaComparator {
   public static final String RAS_VISAS_V_1_1 = "https://ras.nih.gov/visas/v1.1";
   public static final String DBGAP_CLAIM = "ras_dbgap_permissions";

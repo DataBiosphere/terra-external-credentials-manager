@@ -8,8 +8,10 @@ import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.AuthorizationChangeEvent;
+import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.visaComparators.VisaComparator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.core.ApiFutureCallback;
@@ -20,6 +22,7 @@ import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -37,13 +40,15 @@ public class LinkedAccountService {
   private final GA4GHVisaDAO ga4ghVisaDAO;
   private final ObjectMapper objectMapper;
   private final Optional<Publisher> authorizationChangeEventPublisher;
+  private final Collection<VisaComparator> visaComparators;
 
   public LinkedAccountService(
       LinkedAccountDAO linkedAccountDAO,
       GA4GHPassportDAO ga4ghPassportDAO,
       GA4GHVisaDAO ga4ghVisaDAO,
       ExternalCredsConfig externalCredsConfig,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      Collection<VisaComparator> visaComparators) {
     this.linkedAccountDAO = linkedAccountDAO;
     this.ga4ghPassportDAO = ga4ghPassportDAO;
     this.ga4ghVisaDAO = ga4ghVisaDAO;
@@ -61,6 +66,7 @@ public class LinkedAccountService {
                     throw new ExternalCredsException("exception building event publisher", e);
                   }
                 });
+    this.visaComparators = visaComparators;
   }
 
   @ReadTransaction
@@ -175,5 +181,9 @@ public class LinkedAccountService {
             throw new ExternalCredsException("publisher shutdown interrupted", e);
           }
         });
+  }
+
+  private Optional<VisaComparator> getVisaComparator(GA4GHVisa visa) {
+    return visaComparators.stream().filter(c -> c.visaTypeSupported(visa)).findFirst();
   }
 }
