@@ -193,6 +193,7 @@ public class LinkedAccountService {
   private boolean authorizationsDiffer(
       Collection<GA4GHVisa> existingVisas, Collection<GA4GHVisa> newVisas) {
     if (existingVisas.size() != newVisas.size()) {
+      // number of visas differ so there isn't a way to compare, assume authorizations differ
       return true;
     }
 
@@ -201,9 +202,13 @@ public class LinkedAccountService {
       var matchingVisa = findMatchingVisa(newVisa, visasLeftToCheck);
       matchingVisa.ifPresent(visasLeftToCheck::remove);
       if (matchingVisa.isEmpty()) {
+        // no visa found matching newVisa which means newVisa represents different authorizations
         return true;
       }
     }
+
+    // if we made it this far then all newVisas match an existingVisa which means authorizations do
+    // not differ
     return false;
   }
 
