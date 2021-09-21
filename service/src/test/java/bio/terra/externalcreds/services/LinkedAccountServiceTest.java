@@ -13,12 +13,14 @@ import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.visaComparators.VisaComparator;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 public class LinkedAccountServiceTest extends BaseTest {
 
@@ -26,6 +28,12 @@ public class LinkedAccountServiceTest extends BaseTest {
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
   @Autowired private GA4GHVisaDAO visaDAO;
+
+  @MockBean(name = "test1")
+  private VisaComparator testVisaComparator;
+
+  @MockBean(name = "test2")
+  private VisaComparator testVisaComparator2;
 
   @Test
   void testGetLinkedAccount() {
@@ -120,4 +128,11 @@ public class LinkedAccountServiceTest extends BaseTest {
 
     return saved.getLinkedAccount();
   }
+
+  // save new linked account emits event - 2 visa types
+  // save linked account with visa with same auth does not emit event - 2 visa types
+  // save linked account with visa with different auth does emit event - 2 visa types
+  
+  // deleting linked account with no visas does not emit event
+  // deleting linked account with visas does emit event
 }
