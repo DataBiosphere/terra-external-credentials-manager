@@ -108,7 +108,9 @@ public class LinkedAccountServiceTest extends BaseTest {
       assertEquals(
           passport,
           savedPassport.get().withId(Optional.empty()).withLinkedAccountId(Optional.empty()));
-      var savedVisas = visaDAO.listVisas(savedPassport.get().getId().get());
+      var savedVisas =
+          visaDAO.listVisas(
+              saved.getLinkedAccount().getUserId(), saved.getLinkedAccount().getProviderId());
       assertEquals(
           visas,
           savedVisas.stream()

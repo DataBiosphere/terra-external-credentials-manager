@@ -9,6 +9,7 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.PassportVerificationDetails;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
@@ -224,11 +225,11 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
     @Test
     void testAlsoDeletesVisa() {
-      var savedAccountId =
-          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount()).getId();
+      LinkedAccount linkedAccount =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
       var savedPassport =
           passportDAO.insertPassport(
-              TestUtils.createRandomPassport().withLinkedAccountId(savedAccountId));
+              TestUtils.createRandomPassport().withLinkedAccountId(linkedAccount.getId()));
 
       visaDAO.insertVisa(
           new GA4GHVisa.Builder()
@@ -241,9 +242,11 @@ public class GA4GHPassportDAOTest extends BaseTest {
               .jwt("fake-jwt")
               .build());
 
-      assertFalse(visaDAO.listVisas(savedPassport.getId().get()).isEmpty());
-      assertTrue(passportDAO.deletePassport(savedAccountId.get()));
-      assertTrue(visaDAO.listVisas(savedPassport.getId().get()).isEmpty());
+      assertFalse(
+          visaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderId()).isEmpty());
+      assertTrue(passportDAO.deletePassport(linkedAccount.getId().get()));
+      assertTrue(
+          visaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderId()).isEmpty());
     }
   }
 }

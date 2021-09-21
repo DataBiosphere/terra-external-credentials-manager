@@ -82,8 +82,10 @@ public class LinkedAccountService {
   @WriteTransaction
   public LinkedAccountWithPassportAndVisas upsertLinkedAccountWithPassportAndVisas(
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
-    var savedLinkedAccount =
-        linkedAccountDAO.upsertLinkedAccount(linkedAccountWithPassportAndVisas.getLinkedAccount());
+    LinkedAccount linkedAccount = linkedAccountWithPassportAndVisas.getLinkedAccount();
+    var existingVisas =
+        ga4ghVisaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderId());
+    var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     // clear out any passport and visas that may exist and save the new one
     ga4ghPassportDAO.deletePassport(savedLinkedAccount.getId().orElseThrow());
@@ -92,11 +94,13 @@ public class LinkedAccountService {
         savePassportAndVisasIfPresent(
             linkedAccountWithPassportAndVisas.withLinkedAccount(savedLinkedAccount));
 
-    publishAuthorizationChangeEvent(
-        new AuthorizationChangeEvent.Builder()
-            .providerId(savedLinkedAccount.getProviderId())
-            .userId(savedLinkedAccount.getUserId())
-            .build());
+    if (authorizationsDiffer(existingVisas, savedLinkedAccountWithPassportAndVisas.getVisas())) {
+      publishAuthorizationChangeEvent(
+          new AuthorizationChangeEvent.Builder()
+              .providerId(savedLinkedAccount.getProviderId())
+              .userId(savedLinkedAccount.getUserId())
+              .build());
+    }
 
     return savedLinkedAccountWithPassportAndVisas;
   }
@@ -108,9 +112,12 @@ public class LinkedAccountService {
 
   @WriteTransaction
   public boolean deleteLinkedAccount(String userId, String providerId) {
+    var existingVisas = ga4ghVisaDAO.listVisas(userId, providerId);
     var deletionSucceeded = linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
-    publishAuthorizationChangeEvent(
-        new AuthorizationChangeEvent.Builder().providerId(providerId).userId(userId).build());
+    if (!existingVisas.isEmpty()) {
+      publishAuthorizationChangeEvent(
+          new AuthorizationChangeEvent.Builder().providerId(providerId).userId(userId).build());
+    }
     return deletionSucceeded;
   }
 
@@ -181,6 +188,39 @@ public class LinkedAccountService {
             throw new ExternalCredsException("publisher shutdown interrupted", e);
           }
         });
+  }
+
+  private boolean authorizationsDiffer(
+      Collection<GA4GHVisa> existingVisas, Collection<GA4GHVisa> newVisas) {
+    if (existingVisas.size() != newVisas.size()) {
+      return true;
+    }
+
+    var visasLeftToCheck = List.copyOf(existingVisas);
+    for (var newVisa : newVisas) {
+      var matchingVisa = findMatchingVisa(newVisa, visasLeftToCheck);
+      matchingVisa.ifPresent(visasLeftToCheck::remove);
+      if (matchingVisa.isEmpty()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private Optional<GA4GHVisa> findMatchingVisa(
+      GA4GHVisa newVisa, Collection<GA4GHVisa> visasLeftToCheck) {
+    return getVisaComparator(newVisa)
+        .map(
+            visaComparator ->
+                visasLeftToCheck.stream()
+                    .filter(
+                        existingVisa -> !visaComparator.authorizationsDiffer(newVisa, existingVisa))
+                    .findFirst())
+        .orElseGet(
+            () -> {
+              log.error("could not find visa comparator for visa type {}", newVisa.getVisaType());
+              return Optional.empty();
+            });
   }
 
   private Optional<VisaComparator> getVisaComparator(GA4GHVisa visa) {

@@ -51,9 +51,15 @@ public class GA4GHVisaDAO {
     return visa.withId(generatedKeyHolder.getKey().intValue());
   }
 
-  public List<GA4GHVisa> listVisas(int passportId) {
-    var namedParameters = new MapSqlParameterSource("passportId", passportId);
-    var query = "SELECT * FROM ga4gh_visa WHERE passport_id = :passportId";
+  public List<GA4GHVisa> listVisas(String userId, String providerId) {
+    var namedParameters =
+        new MapSqlParameterSource("userId", userId).addValue("providerId", providerId);
+    var query =
+        "SELECT v.* FROM ga4gh_visa v"
+            + " INNER JOIN ga4gh_passport p ON p.id = v.passport_id"
+            + " INNER JOIN linked_account la ON la.id = p.linked_account_id"
+            + " WHERE la.user_id = :userId"
+            + " AND la.provider_id = :providerId";
     return jdbcTemplate.query(query, namedParameters, new GA4GHVisaRowMapper());
   }
 
