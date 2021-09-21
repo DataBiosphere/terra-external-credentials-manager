@@ -113,12 +113,12 @@ public class LinkedAccountService {
   @WriteTransaction
   public boolean deleteLinkedAccount(String userId, String providerId) {
     var existingVisas = ga4ghVisaDAO.listVisas(userId, providerId);
-    var deletionSucceeded = linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
+    var accountExisted = linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
     if (!existingVisas.isEmpty()) {
       publishAuthorizationChangeEvent(
           new AuthorizationChangeEvent.Builder().providerId(providerId).userId(userId).build());
     }
-    return deletionSucceeded;
+    return accountExisted;
   }
 
   @ReadTransaction
