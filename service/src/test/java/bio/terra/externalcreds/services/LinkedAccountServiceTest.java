@@ -3,6 +3,7 @@ package bio.terra.externalcreds.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
@@ -19,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -110,6 +110,41 @@ public class LinkedAccountServiceTest extends BaseTest {
       saveAndValidateLinkedAccount(
           linkedAccount, null, Collections.emptyList(), linkedAccountService, passportDAO, visaDAO);
     }
+
+    @Test
+    void testEmitsEvents() {
+      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var passport = TestUtils.createRandomPassport();
+      var visa1 = TestUtils.createRandomVisa().withVisaType("type1");
+      var visa2 = TestUtils.createRandomVisa().withVisaType("type2");
+
+      var linkedAccountServiceSpy = Mockito.spy(linkedAccountService);
+      var expectedEvent =
+          new AuthorizationChangeEvent.Builder()
+              .providerId(linkedAccount.getProviderId())
+              .userId(linkedAccount.getUserId())
+              .build();
+
+      // save new linked account with 2 visas of different types
+      var saved =
+          linkedAccountServiceSpy.upsertLinkedAccountWithPassportAndVisas(
+              new LinkedAccountWithPassportAndVisas.Builder()
+                  .linkedAccount(linkedAccount)
+                  .passport(Optional.ofNullable(passport))
+                  .visas(List.of(visa1, visa2))
+                  .build());
+      // check that an event was emitted
+      // verify(linkedAccountServiceSpy).publishAuthorizationChangeEvent(any()); // expectedEvent);
+
+      // upsert the same linked account + visas
+      // use a spy to check that nothing was emitted
+
+      // upsert the linked account with visas with different auth (2 different visa types)
+      // use a spy to check that an event was emitted
+
+      // To figure out:
+      // - Do we need to mock the comparator result?
+    }
   }
 
   @Nested
@@ -118,6 +153,8 @@ public class LinkedAccountServiceTest extends BaseTest {
     @Autowired private LinkedAccountService linkedAccountService;
     @Autowired private GA4GHPassportDAO passportDAO;
     @Autowired private GA4GHVisaDAO visaDAO;
+
+    @MockBean private EventPublisher eventPublisherMock;
 
     @Test
     void testDeleteNonExistingLinkedAccount() {
@@ -148,7 +185,6 @@ public class LinkedAccountServiceTest extends BaseTest {
     }
 
     @Test
-    @Disabled
     void testDeleteLinkedAccountEmitsEvent() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
       var passport = TestUtils.createRandomPassport();
@@ -160,10 +196,11 @@ public class LinkedAccountServiceTest extends BaseTest {
       saveAndValidateLinkedAccount(
           linkedAccount, passport, visas, linkedAccountService, passportDAO, visaDAO);
 
-      var spy = Mockito.spy(linkedAccountService);
-      spy.deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
+      linkedAccountService.deleteLinkedAccount(
+          linkedAccount.getUserId(), linkedAccount.getProviderId());
 
-      Mockito.verify(spy)
+      // Check that an event was emitted twice, during both insertion and deletion
+      Mockito.verify(eventPublisherMock, times(2))
           .publishAuthorizationChangeEvent(
               new AuthorizationChangeEvent.Builder()
                   .userId(linkedAccount.getUserId())
@@ -213,10 +250,6 @@ public class LinkedAccountServiceTest extends BaseTest {
 
     return saved.getLinkedAccount();
   }
-
-  // save new linked account emits event - 2 visa types
-  // save linked account with visa with same auth does not emit event - 2 visa types
-  // save linked account with visa with different auth does emit event - 2 visa types
 
   // deleting linked account with no visas does not emit event
   // deleting linked account with visas does emit event
