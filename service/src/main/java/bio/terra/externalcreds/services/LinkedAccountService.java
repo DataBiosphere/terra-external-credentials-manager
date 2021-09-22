@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
 import com.google.cloud.pubsub.v1.Publisher;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
@@ -149,7 +150,8 @@ public class LinkedAccountService {
     }
   }
 
-  private void publishAuthorizationChangeEvent(AuthorizationChangeEvent event) {
+  @VisibleForTesting
+  void publishAuthorizationChangeEvent(AuthorizationChangeEvent event) {
     authorizationChangeEventPublisher.ifPresent(
         publisher -> {
           try {
@@ -219,7 +221,7 @@ public class LinkedAccountService {
             visaComparator ->
                 visasLeftToCheck.stream()
                     .filter(
-                        existingVisa -> !visaComparator.authorizationsDiffer(newVisa, existingVisa))
+                        existingVisa -> visaComparator.authorizationsMatch(newVisa, existingVisa))
                     .findFirst())
         .orElseGet(
             () -> {
