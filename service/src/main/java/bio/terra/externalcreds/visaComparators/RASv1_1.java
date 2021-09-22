@@ -2,11 +2,14 @@ package bio.terra.externalcreds.visaComparators;
 
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.models.GA4GHVisa;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.nimbusds.jwt.JWTParser;
 import java.text.ParseException;
 import java.util.Set;
+import org.immutables.value.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -51,5 +54,21 @@ public class RASv1_1 implements VisaComparator {
   @Override
   public boolean visaTypeSupported(GA4GHVisa visa) {
     return visa.getVisaType().equalsIgnoreCase(RAS_VISAS_V_1_1);
+  }
+
+  /**
+   * Object representing fields of interest in the ras_dbgap_permissions array of a RASv1.1 visa.
+   * This is a nested interface because it is specific to v1.1.
+   */
+  @Value.Immutable
+  @JsonDeserialize(as = ImmutableDbGapPermission.class)
+  interface DbGapPermission extends WithDbGapPermission {
+    @JsonProperty("phs_id")
+    String getPhsId();
+
+    @JsonProperty("consent_group")
+    String getConsentGroup();
+
+    class Builder extends ImmutableDbGapPermission.Builder {}
   }
 }
