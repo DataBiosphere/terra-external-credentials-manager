@@ -1,13 +1,19 @@
 package bio.terra.externalcreds;
 
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader.Builder;
 import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 import com.nimbusds.jose.util.JSONObjectUtils;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import java.net.URI;
 import java.util.Map;
+import lombok.SneakyThrows;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -17,12 +23,12 @@ public class JwtSigningTestUtils {
   public static final String JWKS_PATH = "/openid/connect/jwks.json";
   public static final String JKU_PATH = "/jku.json";
 
-  public ClientAndServer mockServer;
-  public RSAKey accessTokenRsaJWK;
-  public JWSSigner accessTokenSigner;
-  public RSAKey documentTokenRsaJWK;
-  public JWSSigner documentTokenSigner;
-  public String issuer;
+  private ClientAndServer mockServer;
+  private RSAKey accessTokenRsaJWK;
+  private JWSSigner accessTokenSigner;
+  private RSAKey documentTokenRsaJWK;
+  private JWSSigner documentTokenSigner;
+  private String issuer;
 
   public void setUpJwtVerification() throws JOSEException {
     accessTokenRsaJWK = new RSAKeyGenerator(2048).keyID("123").generate();
@@ -61,5 +67,30 @@ public class JwtSigningTestUtils {
 
   public void tearDown() {
     mockServer.stop();
+  }
+
+  @SneakyThrows
+  public String createSignedJwt(JWTClaimsSet claimsSet) {
+    var jwtHeader = new Builder(JWSAlgorithm.RS256).keyID(accessTokenRsaJWK.getKeyID()).build();
+    var signedVisaJwt = new SignedJWT(jwtHeader, claimsSet);
+    signedVisaJwt.sign(accessTokenSigner);
+    return signedVisaJwt.serialize();
+  }
+
+  @SneakyThrows
+  public String createSignedDocumentTokenJwt(JWTClaimsSet claimsSet, String issuer) {
+    var jwtHeader =
+        new Builder(JWSAlgorithm.RS256)
+            .jwkURL(new URI(issuer + JwtSigningTestUtils.JKU_PATH))
+            .keyID(documentTokenRsaJWK.getKeyID())
+            .build();
+
+    var signedVisaJwt = new SignedJWT(jwtHeader, claimsSet);
+    signedVisaJwt.sign(documentTokenSigner);
+    return signedVisaJwt.serialize();
+  }
+
+  public String getIssuer() {
+    return issuer;
   }
 }

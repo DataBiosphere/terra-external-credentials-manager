@@ -9,16 +9,11 @@ import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.ImmutableGA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.services.JwtUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader.Builder;
 import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
-import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -27,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class RASv1_1Test extends BaseTest {
   private static JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
 
-  @Autowired private ObjectMapper objectMapper;
+  @Autowired private RASv1_1 comparator;
 
   @BeforeAll
   static void setUpJwtVerification() throws JOSEException {
@@ -41,8 +36,6 @@ public class RASv1_1Test extends BaseTest {
 
   @Test
   void testSameJwt() {
-    var comparator = new RASv1_1(objectMapper);
-
     var visa = createTestRasVisa(Map.of("phs_id", "phs000021", "consent_group", "c1"));
 
     assertTrue(comparator.authorizationsMatch(visa, visa));
@@ -50,7 +43,6 @@ public class RASv1_1Test extends BaseTest {
 
   @Test
   void testSameAuthorizationsDifferentOrder() {
-    var comparator = new RASv1_1(objectMapper);
     var authorization1 = Map.of("phs_id", "phs000021", "consent_group", "c1");
     var authorization2 = Map.of("phs_id", "phs000022", "consent_group", "c1");
 
@@ -62,9 +54,9 @@ public class RASv1_1Test extends BaseTest {
 
   @Test
   void testSameAuthorizationWithExtraInfo() {
-    var comparator = new RASv1_1(objectMapper);
-    var authorization1 = Map.of("phs_id", "phs000021", "consent_group", "c1");
-    var authorization2 = Map.of("phs_id", "phs000021", "consent_group", "c1", "extra", "foo");
+    var authorization1 = Map.of("phs_id", "phs000021", "consent_group", "c1", "unimportant", "a");
+    var authorization2 =
+        Map.of("phs_id", "phs000021", "consent_group", "c1", "unimportant", "b", "extra", "foo");
 
     assertTrue(
         comparator.authorizationsMatch(
@@ -73,7 +65,6 @@ public class RASv1_1Test extends BaseTest {
 
   @Test
   void testDifferentAuthorization() {
-    var comparator = new RASv1_1(objectMapper);
     var authorization1 = Map.of("phs_id", "phs000021", "consent_group", "c1");
     var authorization2 = Map.of("phs_id", "phs000022", "consent_group", "c1");
 
@@ -84,8 +75,6 @@ public class RASv1_1Test extends BaseTest {
 
   @Test
   void testDifferentVisaTypes() {
-    var comparator = new RASv1_1(objectMapper);
-
     var visa = createTestRasVisa(Map.of("phs_id", "phs000021", "consent_group", "c1"));
 
     assertFalse(comparator.authorizationsMatch(visa, visa.withVisaType("different")));
@@ -93,8 +82,6 @@ public class RASv1_1Test extends BaseTest {
 
   @Test
   void testUnsupportedVisaType() {
-    var comparator = new RASv1_1(objectMapper);
-
     var visa =
         createTestRasVisa(Map.of("phs_id", "phs000021", "consent_group", "c1"))
             .withVisaType("unsupported");
@@ -112,7 +99,6 @@ public class RASv1_1Test extends BaseTest {
         .build();
   }
 
-  @SneakyThrows
   private String createVisaJwtString(Map<String, String>... dbgapPermissions) {
     var visaClaimSet =
         new JWTClaimsSet.Builder()
@@ -124,11 +110,6 @@ public class RASv1_1Test extends BaseTest {
             .claim(RASv1_1.DBGAP_CLAIM, dbgapPermissions)
             .build();
 
-    var jwtHeaderBuilder = new Builder(JWSAlgorithm.RS256);
-
-    jwtHeaderBuilder.keyID(jwtSigningTestUtils.accessTokenRsaJWK.getKeyID());
-    var signedVisaJwt = new SignedJWT(jwtHeaderBuilder.build(), visaClaimSet);
-    signedVisaJwt.sign(jwtSigningTestUtils.accessTokenSigner);
-    return signedVisaJwt.serialize();
+    return jwtSigningTestUtils.createSignedJwt(visaClaimSet);
   }
 }

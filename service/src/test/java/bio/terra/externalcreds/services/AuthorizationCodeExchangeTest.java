@@ -14,12 +14,7 @@ import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSHeader.Builder;
-import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
@@ -204,7 +199,8 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     when(externalCredsConfigMock.getProviders())
         .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
     when(externalCredsConfigMock.getAllowedJwksUris())
-        .thenReturn(List.of(new URI(jwtSigningTestUtils.issuer + JwtSigningTestUtils.JKU_PATH)));
+        .thenReturn(
+            List.of(new URI(jwtSigningTestUtils.getIssuer() + JwtSigningTestUtils.JKU_PATH)));
     when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderId()))
         .thenReturn(Optional.of(providerClient));
     when(oAuth2ServiceMock.authorizationCodeExchange(
@@ -271,7 +267,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         new JWTClaimsSet.Builder()
             .subject(UUID.randomUUID().toString())
             .claim(ProviderService.EXTERNAL_USERID_ATTR, userEmail)
-            .issuer(jwtSigningTestUtils.issuer)
+            .issuer(jwtSigningTestUtils.getIssuer())
             .expirationTime(expires);
 
     if (!visaJwts.isEmpty()) {
@@ -279,17 +275,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     }
 
     var claimsSet = passportClaimSetBuilder.build();
-
-    var signedJWT =
-        new SignedJWT(
-            new JWSHeader.Builder(JWSAlgorithm.RS256)
-                .keyID(jwtSigningTestUtils.accessTokenRsaJWK.getKeyID())
-                .build(),
-            claimsSet);
-
-    signedJWT.sign(jwtSigningTestUtils.accessTokenSigner);
-
-    return signedJWT.serialize();
+    return jwtSigningTestUtils.createSignedJwt(claimsSet);
   }
 
   private LinkedAccount createTestLinkedAccount() {
@@ -313,21 +299,16 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
                 JwtUtils.GA4GH_VISA_V1_CLAIM, Map.of(JwtUtils.VISA_TYPE_CLAIM, visa.getVisaType()))
             .build();
 
-    var jwtHeaderBuilder = new Builder(JWSAlgorithm.RS256);
+    switch (visa.getTokenType()) {
+      case access_token:
+        return jwtSigningTestUtils.createSignedJwt(visaClaimSet);
 
-    JWSSigner signer;
-    if (visa.getTokenType() == TokenTypeEnum.document_token) {
-      jwtHeaderBuilder
-          .jwkURL(new URI(visa.getIssuer() + JwtSigningTestUtils.JKU_PATH))
-          .keyID(jwtSigningTestUtils.documentTokenRsaJWK.getKeyID());
-      signer = jwtSigningTestUtils.documentTokenSigner;
-    } else {
-      jwtHeaderBuilder.keyID(jwtSigningTestUtils.accessTokenRsaJWK.getKeyID());
-      signer = jwtSigningTestUtils.accessTokenSigner;
+      case document_token:
+        return jwtSigningTestUtils.createSignedDocumentTokenJwt(visaClaimSet, visa.getIssuer());
+
+      default:
+        throw new RuntimeException("unexpected token type " + visa.getTokenType());
     }
-    var signedVisaJwt = new SignedJWT(jwtHeaderBuilder.build(), visaClaimSet);
-    signedVisaJwt.sign(signer);
-    return signedVisaJwt.serialize();
   }
 
   private GA4GHVisa createTestVisa(TokenTypeEnum tokenType)
@@ -336,7 +317,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         new GA4GHVisa.Builder()
             .visaType(UUID.randomUUID().toString())
             .tokenType(tokenType)
-            .issuer(jwtSigningTestUtils.issuer)
+            .issuer(jwtSigningTestUtils.getIssuer())
             .expires(new Timestamp(passportExpires.getTime()))
             .jwt("temp")
             .build();
