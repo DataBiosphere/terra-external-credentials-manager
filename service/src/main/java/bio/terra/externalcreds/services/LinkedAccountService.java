@@ -11,6 +11,7 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -128,7 +129,7 @@ public class LinkedAccountService {
       return true;
     }
 
-    var visasLeftToCheck = List.copyOf(existingVisas);
+    var visasLeftToCheck = new ArrayList<>(existingVisas);
     for (var newVisa : newVisas) {
       var matchingVisa = findMatchingVisa(newVisa, visasLeftToCheck);
       matchingVisa.ifPresent(visasLeftToCheck::remove);

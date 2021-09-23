@@ -3,8 +3,12 @@ package bio.terra.externalcreds.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
@@ -23,6 +27,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
@@ -54,15 +59,16 @@ public class LinkedAccountServiceTest extends BaseTest {
   @TestComponent
   class UpsertLinkedAccountWithPassportAndVisas {
 
+    @MockBean EventPublisher eventPublisherMock;
     @Autowired private LinkedAccountService linkedAccountService;
     @Autowired private GA4GHPassportDAO passportDAO;
     @Autowired private GA4GHVisaDAO visaDAO;
 
     @MockBean(name = "test1")
-    private VisaComparator testVisaComparator;
+    private VisaComparator VisaComparatorMock1;
 
     @MockBean(name = "test2")
-    private VisaComparator testVisaComparator2;
+    private VisaComparator VisaComparatorMock2;
 
     @Test
     void testSaveLinkedAccountWithPassportAndVisas() {
@@ -119,32 +125,71 @@ public class LinkedAccountServiceTest extends BaseTest {
       var visa1 = TestUtils.createRandomVisa().withVisaType("type1");
       var visa2 = TestUtils.createRandomVisa().withVisaType("type2");
 
-      var linkedAccountServiceSpy = Mockito.spy(linkedAccountService);
       var expectedEvent =
           new AuthorizationChangeEvent.Builder()
               .providerId(linkedAccount.getProviderId())
               .userId(linkedAccount.getUserId())
               .build();
 
+      // Mock the return values of our comparators
+      // The default return type is false, so we only need to mock the cases which return true
+      var visa1ArgMatcher = new VisaTypeMatcher(visa1);
+      var visa2ArgMatcher = new VisaTypeMatcher(visa2);
+
+      when(VisaComparatorMock1.authorizationsMatch(
+              argThat(visa1ArgMatcher), argThat(visa1ArgMatcher)))
+          .thenReturn(true);
+      when(VisaComparatorMock2.authorizationsMatch(
+              argThat(visa2ArgMatcher), argThat(visa2ArgMatcher)))
+          .thenReturn(true);
+
+      when(VisaComparatorMock1.visaTypeSupported(argThat(visa1ArgMatcher))).thenReturn(true);
+      when(VisaComparatorMock2.visaTypeSupported(argThat(visa2ArgMatcher))).thenReturn(true);
+
       // save new linked account with 2 visas of different types
       var saved =
-          linkedAccountServiceSpy.upsertLinkedAccountWithPassportAndVisas(
+          linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
               new LinkedAccountWithPassportAndVisas.Builder()
                   .linkedAccount(linkedAccount)
                   .passport(Optional.ofNullable(passport))
                   .visas(List.of(visa1, visa2))
                   .build());
       // check that an event was emitted
-      // verify(linkedAccountServiceSpy).publishAuthorizationChangeEvent(any()); // expectedEvent);
+      verify(eventPublisherMock, times(1)).publishAuthorizationChangeEvent(expectedEvent);
 
       // upsert the same linked account + visas
-      // use a spy to check that nothing was emitted
+      linkedAccountService.upsertLinkedAccountWithPassportAndVisas(saved);
+      // check that nothing new was emitted
+      verify(eventPublisherMock, times(1)).publishAuthorizationChangeEvent(any());
 
       // upsert the linked account with visas with different auth (2 different visa types)
-      // use a spy to check that an event was emitted
+      var visa3 = TestUtils.createRandomVisa().withVisaType("type3");
+      linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+          new LinkedAccountWithPassportAndVisas.Builder()
+              .linkedAccount(linkedAccount)
+              .passport(Optional.ofNullable(passport))
+              .visas(List.of(visa1, visa2, visa3))
+              .build());
+      // check that an event was emitted
+      verify(eventPublisherMock, times(2)).publishAuthorizationChangeEvent(expectedEvent);
+    }
 
-      // To figure out:
-      // - Do we need to mock the comparator result?
+    // A custom ArgumentMatcher to use in mocks
+    class VisaTypeMatcher implements ArgumentMatcher<GA4GHVisa> {
+      private final GA4GHVisa left;
+
+      public VisaTypeMatcher(GA4GHVisa visaToMatch) {
+        this.left = visaToMatch;
+      }
+
+      @Override
+      public boolean matches(GA4GHVisa right) {
+        if (right == null) {
+          return false;
+        }
+        var matches = left.getVisaType().equals(right.getVisaType());
+        return matches;
+      }
     }
   }
 
@@ -216,7 +261,7 @@ public class LinkedAccountServiceTest extends BaseTest {
       linkedAccountService.deleteLinkedAccount(
           linkedAccount.getUserId(), linkedAccount.getProviderId());
 
-      Mockito.verify(eventPublisherMock, never())
+      verify(eventPublisherMock, never())
           .publishAuthorizationChangeEvent(
               new AuthorizationChangeEvent.Builder()
                   .userId(linkedAccount.getUserId())
