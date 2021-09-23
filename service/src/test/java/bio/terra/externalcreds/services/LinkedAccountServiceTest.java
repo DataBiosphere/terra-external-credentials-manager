@@ -3,6 +3,7 @@ package bio.terra.externalcreds.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
 import bio.terra.externalcreds.BaseTest;
@@ -162,6 +163,13 @@ public class LinkedAccountServiceTest extends BaseTest {
       assertFalse(
           linkedAccountService.deleteLinkedAccount(
               linkedAccount.getUserId(), linkedAccount.getProviderId()));
+
+      Mockito.verify(eventPublisherMock, never())
+          .publishAuthorizationChangeEvent(
+              new AuthorizationChangeEvent.Builder()
+                  .userId(linkedAccount.getUserId())
+                  .providerId(linkedAccount.getProviderId())
+                  .build());
     }
 
     @Test
@@ -182,25 +190,33 @@ public class LinkedAccountServiceTest extends BaseTest {
               linkedAccount.getUserId(), linkedAccount.getProviderId()));
 
       assertEmpty(linkedAccountService.getLinkedAccount(savedLinkedAccount1.getId().get()));
+
+      // Check that an event was emitted twice, during both insertion and deletion
+      Mockito.verify(eventPublisherMock, times(2))
+          .publishAuthorizationChangeEvent(
+              new AuthorizationChangeEvent.Builder()
+                  .userId(linkedAccount.getUserId())
+                  .providerId(linkedAccount.getProviderId())
+                  .build());
     }
 
     @Test
-    void testDeleteLinkedAccountEmitsEvent() {
+    void testDoesNotEmitEventWhenNoVisas() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
       var passport = TestUtils.createRandomPassport();
-      var visas =
-          List.of(
-              TestUtils.createRandomVisa(),
-              TestUtils.createRandomVisa(),
-              TestUtils.createRandomVisa());
+
       saveAndValidateLinkedAccount(
-          linkedAccount, passport, visas, linkedAccountService, passportDAO, visaDAO);
+          linkedAccount,
+          passport,
+          Collections.emptyList(),
+          linkedAccountService,
+          passportDAO,
+          visaDAO);
 
       linkedAccountService.deleteLinkedAccount(
           linkedAccount.getUserId(), linkedAccount.getProviderId());
 
-      // Check that an event was emitted twice, during both insertion and deletion
-      Mockito.verify(eventPublisherMock, times(2))
+      Mockito.verify(eventPublisherMock, never())
           .publishAuthorizationChangeEvent(
               new AuthorizationChangeEvent.Builder()
                   .userId(linkedAccount.getUserId())
@@ -250,7 +266,4 @@ public class LinkedAccountServiceTest extends BaseTest {
 
     return saved.getLinkedAccount();
   }
-
-  // deleting linked account with no visas does not emit event
-  // deleting linked account with visas does emit event
 }
