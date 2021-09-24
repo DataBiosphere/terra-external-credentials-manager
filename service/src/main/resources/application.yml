@@ -3,6 +3,7 @@ externalcreds:
   background-job-interval-mins: 5
   token-validation-duration: 1h
   visa-and-passport-refresh-duration: 30m
+  authorization-change-event-topic-name: projects/${SERVICE_GOOGLE_PROJECT:broad-dsde-dev}/topics/ecm-events
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
