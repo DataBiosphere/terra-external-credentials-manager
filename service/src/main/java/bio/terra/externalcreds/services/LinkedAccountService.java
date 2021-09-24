@@ -11,7 +11,6 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -129,32 +128,23 @@ public class LinkedAccountService {
       return true;
     }
 
-    // we want to make sure there is a 1 to 1 match between newVisas and existingVisas
-    // order does not matter and there is no way to sort such that we can compare pairwise
-    // so the algorithm here is to make a copy of existingVisas, visasLeftToCheck, for each new visa
-    // if there is a match in visasLeftToCheck, remove it and continue, if no match return true
-    // if we get to the end and found a match for each new visa return false
-    var visasLeftToCheck = new ArrayList<>(existingVisas);
-    for (var newVisa : newVisas) {
-      var matchingVisa = findMatchingVisa(newVisa, visasLeftToCheck);
-      matchingVisa.ifPresent(visasLeftToCheck::remove);
-      if (matchingVisa.isEmpty()) {
-        // no visa found matching newVisa which means newVisa represents different authorizations
-        return true;
-      }
-    }
-
-    // if we made it this far then all newVisas match an existingVisa which means authorizations do
-    // not differ
-    return false;
+    // We want to make sure there is a 1 to 1 match between newVisas and existingVisas
+    // order does not matter and there is no way to sort such that we can compare pairwise.
+    // Match all newVisas to an existingVisa
+    var matchingVisas =
+        newVisas.stream().flatMap(newVisa -> findMatchingVisa(newVisa, existingVisas).stream());
+    // If the count of distinct matchingVisas is not the same as the count of distinct
+    // existingVisas, either at least 1 newVisa did not find a match or at least 1 existingVisa was
+    // matched more than once, thus authorizations differ.
+    return matchingVisas.distinct().count() != existingVisas.stream().distinct().count();
   }
 
   private Optional<GA4GHVisa> findMatchingVisa(
-      GA4GHVisa newVisa, Collection<GA4GHVisa> visasLeftToCheck) {
+      GA4GHVisa newVisa, Collection<GA4GHVisa> visasToCheck) {
     return getVisaComparator(newVisa)
         .map(
             visaComparator ->
-                visasLeftToCheck.stream()
+                visasToCheck.stream()
                     .filter(
                         existingVisa -> visaComparator.authorizationsMatch(newVisa, existingVisa))
                     .findFirst())
