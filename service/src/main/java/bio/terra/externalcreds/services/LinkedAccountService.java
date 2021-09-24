@@ -129,6 +129,11 @@ public class LinkedAccountService {
       return true;
     }
 
+    // we want to make sure there is a 1 to 1 match between newVisas and existingVisas
+    // order does not matter and there is no way to sort such that we can compare pairwise
+    // so the algorithm here is to make a copy of existingVisas, visasLeftToCheck, for each new visa
+    // if there is a match in visasLeftToCheck, remove it and continue, if no match return true
+    // if we get to the end and found a match for each new visa return false
     var visasLeftToCheck = new ArrayList<>(existingVisas);
     for (var newVisa : newVisas) {
       var matchingVisa = findMatchingVisa(newVisa, visasLeftToCheck);
