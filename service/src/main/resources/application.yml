@@ -3,6 +3,8 @@ externalcreds:
   background-job-interval-mins: 5
   token-validation-duration: 1h
   visa-and-passport-refresh-duration: 30m
+  # TODO: add the code to actually check and apply this
+  # TODO: May need to use profiles to get the pubsub topic conditionally
   # only enable google pubsub topic in live envs
   authorization-change-events-enabled: ${AUTHORIZATION_CHANGE_EVENTS_ENABLED:false}
   # name from: https://github.com/broadinstitute/terraform-ap-modules/blob/master/externalcreds/pubsub.tf
