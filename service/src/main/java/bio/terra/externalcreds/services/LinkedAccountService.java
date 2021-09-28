@@ -54,7 +54,7 @@ public class LinkedAccountService {
   @WriteTransaction
   public LinkedAccountWithPassportAndVisas upsertLinkedAccountWithPassportAndVisas(
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
-    LinkedAccount linkedAccount = linkedAccountWithPassportAndVisas.getLinkedAccount();
+    var linkedAccount = linkedAccountWithPassportAndVisas.getLinkedAccount();
     var existingVisas =
         ga4ghVisaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderId());
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);

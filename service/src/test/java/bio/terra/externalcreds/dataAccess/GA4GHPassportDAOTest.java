@@ -225,7 +225,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
     @Test
     void testAlsoDeletesVisa() {
-      LinkedAccount linkedAccount =
+      var linkedAccount =
           linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
       var savedPassport =
           passportDAO.insertPassport(
