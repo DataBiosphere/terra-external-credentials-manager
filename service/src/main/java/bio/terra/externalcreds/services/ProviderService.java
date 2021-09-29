@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -188,28 +189,35 @@ public class ProviderService {
   public int validateAccessTokenVisas() {
     var visaDetailsList = passportService.getUnvalidatedAccessTokenVisaDetails();
 
-    visaDetailsList.forEach(
-        pd -> {
-          var responseBody = validateVisaWithProvider(pd);
+    var linkedAccountIdsToRefresh =
+        visaDetailsList.stream()
+            .flatMap(
+                visaDetails -> {
+                  var responseBody = validateVisaWithProvider(visaDetails);
+                  log.info(
+                      "Got visa validation response: {}",
+                      Map.of(
+                          "linkedAccountId", visaDetails.getLinkedAccountId(),
+                          "providerId", visaDetails.getProviderId(),
+                          "validationResponse", responseBody));
+                  return responseBody.equalsIgnoreCase("valid")
+                      ? Stream.empty()
+                      : Stream.of(visaDetails.getLinkedAccountId());
+                })
+            .distinct();
 
-          // If the response is not "valid", get a new passport.
-          if (!responseBody.equalsIgnoreCase("valid")) {
-            var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
-            try {
-              linkedAccount.ifPresentOrElse(
-                  this::authAndRefreshPassport,
-                  () -> log.info("No linked account found when trying to validate passport."));
-            } catch (Exception e) {
-              log.info("Failed to refresh passport, will try again at the next interval.", e);
-            }
+    linkedAccountIdsToRefresh.forEach(
+        linkedAccountId -> {
+          var linkedAccount = linkedAccountService.getLinkedAccount(linkedAccountId);
+          try {
+            linkedAccount.ifPresentOrElse(
+                this::authAndRefreshPassport,
+                () -> log.info("No linked account found when trying to validate passport."));
+          } catch (Exception e) {
+            log.info("Failed to refresh passport, will try again at the next interval.", e);
           }
-          log.info(
-              "Got visa validation response: {}",
-              Map.of(
-                  "linkedAccountId", pd.getLinkedAccountId(),
-                  "providerId", pd.getProviderId(),
-                  "validationResponse", responseBody));
         });
+
     return visaDetailsList.size();
   }
 
