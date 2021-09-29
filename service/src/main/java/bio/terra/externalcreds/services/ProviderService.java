@@ -10,7 +10,7 @@ import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.models.AuthorizationChangeEvent;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
-import bio.terra.externalcreds.models.PassportVerificationDetails;
+import bio.terra.externalcreds.models.VisaVerificationDetails;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.core.ApiFutureCallback;
@@ -214,12 +214,12 @@ public class ProviderService {
     linkedAccountService.deleteLinkedAccount(userId, providerId);
   }
 
-  public int validatePassportsWithAccessTokenVisas() {
-    var passportDetailsList = passportService.getPassportsWithUnvalidatedAccessTokenVisas();
+  public int validateAccessTokenVisas() {
+    var visaDetailsList = passportService.getUnvalidatedAccessTokenVisaDetails();
 
-    passportDetailsList.forEach(
+    visaDetailsList.forEach(
         pd -> {
-          var responseBody = validatePassportWithProvider(pd);
+          var responseBody = validateVisaWithProvider(pd);
 
           // If the response is not "valid", get a new passport.
           if (!responseBody.equalsIgnoreCase("valid")) {
@@ -237,7 +237,7 @@ public class ProviderService {
             }
           }
         });
-    return passportDetailsList.size();
+    return visaDetailsList.size();
   }
 
   @VisibleForTesting
@@ -300,12 +300,11 @@ public class ProviderService {
   }
 
   @VisibleForTesting
-  String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
-    var providerProperties =
-        externalCredsConfig.getProviders().get(passportDetails.getProviderId());
+  String validateVisaWithProvider(VisaVerificationDetails visaDetails) {
+    var providerProperties = externalCredsConfig.getProviders().get(visaDetails.getProviderId());
     if (providerProperties == null) {
       throw new NotFoundException(
-          String.format("Provider %s not found", passportDetails.getProviderId()));
+          String.format("Provider %s not found", visaDetails.getProviderId()));
     }
 
     var validationEndpoint =
@@ -316,12 +315,12 @@ public class ProviderService {
                     new NotFoundException(
                         String.format(
                             "Validation endpoint for provider %s not found",
-                            passportDetails.getProviderId())));
+                            visaDetails.getProviderId())));
 
     var response =
         WebClient.create(validationEndpoint)
-            .post()
-            .bodyValue(passportDetails.getPassportJwt())
+            .get()
+            .uri(uriBuilder -> uriBuilder.queryParam("visa", visaDetails.getVisaJwt()).build())
             .retrieve();
 
     return response

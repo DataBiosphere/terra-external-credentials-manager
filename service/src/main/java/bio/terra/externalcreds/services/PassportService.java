@@ -3,8 +3,9 @@ package bio.terra.externalcreds.services;
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
+import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
-import bio.terra.externalcreds.models.PassportVerificationDetails;
+import bio.terra.externalcreds.models.VisaVerificationDetails;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
@@ -18,10 +19,13 @@ public class PassportService {
 
   private final GA4GHPassportDAO passportDAO;
   private final ExternalCredsConfig externalCredsConfig;
+  private final GA4GHVisaDAO visaDAO;
 
-  public PassportService(GA4GHPassportDAO passportDAO, ExternalCredsConfig externalCredsConfig) {
+  public PassportService(
+      GA4GHPassportDAO passportDAO, ExternalCredsConfig externalCredsConfig, GA4GHVisaDAO visaDAO) {
     this.passportDAO = passportDAO;
     this.externalCredsConfig = externalCredsConfig;
+    this.visaDAO = visaDAO;
   }
 
   @ReadTransaction
@@ -30,10 +34,10 @@ public class PassportService {
   }
 
   @ReadTransaction
-  public List<PassportVerificationDetails> getPassportsWithUnvalidatedAccessTokenVisas() {
+  public List<VisaVerificationDetails> getUnvalidatedAccessTokenVisaDetails() {
     var validationCutoff =
         new Timestamp(
             Instant.now().minus(externalCredsConfig.getTokenValidationDuration()).toEpochMilli());
-    return passportDAO.getPassportsWithUnvalidatedAccessTokenVisas(validationCutoff);
+    return visaDAO.getUnvalidatedAccessTokenVisaDetails(validationCutoff);
   }
 }

@@ -50,7 +50,7 @@ public class ExternalCredsCronApplication {
 
     // check and validate visas not validated since job was last run
     log.info("beginning validateVisas");
-    var checkedPassportCount = providerService.validatePassportsWithAccessTokenVisas();
+    var checkedPassportCount = providerService.validateAccessTokenVisas();
     log.info("completed validateVisas", Map.of("checked_passport_count", checkedPassportCount));
   }
 }
