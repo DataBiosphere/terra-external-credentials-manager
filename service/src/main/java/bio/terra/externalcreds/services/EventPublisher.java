@@ -29,17 +29,22 @@ public class EventPublisher {
     this.objectMapper = objectMapper;
 
     // note that Publisher authenticates to Google using the env var GOOGLE_APPLICATION_CREDENTIALS
-    this.authorizationChangeEventPublisher =
-        externalCredsConfig
-            .getAuthorizationChangeEventTopicName()
-            .map(
-                topicName -> {
-                  try {
-                    return Publisher.newBuilder(topicName).build();
-                  } catch (IOException e) {
-                    throw new ExternalCredsException("exception building event publisher", e);
-                  }
-                });
+    // the Publisher will be disabled when running locally, to prevent tests from using it
+    if (externalCredsConfig.getAuthorizationChangeEventsEnabled()) {
+      this.authorizationChangeEventPublisher =
+          externalCredsConfig
+              .getAuthorizationChangeEventTopicName()
+              .map(
+                  topicName -> {
+                    try {
+                      return Publisher.newBuilder(topicName).build();
+                    } catch (IOException e) {
+                      throw new ExternalCredsException("exception building event publisher", e);
+                    }
+                  });
+    } else {
+      this.authorizationChangeEventPublisher = Optional.empty();
+    }
   }
 
   public void publishAuthorizationChangeEvent(AuthorizationChangeEvent event) {

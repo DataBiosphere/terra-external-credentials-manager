@@ -3,6 +3,10 @@ externalcreds:
   background-job-interval-mins: 5
   token-validation-duration: 1h
   visa-and-passport-refresh-duration: 30m
+  # only enable google pubsub topic in live envs
+  authorization-change-events-enabled: ${AUTHORIZATION_CHANGE_EVENTS_ENABLED:false}
+  # name from: https://github.com/broadinstitute/terraform-ap-modules/blob/master/externalcreds/pubsub.tf
+  authorization-change-event-topic-name: projects/${SERVICE_GOOGLE_PROJECT:broad-dsde-dev}/topics/ecm-events
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
