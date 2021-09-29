@@ -9,7 +9,6 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHVisa;
-import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.PassportVerificationDetails;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
