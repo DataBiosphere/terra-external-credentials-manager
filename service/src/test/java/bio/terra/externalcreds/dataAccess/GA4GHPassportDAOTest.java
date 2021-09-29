@@ -97,11 +97,11 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
     @Test
     void testAlsoDeletesVisa() {
-      var savedAccountId =
-          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount()).getId();
+      var linkedAccount =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
       var savedPassport =
           passportDAO.insertPassport(
-              TestUtils.createRandomPassport().withLinkedAccountId(savedAccountId));
+              TestUtils.createRandomPassport().withLinkedAccountId(linkedAccount.getId()));
 
       visaDAO.insertVisa(
           new GA4GHVisa.Builder()
@@ -114,9 +114,11 @@ public class GA4GHPassportDAOTest extends BaseTest {
               .jwt("fake-jwt")
               .build());
 
-      assertFalse(visaDAO.listVisas(savedPassport.getId().get()).isEmpty());
-      assertTrue(passportDAO.deletePassport(savedAccountId.get()));
-      assertTrue(visaDAO.listVisas(savedPassport.getId().get()).isEmpty());
+      assertFalse(
+          visaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderId()).isEmpty());
+      assertTrue(passportDAO.deletePassport(linkedAccount.getId().get()));
+      assertTrue(
+          visaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderId()).isEmpty());
     }
   }
 }

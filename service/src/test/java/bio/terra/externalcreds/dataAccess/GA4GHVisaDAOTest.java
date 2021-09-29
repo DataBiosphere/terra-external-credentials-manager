@@ -169,7 +169,8 @@ public class GA4GHVisaDAOTest extends BaseTest {
     assertEquals(expectedVisa1, savedVisa1.withId(Optional.empty()));
     assertEquals(expectedVisa2, savedVisa2.withId(Optional.empty()));
 
-    var loadedVisas = visaDAO.listVisas(savedPassport.getId().get());
+    var loadedVisas =
+        visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
     assertEquals(loadedVisas.size(), 2);
     assertEquals(Set.of(savedVisa1, savedVisa2), Set.copyOf(loadedVisas));
   }
@@ -183,7 +184,7 @@ public class GA4GHVisaDAOTest extends BaseTest {
 
   @Test
   void testListNoVisas() {
-    var loadedVisas = visaDAO.listVisas(-1);
+    var loadedVisas = visaDAO.listVisas("foo", "bar");
     assertEquals(Collections.emptyList(), loadedVisas);
   }
 }

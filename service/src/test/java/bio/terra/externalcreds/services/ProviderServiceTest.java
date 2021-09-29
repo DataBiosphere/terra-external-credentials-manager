@@ -347,7 +347,8 @@ public class ProviderServiceTest extends BaseTest {
       var actualUpdatedLinkedAccount =
           linkedAccountDAO.getLinkedAccount(
               savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
-      var actualUpdatedVisas = visaDAO.listVisas(actualUpdatedPassport.getId().get());
+      var actualUpdatedVisas =
+          visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
       assertEquals(
           savedLinkedAccount.withRefreshToken(updatedRefreshToken),
           actualUpdatedLinkedAccount.get());
