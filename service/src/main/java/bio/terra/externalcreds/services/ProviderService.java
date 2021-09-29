@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -193,10 +194,6 @@ public class ProviderService {
 
           // If the response is not "valid", get a new passport.
           if (!responseBody.equalsIgnoreCase("valid")) {
-            log.info(
-                String.format(
-                    "Found a visa that is not valid, with validation response '%s'. Refreshing passport.",
-                    responseBody));
             var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
             try {
               linkedAccount.ifPresentOrElse(
@@ -206,6 +203,12 @@ public class ProviderService {
               log.info("Failed to refresh passport, will try again at the next interval.", e);
             }
           }
+          log.info(
+              "Got visa validation response: {}",
+              Map.of(
+                  "linkedAccountId", pd.getLinkedAccountId(),
+                  "providerId", pd.getProviderId(),
+                  "validationResponse", responseBody));
         });
     return visaDetailsList.size();
   }
