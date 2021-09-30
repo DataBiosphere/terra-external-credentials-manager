@@ -430,7 +430,7 @@ public class ProviderServiceTest extends BaseTest {
       var passportVerificationDetails =
           new PassportVerificationDetails.Builder()
               .linkedAccountId(passport.getLinkedAccountId().get())
-              .providerId(savedLinkedAccount.getProviderId())
+              .providerName(savedLinkedAccount.getProviderId())
               .passportJwt(passport.getJwt())
               .build();
 
@@ -454,7 +454,7 @@ public class ProviderServiceTest extends BaseTest {
       var passportVerificationDetails =
           new PassportVerificationDetails.Builder()
               .linkedAccountId(passport.getLinkedAccountId().get())
-              .providerId(savedLinkedAccount.getProviderId())
+              .providerName(savedLinkedAccount.getProviderId())
               .passportJwt(passport.getJwt())
               .build();
 
@@ -478,7 +478,7 @@ public class ProviderServiceTest extends BaseTest {
       when(externalCredsConfigMock.getProviders())
           .thenReturn(
               Map.of(
-                  passportVerificationDetails.getProviderId(),
+                  passportVerificationDetails.getProviderName(),
                   TestUtils.createRandomProvider()
                       .setValidationEndpoint(
                           "http://localhost:" + mockServerPort + validationEndpoint)));
@@ -576,7 +576,7 @@ public class ProviderServiceTest extends BaseTest {
       return new PassportVerificationDetails.Builder()
           .linkedAccountId(linkedAccountWithPassportAndVisa.getLinkedAccount().getId().get())
           .passportJwt(linkedAccountWithPassportAndVisa.getPassport().get().getJwt())
-          .providerId(linkedAccountWithPassportAndVisa.getLinkedAccount().getProviderId())
+          .providerName(linkedAccountWithPassportAndVisa.getLinkedAccount().getProviderId())
           .build();
     }
   }

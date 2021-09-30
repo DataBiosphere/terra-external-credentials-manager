@@ -62,14 +62,14 @@ public class GA4GHPassportDAO {
     return passport.withId(generatedKeyHolder.getKey().intValue());
   }
 
-  public Optional<GA4GHPassport> getPassport(String userId, String providerId) {
+  public Optional<GA4GHPassport> getPassport(String userId, String providerName) {
     var namedParameters =
-        new MapSqlParameterSource("userId", userId).addValue("providerId", providerId);
+        new MapSqlParameterSource("userId", userId).addValue("providerName", providerName);
     var query =
         "SELECT p.* FROM ga4gh_passport p"
             + " INNER JOIN linked_account la ON la.id = p.linked_account_id"
             + " WHERE la.user_id = :userId"
-            + " AND la.provider_id = :providerId";
+            + " AND la.provider_name = :providerName";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper())));
@@ -80,7 +80,7 @@ public class GA4GHPassportDAO {
     var namedParameters = new MapSqlParameterSource("validationCutoff", validationCutoff);
 
     var query =
-        "SELECT DISTINCT la.id as linked_account_id, la.provider_id, p.jwt as passport_jwt FROM linked_account la"
+        "SELECT DISTINCT la.id as linked_account_id, la.provider_name, p.jwt as passport_jwt FROM linked_account la"
             + " JOIN ga4gh_passport p"
             + " ON p.linked_account_id = la.id"
             + " JOIN ga4gh_visa v"
@@ -112,7 +112,7 @@ public class GA4GHPassportDAO {
     public PassportVerificationDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
       return new PassportVerificationDetails.Builder()
           .linkedAccountId(rs.getInt("linked_account_id"))
-          .providerId(rs.getString("provider_id"))
+          .providerName(rs.getString("provider_name"))
           .passportJwt(rs.getString("passport_jwt"))
           .build();
     }

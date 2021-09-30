@@ -84,44 +84,48 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<List<String>> listProviders() {
-    var providers = new ArrayList<>(providerService.getProviderList());
-    Collections.sort(providers);
+    var providerNames = new ArrayList<>(providerService.getProviderList());
+    Collections.sort(providerNames);
 
-    return ResponseEntity.ok(providers);
+    return ResponseEntity.ok(providerNames);
   }
 
   @Override
-  public ResponseEntity<LinkInfo> getLink(String provider) {
+  public ResponseEntity<LinkInfo> getLink(String providerName) {
     var userId = getUserIdFromSam();
-    var linkedAccount = linkedAccountService.getLinkedAccount(userId, provider);
+    var linkedAccount = linkedAccountService.getLinkedAccount(userId, providerName);
     return ResponseEntity.of(linkedAccount.map(this::getLinkInfoFromLinkedAccount));
   }
 
   @Override
   public ResponseEntity<String> getAuthUrl(
-      String provider, List<String> scopes, String redirectUri, String state) {
+      String providerName, List<String> scopes, String redirectUri, String state) {
     var authorizationUrl =
         providerService.getProviderAuthorizationUrl(
-            provider, redirectUri, Set.copyOf(scopes), state);
+            providerName, redirectUri, Set.copyOf(scopes), state);
 
     return ResponseEntity.of(authorizationUrl.map(this::jsonString));
   }
 
   @Override
   public ResponseEntity<LinkInfo> createLink(
-      String provider, List<String> scopes, String redirectUri, String state, String oauthcode) {
+      String providerName,
+      List<String> scopes,
+      String redirectUri,
+      String state,
+      String oauthcode) {
     var userId = getUserIdFromSam();
 
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
-            .provider(provider)
+            .providerName(providerName)
             .userId(userId)
             .clientIP(request.getRemoteAddr());
 
     try {
       var linkedAccountWithPassportAndVisas =
           providerService.createLink(
-              provider, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
+              providerName, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
 
       auditLogger.logEvent(
           auditLogEventBuilder
@@ -142,14 +146,14 @@ public class OidcApiController implements OidcApi {
   }
 
   @Override
-  public ResponseEntity<Void> deleteLink(String provider) {
+  public ResponseEntity<Void> deleteLink(String providerName) {
     String userId = getUserIdFromSam();
-    providerService.deleteLink(userId, provider);
+    providerService.deleteLink(userId, providerName);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.LinkDeleted)
-            .provider(provider)
+            .providerName(providerName)
             .userId(userId)
             .clientIP(request.getRemoteAddr())
             .build());
@@ -158,14 +162,14 @@ public class OidcApiController implements OidcApi {
   }
 
   @Override
-  public ResponseEntity<String> getProviderPassport(String provider) {
+  public ResponseEntity<String> getProviderPassport(String providerName) {
     var userId = getUserIdFromSam();
-    var passport = passportService.getPassport(userId, provider);
+    var passport = passportService.getPassport(userId, providerName);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.GetPassport)
-            .provider(provider)
+            .providerName(providerName)
             .userId(userId)
             .clientIP(request.getRemoteAddr())
             .build());

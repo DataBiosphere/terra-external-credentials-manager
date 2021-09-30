@@ -14,7 +14,7 @@ public interface AuditLogEvent extends WithAuditLogEvent {
   @JsonInclude(Include.NON_EMPTY)
   Optional<String> getClientIP();
 
-  String getProvider();
+  String getProviderName();
 
   AuditLogEventType getAuditLogEventType();
 

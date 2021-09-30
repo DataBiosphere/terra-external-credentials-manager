@@ -6,7 +6,7 @@ import org.immutables.value.Value;
 public interface PassportVerificationDetails {
   Integer getLinkedAccountId();
 
-  String getProviderId();
+  String getProviderName();
 
   String getPassportJwt();
 

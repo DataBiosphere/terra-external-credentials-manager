@@ -272,10 +272,10 @@ public class ProviderService {
   @VisibleForTesting
   String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
     var providerProperties =
-        externalCredsConfig.getProviders().get(passportDetails.getProviderId());
+        externalCredsConfig.getProviders().get(passportDetails.getProviderName());
     if (providerProperties == null) {
       throw new NotFoundException(
-          String.format("Provider %s not found", passportDetails.getProviderId()));
+          String.format("Provider %s not found", passportDetails.getProviderName()));
     }
 
     var validationEndpoint =
@@ -286,7 +286,7 @@ public class ProviderService {
                     new NotFoundException(
                         String.format(
                             "Validation endpoint for provider %s not found",
-                            passportDetails.getProviderId())));
+                            passportDetails.getProviderName())));
 
     var response =
         WebClient.create(validationEndpoint)
@@ -304,7 +304,7 @@ public class ProviderService {
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.LinkExpired)
-            .provider(linkedAccount.getProviderId())
+            .providerName(linkedAccount.getProviderId())
             .userId(linkedAccount.getUserId())
             .build());
 

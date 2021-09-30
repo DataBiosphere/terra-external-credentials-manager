@@ -96,14 +96,14 @@ public class GA4GHPassportDAOTest extends BaseTest {
       var passportWithUnvalidatedVisaDetails =
           new PassportVerificationDetails.Builder()
               .linkedAccountId(savedLinkedAccountUnvalidatedVisa.getId().get())
-              .providerId(savedLinkedAccountUnvalidatedVisa.getProviderId())
+              .providerName(savedLinkedAccountUnvalidatedVisa.getProviderId())
               .passportJwt(savedPassportUnvalidatedVisa.getJwt())
               .build();
 
       var passportWithUnvalidatedVisaDetails2 =
           new PassportVerificationDetails.Builder()
               .linkedAccountId(savedLinkedAccountUnvalidatedVisa2.getId().get())
-              .providerId(savedLinkedAccountUnvalidatedVisa2.getProviderId())
+              .providerName(savedLinkedAccountUnvalidatedVisa2.getProviderId())
               .passportJwt(savedPassportUnvalidatedVisa2.getJwt())
               .build();
 
@@ -149,7 +149,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
       var passportWithUnvalidatedVisaDetails =
           new PassportVerificationDetails.Builder()
               .linkedAccountId(savedLinkedAccountUnvalidatedVisa.getId().get())
-              .providerId(savedLinkedAccountUnvalidatedVisa.getProviderId())
+              .providerName(savedLinkedAccountUnvalidatedVisa.getProviderId())
               .passportJwt(savedPassportUnvalidatedVisa.getJwt())
               .build();
 
