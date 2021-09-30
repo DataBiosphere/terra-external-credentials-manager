@@ -192,18 +192,10 @@ public class ProviderService {
     var linkedAccountIdsToRefresh =
         visaDetailsList.stream()
             .flatMap(
-                visaDetails -> {
-                  var responseBody = validateVisaWithProvider(visaDetails);
-                  log.info(
-                      "Got visa validation response: {}",
-                      Map.of(
-                          "linkedAccountId", visaDetails.getLinkedAccountId(),
-                          "providerId", visaDetails.getProviderId(),
-                          "validationResponse", responseBody));
-                  return responseBody.equalsIgnoreCase("valid")
-                      ? Stream.empty()
-                      : Stream.of(visaDetails.getLinkedAccountId());
-                })
+                visaDetails ->
+                    validateVisaWithProvider(visaDetails).equalsIgnoreCase("valid")
+                        ? Stream.empty()
+                        : Stream.of(visaDetails.getLinkedAccountId()))
             .distinct();
 
     linkedAccountIdsToRefresh.forEach(
@@ -303,11 +295,19 @@ public class ProviderService {
             .get()
             .uri(uriBuilder -> uriBuilder.queryParam("visa", visaDetails.getVisaJwt()).build())
             .retrieve();
+    var responseBody =
+        response
+            .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
+            .bodyToMono(String.class)
+            .block(Duration.of(1000, ChronoUnit.MILLIS));
 
-    return response
-        .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
-        .bodyToMono(String.class)
-        .block(Duration.of(1000, ChronoUnit.MILLIS));
+    log.info(
+        "Got visa validation response.",
+        Map.of(
+            "linkedAccountId", visaDetails.getLinkedAccountId(),
+            "providerId", visaDetails.getProviderId(),
+            "validationResponse", responseBody));
+    return responseBody;
   }
 
   private void invalidateLinkedAccount(LinkedAccount linkedAccount) {
