@@ -49,7 +49,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
       var savedLinkedAccount =
           linkedAccountService.getLinkedAccount(
-              linkedAccount.getUserId(), linkedAccount.getProviderId());
+              linkedAccount.getUserId(), linkedAccount.getProviderName());
       assertPresent(savedLinkedAccount);
       assertEquals(linkedAccount, savedLinkedAccount.get().withId(Optional.empty()));
     }
@@ -126,7 +126,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
       var expectedEvent =
           new AuthorizationChangeEvent.Builder()
-              .providerId(linkedAccount.getProviderId())
+              .providerName(linkedAccount.getProviderName())
               .userId(linkedAccount.getUserId())
               .build();
 
@@ -164,7 +164,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
       var expectedEvent =
           new AuthorizationChangeEvent.Builder()
-              .providerId(linkedAccount.getProviderId())
+              .providerName(linkedAccount.getProviderName())
               .userId(linkedAccount.getUserId())
               .build();
 
@@ -227,7 +227,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
       var expectedEvent =
           new AuthorizationChangeEvent.Builder()
-              .providerId(linkedAccount.getProviderId())
+              .providerName(linkedAccount.getProviderName())
               .userId(linkedAccount.getUserId())
               .build();
 
@@ -262,7 +262,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
       var expectedEvent =
           new AuthorizationChangeEvent.Builder()
-              .providerId(linkedAccount.getProviderId())
+              .providerName(linkedAccount.getProviderName())
               .userId(linkedAccount.getUserId())
               .build();
 
@@ -346,13 +346,13 @@ public class LinkedAccountServiceTest extends BaseTest {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
       assertFalse(
           linkedAccountService.deleteLinkedAccount(
-              linkedAccount.getUserId(), linkedAccount.getProviderId()));
+              linkedAccount.getUserId(), linkedAccount.getProviderName()));
 
       Mockito.verify(eventPublisherMock, never())
           .publishAuthorizationChangeEvent(
               new AuthorizationChangeEvent.Builder()
                   .userId(linkedAccount.getUserId())
-                  .providerId(linkedAccount.getProviderId())
+                  .providerName(linkedAccount.getProviderName())
                   .build());
     }
 
@@ -371,7 +371,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
       assertTrue(
           linkedAccountService.deleteLinkedAccount(
-              linkedAccount.getUserId(), linkedAccount.getProviderId()));
+              linkedAccount.getUserId(), linkedAccount.getProviderName()));
 
       assertEmpty(linkedAccountService.getLinkedAccount(savedLinkedAccount1.getId().get()));
 
@@ -380,7 +380,7 @@ public class LinkedAccountServiceTest extends BaseTest {
           .publishAuthorizationChangeEvent(
               new AuthorizationChangeEvent.Builder()
                   .userId(linkedAccount.getUserId())
-                  .providerId(linkedAccount.getProviderId())
+                  .providerName(linkedAccount.getProviderName())
                   .build());
     }
 
@@ -398,13 +398,13 @@ public class LinkedAccountServiceTest extends BaseTest {
           visaDAO);
 
       linkedAccountService.deleteLinkedAccount(
-          linkedAccount.getUserId(), linkedAccount.getProviderId());
+          linkedAccount.getUserId(), linkedAccount.getProviderName());
 
       verify(eventPublisherMock, never())
           .publishAuthorizationChangeEvent(
               new AuthorizationChangeEvent.Builder()
                   .userId(linkedAccount.getUserId())
-                  .providerId(linkedAccount.getProviderId())
+                  .providerName(linkedAccount.getProviderName())
                   .build());
     }
   }
@@ -429,7 +429,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
     var savedPassport =
         passportDAO.getPassport(
-            saved.getLinkedAccount().getUserId(), saved.getLinkedAccount().getProviderId());
+            saved.getLinkedAccount().getUserId(), saved.getLinkedAccount().getProviderName());
     if (passport == null) {
       assertEmpty(savedPassport);
     } else {
@@ -440,7 +440,7 @@ public class LinkedAccountServiceTest extends BaseTest {
           savedPassport.get().withId(Optional.empty()).withLinkedAccountId(Optional.empty()));
       var savedVisas =
           visaDAO.listVisas(
-              saved.getLinkedAccount().getUserId(), saved.getLinkedAccount().getProviderId());
+              saved.getLinkedAccount().getUserId(), saved.getLinkedAccount().getProviderName());
       assertEquals(
           visas,
           savedVisas.stream()

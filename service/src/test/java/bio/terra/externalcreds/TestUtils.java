@@ -20,7 +20,7 @@ public class TestUtils {
   public static LinkedAccount createRandomLinkedAccount() {
     return new LinkedAccount.Builder()
         .expires(getRandomTimestamp())
-        .providerId(UUID.randomUUID().toString())
+        .providerName(UUID.randomUUID().toString())
         .refreshToken(UUID.randomUUID().toString())
         .userId(UUID.randomUUID().toString())
         .externalUserId(UUID.randomUUID().toString())

@@ -47,8 +47,8 @@ public class LinkedAccountService {
   }
 
   @ReadTransaction
-  public Optional<LinkedAccount> getLinkedAccount(String userId, String providerId) {
-    return linkedAccountDAO.getLinkedAccount(userId, providerId);
+  public Optional<LinkedAccount> getLinkedAccount(String userId, String providerName) {
+    return linkedAccountDAO.getLinkedAccount(userId, providerName);
   }
 
   @WriteTransaction
@@ -56,7 +56,7 @@ public class LinkedAccountService {
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
     var linkedAccount = linkedAccountWithPassportAndVisas.getLinkedAccount();
     var existingVisas =
-        ga4ghVisaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderId());
+        ga4ghVisaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderName());
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     // clear out any passport and visas that may exist and save the new one
@@ -69,7 +69,7 @@ public class LinkedAccountService {
     if (authorizationsDiffer(existingVisas, savedLinkedAccountWithPassportAndVisas.getVisas())) {
       eventPublisher.publishAuthorizationChangeEvent(
           new AuthorizationChangeEvent.Builder()
-              .providerId(savedLinkedAccount.getProviderId())
+              .providerName(savedLinkedAccount.getProviderName())
               .userId(savedLinkedAccount.getUserId())
               .build());
     }
@@ -83,12 +83,12 @@ public class LinkedAccountService {
   }
 
   @WriteTransaction
-  public boolean deleteLinkedAccount(String userId, String providerId) {
-    var existingVisas = ga4ghVisaDAO.listVisas(userId, providerId);
-    var accountExisted = linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerId);
+  public boolean deleteLinkedAccount(String userId, String providerName) {
+    var existingVisas = ga4ghVisaDAO.listVisas(userId, providerName);
+    var accountExisted = linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerName);
     if (!existingVisas.isEmpty()) {
       eventPublisher.publishAuthorizationChangeEvent(
-          new AuthorizationChangeEvent.Builder().providerId(providerId).userId(userId).build());
+          new AuthorizationChangeEvent.Builder().providerName(providerName).userId(userId).build());
     }
     return accountExisted;
   }

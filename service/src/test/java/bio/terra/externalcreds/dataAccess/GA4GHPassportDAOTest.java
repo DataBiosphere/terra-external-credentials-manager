@@ -28,7 +28,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
   @Test
   void testGetMissingPassport() {
-    var shouldBeEmpty = passportDAO.getPassport("nonexistent_user_id", "nonexistent_provider_id");
+    var shouldBeEmpty = passportDAO.getPassport("nonexistent_user_id", "nonexistent_provider_name");
     assertEmpty(shouldBeEmpty);
   }
 
@@ -53,7 +53,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
           savedPassport);
 
       var loadedPassport =
-          passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderId());
+          passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderName());
       assertEquals(Optional.of(savedPassport), loadedPassport);
     }
 
@@ -85,9 +85,10 @@ public class GA4GHPassportDAOTest extends BaseTest {
           TestUtils.createRandomPassport().withLinkedAccountId(savedAccount.getId()));
 
       assertPresent(
-          passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderId()));
+          passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderName()));
       assertTrue(passportDAO.deletePassport(savedAccount.getId().get()));
-      assertEmpty(passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderId()));
+      assertEmpty(
+          passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderName()));
     }
 
     @Test
@@ -115,10 +116,10 @@ public class GA4GHPassportDAOTest extends BaseTest {
               .build());
 
       assertFalse(
-          visaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderId()).isEmpty());
+          visaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderName()).isEmpty());
       assertTrue(passportDAO.deletePassport(linkedAccount.getId().get()));
       assertTrue(
-          visaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderId()).isEmpty());
+          visaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderName()).isEmpty());
     }
   }
 }

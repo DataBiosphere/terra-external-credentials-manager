@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: "rename_provider_id_column"
+      author: kfeldman
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE linked_account RENAME COLUMN provider_id TO provider_name;

@@ -87,14 +87,14 @@ public class GA4GHVisaDAOTest extends BaseTest {
       var passportWithUnvalidatedVisaDetails =
           new VisaVerificationDetails.Builder()
               .linkedAccountId(savedLinkedAccountUnvalidatedVisa.getId().get())
-              .providerId(savedLinkedAccountUnvalidatedVisa.getProviderId())
+              .providerName(savedLinkedAccountUnvalidatedVisa.getProviderName())
               .visaJwt(savedUnvalidatedVisa.getJwt())
               .build();
 
       var passportWithUnvalidatedVisaDetails2 =
           new VisaVerificationDetails.Builder()
               .linkedAccountId(savedLinkedAccountUnvalidatedVisa2.getId().get())
-              .providerId(savedLinkedAccountUnvalidatedVisa2.getProviderId())
+              .providerName(savedLinkedAccountUnvalidatedVisa2.getProviderName())
               .visaJwt(savedUnvalidatedVisa2.getJwt())
               .build();
 
@@ -139,7 +139,7 @@ public class GA4GHVisaDAOTest extends BaseTest {
       var passportWithUnvalidatedVisaDetails =
           new VisaVerificationDetails.Builder()
               .linkedAccountId(savedLinkedAccountUnvalidatedVisa.getId().get())
-              .providerId(savedLinkedAccountUnvalidatedVisa.getProviderId())
+              .providerName(savedLinkedAccountUnvalidatedVisa.getProviderName())
               .visaJwt(savedUnvalidatedVisa.getJwt())
               .build();
 
@@ -170,7 +170,7 @@ public class GA4GHVisaDAOTest extends BaseTest {
     assertEquals(expectedVisa2, savedVisa2.withId(Optional.empty()));
 
     var loadedVisas =
-        visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
+        visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
     assertEquals(loadedVisas.size(), 2);
     assertEquals(Set.of(savedVisa1, savedVisa2), Set.copyOf(loadedVisas));
   }

@@ -29,8 +29,8 @@ public class PassportService {
   }
 
   @ReadTransaction
-  public Optional<GA4GHPassport> getPassport(String userId, String providerId) {
-    return passportDAO.getPassport(userId, providerId);
+  public Optional<GA4GHPassport> getPassport(String userId, String providerName) {
+    return passportDAO.getPassport(userId, providerName);
   }
 
   @ReadTransaction

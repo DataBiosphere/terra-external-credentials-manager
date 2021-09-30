@@ -88,16 +88,17 @@ public class ProviderServiceTest extends BaseTest {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
 
       when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(linkedAccount.getProviderId(), TestUtils.createRandomProvider()));
+          .thenReturn(Map.of(linkedAccount.getProviderName(), TestUtils.createRandomProvider()));
 
       when(linkedAccountServiceMock.getLinkedAccount(
-              linkedAccount.getUserId(), linkedAccount.getProviderId()))
+              linkedAccount.getUserId(), linkedAccount.getProviderName()))
           .thenReturn(Optional.empty());
 
       assertThrows(
           NotFoundException.class,
           () ->
-              providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderId()));
+              providerService.deleteLink(
+                  linkedAccount.getUserId(), linkedAccount.getProviderName()));
     }
 
     private void testWithRevokeResponseCode(HttpStatus httpStatus) {
@@ -117,13 +118,13 @@ public class ProviderServiceTest extends BaseTest {
               new Parameter("client_secret", providerInfo.getClientSecret()));
 
       when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
+          .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
 
       when(linkedAccountServiceMock.getLinkedAccount(
-              linkedAccount.getUserId(), linkedAccount.getProviderId()))
+              linkedAccount.getUserId(), linkedAccount.getProviderName()))
           .thenReturn(Optional.of(linkedAccount));
       when(linkedAccountServiceMock.deleteLinkedAccount(
-              linkedAccount.getUserId(), linkedAccount.getProviderId()))
+              linkedAccount.getUserId(), linkedAccount.getProviderName()))
           .thenReturn(true);
 
       //  Mock the server response
@@ -136,9 +137,9 @@ public class ProviderServiceTest extends BaseTest {
                     .withQueryStringParameters(expectedParameters))
             .respond(HttpResponse.response().withStatusCode(httpStatus.value()));
 
-        providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderId());
+        providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderName());
         verify(linkedAccountServiceMock)
-            .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
+            .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderName());
       } finally {
         mockServer.stop();
       }
@@ -175,10 +176,10 @@ public class ProviderServiceTest extends BaseTest {
       // check that the passport was deleted and the linked account was marked as invalid
       assertEmpty(
           passportDAO.getPassport(
-              expiredLinkedAccount.getUserId(), expiredLinkedAccount.getProviderId()));
+              expiredLinkedAccount.getUserId(), expiredLinkedAccount.getProviderName()));
       var updatedLinkedAccount =
           linkedAccountDAO.getLinkedAccount(
-              expiredLinkedAccount.getUserId(), expiredLinkedAccount.getProviderId());
+              expiredLinkedAccount.getUserId(), expiredLinkedAccount.getProviderName());
       assertFalse(updatedLinkedAccount.get().isAuthenticated());
     }
 
@@ -202,9 +203,9 @@ public class ProviderServiceTest extends BaseTest {
       when(externalCredsConfigMock.getProviders())
           .thenReturn(
               Map.of(
-                  savedLinkedAccount.getProviderId(),
+                  savedLinkedAccount.getProviderName(),
                   TestUtils.createRandomProvider().setIssuer("BadIssuer")));
-      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderId()))
+      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
           .thenThrow(new IllegalArgumentException());
 
       // check that an exception is thrown
@@ -226,11 +227,11 @@ public class ProviderServiceTest extends BaseTest {
               TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
       visaDAO.insertVisa(TestUtils.createRandomVisa().withPassportId(savedPassport.getId()));
 
-      mockProviderConfigs(savedLinkedAccount.getProviderId());
+      mockProviderConfigs(savedLinkedAccount.getProviderName());
 
       // mock the ClientRegistration
-      var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderId());
-      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderId()))
+      var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderName());
+      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
           .thenReturn(Optional.of(clientRegistration));
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
@@ -248,10 +249,10 @@ public class ProviderServiceTest extends BaseTest {
       // check that the passport was deleted and the linked account was marked as invalid
       assertEmpty(
           passportDAO.getPassport(
-              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId()));
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName()));
       var updatedLinkedAccount =
           linkedAccountDAO.getLinkedAccount(
-              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
       assertFalse(updatedLinkedAccount.get().isAuthenticated());
     }
 
@@ -268,11 +269,11 @@ public class ProviderServiceTest extends BaseTest {
               TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
       visaDAO.insertVisa(TestUtils.createRandomVisa().withPassportId(savedPassport.getId()));
 
-      mockProviderConfigs(savedLinkedAccount.getProviderId());
+      mockProviderConfigs(savedLinkedAccount.getProviderName());
 
       // mock the ClientRegistration
-      var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderId());
-      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderId()))
+      var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderName());
+      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
           .thenReturn(Optional.of(clientRegistration));
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
@@ -302,11 +303,11 @@ public class ProviderServiceTest extends BaseTest {
               TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
       visaDAO.insertVisa(TestUtils.createRandomVisa().withPassportId(savedPassport.getId()));
 
-      mockProviderConfigs(savedLinkedAccount.getProviderId());
+      mockProviderConfigs(savedLinkedAccount.getProviderName());
 
       // mock the ClientRegistration
-      var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderId());
-      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderId()))
+      var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderName());
+      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
           .thenReturn(Optional.of(clientRegistration));
 
       // mock the OAuth2Authorization response
@@ -342,13 +343,13 @@ public class ProviderServiceTest extends BaseTest {
       // check that the passport and visa were updated in the DB
       var actualUpdatedPassport =
           passportDAO
-              .getPassport(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId())
+              .getPassport(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName())
               .get();
       var actualUpdatedLinkedAccount =
           linkedAccountDAO.getLinkedAccount(
-              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
       var actualUpdatedVisas =
-          visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
+          visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
       assertEquals(
           savedLinkedAccount.withRefreshToken(updatedRefreshToken),
           actualUpdatedLinkedAccount.get());
@@ -361,13 +362,13 @@ public class ProviderServiceTest extends BaseTest {
           actualUpdatedVisas.get(0));
     }
 
-    private void mockProviderConfigs(String providerId) {
+    private void mockProviderConfigs(String providerName) {
       when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(providerId, TestUtils.createRandomProvider()));
+          .thenReturn(Map.of(providerName, TestUtils.createRandomProvider()));
     }
 
-    private ClientRegistration createClientRegistration(String providerId) {
-      return ClientRegistration.withRegistrationId(providerId)
+    private ClientRegistration createClientRegistration(String providerName) {
+      return ClientRegistration.withRegistrationId(providerName)
           .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
           .build();
     }
@@ -432,7 +433,7 @@ public class ProviderServiceTest extends BaseTest {
       var passportVerificationDetails =
           new VisaVerificationDetails.Builder()
               .linkedAccountId(passport.getLinkedAccountId().get())
-              .providerId(savedLinkedAccount.getProviderId())
+              .providerName(savedLinkedAccount.getProviderName())
               .visaJwt(passport.getJwt())
               .build();
 
@@ -456,7 +457,7 @@ public class ProviderServiceTest extends BaseTest {
       var passportVerificationDetails =
           new VisaVerificationDetails.Builder()
               .linkedAccountId(passport.getLinkedAccountId().get())
-              .providerId(savedLinkedAccount.getProviderId())
+              .providerName(savedLinkedAccount.getProviderName())
               .visaJwt(passport.getJwt())
               .build();
 
@@ -480,7 +481,7 @@ public class ProviderServiceTest extends BaseTest {
       when(externalCredsConfigMock.getProviders())
           .thenReturn(
               Map.of(
-                  visaVerificationDetails.getProviderId(),
+                  visaVerificationDetails.getProviderName(),
                   TestUtils.createRandomProvider()
                       .setValidationEndpoint(
                           "http://localhost:" + mockServerPort + validationEndpoint)));
@@ -580,7 +581,7 @@ public class ProviderServiceTest extends BaseTest {
       return new VisaVerificationDetails.Builder()
           .linkedAccountId(linkedAccount.getId().get())
           .visaJwt(visa.getJwt())
-          .providerId(linkedAccount.getProviderId())
+          .providerName(linkedAccount.getProviderName())
           .build();
     }
   }

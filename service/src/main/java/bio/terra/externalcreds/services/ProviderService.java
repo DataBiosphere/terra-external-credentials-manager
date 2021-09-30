@@ -88,12 +88,12 @@ public class ProviderService {
   }
 
   public Optional<String> getProviderAuthorizationUrl(
-      String provider, String redirectUri, Set<String> scopes, String state) {
+      String providerName, String redirectUri, Set<String> scopes, String state) {
     return providerClientCache
-        .getProviderClient(provider)
+        .getProviderClient(providerName)
         .map(
             providerClient -> {
-              var providerInfo = externalCredsConfig.getProviders().get(provider);
+              var providerInfo = externalCredsConfig.getProviders().get(providerName);
 
               return oAuth2Service.getAuthorizationRequestUri(
                   providerClient,
@@ -105,7 +105,7 @@ public class ProviderService {
   }
 
   public Optional<LinkedAccountWithPassportAndVisas> createLink(
-      String provider,
+      String providerName,
       String userId,
       String authorizationCode,
       String redirectUri,
@@ -113,11 +113,11 @@ public class ProviderService {
       String state) {
 
     return providerClientCache
-        .getProviderClient(provider)
+        .getProviderClient(providerName)
         .map(
             providerClient ->
                 createLinkInternal(
-                    provider,
+                    providerName,
                     userId,
                     authorizationCode,
                     redirectUri,
@@ -127,14 +127,14 @@ public class ProviderService {
   }
 
   private LinkedAccountWithPassportAndVisas createLinkInternal(
-      String provider,
+      String providerName,
       String userId,
       String authorizationCode,
       String redirectUri,
       Set<String> scopes,
       String state,
       ClientRegistration providerClient) {
-    var providerInfo = externalCredsConfig.getProviders().get(provider);
+    var providerInfo = externalCredsConfig.getProviders().get(providerName);
 
     var tokenResponse =
         oAuth2Service.authorizationCodeExchange(
@@ -157,7 +157,7 @@ public class ProviderService {
 
     var linkedAccount =
         new LinkedAccount.Builder()
-            .providerId(provider)
+            .providerName(providerName)
             .userId(userId)
             .expires(expires)
             .externalUserId(userInfo.getAttribute(EXTERNAL_USERID_ATTR))
@@ -169,21 +169,21 @@ public class ProviderService {
         jwtUtils.enrichAccountWithPassportAndVisas(linkedAccount, userInfo));
   }
 
-  public void deleteLink(String userId, String providerId) {
-    var providerInfo = externalCredsConfig.getProviders().get(providerId);
+  public void deleteLink(String userId, String providerName) {
+    var providerInfo = externalCredsConfig.getProviders().get(providerName);
 
     if (providerInfo == null) {
-      throw new NotFoundException(String.format("Provider %s not found", providerId));
+      throw new NotFoundException(String.format("Provider %s not found", providerName));
     }
 
     var linkedAccount =
         linkedAccountService
-            .getLinkedAccount(userId, providerId)
+            .getLinkedAccount(userId, providerName)
             .orElseThrow(() -> new NotFoundException("Link not found for user"));
 
     revokeAccessToken(providerInfo, linkedAccount);
 
-    linkedAccountService.deleteLinkedAccount(userId, providerId);
+    linkedAccountService.deleteLinkedAccount(userId, providerName);
   }
 
   public int validateAccessTokenVisas() {
@@ -225,7 +225,7 @@ public class ProviderService {
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
             String.format(
-                "Could not contact issuer for provider %s", linkedAccount.getProviderId()),
+                "Could not contact issuer for provider %s", linkedAccount.getProviderName()),
             iae);
       } catch (OAuth2AuthorizationException oauthEx) {
         // if the cause is a 4xx response, delete the passport
@@ -246,13 +246,13 @@ public class ProviderService {
       LinkedAccount linkedAccount) {
     var clientRegistration =
         providerClientCache
-            .getProviderClient(linkedAccount.getProviderId())
+            .getProviderClient(linkedAccount.getProviderName())
             .orElseThrow(
                 () ->
                     new ExternalCredsException(
                         String.format(
                             "Unable to find configs for the provider: %s",
-                            linkedAccount.getProviderId())));
+                            linkedAccount.getProviderName())));
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
@@ -274,10 +274,10 @@ public class ProviderService {
 
   @VisibleForTesting
   String validateVisaWithProvider(VisaVerificationDetails visaDetails) {
-    var providerProperties = externalCredsConfig.getProviders().get(visaDetails.getProviderId());
+    var providerProperties = externalCredsConfig.getProviders().get(visaDetails.getProviderName());
     if (providerProperties == null) {
       throw new NotFoundException(
-          String.format("Provider %s not found", visaDetails.getProviderId()));
+          String.format("Provider %s not found", visaDetails.getProviderName()));
     }
 
     var validationEndpoint =
@@ -288,7 +288,7 @@ public class ProviderService {
                     new NotFoundException(
                         String.format(
                             "Validation endpoint for provider %s not found",
-                            visaDetails.getProviderId())));
+                            visaDetails.getProviderName())));
 
     var response =
         WebClient.create(validationEndpoint)
@@ -305,7 +305,7 @@ public class ProviderService {
         "Got visa validation response.",
         Map.of(
             "linkedAccountId", visaDetails.getLinkedAccountId(),
-            "providerId", visaDetails.getProviderId(),
+            "providerName", visaDetails.getProviderName(),
             "validationResponse", responseBody));
     return responseBody;
   }
@@ -314,7 +314,7 @@ public class ProviderService {
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.LinkExpired)
-            .provider(linkedAccount.getProviderId())
+            .providerName(linkedAccount.getProviderName())
             .userId(linkedAccount.getUserId())
             .build());
 
@@ -351,7 +351,7 @@ public class ProviderService {
     log.info(
         "Token revocation request for user [{}], provider [{}] returned with the result: [{}]",
         linkedAccount.getUserId(),
-        linkedAccount.getProviderId(),
+        linkedAccount.getProviderName(),
         responseBody);
   }
 }

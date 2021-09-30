@@ -36,4 +36,5 @@ databaseChangeLog:
       author: dvoet
       changes:
         - sql:
-            sql: ALTER TABLE ga4gh_visa ALTER last_validated DROP NOT NULL;
+            sql: >
+              ALTER TABLE ga4gh_visa ALTER last_validated DROP NOT NULL;

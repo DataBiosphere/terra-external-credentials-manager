@@ -180,7 +180,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
       throws URISyntaxException {
     var providerInfo = TestUtils.createRandomProvider();
     var providerClient =
-        ClientRegistration.withRegistrationId(linkedAccount.getProviderId())
+        ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .build();
     var accessTokenResponse =
@@ -197,11 +197,11 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
         new DefaultOAuth2User(null, userAttributes, ProviderService.EXTERNAL_USERID_ATTR);
 
     when(externalCredsConfigMock.getProviders())
-        .thenReturn(Map.of(linkedAccount.getProviderId(), providerInfo));
+        .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
     when(externalCredsConfigMock.getAllowedJwksUris())
         .thenReturn(
             List.of(new URI(jwtSigningTestUtils.getIssuer() + JwtSigningTestUtils.JKU_PATH)));
-    when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderId()))
+    when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
         .thenReturn(Optional.of(providerClient));
     when(oAuth2ServiceMock.authorizationCodeExchange(
             providerClient,
@@ -226,7 +226,7 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
 
     var linkedAccountWithPassportAndVisas =
         providerService.createLink(
-            expectedLinkedAccount.getProviderId(),
+            expectedLinkedAccount.getProviderName(),
             expectedLinkedAccount.getUserId(),
             authorizationCode,
             redirectUri,

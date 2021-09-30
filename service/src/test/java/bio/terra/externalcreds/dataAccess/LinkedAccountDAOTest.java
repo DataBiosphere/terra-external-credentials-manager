@@ -50,7 +50,8 @@ public class LinkedAccountDAOTest extends BaseTest {
     assertEquals(linkedAccount.withId(savedLinkedAccount.getId()), savedLinkedAccount);
 
     var loadedLinkedAccount =
-        linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
+        linkedAccountDAO.getLinkedAccount(
+            linkedAccount.getUserId(), linkedAccount.getProviderName());
     assertEquals(Optional.of(savedLinkedAccount), loadedLinkedAccount);
   }
 
@@ -73,7 +74,8 @@ public class LinkedAccountDAOTest extends BaseTest {
     assertNotEquals(createdLinkedAccount.getExpires(), updatedLinkedAccount.getExpires());
 
     var loadedLinkedAccount =
-        linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderId());
+        linkedAccountDAO.getLinkedAccount(
+            linkedAccount.getUserId(), linkedAccount.getProviderName());
     assertEquals(Optional.of(updatedLinkedAccount), loadedLinkedAccount);
   }
 
@@ -86,11 +88,11 @@ public class LinkedAccountDAOTest extends BaseTest {
           linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
       var deletionSucceeded =
           linkedAccountDAO.deleteLinkedAccountIfExists(
-              createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderId());
+              createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderName());
       assertTrue(deletionSucceeded);
       assertEmpty(
           linkedAccountDAO.getLinkedAccount(
-              createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderId()));
+              createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderName()));
     }
 
     @Test
@@ -114,10 +116,10 @@ public class LinkedAccountDAOTest extends BaseTest {
               .build();
       passportDAO.insertPassport(passport);
       linkedAccountDAO.deleteLinkedAccountIfExists(
-          savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId());
+          savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
       assertEmpty(
           passportDAO.getPassport(
-              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderId()));
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName()));
     }
   }
 

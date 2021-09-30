@@ -6,7 +6,7 @@ import org.immutables.value.Value;
 public interface VisaVerificationDetails {
   Integer getLinkedAccountId();
 
-  String getProviderId();
+  String getProviderName();
 
   String getVisaJwt();
 

@@ -8,7 +8,7 @@ import org.immutables.value.Value;
 public interface AuthorizationChangeEvent extends WithAuthorizationChangeEvent {
   String getUserId();
 
-  String getProviderId();
+  String getProviderName();
 
   class Builder extends ImmutableAuthorizationChangeEvent.Builder {}
 }

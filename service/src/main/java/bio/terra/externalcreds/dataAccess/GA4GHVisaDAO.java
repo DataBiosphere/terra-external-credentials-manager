@@ -53,15 +53,15 @@ public class GA4GHVisaDAO {
     return visa.withId(generatedKeyHolder.getKey().intValue());
   }
 
-  public List<GA4GHVisa> listVisas(String userId, String providerId) {
+  public List<GA4GHVisa> listVisas(String userId, String providerName) {
     var namedParameters =
-        new MapSqlParameterSource("userId", userId).addValue("providerId", providerId);
+        new MapSqlParameterSource("userId", userId).addValue("providerName", providerName);
     var query =
         "SELECT v.* FROM ga4gh_visa v"
             + " INNER JOIN ga4gh_passport p ON p.id = v.passport_id"
             + " INNER JOIN linked_account la ON la.id = p.linked_account_id"
             + " WHERE la.user_id = :userId"
-            + " AND la.provider_id = :providerId";
+            + " AND la.provider_name = :providerName";
     return jdbcTemplate.query(query, namedParameters, new GA4GHVisaRowMapper());
   }
 
@@ -72,7 +72,7 @@ public class GA4GHVisaDAO {
             .addValue("validationCutoff", validationCutoff);
 
     var query =
-        "SELECT DISTINCT la.id as linked_account_id, la.provider_id as provider_id, v.jwt as jwt FROM linked_account la"
+        "SELECT DISTINCT la.id as linked_account_id, la.provider_name as provider_name, v.jwt as jwt FROM linked_account la"
             + " JOIN ga4gh_passport p"
             + " ON p.linked_account_id = la.id"
             + " JOIN ga4gh_visa v"
@@ -107,7 +107,7 @@ public class GA4GHVisaDAO {
     public VisaVerificationDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
       return new VisaVerificationDetails.Builder()
           .linkedAccountId(rs.getInt("linked_account_id"))
-          .providerId(rs.getString("provider_id"))
+          .providerName(rs.getString("provider_name"))
           .visaJwt(rs.getString("jwt"))
           .build();
     }

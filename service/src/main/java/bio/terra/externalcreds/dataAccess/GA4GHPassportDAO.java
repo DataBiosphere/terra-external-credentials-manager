@@ -58,14 +58,14 @@ public class GA4GHPassportDAO {
     return passport.withId(generatedKeyHolder.getKey().intValue());
   }
 
-  public Optional<GA4GHPassport> getPassport(String userId, String providerId) {
+  public Optional<GA4GHPassport> getPassport(String userId, String providerName) {
     var namedParameters =
-        new MapSqlParameterSource("userId", userId).addValue("providerId", providerId);
+        new MapSqlParameterSource("userId", userId).addValue("providerName", providerName);
     var query =
         "SELECT p.* FROM ga4gh_passport p"
             + " INNER JOIN linked_account la ON la.id = p.linked_account_id"
             + " WHERE la.user_id = :userId"
-            + " AND la.provider_id = :providerId";
+            + " AND la.provider_name = :providerName";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper())));

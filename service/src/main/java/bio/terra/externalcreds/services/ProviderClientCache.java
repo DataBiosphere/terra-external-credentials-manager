@@ -22,8 +22,8 @@ public class ProviderClientCache {
   }
 
   @Cacheable(cacheNames = "providerClients", sync = true)
-  public Optional<ClientRegistration> getProviderClient(String provider) {
-    return Optional.ofNullable(externalCredsConfig.getProviders().get(provider))
+  public Optional<ClientRegistration> getProviderClient(String providerName) {
+    return Optional.ofNullable(externalCredsConfig.getProviders().get(providerName))
         .map(this::buildClientRegistration);
   }
 
