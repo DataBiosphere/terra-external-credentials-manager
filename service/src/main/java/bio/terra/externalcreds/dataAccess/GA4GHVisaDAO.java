@@ -2,8 +2,10 @@ package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
+import bio.terra.externalcreds.models.VisaVerificationDetails;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
 import java.util.Optional;
@@ -63,6 +65,24 @@ public class GA4GHVisaDAO {
     return jdbcTemplate.query(query, namedParameters, new GA4GHVisaRowMapper());
   }
 
+  public List<VisaVerificationDetails> getUnvalidatedAccessTokenVisaDetails(
+      Timestamp validationCutoff) {
+    var namedParameters =
+        new MapSqlParameterSource("tokenType", TokenTypeEnum.access_token.toString())
+            .addValue("validationCutoff", validationCutoff);
+
+    var query =
+        "SELECT DISTINCT la.id as linked_account_id, la.provider_id as provider_id, v.jwt as jwt FROM linked_account la"
+            + " JOIN ga4gh_passport p"
+            + " ON p.linked_account_id = la.id"
+            + " JOIN ga4gh_visa v"
+            + " ON v.passport_id = p.id"
+            + " WHERE v.token_type = :tokenType::token_type_enum"
+            + " AND v.last_validated <= :validationCutoff";
+
+    return jdbcTemplate.query(query, namedParameters, new VisaVerificationDetailsRowMapper());
+  }
+
   private static class GA4GHVisaRowMapper implements RowMapper<GA4GHVisa> {
 
     @Override
@@ -76,6 +96,19 @@ public class GA4GHVisaDAO {
           .tokenType(TokenTypeEnum.valueOf(rs.getString("token_type")))
           .lastValidated(Optional.ofNullable(rs.getTimestamp("last_validated")))
           .visaType(rs.getString("visa_type"))
+          .build();
+    }
+  }
+
+  private static class VisaVerificationDetailsRowMapper
+      implements RowMapper<VisaVerificationDetails> {
+
+    @Override
+    public VisaVerificationDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new VisaVerificationDetails.Builder()
+          .linkedAccountId(rs.getInt("linked_account_id"))
+          .providerId(rs.getString("provider_id"))
+          .visaJwt(rs.getString("jwt"))
           .build();
     }
   }
