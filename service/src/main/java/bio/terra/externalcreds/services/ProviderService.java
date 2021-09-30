@@ -9,15 +9,17 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
-import bio.terra.externalcreds.models.PassportVerificationDetails;
+import bio.terra.externalcreds.models.VisaVerificationDetails;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -184,30 +186,31 @@ public class ProviderService {
     linkedAccountService.deleteLinkedAccount(userId, providerName);
   }
 
-  public int validatePassportsWithAccessTokenVisas() {
-    var passportDetailsList = passportService.getPassportsWithUnvalidatedAccessTokenVisas();
+  public int validateAccessTokenVisas() {
+    var visaDetailsList = passportService.getUnvalidatedAccessTokenVisaDetails();
 
-    passportDetailsList.forEach(
-        pd -> {
-          var responseBody = validatePassportWithProvider(pd);
+    var linkedAccountIdsToRefresh =
+        visaDetailsList.stream()
+            .flatMap(
+                visaDetails ->
+                    validateVisaWithProvider(visaDetails).equalsIgnoreCase("valid")
+                        ? Stream.empty()
+                        : Stream.of(visaDetails.getLinkedAccountId()))
+            .distinct();
 
-          // If the response is not "valid", get a new passport.
-          if (!responseBody.equalsIgnoreCase("valid")) {
-            log.info(
-                String.format(
-                    "Found a visa that is not valid, with validation response '%s'. Refreshing passport.",
-                    responseBody));
-            var linkedAccount = linkedAccountService.getLinkedAccount(pd.getLinkedAccountId());
-            try {
-              linkedAccount.ifPresentOrElse(
-                  this::authAndRefreshPassport,
-                  () -> log.info("No linked account found when trying to validate passport."));
-            } catch (Exception e) {
-              log.info("Failed to refresh passport, will try again at the next interval.", e);
-            }
+    linkedAccountIdsToRefresh.forEach(
+        linkedAccountId -> {
+          var linkedAccount = linkedAccountService.getLinkedAccount(linkedAccountId);
+          try {
+            linkedAccount.ifPresentOrElse(
+                this::authAndRefreshPassport,
+                () -> log.info("No linked account found when trying to validate passport."));
+          } catch (Exception e) {
+            log.info("Failed to refresh passport, will try again at the next interval.", e);
           }
         });
-    return passportDetailsList.size();
+
+    return visaDetailsList.size();
   }
 
   @VisibleForTesting
@@ -270,12 +273,11 @@ public class ProviderService {
   }
 
   @VisibleForTesting
-  String validatePassportWithProvider(PassportVerificationDetails passportDetails) {
-    var providerProperties =
-        externalCredsConfig.getProviders().get(passportDetails.getProviderName());
+  String validateVisaWithProvider(VisaVerificationDetails visaDetails) {
+    var providerProperties = externalCredsConfig.getProviders().get(visaDetails.getProviderName());
     if (providerProperties == null) {
       throw new NotFoundException(
-          String.format("Provider %s not found", passportDetails.getProviderName()));
+          String.format("Provider %s not found", visaDetails.getProviderName()));
     }
 
     var validationEndpoint =
@@ -286,18 +288,26 @@ public class ProviderService {
                     new NotFoundException(
                         String.format(
                             "Validation endpoint for provider %s not found",
-                            passportDetails.getProviderName())));
+                            visaDetails.getProviderName())));
 
     var response =
         WebClient.create(validationEndpoint)
-            .post()
-            .bodyValue(passportDetails.getPassportJwt())
+            .get()
+            .uri(uriBuilder -> uriBuilder.queryParam("visa", visaDetails.getVisaJwt()).build())
             .retrieve();
+    var responseBody =
+        response
+            .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
+            .bodyToMono(String.class)
+            .block(Duration.of(1000, ChronoUnit.MILLIS));
 
-    return response
-        .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
-        .bodyToMono(String.class)
-        .block(Duration.of(1000, ChronoUnit.MILLIS));
+    log.info(
+        "Got visa validation response.",
+        Map.of(
+            "linkedAccountId", visaDetails.getLinkedAccountId(),
+            "providerName", visaDetails.getProviderName(),
+            "validationResponse", responseBody));
+    return responseBody;
   }
 
   private void invalidateLinkedAccount(LinkedAccount linkedAccount) {

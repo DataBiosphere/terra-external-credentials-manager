@@ -2,12 +2,8 @@ package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHPassport;
-import bio.terra.externalcreds.models.PassportVerificationDetails;
-import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
@@ -75,23 +71,6 @@ public class GA4GHPassportDAO {
             jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper())));
   }
 
-  public List<PassportVerificationDetails> getPassportsWithUnvalidatedAccessTokenVisas(
-      Timestamp validationCutoff) {
-    var namedParameters = new MapSqlParameterSource("validationCutoff", validationCutoff);
-
-    var query =
-        "SELECT DISTINCT la.id as linked_account_id, la.provider_name, p.jwt as passport_jwt FROM linked_account la"
-            + " JOIN ga4gh_passport p"
-            + " ON p.linked_account_id = la.id"
-            + " JOIN ga4gh_visa v"
-            + " ON v.passport_id = p.id"
-            + " WHERE v.token_type = "
-            + String.format("'%s'", TokenTypeEnum.access_token)
-            + " AND v.last_validated <= :validationCutoff";
-
-    return jdbcTemplate.query(query, namedParameters, new PassportVerificationDetailsRowMapper());
-  }
-
   private static class GA4GHPassportRowMapper implements RowMapper<GA4GHPassport> {
 
     @Override
@@ -101,19 +80,6 @@ public class GA4GHPassportDAO {
           .linkedAccountId(rs.getInt("linked_account_id"))
           .jwt(rs.getString("jwt"))
           .expires(rs.getTimestamp("expires"))
-          .build();
-    }
-  }
-
-  private static class PassportVerificationDetailsRowMapper
-      implements RowMapper<PassportVerificationDetails> {
-
-    @Override
-    public PassportVerificationDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new PassportVerificationDetails.Builder()
-          .linkedAccountId(rs.getInt("linked_account_id"))
-          .providerName(rs.getString("provider_name"))
-          .passportJwt(rs.getString("passport_jwt"))
           .build();
     }
   }

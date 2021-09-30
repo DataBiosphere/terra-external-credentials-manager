@@ -3,12 +3,12 @@ package bio.terra.externalcreds.models;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface PassportVerificationDetails {
+public interface VisaVerificationDetails {
   Integer getLinkedAccountId();
 
   String getProviderName();
 
-  String getPassportJwt();
+  String getVisaJwt();
 
-  class Builder extends ImmutablePassportVerificationDetails.Builder {}
+  class Builder extends ImmutableVisaVerificationDetails.Builder {}
 }
