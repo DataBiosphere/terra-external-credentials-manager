@@ -25,7 +25,7 @@ public class PassportServiceTest extends BaseTest {
         passportDAO.insertPassport(passport.withLinkedAccountId(savedLinkedAccount.getId()));
 
     var loadedPassport =
-        passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderId());
+        passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderName());
 
     assertPresent(loadedPassport);
     assertEquals(passport.getJwt(), savedPassport.getJwt());
@@ -46,6 +46,6 @@ public class PassportServiceTest extends BaseTest {
     linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     assertEmpty(
-        passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderId()));
+        passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderName()));
   }
 }

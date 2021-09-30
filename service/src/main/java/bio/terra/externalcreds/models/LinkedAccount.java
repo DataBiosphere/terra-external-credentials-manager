@@ -10,7 +10,7 @@ public interface LinkedAccount extends WithLinkedAccount {
 
   String getUserId();
 
-  String getProviderId();
+  String getProviderName();
 
   String getRefreshToken();
 

@@ -24,11 +24,13 @@ public class LinkedAccountDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  public Optional<LinkedAccount> getLinkedAccount(String userId, String providerId) {
+  public Optional<LinkedAccount> getLinkedAccount(String userId, String providerName) {
     var namedParameters =
-        new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
+        new MapSqlParameterSource()
+            .addValue("userId", userId)
+            .addValue("providerName", providerName);
     var query =
-        "SELECT * FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
+        "SELECT * FROM linked_account WHERE user_id = :userId and provider_name = :providerName";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper())));
@@ -58,9 +60,9 @@ public class LinkedAccountDAO {
 
   public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
     var query =
-        "INSERT INTO linked_account (user_id, provider_id, refresh_token, expires, external_user_id, is_authenticated)"
-            + " VALUES (:userId, :providerId, :refreshToken, :expires, :externalUserId, :isAuthenticated)"
-            + " ON CONFLICT (user_id, provider_id) DO UPDATE SET"
+        "INSERT INTO linked_account (user_id, provider_name, refresh_token, expires, external_user_id, is_authenticated)"
+            + " VALUES (:userId, :providerName, :refreshToken, :expires, :externalUserId, :isAuthenticated)"
+            + " ON CONFLICT (user_id, provider_name) DO UPDATE SET"
             + " refresh_token = excluded.refresh_token,"
             + " expires = excluded.expires,"
             + " external_user_id = excluded.external_user_id,"
@@ -70,7 +72,7 @@ public class LinkedAccountDAO {
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", linkedAccount.getUserId())
-            .addValue("providerId", linkedAccount.getProviderId())
+            .addValue("providerName", linkedAccount.getProviderName())
             .addValue("refreshToken", linkedAccount.getRefreshToken())
             .addValue("expires", linkedAccount.getExpires())
             .addValue("externalUserId", linkedAccount.getExternalUserId())
@@ -86,13 +88,16 @@ public class LinkedAccountDAO {
 
   /**
    * @param userId
-   * @param providerId
+   * @param providerName
    * @return boolean whether or not an account was found and deleted
    */
-  public boolean deleteLinkedAccountIfExists(String userId, String providerId) {
-    var query = "DELETE FROM linked_account WHERE user_id = :userId and provider_id = :providerId";
+  public boolean deleteLinkedAccountIfExists(String userId, String providerName) {
+    var query =
+        "DELETE FROM linked_account WHERE user_id = :userId and provider_name = :providerName";
     var namedParameters =
-        new MapSqlParameterSource().addValue("userId", userId).addValue("providerId", providerId);
+        new MapSqlParameterSource()
+            .addValue("userId", userId)
+            .addValue("providerName", providerName);
 
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
@@ -104,7 +109,7 @@ public class LinkedAccountDAO {
       return new LinkedAccount.Builder()
           .id(rs.getInt("id"))
           .userId(rs.getString("user_id"))
-          .providerId(rs.getString("provider_id"))
+          .providerName(rs.getString("provider_name"))
           .refreshToken(rs.getString("refresh_token"))
           .expires(rs.getTimestamp("expires"))
           .externalUserId(rs.getString("external_user_id"))

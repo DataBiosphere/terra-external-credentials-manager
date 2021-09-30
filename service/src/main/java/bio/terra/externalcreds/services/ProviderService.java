@@ -125,14 +125,14 @@ public class ProviderService {
   }
 
   private LinkedAccountWithPassportAndVisas createLinkInternal(
-      String provider,
+      String providerName,
       String userId,
       String authorizationCode,
       String redirectUri,
       Set<String> scopes,
       String state,
       ClientRegistration providerClient) {
-    var providerInfo = externalCredsConfig.getProviders().get(provider);
+    var providerInfo = externalCredsConfig.getProviders().get(providerName);
 
     var tokenResponse =
         oAuth2Service.authorizationCodeExchange(
@@ -155,7 +155,7 @@ public class ProviderService {
 
     var linkedAccount =
         new LinkedAccount.Builder()
-            .providerId(provider)
+            .providerName(providerName)
             .userId(userId)
             .expires(expires)
             .externalUserId(userInfo.getAttribute(EXTERNAL_USERID_ATTR))
@@ -222,7 +222,7 @@ public class ProviderService {
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
             String.format(
-                "Could not contact issuer for provider %s", linkedAccount.getProviderId()),
+                "Could not contact issuer for provider %s", linkedAccount.getProviderName()),
             iae);
       } catch (OAuth2AuthorizationException oauthEx) {
         // if the cause is a 4xx response, delete the passport
@@ -243,13 +243,13 @@ public class ProviderService {
       LinkedAccount linkedAccount) {
     var clientRegistration =
         providerClientCache
-            .getProviderClient(linkedAccount.getProviderId())
+            .getProviderClient(linkedAccount.getProviderName())
             .orElseThrow(
                 () ->
                     new ExternalCredsException(
                         String.format(
                             "Unable to find configs for the provider: %s",
-                            linkedAccount.getProviderId())));
+                            linkedAccount.getProviderName())));
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
@@ -304,7 +304,7 @@ public class ProviderService {
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.LinkExpired)
-            .providerName(linkedAccount.getProviderId())
+            .providerName(linkedAccount.getProviderName())
             .userId(linkedAccount.getUserId())
             .build());
 
@@ -341,7 +341,7 @@ public class ProviderService {
     log.info(
         "Token revocation request for user [{}], provider [{}] returned with the result: [{}]",
         linkedAccount.getUserId(),
-        linkedAccount.getProviderId(),
+        linkedAccount.getProviderName(),
         responseBody);
   }
 }

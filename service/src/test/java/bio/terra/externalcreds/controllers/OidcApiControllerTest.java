@@ -111,11 +111,11 @@ public class OidcApiControllerTest extends BaseTest {
       mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
       when(linkedAccountServiceMock.getLinkedAccount(
-              eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderId())))
+              eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderName())))
           .thenReturn(Optional.of(inputLinkedAccount));
 
       mvc.perform(
-              get("/api/oidc/v1/" + inputLinkedAccount.getProviderId())
+              get("/api/oidc/v1/" + inputLinkedAccount.getProviderName())
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(
               content()
@@ -175,7 +175,7 @@ public class OidcApiControllerTest extends BaseTest {
     mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
     when(providerServiceMock.createLink(
-            inputLinkedAccount.getProviderId(),
+            inputLinkedAccount.getProviderName(),
             inputLinkedAccount.getUserId(),
             oauthcode,
             redirectUri,
@@ -188,7 +188,7 @@ public class OidcApiControllerTest extends BaseTest {
                     .build()));
 
     mvc.perform(
-            post("/api/oidc/v1/{provider}/oauthcode", inputLinkedAccount.getProviderId())
+            post("/api/oidc/v1/{provider}/oauthcode", inputLinkedAccount.getProviderName())
                 .header("authorization", "Bearer " + accessToken)
                 .param("scopes", scopes)
                 .param("redirectUri", redirectUri)

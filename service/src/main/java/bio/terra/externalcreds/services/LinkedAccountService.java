@@ -56,7 +56,7 @@ public class LinkedAccountService {
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
     var linkedAccount = linkedAccountWithPassportAndVisas.getLinkedAccount();
     var existingVisas =
-        ga4ghVisaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderId());
+        ga4ghVisaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderName());
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     // clear out any passport and visas that may exist and save the new one
@@ -69,7 +69,7 @@ public class LinkedAccountService {
     if (authorizationsDiffer(existingVisas, savedLinkedAccountWithPassportAndVisas.getVisas())) {
       eventPublisher.publishAuthorizationChangeEvent(
           new AuthorizationChangeEvent.Builder()
-              .providerId(savedLinkedAccount.getProviderId())
+              .providerId(savedLinkedAccount.getProviderName())
               .userId(savedLinkedAccount.getUserId())
               .build());
     }
