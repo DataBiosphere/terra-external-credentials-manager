@@ -5,7 +5,7 @@ databaseChangeLog:
       changes:
         - sql:
             sql: >
-            CREATE TYPE token_type_enum AS ENUM ('document_token', 'access_token')
+              CREATE TYPE token_type_enum AS ENUM ('document_token', 'access_token')
         - createTable:
             tableName: linked_account
             columns:
