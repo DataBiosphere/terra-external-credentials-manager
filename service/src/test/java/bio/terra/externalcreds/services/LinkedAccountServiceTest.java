@@ -126,7 +126,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
       var expectedEvent =
           new AuthorizationChangeEvent.Builder()
-              .providerId(linkedAccount.getProviderName())
+              .providerName(linkedAccount.getProviderName())
               .userId(linkedAccount.getUserId())
               .build();
 
@@ -164,7 +164,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
       var expectedEvent =
           new AuthorizationChangeEvent.Builder()
-              .providerId(linkedAccount.getProviderName())
+              .providerName(linkedAccount.getProviderName())
               .userId(linkedAccount.getUserId())
               .build();
 
@@ -227,7 +227,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
       var expectedEvent =
           new AuthorizationChangeEvent.Builder()
-              .providerId(linkedAccount.getProviderName())
+              .providerName(linkedAccount.getProviderName())
               .userId(linkedAccount.getUserId())
               .build();
 
@@ -262,7 +262,7 @@ public class LinkedAccountServiceTest extends BaseTest {
 
       var expectedEvent =
           new AuthorizationChangeEvent.Builder()
-              .providerId(linkedAccount.getProviderName())
+              .providerName(linkedAccount.getProviderName())
               .userId(linkedAccount.getUserId())
               .build();
 
@@ -352,7 +352,7 @@ public class LinkedAccountServiceTest extends BaseTest {
           .publishAuthorizationChangeEvent(
               new AuthorizationChangeEvent.Builder()
                   .userId(linkedAccount.getUserId())
-                  .providerId(linkedAccount.getProviderName())
+                  .providerName(linkedAccount.getProviderName())
                   .build());
     }
 
@@ -380,7 +380,7 @@ public class LinkedAccountServiceTest extends BaseTest {
           .publishAuthorizationChangeEvent(
               new AuthorizationChangeEvent.Builder()
                   .userId(linkedAccount.getUserId())
-                  .providerId(linkedAccount.getProviderName())
+                  .providerName(linkedAccount.getProviderName())
                   .build());
     }
 
@@ -404,7 +404,7 @@ public class LinkedAccountServiceTest extends BaseTest {
           .publishAuthorizationChangeEvent(
               new AuthorizationChangeEvent.Builder()
                   .userId(linkedAccount.getUserId())
-                  .providerId(linkedAccount.getProviderName())
+                  .providerName(linkedAccount.getProviderName())
                   .build());
     }
   }
