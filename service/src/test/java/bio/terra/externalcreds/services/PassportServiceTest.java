@@ -35,9 +35,9 @@ public class PassportServiceTest extends BaseTest {
   @Test
   void testGetGA4GHPassportNoLinkedAccount() {
     var userId = "nonexistent_user_id";
-    var providerId = "fake_provider";
+    var providerName = "fake_provider";
 
-    assertEmpty(passportService.getPassport(userId, providerId));
+    assertEmpty(passportService.getPassport(userId, providerName));
   }
 
   @Test

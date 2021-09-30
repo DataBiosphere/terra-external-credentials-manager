@@ -86,12 +86,12 @@ public class ProviderService {
   }
 
   public Optional<String> getProviderAuthorizationUrl(
-      String provider, String redirectUri, Set<String> scopes, String state) {
+      String providerName, String redirectUri, Set<String> scopes, String state) {
     return providerClientCache
-        .getProviderClient(provider)
+        .getProviderClient(providerName)
         .map(
             providerClient -> {
-              var providerInfo = externalCredsConfig.getProviders().get(provider);
+              var providerInfo = externalCredsConfig.getProviders().get(providerName);
 
               return oAuth2Service.getAuthorizationRequestUri(
                   providerClient,
@@ -103,7 +103,7 @@ public class ProviderService {
   }
 
   public Optional<LinkedAccountWithPassportAndVisas> createLink(
-      String provider,
+      String providerName,
       String userId,
       String authorizationCode,
       String redirectUri,
@@ -111,11 +111,11 @@ public class ProviderService {
       String state) {
 
     return providerClientCache
-        .getProviderClient(provider)
+        .getProviderClient(providerName)
         .map(
             providerClient ->
                 createLinkInternal(
-                    provider,
+                    providerName,
                     userId,
                     authorizationCode,
                     redirectUri,
@@ -167,21 +167,21 @@ public class ProviderService {
         jwtUtils.enrichAccountWithPassportAndVisas(linkedAccount, userInfo));
   }
 
-  public void deleteLink(String userId, String providerId) {
-    var providerInfo = externalCredsConfig.getProviders().get(providerId);
+  public void deleteLink(String userId, String providerName) {
+    var providerInfo = externalCredsConfig.getProviders().get(providerName);
 
     if (providerInfo == null) {
-      throw new NotFoundException(String.format("Provider %s not found", providerId));
+      throw new NotFoundException(String.format("Provider %s not found", providerName));
     }
 
     var linkedAccount =
         linkedAccountService
-            .getLinkedAccount(userId, providerId)
+            .getLinkedAccount(userId, providerName)
             .orElseThrow(() -> new NotFoundException("Link not found for user"));
 
     revokeAccessToken(providerInfo, linkedAccount);
 
-    linkedAccountService.deleteLinkedAccount(userId, providerId);
+    linkedAccountService.deleteLinkedAccount(userId, providerName);
   }
 
   public int validatePassportsWithAccessTokenVisas() {

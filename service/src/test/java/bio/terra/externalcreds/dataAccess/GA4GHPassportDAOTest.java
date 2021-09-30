@@ -32,7 +32,7 @@ public class GA4GHPassportDAOTest extends BaseTest {
 
   @Test
   void testGetMissingPassport() {
-    var shouldBeEmpty = passportDAO.getPassport("nonexistent_user_id", "nonexistent_provider_id");
+    var shouldBeEmpty = passportDAO.getPassport("nonexistent_user_id", "nonexistent_provider_name");
     assertEmpty(shouldBeEmpty);
   }
 
