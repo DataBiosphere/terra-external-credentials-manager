@@ -360,13 +360,13 @@ public class ProviderServiceTest extends BaseTest {
           actualUpdatedVisas.get(0));
     }
 
-    private void mockProviderConfigs(String providerId) {
+    private void mockProviderConfigs(String providerName) {
       when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(providerId, TestUtils.createRandomProvider()));
+          .thenReturn(Map.of(providerName, TestUtils.createRandomProvider()));
     }
 
-    private ClientRegistration createClientRegistration(String providerId) {
-      return ClientRegistration.withRegistrationId(providerId)
+    private ClientRegistration createClientRegistration(String providerName) {
+      return ClientRegistration.withRegistrationId(providerName)
           .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
           .build();
     }

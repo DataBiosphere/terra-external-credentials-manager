@@ -70,14 +70,16 @@ public class OidcApiControllerTest extends BaseTest {
       var scopes = Set.of("openid", "email");
       String state = null;
 
-      when(providerServiceMock.getProviderAuthorizationUrl(providerName, redirectUri, scopes, state))
+      when(providerServiceMock.getProviderAuthorizationUrl(
+              providerName, redirectUri, scopes, state))
           .thenReturn(Optional.of(result));
 
       var queryParams = new LinkedMultiValueMap<String, String>();
       queryParams.add("redirectUri", redirectUri);
       queryParams.addAll("scopes", List.copyOf(scopes));
       mvc.perform(
-              get("/api/oidc/v1/{provider}/authorization-url", providerName).queryParams(queryParams))
+              get("/api/oidc/v1/{provider}/authorization-url", providerName)
+                  .queryParams(queryParams))
           .andExpect(content().json("\"" + result + "\""));
     }
 
@@ -88,14 +90,16 @@ public class OidcApiControllerTest extends BaseTest {
       var scopes = Set.of("openid", "email");
       String state = null;
 
-      when(providerServiceMock.getProviderAuthorizationUrl(providerName, redirectUri, scopes, state))
+      when(providerServiceMock.getProviderAuthorizationUrl(
+              providerName, redirectUri, scopes, state))
           .thenReturn(Optional.empty());
 
       var queryParams = new LinkedMultiValueMap<String, String>();
       queryParams.add("redirectUri", redirectUri);
       queryParams.addAll("scopes", List.copyOf(scopes));
       mvc.perform(
-              get("/api/oidc/v1/{provider}/authorization-url", providerName).queryParams(queryParams))
+              get("/api/oidc/v1/{provider}/authorization-url", providerName)
+                  .queryParams(queryParams))
           .andExpect(status().isNotFound());
     }
   }
