@@ -144,9 +144,8 @@ jobs:
 
       - name: Render GitHub Secrets
         env:
-          # Copied to GH from vault location: "secret/dsde/firecloud/dev/common/firecloud-account.json"
-          DEV_FIRECLOUD_ACCOUNT: ${{ secrets.DEV_FIRECLOUD_ACCOUNT }}
-        run: echo "$DEV_FIRECLOUD_ACCOUNT" >"./integration/src/main/resources/rendered/user-delegated-sa.json"
+          DEV_FIRECLOUD_ACCOUNT_B64: ${{ secrets.DEV_FIRECLOUD_ACCOUNT_B64 }}
+        run: echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
 
       - name: Launch the background process for integration tests
         run: ./gradlew --build-cache :service:bootRunDev | tee bootrun.log &
