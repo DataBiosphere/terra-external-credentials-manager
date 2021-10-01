@@ -36,15 +36,16 @@ public class RASv1_1Test extends BaseTest {
 
   @Test
   void testSameJwt() {
-    var visa = createTestRasVisa(Map.of("phs_id", "phs000021", "consent_group", "c1"));
+    var visa =
+        createTestRasVisa(Map.of("phs_id", "phs000021", "consent_group", "c1", "role", "pi"));
 
     assertTrue(comparator.authorizationsMatch(visa, visa));
   }
 
   @Test
   void testSameAuthorizationsDifferentOrder() {
-    var authorization1 = Map.of("phs_id", "phs000021", "consent_group", "c1");
-    var authorization2 = Map.of("phs_id", "phs000022", "consent_group", "c1");
+    var authorization1 = Map.of("phs_id", "phs000021", "consent_group", "c1", "role", "pi");
+    var authorization2 = Map.of("phs_id", "phs000022", "consent_group", "c1", "role", "pi");
 
     assertTrue(
         comparator.authorizationsMatch(
@@ -54,9 +55,20 @@ public class RASv1_1Test extends BaseTest {
 
   @Test
   void testSameAuthorizationWithExtraInfo() {
-    var authorization1 = Map.of("phs_id", "phs000021", "consent_group", "c1", "unimportant", "a");
+    var authorization1 =
+        Map.of("phs_id", "phs000021", "consent_group", "c1", "role", "pi", "unimportant", "a");
     var authorization2 =
-        Map.of("phs_id", "phs000021", "consent_group", "c1", "unimportant", "b", "extra", "foo");
+        Map.of(
+            "phs_id",
+            "phs000021",
+            "consent_group",
+            "c1",
+            "role",
+            "pi",
+            "unimportant",
+            "b",
+            "extra",
+            "foo");
 
     assertTrue(
         comparator.authorizationsMatch(
@@ -65,8 +77,8 @@ public class RASv1_1Test extends BaseTest {
 
   @Test
   void testDifferentAuthorization() {
-    var authorization1 = Map.of("phs_id", "phs000021", "consent_group", "c1");
-    var authorization2 = Map.of("phs_id", "phs000022", "consent_group", "c1");
+    var authorization1 = Map.of("phs_id", "phs000021", "consent_group", "c1", "role", "pi");
+    var authorization2 = Map.of("phs_id", "phs000022", "consent_group", "c1", "role", "pi");
 
     assertFalse(
         comparator.authorizationsMatch(
@@ -87,6 +99,15 @@ public class RASv1_1Test extends BaseTest {
             .withVisaType("unsupported");
 
     assertFalse(comparator.visaTypeSupported(visa));
+  }
+
+  @Test
+  void testDuplicateAuthorizations() {
+    var authorization = Map.of("phs_id", "phs000021", "consent_group", "c1", "role", "pi");
+
+    assertTrue(
+        comparator.authorizationsMatch(
+            createTestRasVisa(authorization, authorization), createTestRasVisa(authorization)));
   }
 
   private ImmutableGA4GHVisa createTestRasVisa(Map<String, String>... dbgapPermissions) {
