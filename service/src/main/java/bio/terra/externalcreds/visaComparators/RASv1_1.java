@@ -23,6 +23,8 @@ public class RASv1_1 implements VisaComparator {
     this.objectMapper = objectMapper;
   }
 
+  // TODO: write tests specifically for this class
+
   @Override
   public boolean authorizationsMatch(GA4GHVisa visa1, GA4GHVisa visa2) {
     if (!visa1.getVisaType().equalsIgnoreCase(visa2.getVisaType())) {

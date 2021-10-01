@@ -139,6 +139,8 @@ public class OidcApiController implements OidcApi {
           linkedAccountWithPassportAndVisas.map(
               x -> getLinkInfoFromLinkedAccount(x.getLinkedAccount())));
     } catch (Exception e) {
+      // TODO: test that log is recorded when exception is thrown
+      //  (use `verify` to check that logEvent is called)
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());
       throw e;

@@ -6,6 +6,8 @@ import javax.annotation.Nullable;
 import org.springframework.http.HttpStatus;
 
 public class InvalidJwtException extends ExternalCredsException {
+  // TODO: ask someone else their opinion on whether the unused methods here should be deleted
+
   public InvalidJwtException(String message) {
     super(message);
   }

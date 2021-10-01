@@ -21,6 +21,7 @@ public class PublicApiController implements PublicApi {
     this.externalCredsConfig = externalCredsConfig;
   }
 
+  // TODO: definitely test these both lol
   @Override
   public ResponseEntity<SystemStatus> getStatus() {
     var currentStatus = statusService.getSystemStatus();

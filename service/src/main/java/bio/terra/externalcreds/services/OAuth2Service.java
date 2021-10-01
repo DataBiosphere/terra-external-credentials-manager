@@ -50,6 +50,7 @@ public class OAuth2Service {
       String state,
       Map<String, Object> additionalAuthorizationParameters) {
 
+    // TODO: consider writing an actual unit test for this method
     return createOAuth2AuthorizationRequest(
             redirectUri, scopes, state, providerClient, additionalAuthorizationParameters)
         .getAuthorizationRequestUri();

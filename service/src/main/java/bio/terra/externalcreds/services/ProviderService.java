@@ -89,6 +89,7 @@ public class ProviderService {
 
   public Optional<String> getProviderAuthorizationUrl(
       String providerName, String redirectUri, Set<String> scopes, String state) {
+    // TODO: test this, mock the providerClientCache and provider configs
     return providerClientCache
         .getProviderClient(providerName)
         .map(
@@ -147,6 +148,7 @@ public class ProviderService {
 
     var refreshToken = tokenResponse.getRefreshToken();
     if (refreshToken == null) {
+      // TODO (maybe): test this case
       throw new ExternalCredsException(
           "cannot link account because authorization response did not contain refresh token");
     }
@@ -253,6 +255,7 @@ public class ProviderService {
                         String.format(
                             "Unable to find configs for the provider: %s",
                             linkedAccount.getProviderName())));
+    // TODO: test the above exception
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
@@ -276,6 +279,7 @@ public class ProviderService {
   String validateVisaWithProvider(VisaVerificationDetails visaDetails) {
     var providerProperties = externalCredsConfig.getProviders().get(visaDetails.getProviderName());
     if (providerProperties == null) {
+      // TODO: test this case
       throw new NotFoundException(
           String.format("Provider %s not found", visaDetails.getProviderName()));
     }
@@ -289,6 +293,7 @@ public class ProviderService {
                         String.format(
                             "Validation endpoint for provider %s not found",
                             visaDetails.getProviderName())));
+    // TODO: test the exception above
 
     var response =
         WebClient.create(validationEndpoint)
