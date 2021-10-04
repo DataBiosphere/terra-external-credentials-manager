@@ -72,7 +72,7 @@ public class GA4GHVisaDAO {
             .addValue("validationCutoff", validationCutoff);
 
     var query =
-        "SELECT DISTINCT la.id as linked_account_id, la.provider_name as provider_name, v.jwt as jwt FROM linked_account la"
+        "SELECT DISTINCT la.id as linked_account_id, la.provider_name as provider_name, v.jwt as jwt, v.id as visa_id FROM linked_account la"
             + " JOIN ga4gh_passport p"
             + " ON p.linked_account_id = la.id"
             + " JOIN ga4gh_visa v"
@@ -81,6 +81,15 @@ public class GA4GHVisaDAO {
             + " AND v.last_validated <= :validationCutoff";
 
     return jdbcTemplate.query(query, namedParameters, new VisaVerificationDetailsRowMapper());
+  }
+
+  public void updateLastValidated(int visaId, Timestamp newLastValidated) {
+    var namedParameters =
+        new MapSqlParameterSource("id", visaId).addValue("newLastValidated", newLastValidated);
+
+    var query = "UPDATE ga4gh_visa set last_validated = :newLastValidated where id = :id";
+
+    jdbcTemplate.update(query, namedParameters);
   }
 
   private static class GA4GHVisaRowMapper implements RowMapper<GA4GHVisa> {
@@ -109,6 +118,7 @@ public class GA4GHVisaDAO {
           .linkedAccountId(rs.getInt("linked_account_id"))
           .providerName(rs.getString("provider_name"))
           .visaJwt(rs.getString("jwt"))
+          .visaId(rs.getInt("visa_id"))
           .build();
     }
   }
