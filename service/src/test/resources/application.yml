@@ -1,0 +1,17 @@
+externalcreds:
+  sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
+  background-job-interval-mins: 5
+  token-validation-duration: 1h
+  visa-and-passport-refresh-duration: 30m
+  authorization-change-events-enabled: ${AUTHORIZATION_CHANGE_EVENTS_ENABLED:false}
+  authorization-change-event-topic-name: projects/${SERVICE_GOOGLE_PROJECT:broad-dsde-dev}/topics/ecm-events
+
+spring:
+  datasource:
+    password: ${DATABASE_USER_PASSWORD:ecmpwd}
+    url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/${DATABASE_NAME:ecm}
+    username: ${DATABASE_USER:ecmuser}
+
+terra.common:
+  tracing:
+    stackdriverExportEnabled: ${CLOUD_TRACE_ENABLED:false}
