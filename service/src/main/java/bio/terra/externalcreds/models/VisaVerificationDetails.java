@@ -10,5 +10,7 @@ public interface VisaVerificationDetails {
 
   String getVisaJwt();
 
+  int getVisaId();
+
   class Builder extends ImmutableVisaVerificationDetails.Builder {}
 }
