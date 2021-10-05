@@ -101,34 +101,32 @@ public class ProviderServiceTest extends BaseTest {
     }
 
     private void testWithRevokeResponseCode(HttpStatus httpStatus) {
-      var revocationPath = "/test/revoke/";
-      var mockServerPort = 50555;
-      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      try (var mockServer = ClientAndServer.startClientAndServer()) {
+        var revocationPath = "/test/revoke/";
+        var linkedAccount = TestUtils.createRandomLinkedAccount();
 
-      var providerInfo =
-          TestUtils.createRandomProvider()
-              .setRevokeEndpoint(
-                  "http://localhost:" + mockServerPort + revocationPath + "?token=%s");
+        var providerInfo =
+            TestUtils.createRandomProvider()
+                .setRevokeEndpoint(
+                    "http://localhost:" + mockServer.getPort() + revocationPath + "?token=%s");
 
-      var expectedParameters =
-          List.of(
-              new Parameter("token", linkedAccount.getRefreshToken()),
-              new Parameter("client_id", providerInfo.getClientId()),
-              new Parameter("client_secret", providerInfo.getClientSecret()));
+        var expectedParameters =
+            List.of(
+                new Parameter("token", linkedAccount.getRefreshToken()),
+                new Parameter("client_id", providerInfo.getClientId()),
+                new Parameter("client_secret", providerInfo.getClientSecret()));
 
-      when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
+        when(externalCredsConfigMock.getProviders())
+            .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
 
-      when(linkedAccountServiceMock.getLinkedAccount(
-              linkedAccount.getUserId(), linkedAccount.getProviderName()))
-          .thenReturn(Optional.of(linkedAccount));
-      when(linkedAccountServiceMock.deleteLinkedAccount(
-              linkedAccount.getUserId(), linkedAccount.getProviderName()))
-          .thenReturn(true);
+        when(linkedAccountServiceMock.getLinkedAccount(
+                linkedAccount.getUserId(), linkedAccount.getProviderName()))
+            .thenReturn(Optional.of(linkedAccount));
+        when(linkedAccountServiceMock.deleteLinkedAccount(
+                linkedAccount.getUserId(), linkedAccount.getProviderName()))
+            .thenReturn(true);
 
-      //  Mock the server response
-      var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
-      try {
+        //  Mock the server response
         mockServer
             .when(
                 HttpRequest.request(revocationPath)
@@ -139,8 +137,6 @@ public class ProviderServiceTest extends BaseTest {
         providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderName());
         verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderName());
-      } finally {
-        mockServer.stop();
       }
     }
   }
@@ -486,8 +482,9 @@ public class ProviderServiceTest extends BaseTest {
         VisaVerificationDetails visaVerificationDetails,
         HttpStatus mockedStatusCode,
         String mockedResponseBody) {
-      var mockServerPort = 50555;
       var validationEndpoint = "/fake-validation-endpoint";
+
+      var mockServer = ClientAndServer.startClientAndServer();
 
       when(externalCredsConfigMock.getProviders())
           .thenReturn(
@@ -495,10 +492,9 @@ public class ProviderServiceTest extends BaseTest {
                   visaVerificationDetails.getProviderName(),
                   TestUtils.createRandomProvider()
                       .setValidationEndpoint(
-                          "http://localhost:" + mockServerPort + validationEndpoint)));
+                          "http://localhost:" + mockServer.getPort() + validationEndpoint)));
 
       //  Mock the server response with 400 response code for invalid passport format
-      var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
       var expectedQueryStringParameters =
           List.of(new Parameter("visa", visaVerificationDetails.getVisaJwt()));
       mockServer
