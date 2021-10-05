@@ -1,5 +1,5 @@
+# Override the ECM config values for tests so unit tests won't be impacted by config changes
 externalcreds:
-  # 
   sam-base-path: http://localhost:1000/
   background-job-interval-mins: 5
   token-validation-duration: 1h

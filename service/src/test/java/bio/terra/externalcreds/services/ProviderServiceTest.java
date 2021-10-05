@@ -403,10 +403,6 @@ public class ProviderServiceTest extends BaseTest {
       passportDAO.insertPassport(expiringPassport);
       passportDAO.insertPassport(notExpiringPassport);
 
-      // mock the configs
-      when(externalCredsConfigMock.getVisaAndPassportRefreshDuration())
-          .thenReturn(Duration.ofMinutes(30));
-
       // check that authAndRefreshPassport is called exactly once with the expiring linked account
       var providerServiceSpy = Mockito.spy(providerService);
       providerServiceSpy.refreshExpiringPassports();
