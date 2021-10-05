@@ -1,7 +1,7 @@
 externalcreds:
   sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
   background-job-interval-mins: 5
-  token-validation-duration: 1h
+  token-validation-duration: 50m # with 5m job interval, 50m allows 2 attempts to validate before 60m expires
   visa-and-passport-refresh-duration: 30m
   # only enable google pubsub topic in live envs
   authorization-change-events-enabled: ${AUTHORIZATION_CHANGE_EVENTS_ENABLED:false}
