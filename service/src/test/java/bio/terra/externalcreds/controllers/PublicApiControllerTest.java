@@ -28,9 +28,19 @@ public class PublicApiControllerTest extends BaseTest {
 
   @Test
   void testGetVersion() throws Exception {
-    var versionProperties = VersionProperties.create().setGitTag("gitTag").setGitHash("gitHash").setBuild("build").setGithub("github");
+    var versionProperties =
+        VersionProperties.create()
+            .setGitTag("gitTag")
+            .setGitHash("gitHash")
+            .setBuild("build")
+            .setGithub("github");
     when(externalCredsConfig.getVersion()).thenReturn(versionProperties);
 
-    mvc.perform(get("/version")).andExpect(content().json(""));
+    mvc.perform(get("/version"))
+        .andExpect(
+            content()
+                .json(
+                    "{\"gitTag\": \"gitTag\", \"gitHash\": \"gitHash\", "
+                        + "\"github\": \"github\", \"build\": \"build\"}"));
   }
 }
