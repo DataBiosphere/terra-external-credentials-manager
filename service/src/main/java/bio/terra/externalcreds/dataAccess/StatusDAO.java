@@ -14,7 +14,6 @@ public class StatusDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  // TODO: check that both these methods return true
   private boolean isConnectionValid(Connection connection) throws SQLException {
     return connection.isValid(1);
   }

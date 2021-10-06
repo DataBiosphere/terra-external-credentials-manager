@@ -17,7 +17,6 @@ public class StatusService {
   }
 
   public SystemStatus getSystemStatus() {
-    // TODO: test this method
     var subsystems = new SubsystemStatus();
 
     try {
