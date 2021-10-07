@@ -61,9 +61,10 @@ public class TestUtils {
   }
 
   public static VisaVerificationDetails createRandomVisaVerificationDetails() {
-      return new VisaVerificationDetails.Builder()
-              .providerName(UUID.randomUUID().toString())
-              .visaJwt(UUID.randomUUID().toString())
-              .build();
+    return new VisaVerificationDetails.Builder()
+        .linkedAccountId(42)
+        .providerName(UUID.randomUUID().toString())
+        .visaJwt(UUID.randomUUID().toString())
+        .build();
   }
 }

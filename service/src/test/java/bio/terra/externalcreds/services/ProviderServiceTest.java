@@ -429,8 +429,7 @@ public class ProviderServiceTest extends BaseTest {
       var visaVerificationDetails = TestUtils.createRandomVisaVerificationDetails();
 
       var mockServer =
-          mockValidationEndpointConfigsAndResponse(
-              visaVerificationDetails, HttpStatus.OK, "Valid");
+          mockValidationEndpointConfigsAndResponse(visaVerificationDetails, HttpStatus.OK, "Valid");
 
       var responseBody = providerService.validateVisaWithProvider(visaVerificationDetails);
       assertEquals("Valid", responseBody);
@@ -454,30 +453,27 @@ public class ProviderServiceTest extends BaseTest {
 
     @Test
     void testProviderPropertiesIsNull() {
-      var fakeProviderName = "fakeProvider";
-      // when(externalCredsConfigMock.getProviders().get(fakeProviderName)).thenReturn(null);
+      var visaVerificationDetails = TestUtils.createRandomVisaVerificationDetails();
       when(externalCredsConfigMock.getProviders()).thenReturn(new HashMap<>());
 
-      // TODO: actually call the method you're testing you boob!!!!
-      //      assertThrows(
-      //          NotFoundException.class,
-      //          () -> providerService.validateVisaWithProvider());
+      assertThrows(
+          NotFoundException.class,
+          () -> providerService.validateVisaWithProvider(visaVerificationDetails));
     }
 
-   // @Test
-//    void testNoValidationEndpoint() {
-//
-//      // TODO: finish this, needs visa verification details
-//      var fakeProviderName = "fakeProvider";
-//      //var providerProperties = TestUtils.createRandomProviderWithoutRevokeEndpoint();
-//
-//      when(externalCredsConfigMock.getProviders())
-//          .thenReturn(Map.of(fakeProviderName, providerProperties));
-//
-//      assertThrows(
-//          NotFoundException.class,
-//          () -> externalCredsConfigMock.getProviders().get(fakeProviderName));
-//    }
+    @Test
+    void testNoValidationEndpoint() {
+      var fakeProviderName = "fakeProvider";
+      var providerProperties = TestUtils.createRandomProvider();
+      var visaVerificationDetails = TestUtils.createRandomVisaVerificationDetails();
+
+      when(externalCredsConfigMock.getProviders())
+          .thenReturn(Map.of(fakeProviderName, providerProperties));
+
+      assertThrows(
+          NotFoundException.class,
+          () -> providerService.validateVisaWithProvider(visaVerificationDetails));
+    }
 
     private ClientAndServer mockValidationEndpointConfigsAndResponse(
         VisaVerificationDetails visaVerificationDetails,
@@ -593,19 +589,4 @@ public class ProviderServiceTest extends BaseTest {
         .providerName(savedLinkedAccount.getProviderName())
         .build();
   }
-
-  //  private VisaVerificationDetails createVisaVerificationDetails(GA4GHVisa visa,
-  // LinkedAccountService linkedAccountService) {
-  //    var savedLinkedAccountWithPassportAndVisa =
-  //        linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-  //            new LinkedAccountWithPassportAndVisas.Builder()
-  //                .linkedAccount(TestUtils.createRandomLinkedAccount())
-  //                .passport(TestUtils.createRandomPassport())
-  //                .visas(List.of(visa))
-  //                .build());
-  //
-  //    return
-  // buildVisaVerificationDetails(savedLinkedAccountWithPassportAndVisa.getLinkedAccount(),
-  // savedLinkedAccountWithPassportAndVisa.);
-  //  }
 }
