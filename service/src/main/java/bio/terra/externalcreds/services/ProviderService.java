@@ -89,7 +89,6 @@ public class ProviderService {
 
   public Optional<String> getProviderAuthorizationUrl(
       String providerName, String redirectUri, Set<String> scopes, String state) {
-    // TODO: test this, mock the providerClientCache and provider configs
     return providerClientCache
         .getProviderClient(providerName)
         .map(
@@ -256,6 +255,8 @@ public class ProviderService {
                             "Unable to find configs for the provider: %s",
                             linkedAccount.getProviderName())));
     // TODO: test the above exception
+    //  mock providerClientCache.getProviderClient to return an empty optional
+    //  then check that ExternalCredsException is thrown
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
