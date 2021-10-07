@@ -280,6 +280,9 @@ public class ProviderService {
     var providerProperties = externalCredsConfig.getProviders().get(visaDetails.getProviderName());
     if (providerProperties == null) {
       // TODO: test this case
+      //    mock externalCredsConfig.getProviders() so providerProperties is null, then we'll hit
+      // the exception below
+      //    use assertThrows to make sure it throws a NotFoundException
       throw new NotFoundException(
           String.format("Provider %s not found", visaDetails.getProviderName()));
     }
@@ -294,6 +297,9 @@ public class ProviderService {
                             "Validation endpoint for provider %s not found",
                             visaDetails.getProviderName())));
     // TODO: test the exception above
+    //      mock externalCredsConfig.getProviders() (providerProperties is not null, but should not
+    // have a validation endpoint)
+    //     use assertThrows to make sure it throws a NotFoundException
 
     var response =
         WebClient.create(validationEndpoint)
