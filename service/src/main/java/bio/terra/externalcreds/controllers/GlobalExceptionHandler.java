@@ -35,8 +35,6 @@ public class GlobalExceptionHandler {
     NoHandlerFoundException.class
   })
   public ResponseEntity<ErrorReport> validationExceptionHandler(Exception ex) {
-    // TODO: have a test that expects a BadRequest response code from some controller
-    //   - maybe have a separate test class to test this error handling
     log.error("Global exception handler: catch stack", ex);
     // For security reasons, we generally don't want to include the user's invalid (and potentially
     // malicious) input in the error response, which also means we don't include the full exception.
@@ -55,7 +53,6 @@ public class GlobalExceptionHandler {
   // -- catchall - log so we can understand what we have missed in the handlers above
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorReport> catchallHandler(Exception ex) {
-    // TODO: same as above
     log.error("Exception caught by catchall handler", ex);
     return buildErrorReport(ex, HttpStatus.INTERNAL_SERVER_ERROR);
   }
