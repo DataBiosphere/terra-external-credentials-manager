@@ -62,6 +62,7 @@ public class TestUtils {
 
   public static VisaVerificationDetails createRandomVisaVerificationDetails() {
     return new VisaVerificationDetails.Builder()
+        .visaId(21)
         .linkedAccountId(42)
         .providerName(UUID.randomUUID().toString())
         .visaJwt(UUID.randomUUID().toString())

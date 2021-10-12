@@ -2,7 +2,7 @@ package bio.terra.externalcreds;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader.Builder;
+import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -71,7 +71,8 @@ public class JwtSigningTestUtils {
 
   @SneakyThrows
   public String createSignedJwt(JWTClaimsSet claimsSet) {
-    var jwtHeader = new Builder(JWSAlgorithm.RS256).keyID(accessTokenRsaJWK.getKeyID()).build();
+    var jwtHeader =
+        new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(accessTokenRsaJWK.getKeyID()).build();
     var signedVisaJwt = new SignedJWT(jwtHeader, claimsSet);
     signedVisaJwt.sign(accessTokenSigner);
     return signedVisaJwt.serialize();
@@ -80,7 +81,7 @@ public class JwtSigningTestUtils {
   @SneakyThrows
   public String createSignedDocumentTokenJwt(JWTClaimsSet claimsSet, String issuer) {
     var jwtHeader =
-        new Builder(JWSAlgorithm.RS256)
+        new JWSHeader.Builder(JWSAlgorithm.RS256)
             .jwkURL(new URI(issuer + JwtSigningTestUtils.JKU_PATH))
             .keyID(documentTokenRsaJWK.getKeyID())
             .build();
