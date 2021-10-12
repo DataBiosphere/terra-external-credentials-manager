@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
-import org.junit.jupiter.api.Disabled;
+import bio.terra.externalcreds.ExternalCredsException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,11 +23,9 @@ public class GlobalExceptionHandlerTest extends BaseTest {
     mvc.perform(get("/status")).andExpect(status().isBadRequest());
   }
 
-  // TODO make this work :)
   @Test
-  @Disabled
   void testInternalServerError() throws Exception {
-    when(publicApiControllerMock.getStatus()).thenThrow(Exception.class);
+    when(publicApiControllerMock.getStatus()).thenThrow(new ExternalCredsException("sad"));
     mvc.perform(get("/status")).andExpect(status().isInternalServerError());
   }
 }
