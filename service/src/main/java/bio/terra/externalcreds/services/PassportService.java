@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
+import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
@@ -39,5 +40,10 @@ public class PassportService {
         new Timestamp(
             Instant.now().minus(externalCredsConfig.getTokenValidationDuration()).toEpochMilli());
     return visaDAO.getUnvalidatedAccessTokenVisaDetails(validationCutoff);
+  }
+
+  @WriteTransaction
+  public void updateVisaLastValidated(int visaId) {
+    visaDAO.updateLastValidated(visaId, new Timestamp(Instant.now().toEpochMilli()));
   }
 }

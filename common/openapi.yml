@@ -48,26 +48,6 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
 
-  /api/oidc/v1/{provider}/accesstoken:
-    parameters:
-      - $ref: '#/components/parameters/providerParam'
-    get:
-      summary: Gets a new access token from and for the provider if the account has been linked.
-      tags: [ oidc ]
-      operationId: getAccessToken
-      description: Requires an authenticated user.
-      responses:
-        '200':
-          description: The access token
-          content:
-            application/json:
-              schema:
-                type: string
-        '404':
-          $ref: '#/components/responses/LinkNotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
   /api/oidc/v1/{provider}/authorization-url:
     parameters:
       - $ref: '#/components/parameters/providerParam'
@@ -131,59 +111,6 @@ paths:
                 format: base64
         '404':
           description: provider does not support passports
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  /api/ga4gh/v1/passport:
-    get:
-      summary: Return a Terra signed JWT containing all of a user’s Visas across all providers.
-      tags: [ ga4gh ]
-      operationId: getTerraPassport
-      description: Future enhancement may include parameters to limit which Visas are included.
-      responses:
-        '200':
-          description: A JSON object
-          content:
-            application/json:
-              schema:
-                type: string
-                format: base64
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  /api/user/v1/{user_id}/visas:
-    parameters:
-      - $ref: '#/components/parameters/userIdParam'
-    get:
-      summary: Returns all of a user's decoded Visas (JWT payloads, not full JWTs)
-      tags: [ user ]
-      operationId: getVisas
-      responses:
-        '200':
-          description: A JSON object
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  /.well-known/openid-configuration:
-    get:
-      summary: Discovery api for openid configuration.
-      tags: [ public ]
-      operationId: getOIDC
-      security: [ ]
-      description: The only field published by this service is jwks_uri which will point to the google service account jwks.
-      responses:
-        '200':
-          description: A JSON object
-          content:
-            application/json:
-              schema:
-                type: object
         '500':
           $ref: '#/components/responses/ServerError'
 

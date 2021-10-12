@@ -4,6 +4,7 @@ import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.nimbusds.jwt.JWTParser;
@@ -49,7 +50,8 @@ public class RASv1_1 implements VisaComparator {
       throws ParseException, JsonProcessingException {
     var visaClaim =
         JWTParser.parse(visa.getJwt()).getJWTClaimsSet().getClaim(DBGAP_CLAIM).toString();
-    var visaPermissions = Set.of(objectMapper.readValue(visaClaim, DbGapPermission[].class));
+    var visaPermissions =
+        objectMapper.readValue(visaClaim, new TypeReference<Set<DbGapPermission>>() {});
     return visaPermissions;
   }
 
@@ -70,6 +72,8 @@ public class RASv1_1 implements VisaComparator {
 
     @JsonProperty("consent_group")
     String getConsentGroup();
+
+    String getRole();
 
     class Builder extends ImmutableDbGapPermission.Builder {}
   }

@@ -38,7 +38,7 @@ public class JwtSigningTestUtils {
     accessTokenSigner = new RSASSASigner(accessTokenRsaJWK);
     documentTokenSigner = new RSASSASigner(documentTokenRsaJWK);
 
-    mockServer = ClientAndServer.startClientAndServer(50555);
+    mockServer = ClientAndServer.startClientAndServer();
 
     issuer = "http://localhost:" + mockServer.getPort();
     var wellKnownConfigMap = Map.of("issuer", issuer, "jwks_uri", issuer + JWKS_PATH);

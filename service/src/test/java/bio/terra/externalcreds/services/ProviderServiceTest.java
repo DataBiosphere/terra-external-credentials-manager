@@ -3,6 +3,7 @@ package bio.terra.externalcreds.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -19,8 +20,6 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
-import bio.terra.externalcreds.models.GA4GHVisa;
-import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
@@ -103,34 +102,32 @@ public class ProviderServiceTest extends BaseTest {
     }
 
     private void testWithRevokeResponseCode(HttpStatus httpStatus) {
-      var revocationPath = "/test/revoke/";
-      var mockServerPort = 50555;
-      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      try (var mockServer = ClientAndServer.startClientAndServer()) {
+        var revocationPath = "/test/revoke/";
+        var linkedAccount = TestUtils.createRandomLinkedAccount();
 
-      var providerInfo =
-          TestUtils.createRandomProvider()
-              .setRevokeEndpoint(
-                  "http://localhost:" + mockServerPort + revocationPath + "?token=%s");
+        var providerInfo =
+            TestUtils.createRandomProvider()
+                .setRevokeEndpoint(
+                    "http://localhost:" + mockServer.getPort() + revocationPath + "?token=%s");
 
-      var expectedParameters =
-          List.of(
-              new Parameter("token", linkedAccount.getRefreshToken()),
-              new Parameter("client_id", providerInfo.getClientId()),
-              new Parameter("client_secret", providerInfo.getClientSecret()));
+        var expectedParameters =
+            List.of(
+                new Parameter("token", linkedAccount.getRefreshToken()),
+                new Parameter("client_id", providerInfo.getClientId()),
+                new Parameter("client_secret", providerInfo.getClientSecret()));
 
-      when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
+        when(externalCredsConfigMock.getProviders())
+            .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
 
-      when(linkedAccountServiceMock.getLinkedAccount(
-              linkedAccount.getUserId(), linkedAccount.getProviderName()))
-          .thenReturn(Optional.of(linkedAccount));
-      when(linkedAccountServiceMock.deleteLinkedAccount(
-              linkedAccount.getUserId(), linkedAccount.getProviderName()))
-          .thenReturn(true);
+        when(linkedAccountServiceMock.getLinkedAccount(
+                linkedAccount.getUserId(), linkedAccount.getProviderName()))
+            .thenReturn(Optional.of(linkedAccount));
+        when(linkedAccountServiceMock.deleteLinkedAccount(
+                linkedAccount.getUserId(), linkedAccount.getProviderName()))
+            .thenReturn(true);
 
-      //  Mock the server response
-      var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
-      try {
+        //  Mock the server response
         mockServer
             .when(
                 HttpRequest.request(revocationPath)
@@ -141,8 +138,6 @@ public class ProviderServiceTest extends BaseTest {
         providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderName());
         verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderName());
-      } finally {
-        mockServer.stop();
       }
     }
   }
@@ -420,35 +415,68 @@ public class ProviderServiceTest extends BaseTest {
   @TestComponent
   class ValidateVisaWithProvider {
     @Autowired private ProviderService providerService;
-    @Autowired private LinkedAccountDAO linkedAccountDAO;
+    @Autowired private LinkedAccountService linkedAccountService;
+    @Autowired private GA4GHVisaDAO visaDAO;
 
     @MockBean ExternalCredsConfig externalCredsConfigMock;
 
     @Test
     void testSuccessfullyValidatePassportWithProvider() {
-      var visaVerificationDetails = TestUtils.createRandomVisaVerificationDetails();
+      var savedLinkedAccountWithPassportAndVisa =
+          createLinkedAccountWithOldVisa(linkedAccountService);
 
-      var mockServer =
-          mockValidationEndpointConfigsAndResponse(visaVerificationDetails, HttpStatus.OK, "Valid");
+      var visaVerificationDetails =
+          getExpectedVisaVerificationDetails(savedLinkedAccountWithPassportAndVisa);
 
-      var responseBody = providerService.validateVisaWithProvider(visaVerificationDetails);
-      assertEquals("Valid", responseBody);
+      try (var mockServer =
+          mockValidationEndpointConfigsAndResponse(
+              visaVerificationDetails, HttpStatus.OK, "Valid")) {
 
-      mockServer.stop();
+        var responseBody = providerService.validateVisaWithProvider(visaVerificationDetails);
+        assertEquals(true, responseBody);
+
+        // verify that visa last validated has been updated
+        var updatedVisas =
+            visaDAO.listVisas(
+                savedLinkedAccountWithPassportAndVisa.getLinkedAccount().getUserId(),
+                savedLinkedAccountWithPassportAndVisa.getLinkedAccount().getProviderName());
+        assertEquals(savedLinkedAccountWithPassportAndVisa.getVisas().size(), updatedVisas.size());
+        assertTrue(
+            savedLinkedAccountWithPassportAndVisa
+                .getVisas()
+                .get(0)
+                .getLastValidated()
+                .get()
+                .before(updatedVisas.get(0).getLastValidated().get()));
+      }
     }
 
     @Test
     void testValidateInvalidVisaWithProvider() {
-      var visaVerificationDetails = TestUtils.createRandomVisaVerificationDetails();
+      var savedLinkedAccountWithPassportAndVisa =
+          createLinkedAccountWithOldVisa(linkedAccountService);
 
-      var mockServer =
+      var visaVerificationDetails =
+          getExpectedVisaVerificationDetails(savedLinkedAccountWithPassportAndVisa);
+
+      try (var mockServer =
           mockValidationEndpointConfigsAndResponse(
-              visaVerificationDetails, HttpStatus.BAD_REQUEST, "Invalid Passport");
+              visaVerificationDetails, HttpStatus.BAD_REQUEST, "Invalid Passport")) {
 
-      var responseBody = providerService.validateVisaWithProvider(visaVerificationDetails);
-      assertEquals("Invalid Passport", responseBody);
+        var responseBody = providerService.validateVisaWithProvider(visaVerificationDetails);
+        assertEquals(false, responseBody);
 
-      mockServer.stop();
+        // verify that visa last validated has NOT been updated
+        var unchangedVisas =
+            visaDAO.listVisas(
+                savedLinkedAccountWithPassportAndVisa.getLinkedAccount().getUserId(),
+                savedLinkedAccountWithPassportAndVisa.getLinkedAccount().getProviderName());
+        assertEquals(
+            savedLinkedAccountWithPassportAndVisa.getVisas().size(), unchangedVisas.size());
+        assertEquals(
+            savedLinkedAccountWithPassportAndVisa.getVisas().get(0).getLastValidated().get(),
+            unchangedVisas.get(0).getLastValidated().get());
+      }
     }
 
     @Test
@@ -479,8 +507,9 @@ public class ProviderServiceTest extends BaseTest {
         VisaVerificationDetails visaVerificationDetails,
         HttpStatus mockedStatusCode,
         String mockedResponseBody) {
-      var mockServerPort = 50555;
       var validationEndpoint = "/fake-validation-endpoint";
+
+      var mockServer = ClientAndServer.startClientAndServer();
 
       when(externalCredsConfigMock.getProviders())
           .thenReturn(
@@ -488,10 +517,9 @@ public class ProviderServiceTest extends BaseTest {
                   visaVerificationDetails.getProviderName(),
                   TestUtils.createRandomProvider()
                       .setValidationEndpoint(
-                          "http://localhost:" + mockServerPort + validationEndpoint)));
+                          "http://localhost:" + mockServer.getPort() + validationEndpoint)));
 
       //  Mock the server response with 400 response code for invalid passport format
-      var mockServer = ClientAndServer.startClientAndServer(mockServerPort);
       var expectedQueryStringParameters =
           List.of(new Parameter("visa", visaVerificationDetails.getVisaJwt()));
       mockServer
@@ -510,31 +538,19 @@ public class ProviderServiceTest extends BaseTest {
 
   @Nested
   @TestComponent
-  class ValidatePassportsWithAccessTokenVisas {
+  class ValidateAccessTokenVisas {
     @Autowired private ProviderService providerService;
     @Autowired private LinkedAccountService linkedAccountService;
 
     @Test
     void testValidResponse() {
       var providerServiceSpy = spy(providerService);
-      // insert a linkedAccount, passport and visa
-      var visaNeedingVerification =
-          TestUtils.createRandomVisa()
-              .withTokenType(TokenTypeEnum.access_token)
-              .withLastValidated(
-                  new Timestamp(Instant.now().minus(Duration.ofDays(50)).toEpochMilli()));
-      var savedLinkedAccountWithPassportAndVisa =
-          linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-              new LinkedAccountWithPassportAndVisas.Builder()
-                  .linkedAccount(TestUtils.createRandomLinkedAccount())
-                  .passport(TestUtils.createRandomPassport())
-                  .visas(List.of(visaNeedingVerification))
-                  .build());
+      LinkedAccountWithPassportAndVisas savedLinkedAccountWithPassportAndVisa =
+          createLinkedAccountWithOldVisa(linkedAccountService);
 
       var expectedVisaDetails =
-          buildVisaVerificationDetails(
-              savedLinkedAccountWithPassportAndVisa.getLinkedAccount(), visaNeedingVerification);
-      doReturn("Valid").when(providerServiceSpy).validateVisaWithProvider(expectedVisaDetails);
+          getExpectedVisaVerificationDetails(savedLinkedAccountWithPassportAndVisa);
+      doReturn(true).when(providerServiceSpy).validateVisaWithProvider(expectedVisaDetails);
 
       // check that validatePassportWithProvider is called once and no exceptions are thrown
       providerServiceSpy.validateAccessTokenVisas();
@@ -545,27 +561,13 @@ public class ProviderServiceTest extends BaseTest {
     @Test
     void testInvalidResponse() {
       var providerServiceSpy = spy(providerService);
-      // insert a linkedAccount, passport and visa
-      var visaNeedingVerification =
-          TestUtils.createRandomVisa()
-              .withTokenType(TokenTypeEnum.access_token)
-              .withLastValidated(
-                  new Timestamp(Instant.now().minus(Duration.ofDays(50)).toEpochMilli()));
-      var savedLinkedAccountWithPassportAndVisa =
-          linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-              new LinkedAccountWithPassportAndVisas.Builder()
-                  .linkedAccount(TestUtils.createRandomLinkedAccount())
-                  .passport(TestUtils.createRandomPassport())
-                  .visas(List.of(visaNeedingVerification))
-                  .build());
+      LinkedAccountWithPassportAndVisas savedLinkedAccountWithPassportAndVisa =
+          createLinkedAccountWithOldVisa(linkedAccountService);
 
       // mock the behavior of helper functions which already have their own tests
-      var expectedPassportDetails =
-          buildVisaVerificationDetails(
-              savedLinkedAccountWithPassportAndVisa.getLinkedAccount(), visaNeedingVerification);
-      doReturn("Invalid")
-          .when(providerServiceSpy)
-          .validateVisaWithProvider(expectedPassportDetails);
+      var expectedVisaDetails =
+          getExpectedVisaVerificationDetails(savedLinkedAccountWithPassportAndVisa);
+      doReturn(false).when(providerServiceSpy).validateVisaWithProvider(expectedVisaDetails);
       doNothing()
           .when(providerServiceSpy)
           .authAndRefreshPassport(savedLinkedAccountWithPassportAndVisa.getLinkedAccount());
@@ -573,7 +575,7 @@ public class ProviderServiceTest extends BaseTest {
       // check that validatePassportWithProvider is called once and no exceptions are thrown
       providerServiceSpy.validateAccessTokenVisas();
       verify(providerServiceSpy).validateVisaWithProvider(any());
-      verify(providerServiceSpy).validateVisaWithProvider(expectedPassportDetails);
+      verify(providerServiceSpy).validateVisaWithProvider(expectedVisaDetails);
 
       // check that authAndRefreshPassport was also called once
       verify(providerServiceSpy)
@@ -581,12 +583,32 @@ public class ProviderServiceTest extends BaseTest {
     }
   }
 
-  private VisaVerificationDetails buildVisaVerificationDetails(
-      LinkedAccount savedLinkedAccount, GA4GHVisa visa) {
+  private VisaVerificationDetails getExpectedVisaVerificationDetails(
+      LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
+    var visa = linkedAccountWithPassportAndVisas.getVisas().get(0);
     return new VisaVerificationDetails.Builder()
-        .linkedAccountId(savedLinkedAccount.getId().get())
+        .linkedAccountId(linkedAccountWithPassportAndVisas.getLinkedAccount().getId().get())
         .visaJwt(visa.getJwt())
-        .providerName(savedLinkedAccount.getProviderName())
+        .providerName(linkedAccountWithPassportAndVisas.getLinkedAccount().getProviderName())
+        .visaId(visa.getId().get())
         .build();
+  }
+
+  private LinkedAccountWithPassportAndVisas createLinkedAccountWithOldVisa(
+      LinkedAccountService linkedAccountService) {
+    var visaNeedingVerification =
+        TestUtils.createRandomVisa()
+            .withTokenType(TokenTypeEnum.access_token)
+            .withLastValidated(
+                new Timestamp(Instant.now().minus(Duration.ofDays(50)).toEpochMilli()));
+
+    var savedLinkedAccountWithPassportAndVisa =
+        linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+            new LinkedAccountWithPassportAndVisas.Builder()
+                .linkedAccount(TestUtils.createRandomLinkedAccount())
+                .passport(TestUtils.createRandomPassport())
+                .visas(List.of(visaNeedingVerification))
+                .build());
+    return savedLinkedAccountWithPassportAndVisa;
   }
 }

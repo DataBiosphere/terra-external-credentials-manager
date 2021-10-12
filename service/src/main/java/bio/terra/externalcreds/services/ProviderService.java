@@ -194,7 +194,7 @@ public class ProviderService {
         visaDetailsList.stream()
             .flatMap(
                 visaDetails ->
-                    validateVisaWithProvider(visaDetails).equalsIgnoreCase("valid")
+                    validateVisaWithProvider(visaDetails)
                         ? Stream.empty()
                         : Stream.of(visaDetails.getLinkedAccountId()))
             .distinct();
@@ -277,7 +277,7 @@ public class ProviderService {
   }
 
   @VisibleForTesting
-  String validateVisaWithProvider(VisaVerificationDetails visaDetails) {
+  boolean validateVisaWithProvider(VisaVerificationDetails visaDetails) {
     var providerProperties = externalCredsConfig.getProviders().get(visaDetails.getProviderName());
     if (providerProperties == null) {
       throw new NotFoundException(
@@ -311,7 +311,13 @@ public class ProviderService {
             "linkedAccountId", visaDetails.getLinkedAccountId(),
             "providerName", visaDetails.getProviderName(),
             "validationResponse", responseBody));
-    return responseBody;
+
+    var visaValid = responseBody.equalsIgnoreCase("valid");
+
+    if (visaValid) {
+      passportService.updateVisaLastValidated(visaDetails.getVisaId());
+    }
+    return visaValid;
   }
 
   private void invalidateLinkedAccount(LinkedAccount linkedAccount) {
