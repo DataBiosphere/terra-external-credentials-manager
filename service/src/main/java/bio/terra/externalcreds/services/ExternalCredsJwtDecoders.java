@@ -28,8 +28,6 @@ import org.springframework.util.Assert;
 public class ExternalCredsJwtDecoders {
   private ExternalCredsJwtDecoders() {}
 
-  // TODO: consider having a set of tests specifically for this class
-
   /** Adapted from {@link JwtDecoders#withProviderConfiguration(java.util.Map, String)} */
   public static JwtDecoder fromJku(URI jku) throws MalformedURLException {
     OAuth2TokenValidator<Jwt> jwtValidator = JwtValidators.createDefault();
@@ -61,14 +59,12 @@ public class ExternalCredsJwtDecoders {
       List<? extends JWK> jwks = jwkSource.get(new JWKSelector(jwkMatcher), null);
       for (JWK jwk : jwks) {
         if (jwk.getAlgorithm() != null) {
-          // TODO: test the case where the algorithm is null
           JWSAlgorithm jwsAlgorithm = JWSAlgorithm.parse(jwk.getAlgorithm().getName());
           jwsAlgorithms.add(jwsAlgorithm);
         } else {
           if (jwk.getKeyType() == KeyType.RSA) {
             jwsAlgorithms.addAll(JWSAlgorithm.Family.RSA);
           } else if (jwk.getKeyType() == KeyType.EC) {
-            // TODO: test this case
             jwsAlgorithms.addAll(JWSAlgorithm.Family.EC);
           }
         }
