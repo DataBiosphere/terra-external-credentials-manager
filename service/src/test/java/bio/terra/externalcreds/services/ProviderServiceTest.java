@@ -358,6 +358,22 @@ public class ProviderServiceTest extends BaseTest {
           actualUpdatedVisas.get(0));
     }
 
+    @Test
+    void testMissingProviderConfigs() {
+      // pass in a non-expired linked account
+      var linkedAccount =
+          TestUtils.createRandomLinkedAccount()
+              .withExpires(
+                  new Timestamp(Instant.now().plus(Duration.ofMinutes(60)).toEpochMilli()));
+      // mock providerClientCache.getProviderClient to return an empty optional
+      when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+          .thenReturn(Optional.empty());
+      // check that ExternalCredsException is thrown
+      assertThrows(
+          ExternalCredsException.class,
+          () -> providerService.authAndRefreshPassport(linkedAccount));
+    }
+
     private void mockProviderConfigs(String providerName) {
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(providerName, TestUtils.createRandomProvider()));

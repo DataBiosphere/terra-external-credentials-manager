@@ -147,7 +147,6 @@ public class ProviderService {
 
     var refreshToken = tokenResponse.getRefreshToken();
     if (refreshToken == null) {
-      // TODO (maybe): test this case
       throw new ExternalCredsException(
           "cannot link account because authorization response did not contain refresh token");
     }
@@ -243,7 +242,7 @@ public class ProviderService {
     }
   }
 
-  public LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
+  private LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
       LinkedAccount linkedAccount) {
     var clientRegistration =
         providerClientCache
@@ -254,9 +253,6 @@ public class ProviderService {
                         String.format(
                             "Unable to find configs for the provider: %s",
                             linkedAccount.getProviderName())));
-    // TODO: test the above exception
-    //  mock providerClientCache.getProviderClient to return an empty optional
-    //  then check that ExternalCredsException is thrown
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
