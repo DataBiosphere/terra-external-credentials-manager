@@ -29,9 +29,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class JwtUtils {
-  // TODO: have a specific test class for this
-  //  (some tests may already exist in AuthCodeExchangeTest and should maybe be moved to their own
-  //  test class)
 
   public static final String PASSPORT_JWT_V11_CLAIM = "passport_jwt_v11";
   public static final String GA4GH_PASSPORT_V1_CLAIM = "ga4gh_passport_v1";

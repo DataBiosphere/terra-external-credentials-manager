@@ -1,5 +1,8 @@
 package bio.terra.externalcreds;
 
+import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.TokenTypeEnum;
+import bio.terra.externalcreds.services.JwtUtils;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -12,7 +15,10 @@ import com.nimbusds.jose.util.JSONObjectUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.sql.Timestamp;
 import java.util.Map;
+import java.util.UUID;
 import lombok.SneakyThrows;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
@@ -93,5 +99,40 @@ public class JwtSigningTestUtils {
 
   public String getIssuer() {
     return issuer;
+  }
+
+  public String createVisaJwtString(GA4GHVisa visa) throws URISyntaxException, JOSEException {
+    var visaClaimSet =
+        new JWTClaimsSet.Builder()
+            .expirationTime(visa.getExpires())
+            .issuer(visa.getIssuer().equals("null") ? null : visa.getIssuer())
+            .claim(
+                JwtUtils.GA4GH_VISA_V1_CLAIM, Map.of(JwtUtils.VISA_TYPE_CLAIM, visa.getVisaType()))
+            .build();
+
+    switch (visa.getTokenType()) {
+      case access_token:
+        return createSignedJwt(visaClaimSet);
+
+      case document_token:
+        return createSignedDocumentTokenJwt(visaClaimSet, visa.getIssuer());
+
+      default:
+        throw new RuntimeException("unexpected token type " + visa.getTokenType());
+    }
+  }
+
+  public GA4GHVisa createTestVisaWithJwt(TokenTypeEnum tokenType, Timestamp expires)
+      throws URISyntaxException, JOSEException {
+    var visa =
+        new GA4GHVisa.Builder()
+            .visaType(UUID.randomUUID().toString())
+            .tokenType(tokenType)
+            .issuer(getIssuer())
+            .expires(expires)
+            .jwt("temp")
+            .build();
+    visa = visa.withJwt(createVisaJwtString(visa));
+    return visa;
   }
 }
