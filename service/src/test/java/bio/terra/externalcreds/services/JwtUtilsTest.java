@@ -57,7 +57,6 @@ public class JwtUtilsTest extends BaseTest {
           jwtSigningTestUtils
               .createTestVisaWithJwt(TokenTypeEnum.access_token, TestUtils.getRandomTimestamp())
               .withIssuer("null");
-      // TODO: decide if a normal visa could be used here instead to simplify
       var jwtMissingIssuer = jwtSigningTestUtils.createVisaJwtString(visa);
       assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtMissingIssuer));
     }
