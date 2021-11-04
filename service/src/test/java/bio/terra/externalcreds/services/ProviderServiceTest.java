@@ -26,6 +26,7 @@ import bio.terra.externalcreds.models.VisaVerificationDetails;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -357,6 +358,22 @@ public class ProviderServiceTest extends BaseTest {
           actualUpdatedVisas.get(0));
     }
 
+    @Test
+    void testMissingProviderConfigs() {
+      // pass in a non-expired linked account
+      var linkedAccount =
+          TestUtils.createRandomLinkedAccount()
+              .withExpires(
+                  new Timestamp(Instant.now().plus(Duration.ofMinutes(60)).toEpochMilli()));
+      // mock providerClientCache.getProviderClient to return an empty optional
+      when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+          .thenReturn(Optional.empty());
+      // check that ExternalCredsException is thrown
+      assertThrows(
+          ExternalCredsException.class,
+          () -> providerService.authAndRefreshPassport(linkedAccount));
+    }
+
     private void mockProviderConfigs(String providerName) {
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(providerName, TestUtils.createRandomProvider()));
@@ -421,7 +438,7 @@ public class ProviderServiceTest extends BaseTest {
 
     @Test
     void testSuccessfullyValidatePassportWithProvider() {
-      LinkedAccountWithPassportAndVisas savedLinkedAccountWithPassportAndVisa =
+      var savedLinkedAccountWithPassportAndVisa =
           createLinkedAccountWithOldVisa(linkedAccountService);
 
       var visaVerificationDetails =
@@ -451,8 +468,8 @@ public class ProviderServiceTest extends BaseTest {
     }
 
     @Test
-    void testValidateInvalidPassportWithProvider() {
-      LinkedAccountWithPassportAndVisas savedLinkedAccountWithPassportAndVisa =
+    void testValidateInvalidVisaWithProvider() {
+      var savedLinkedAccountWithPassportAndVisa =
           createLinkedAccountWithOldVisa(linkedAccountService);
 
       var visaVerificationDetails =
@@ -476,6 +493,30 @@ public class ProviderServiceTest extends BaseTest {
             savedLinkedAccountWithPassportAndVisa.getVisas().get(0).getLastValidated().get(),
             unchangedVisas.get(0).getLastValidated().get());
       }
+    }
+
+    @Test
+    void testProviderPropertiesIsNull() {
+      var visaVerificationDetails = TestUtils.createRandomVisaVerificationDetails();
+      when(externalCredsConfigMock.getProviders()).thenReturn(new HashMap<>());
+
+      assertThrows(
+          NotFoundException.class,
+          () -> providerService.validateVisaWithProvider(visaVerificationDetails));
+    }
+
+    @Test
+    void testNoValidationEndpoint() {
+      var fakeProviderName = "fakeProvider";
+      var providerProperties = TestUtils.createRandomProvider();
+      var visaVerificationDetails = TestUtils.createRandomVisaVerificationDetails();
+
+      when(externalCredsConfigMock.getProviders())
+          .thenReturn(Map.of(fakeProviderName, providerProperties));
+
+      assertThrows(
+          NotFoundException.class,
+          () -> providerService.validateVisaWithProvider(visaVerificationDetails));
     }
 
     private ClientAndServer mockValidationEndpointConfigsAndResponse(

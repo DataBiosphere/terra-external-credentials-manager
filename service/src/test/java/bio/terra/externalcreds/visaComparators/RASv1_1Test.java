@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class RASv1_1Test extends BaseTest {
-  private static JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
+  private static final JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
 
   @Autowired private RASv1_1 comparator;
 
@@ -110,6 +110,7 @@ public class RASv1_1Test extends BaseTest {
             createTestRasVisa(authorization, authorization), createTestRasVisa(authorization)));
   }
 
+  @SafeVarargs
   private ImmutableGA4GHVisa createTestRasVisa(Map<String, String>... dbgapPermissions) {
     return new GA4GHVisa.Builder()
         .jwt(createVisaJwtString(dbgapPermissions))
@@ -120,6 +121,7 @@ public class RASv1_1Test extends BaseTest {
         .build();
   }
 
+  @SafeVarargs
   private String createVisaJwtString(Map<String, String>... dbgapPermissions) {
     var visaClaimSet =
         new JWTClaimsSet.Builder()

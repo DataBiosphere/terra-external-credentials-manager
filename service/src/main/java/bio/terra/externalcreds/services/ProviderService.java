@@ -242,7 +242,7 @@ public class ProviderService {
     }
   }
 
-  public LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
+  private LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
       LinkedAccount linkedAccount) {
     var clientRegistration =
         providerClientCache

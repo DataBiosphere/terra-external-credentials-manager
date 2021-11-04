@@ -5,6 +5,7 @@ import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
+import bio.terra.externalcreds.models.VisaVerificationDetails;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
@@ -57,5 +58,14 @@ public class TestUtils {
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static VisaVerificationDetails createRandomVisaVerificationDetails() {
+    return new VisaVerificationDetails.Builder()
+        .visaId(21)
+        .linkedAccountId(42)
+        .providerName(UUID.randomUUID().toString())
+        .visaJwt(UUID.randomUUID().toString())
+        .build();
   }
 }

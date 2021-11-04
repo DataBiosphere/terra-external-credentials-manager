@@ -1,8 +1,6 @@
 package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
@@ -109,65 +107,6 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
   void testNoPassport() throws URISyntaxException {
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, null, Collections.emptyList());
-  }
-
-  @Test
-  void testInvalidJwtSignature() throws URISyntaxException, JOSEException {
-    var invalidJwt = createTestVisa(TokenTypeEnum.access_token).getJwt() + "foo";
-    assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(invalidJwt));
-  }
-
-  @Test
-  void testJwtMissingIssuer() throws URISyntaxException, JOSEException {
-    var jwtMissingIssuer =
-        createVisaJwtString(createTestVisa(TokenTypeEnum.access_token).withIssuer("null"));
-    assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtMissingIssuer));
-  }
-
-  @Test
-  void testJwtIssuerNotReal() throws URISyntaxException, JOSEException {
-    var jwtNotRealIssuer =
-        createVisaJwtString(
-            createTestVisa(TokenTypeEnum.access_token).withIssuer("http://does.not.exist"));
-    assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtNotRealIssuer));
-  }
-
-  @Test
-  void testJwtJkuNotOnAllowList() throws URISyntaxException, JOSEException {
-    var exception =
-        assertThrows(
-            InvalidJwtException.class,
-            () -> jwtUtils.decodeJwt(createTestVisa(TokenTypeEnum.document_token).getJwt()));
-
-    assertTrue(exception.getMessage().contains("not on allowed list"));
-  }
-
-  @Test
-  void testJwtJkuNotResponsive() throws URISyntaxException, JOSEException {
-    String testIssuer = "http://localhost:10";
-    when(externalCredsConfigMock.getAllowedJwksUris())
-        .thenReturn(List.of(new URI(testIssuer + JwtSigningTestUtils.JKU_PATH)));
-
-    var jwtNotResponsiveJku =
-        createVisaJwtString(createTestVisa(TokenTypeEnum.document_token).withIssuer(testIssuer));
-
-    var exception =
-        assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtNotResponsiveJku));
-    assertTrue(exception.getMessage().contains("Connection refused"));
-  }
-
-  @Test
-  void testJwtJkuMalformed() throws URISyntaxException, JOSEException {
-    String testIssuer = "foobar";
-    when(externalCredsConfigMock.getAllowedJwksUris())
-        .thenReturn(List.of(new URI(testIssuer + JwtSigningTestUtils.JKU_PATH)));
-
-    var jwtMalformedJku =
-        createVisaJwtString(createTestVisa(TokenTypeEnum.document_token).withIssuer(testIssuer));
-
-    var exception =
-        assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtMalformedJku));
-    assertTrue(exception.getMessage().contains("URI is not absolute"));
   }
 
   private void setupMocks(
@@ -290,38 +229,8 @@ public class AuthorizationCodeExchangeTest extends BaseTest {
     return new GA4GHPassport.Builder().jwt(jwtString).expires(passportExpiresTime).build();
   }
 
-  private String createVisaJwtString(GA4GHVisa visa) throws URISyntaxException, JOSEException {
-    var visaClaimSet =
-        new JWTClaimsSet.Builder()
-            .expirationTime(visa.getExpires())
-            .issuer(visa.getIssuer().equals("null") ? null : visa.getIssuer())
-            .claim(
-                JwtUtils.GA4GH_VISA_V1_CLAIM, Map.of(JwtUtils.VISA_TYPE_CLAIM, visa.getVisaType()))
-            .build();
-
-    switch (visa.getTokenType()) {
-      case access_token:
-        return jwtSigningTestUtils.createSignedJwt(visaClaimSet);
-
-      case document_token:
-        return jwtSigningTestUtils.createSignedDocumentTokenJwt(visaClaimSet, visa.getIssuer());
-
-      default:
-        throw new RuntimeException("unexpected token type " + visa.getTokenType());
-    }
-  }
-
   private GA4GHVisa createTestVisa(TokenTypeEnum tokenType)
       throws URISyntaxException, JOSEException {
-    var visa =
-        new GA4GHVisa.Builder()
-            .visaType(UUID.randomUUID().toString())
-            .tokenType(tokenType)
-            .issuer(jwtSigningTestUtils.getIssuer())
-            .expires(new Timestamp(passportExpires.getTime()))
-            .jwt("temp")
-            .build();
-    visa = visa.withJwt(createVisaJwtString(visa));
-    return visa;
+    return jwtSigningTestUtils.createTestVisaWithJwt(tokenType, passportExpiresTime);
   }
 }
