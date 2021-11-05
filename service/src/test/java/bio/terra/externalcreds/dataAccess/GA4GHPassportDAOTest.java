@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DuplicateKeyException;
 
-public class GA4GHPassportDAOTest extends BaseTest {
+class GA4GHPassportDAOTest extends BaseTest {
 
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
@@ -65,11 +65,10 @@ public class GA4GHPassportDAOTest extends BaseTest {
           passportDAO.insertPassport(
               TestUtils.createRandomPassport().withLinkedAccountId(savedAccountId));
 
+      var duplicatePassport =
+          savedPassport.withExpires(new Timestamp(200)).withJwt("different-jwt");
       assertThrows(
-          DuplicateKeyException.class,
-          () ->
-              passportDAO.insertPassport(
-                  savedPassport.withExpires(new Timestamp(200)).withJwt("different-jwt")));
+          DuplicateKeyException.class, () -> passportDAO.insertPassport(duplicatePassport));
     }
   }
 

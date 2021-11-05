@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
@@ -50,7 +51,7 @@ public class GA4GHVisaDAO {
     var generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
-    return visa.withId(generatedKeyHolder.getKey().intValue());
+    return visa.withId(Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
   }
 
   public List<GA4GHVisa> listVisas(String userId, String providerName) {

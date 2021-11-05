@@ -35,10 +35,10 @@ public class ProviderClientCache {
             .issuerUri(providerInfo.getIssuer());
 
     // set optional overrides
-    providerInfo.getUserInfoEndpoint().map(builder::userInfoUri);
-    providerInfo.getAuthorizationEndpoint().map(builder::authorizationUri);
-    providerInfo.getTokenEndpoint().map(builder::tokenUri);
-    providerInfo.getJwksUri().map(builder::jwkSetUri);
+    providerInfo.getUserInfoEndpoint().ifPresent(builder::userInfoUri);
+    providerInfo.getAuthorizationEndpoint().ifPresent(builder::authorizationUri);
+    providerInfo.getTokenEndpoint().ifPresent(builder::tokenUri);
+    providerInfo.getJwksUri().ifPresent(builder::jwkSetUri);
 
     return builder.build();
   }

@@ -37,7 +37,7 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenRespon
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-public class AuthorizationCodeExchangeTest extends BaseTest {
+class AuthorizationCodeExchangeTest extends BaseTest {
   @MockBean OAuth2Service oAuth2ServiceMock;
   @MockBean ProviderClientCache providerClientCacheMock;
   @MockBean ExternalCredsConfig externalCredsConfigMock;

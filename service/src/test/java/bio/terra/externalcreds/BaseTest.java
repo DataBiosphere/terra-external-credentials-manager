@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("human-readable-logging")
 @Transactional
 @Rollback
-public class BaseTest {
+public abstract class BaseTest {
   public void assertEmpty(Optional<?> optional) {
     assertTrue(optional.isEmpty(), "expected empty optional");
   }

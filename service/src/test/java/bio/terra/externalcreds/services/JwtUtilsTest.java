@@ -73,15 +73,11 @@ public class JwtUtilsTest extends BaseTest {
 
     @Test
     void testJwtJkuNotOnAllowList() throws URISyntaxException, JOSEException {
-      var exception =
-          assertThrows(
-              InvalidJwtException.class,
-              () ->
-                  jwtUtils.decodeJwt(
-                      jwtSigningTestUtils
-                          .createTestVisaWithJwt(
-                              TokenTypeEnum.document_token, TestUtils.getRandomTimestamp())
-                          .getJwt()));
+      var badJwt =
+          jwtSigningTestUtils
+              .createTestVisaWithJwt(TokenTypeEnum.document_token, TestUtils.getRandomTimestamp())
+              .getJwt();
+      var exception = assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(badJwt));
 
       assertTrue(exception.getMessage().contains("not on allowed list"));
     }

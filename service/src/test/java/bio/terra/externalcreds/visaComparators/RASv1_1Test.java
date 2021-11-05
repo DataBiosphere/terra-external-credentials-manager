@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class RASv1_1Test extends BaseTest {
+class RASv1_1Test extends BaseTest {
   private static final JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
 
   @Autowired private RASv1_1 comparator;
