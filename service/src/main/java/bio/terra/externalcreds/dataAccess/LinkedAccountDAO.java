@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
@@ -83,7 +84,7 @@ public class LinkedAccountDAO {
     var generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
-    return linkedAccount.withId(generatedKeyHolder.getKey().intValue());
+    return linkedAccount.withId(Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
   }
 
   /**

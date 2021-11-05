@@ -83,6 +83,7 @@ public class EventPublisher {
             publisher.shutdown();
             publisher.awaitTermination(1, TimeUnit.MINUTES);
           } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new ExternalCredsException("publisher shutdown interrupted", e);
           }
         });

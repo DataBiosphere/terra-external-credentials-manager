@@ -9,7 +9,7 @@ import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class PassportServiceTest extends BaseTest {
+class PassportServiceTest extends BaseTest {
 
   @Autowired PassportService passportService;
   @Autowired LinkedAccountDAO linkedAccountDAO;

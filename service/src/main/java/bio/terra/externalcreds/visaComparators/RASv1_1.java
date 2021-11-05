@@ -48,9 +48,7 @@ public class RASv1_1 implements VisaComparator {
       throws ParseException, JsonProcessingException {
     var visaClaim =
         JWTParser.parse(visa.getJwt()).getJWTClaimsSet().getClaim(DBGAP_CLAIM).toString();
-    var visaPermissions =
-        objectMapper.readValue(visaClaim, new TypeReference<Set<DbGapPermission>>() {});
-    return visaPermissions;
+    return objectMapper.readValue(visaClaim, new TypeReference<Set<DbGapPermission>>() {});
   }
 
   @Override

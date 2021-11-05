@@ -1,7 +1,6 @@
 package bio.terra.externalcreds.controllers;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -41,7 +40,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 
 @AutoConfigureMockMvc
-public class OidcApiControllerTest extends BaseTest {
+class OidcApiControllerTest extends BaseTest {
 
   @Autowired private ObjectMapper mapper;
 
@@ -119,7 +118,7 @@ public class OidcApiControllerTest extends BaseTest {
       mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
       when(linkedAccountServiceMock.getLinkedAccount(
-              eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderName())))
+              inputLinkedAccount.getUserId(), inputLinkedAccount.getProviderName()))
           .thenReturn(Optional.of(inputLinkedAccount));
 
       mvc.perform(
