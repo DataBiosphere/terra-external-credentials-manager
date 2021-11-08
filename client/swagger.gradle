@@ -24,7 +24,10 @@ generateSwaggerCode {
 			modelPackage  : "${artifactGroup}.model",
 			apiPackage    : "${artifactGroup}.api",
 			invokerPackage: "${artifactGroup}.client",
-			dateLibrary   : 'java8'
+			dateLibrary   : 'java11',
+			java8         : true
+			// this is needed because everything outside of the generated date library still checks this flag to decide
+			// whether or not to use native libraries (search for 'java11' in swagger-codegen-generators)
 	]
 
 	rawOptions = ["--ignore-file-override", "${projectDir}/.swagger-codegen-ignore"]
