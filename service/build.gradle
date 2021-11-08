@@ -8,7 +8,7 @@ plugins {
 	id 'com.diffplug.spotless'
 	id 'com.github.ben-manes.versions' version '0.39.0'
 	id 'com.github.spotbugs' version '4.7.9'
-	id 'com.google.cloud.tools.jib' version '3.1.4'
+	id 'com.google.cloud.tools.jib' version '3.1.2' // can't update for now, see https://github.com/GoogleContainerTools/jib/issues/3445
 	id 'com.gorylenko.gradle-git-properties' version '2.3.1'
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
