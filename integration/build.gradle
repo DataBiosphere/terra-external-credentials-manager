@@ -21,7 +21,7 @@ dependencies {
 	implementation 'org.junit.jupiter:junit-jupiter-api'
 
 	// Google Dependencies
-	implementation 'com.google.auth:google-auth-library-oauth2-http:1.1.0'
+	implementation 'com.google.auth:google-auth-library-oauth2-http:1.2.2'
 
 	// ECM client library
 	implementation project(':client')
