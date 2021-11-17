@@ -16,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
     properties = {"DATABASE_NAME=ecm_test"},
     classes = ExternalCredsWebApplication.class)
 @ActiveProfiles("human-readable-logging")
-public class WriteTransactionTest {
+class WriteTransactionTest {
   @Autowired private WriteTransactionProbe writeTransactionProbe;
 
   @BeforeEach
@@ -38,7 +38,7 @@ public class WriteTransactionTest {
    * @throws InterruptedException
    */
   @Test
-  public void testWriteTransactionAnnotation() throws InterruptedException {
+  void testWriteTransactionAnnotation() throws InterruptedException {
     var probeValue = 22;
     var probeId = 1;
 

@@ -49,7 +49,6 @@ public class OAuth2Service {
       Set<String> scopes,
       String state,
       Map<String, Object> additionalAuthorizationParameters) {
-
     return createOAuth2AuthorizationRequest(
             redirectUri, scopes, state, providerClient, additionalAuthorizationParameters)
         .getAuthorizationRequestUri();

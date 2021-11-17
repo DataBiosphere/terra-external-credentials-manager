@@ -230,9 +230,9 @@ public class ProviderService {
       } catch (OAuth2AuthorizationException oauthEx) {
         // if the cause is a 4xx response, delete the passport
         if (oauthEx.getCause() instanceof HttpClientErrorException) {
-          linkedAccount
-              .getId()
-              .orElseThrow(() -> new ExternalCredsException("linked account id missing"));
+          if (linkedAccount.getId().isEmpty()) {
+            throw new ExternalCredsException("linked account id missing");
+          }
           invalidateLinkedAccount(linkedAccount);
         } else {
           // log and try again later
@@ -242,7 +242,7 @@ public class ProviderService {
     }
   }
 
-  public LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
+  private LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
       LinkedAccount linkedAccount) {
     var clientRegistration =
         providerClientCache
@@ -308,7 +308,7 @@ public class ProviderService {
             "providerName", visaDetails.getProviderName(),
             "validationResponse", responseBody));
 
-    var visaValid = responseBody.equalsIgnoreCase("valid");
+    var visaValid = "valid".equalsIgnoreCase(responseBody);
 
     if (visaValid) {
       passportService.updateVisaLastValidated(visaDetails.getVisaId());

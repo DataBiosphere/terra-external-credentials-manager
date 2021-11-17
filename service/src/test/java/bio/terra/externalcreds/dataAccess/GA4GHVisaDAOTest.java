@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 
-public class GA4GHVisaDAOTest extends BaseTest {
+class GA4GHVisaDAOTest extends BaseTest {
 
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
@@ -174,15 +174,14 @@ public class GA4GHVisaDAOTest extends BaseTest {
 
     var loadedVisas =
         visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
-    assertEquals(loadedVisas.size(), 2);
+    assertEquals(2, loadedVisas.size());
     assertEquals(Set.of(savedVisa1, savedVisa2), Set.copyOf(loadedVisas));
   }
 
   @Test
   void testInsertVisaWithInvalidForeignKey() {
-    assertThrows(
-        DataAccessException.class,
-        () -> visaDAO.insertVisa(TestUtils.createRandomVisa().withPassportId(-1)));
+    var invalidKeyVisa = TestUtils.createRandomVisa().withPassportId(-1);
+    assertThrows(DataAccessException.class, () -> visaDAO.insertVisa(invalidKeyVisa));
   }
 
   @Test

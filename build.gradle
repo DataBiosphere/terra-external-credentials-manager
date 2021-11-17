@@ -2,10 +2,11 @@ plugins {
 	id 'idea'
 
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
-	id 'org.springframework.boot' version '2.5.4' apply false
+	id 'org.springframework.boot' version '2.5.6' apply false
 	id 'com.diffplug.spotless' version '5.14.2'apply false
 	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
-
+	id 'com.google.cloud.tools.jib' version '3.1.4' apply false
+	// ^^ see https://github.com/GoogleContainerTools/jib/blob/master/docs/faq.md#i-am-seeing-method-not-found-or-class-not-found-errors-when-building
   	id "org.sonarqube" version "3.3"
 }
 
@@ -13,7 +14,7 @@ repositories { mavenCentral() }
 
 subprojects {
 	group = 'bio.terra'
-	version = '0.46.0-SNAPSHOT'
+	version = '0.49.0-SNAPSHOT'
 
 	ext {
 		artifactGroup = "${group}.${rootProject.name}"
@@ -27,8 +28,8 @@ subprojects {
 		}
 
 		dependencies {
-			dependency 'io.swagger.core.v3:swagger-annotations:2.1.10'
-			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.27'
+			dependency 'io.swagger.core.v3:swagger-annotations:2.1.11'
+			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.29'
 		}
 	}
 

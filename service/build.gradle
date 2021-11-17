@@ -7,8 +7,8 @@ plugins {
 
 	id 'com.diffplug.spotless'
 	id 'com.github.ben-manes.versions' version '0.39.0'
-	id 'com.github.spotbugs' version '4.7.3'
-	id 'com.google.cloud.tools.jib' version '3.1.2'
+	id 'com.github.spotbugs' version '4.7.9'
+	id 'com.google.cloud.tools.jib'
 	id 'com.gorylenko.gradle-git-properties' version '2.3.1'
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
@@ -30,7 +30,7 @@ apply from: 'analysis.gradle'
 
 dependencies {
 	// google
-	implementation platform('com.google.cloud:libraries-bom:22.0.0')
+	implementation platform('com.google.cloud:libraries-bom:24.0.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 
 	annotationProcessor 'org.immutables:value:2.8.8'
@@ -40,3 +40,5 @@ dependencies {
 	// for testing with mock web server
 	testImplementation 'org.mock-server:mockserver-netty:5.11.2'
 }
+
+test { maxParallelForks = 2 }

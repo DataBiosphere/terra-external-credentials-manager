@@ -1,9 +1,9 @@
 package bio.terra.externalcreds.dataAccess;
 
-import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
@@ -18,12 +18,9 @@ import org.springframework.stereotype.Repository;
 public class GA4GHPassportDAO {
 
   private final NamedParameterJdbcTemplate jdbcTemplate;
-  private final ExternalCredsConfig externalCredsConfig;
 
-  public GA4GHPassportDAO(
-      NamedParameterJdbcTemplate jdbcTemplate, ExternalCredsConfig externalCredsConfig) {
+  public GA4GHPassportDAO(NamedParameterJdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
-    this.externalCredsConfig = externalCredsConfig;
   }
 
   /**
@@ -55,7 +52,7 @@ public class GA4GHPassportDAO {
     var generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
-    return passport.withId(generatedKeyHolder.getKey().intValue());
+    return passport.withId(Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
   }
 
   public Optional<GA4GHPassport> getPassport(String userId, String providerName) {

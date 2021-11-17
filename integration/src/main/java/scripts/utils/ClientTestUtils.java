@@ -4,7 +4,6 @@ import bio.terra.externalcreds.client.ApiClient;
 import bio.terra.testrunner.runner.config.ServerSpecification;
 import com.google.auth.oauth2.AccessToken;
 import com.google.common.base.Strings;
-import java.io.IOException;
 import javax.annotation.Nullable;
 
 public class ClientTestUtils {
@@ -18,13 +17,12 @@ public class ClientTestUtils {
    * @param server the server we are testing against
    * @return the API client object for this user
    */
-  public static ApiClient getClientWithoutAccessToken(ServerSpecification server)
-      throws IOException {
+  public static ApiClient getClientWithoutAccessToken(ServerSpecification server) {
     return buildClient(null, server);
   }
 
   private static ApiClient buildClient(
-      @Nullable AccessToken accessToken, ServerSpecification server) throws IOException {
+      @Nullable AccessToken accessToken, ServerSpecification server) {
     if (Strings.isNullOrEmpty(server.policyManagerUri)) {
       throw new IllegalArgumentException("Service URI cannot be empty");
     }

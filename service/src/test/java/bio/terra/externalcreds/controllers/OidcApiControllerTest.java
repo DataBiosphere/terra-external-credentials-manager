@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.controllers;
 
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -14,7 +14,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
@@ -38,7 +40,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 
 @AutoConfigureMockMvc
-public class OidcApiControllerTest extends BaseTest {
+class OidcApiControllerTest extends BaseTest {
 
   @Autowired private ObjectMapper mapper;
 
@@ -49,6 +51,7 @@ public class OidcApiControllerTest extends BaseTest {
   @MockBean private ProviderService providerServiceMock;
   @MockBean private SamService samServiceMock;
   @MockBean private PassportService passportServiceMock;
+  @MockBean private AuditLogger auditLoggerMock;
 
   @Test
   void testListProviders() throws Exception {
@@ -115,7 +118,7 @@ public class OidcApiControllerTest extends BaseTest {
       mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
       when(linkedAccountServiceMock.getLinkedAccount(
-              eq(inputLinkedAccount.getUserId()), eq(inputLinkedAccount.getProviderName())))
+              inputLinkedAccount.getUserId(), inputLinkedAccount.getProviderName()))
           .thenReturn(Optional.of(inputLinkedAccount));
 
       mvc.perform(
@@ -166,44 +169,71 @@ public class OidcApiControllerTest extends BaseTest {
     }
   }
 
-  @Test
-  void testCreateLink() throws Exception {
-    var accessToken = "testToken";
-    var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
+  @Nested
+  class CreateLink {
 
-    var scopes = new String[] {"email", "foo"};
-    var redirectUri = "http://redirect";
-    var state = UUID.randomUUID().toString();
-    var oauthcode = UUID.randomUUID().toString();
+    @Test
+    void testCreatesLinkSuccessfully() throws Exception {
+      var accessToken = "testToken";
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
 
-    mockSamUser(inputLinkedAccount.getUserId(), accessToken);
+      var scopes = new String[] {"email", "foo"};
+      var redirectUri = "http://redirect";
+      var state = UUID.randomUUID().toString();
+      var oauthcode = UUID.randomUUID().toString();
 
-    when(providerServiceMock.createLink(
-            inputLinkedAccount.getProviderName(),
-            inputLinkedAccount.getUserId(),
-            oauthcode,
-            redirectUri,
-            Set.of(scopes),
-            state))
-        .thenReturn(
-            Optional.of(
-                new LinkedAccountWithPassportAndVisas.Builder()
-                    .linkedAccount(inputLinkedAccount)
-                    .build()));
+      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
-    mvc.perform(
-            post("/api/oidc/v1/{provider}/oauthcode", inputLinkedAccount.getProviderName())
-                .header("authorization", "Bearer " + accessToken)
-                .param("scopes", scopes)
-                .param("redirectUri", redirectUri)
-                .param("state", state)
-                .param("oauthcode", oauthcode))
-        .andExpect(status().isOk())
-        .andExpect(
-            content()
-                .json(
-                    mapper.writeValueAsString(
-                        oidcApiController.getLinkInfoFromLinkedAccount(inputLinkedAccount))));
+      when(providerServiceMock.createLink(
+              inputLinkedAccount.getProviderName(),
+              inputLinkedAccount.getUserId(),
+              oauthcode,
+              redirectUri,
+              Set.of(scopes),
+              state))
+          .thenReturn(
+              Optional.of(
+                  new LinkedAccountWithPassportAndVisas.Builder()
+                      .linkedAccount(inputLinkedAccount)
+                      .build()));
+
+      mvc.perform(
+              post("/api/oidc/v1/{provider}/oauthcode", inputLinkedAccount.getProviderName())
+                  .header("authorization", "Bearer " + accessToken)
+                  .param("scopes", scopes)
+                  .param("redirectUri", redirectUri)
+                  .param("state", state)
+                  .param("oauthcode", oauthcode))
+          .andExpect(status().isOk())
+          .andExpect(
+              content()
+                  .json(
+                      mapper.writeValueAsString(
+                          oidcApiController.getLinkInfoFromLinkedAccount(inputLinkedAccount))));
+    }
+
+    @Test
+    void testExceptionIsLogged() throws Exception {
+      var accessToken = "testToken";
+
+      mockSamUser("userId", accessToken);
+
+      when(providerServiceMock.createLink(any(), any(), any(), any(), any(), any()))
+          .thenThrow(new ExternalCredsException("This is a drill!"));
+
+      // check that an internal server error code is returned
+      mvc.perform(
+              post("/api/oidc/v1/{provider}/oauthcode", "testProviderName")
+                  .header("authorization", "Bearer " + accessToken)
+                  .param("scopes", new String[] {"foo"})
+                  .param("redirectUri", "redirectUri")
+                  .param("state", "state")
+                  .param("oauthcode", "oauthcode"))
+          .andExpect(status().isInternalServerError());
+
+      // check that a log was recorded
+      verify(auditLoggerMock).logEvent(any());
+    }
   }
 
   @Nested

@@ -6,6 +6,7 @@ import javax.annotation.Nullable;
 import org.springframework.http.HttpStatus;
 
 public class InvalidJwtException extends ExternalCredsException {
+
   public InvalidJwtException(String message) {
     super(message);
   }

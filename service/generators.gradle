@@ -1,6 +1,6 @@
 dependencies {
 	implementation 'io.swagger.core.v3:swagger-annotations'
-	runtimeOnly 'org.webjars.npm:swagger-ui-dist:3.51.2'
+	runtimeOnly 'org.webjars.npm:swagger-ui-dist:4.1.0'
 	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli'
 
 	// Versioned by Spring:
@@ -15,7 +15,7 @@ generateSwaggerCode {
 	additionalProperties = [
 			modelPackage     : "${artifactGroup}.generated.model",
 			apiPackage       : "${artifactGroup}.generated.api",
-			dateLibrary      : 'java8',
+			dateLibrary      : 'java11',
 			interfaceOnly    : 'true',
 			useTags          : 'true',
 			springBootVersion: dependencyManagement.managedVersions['org.springframework.boot:spring-boot']
