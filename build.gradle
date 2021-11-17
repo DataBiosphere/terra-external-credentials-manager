@@ -5,6 +5,8 @@ plugins {
 	id 'org.springframework.boot' version '2.5.4' apply false
 	id 'com.diffplug.spotless' version '5.14.2'apply false
 	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
+
+  	id "org.sonarqube" version "3.3"
 }
 
 repositories { mavenCentral() }
@@ -29,6 +31,17 @@ subprojects {
 			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.27'
 		}
 	}
+
 }
+
+sonarqube {
+	properties {
+		property "sonar.projectKey", "DataBiosphere_terra-external-credentials-manager"
+		property "sonar.organization", "broad-databiosphere"
+		property "sonar.host.url", "https://sonarcloud.io"
+		property "sonar.sources", "src/main/java,src/main/resources/templates"
+	}
+}
+
 
 idea.project.jdkName = '11'
