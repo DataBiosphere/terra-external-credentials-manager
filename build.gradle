@@ -7,7 +7,7 @@ plugins {
 	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
 	id 'com.google.cloud.tools.jib' version '3.1.4' apply false
 	// ^^ see https://github.com/GoogleContainerTools/jib/blob/master/docs/faq.md#i-am-seeing-method-not-found-or-class-not-found-errors-when-building
-  	id "org.sonarqube" version "3.3"
+  	id "org.sonarqube" version "3.3" apply false
 }
 
 repositories { mavenCentral() }
@@ -35,14 +35,6 @@ subprojects {
 
 }
 
-sonarqube {
-	properties {
-		property "sonar.projectKey", "DataBiosphere_terra-external-credentials-manager"
-		property "sonar.organization", "broad-databiosphere"
-		property "sonar.host.url", "https://sonarcloud.io"
-		property "sonar.sources", "src/main/java,src/main/resources/templates"
-	}
-}
 
 
 idea.project.jdkName = '11'
