@@ -18,6 +18,7 @@ subprojects {
 	ext {
 		artifactGroup = "${group}.${rootProject.name}"
 	}
+	ext['log4j2.version'] = '2.15.0' // until Spring Boot 2.6.2
 
 	apply plugin: 'io.spring.dependency-management'
 
