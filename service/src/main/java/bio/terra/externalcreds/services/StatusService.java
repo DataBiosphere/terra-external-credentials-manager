@@ -1,7 +1,6 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.dataAccess.StatusDAO;
-import bio.terra.externalcreds.generated.model.SubsystemStatus;
 import bio.terra.externalcreds.generated.model.SystemStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,15 +16,15 @@ public class StatusService {
   }
 
   public SystemStatus getSystemStatus() {
-    var subsystems = new SubsystemStatus();
+    var currentStatus = new SystemStatus();
 
     try {
-      subsystems.put("postgres", statusDAO.isPostgresOk());
+      currentStatus.putSystemsItem("postgres", statusDAO.isPostgresOk());
     } catch (Exception e) {
       log.warn("Error checking database status", e);
-      subsystems.put("postgres", false);
+      currentStatus.putSystemsItem("postgres", false);
     }
 
-    return new SystemStatus().ok(!subsystems.containsValue(false)).systems(subsystems);
+    return currentStatus.ok(!currentStatus.getSystems().containsValue(false));
   }
 }
