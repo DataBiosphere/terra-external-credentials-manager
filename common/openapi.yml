@@ -256,12 +256,9 @@ components:
           type: boolean
           description: whether any system(s) need attention
         systems:
-          $ref: '#/components/schemas/SubsystemStatus'
-
-    SubsystemStatus:
-      type: object
-      additionalProperties:
-        type: boolean
+          type: object
+          additionalProperties:
+            type: boolean
 
     VersionProperties:
       type: object
