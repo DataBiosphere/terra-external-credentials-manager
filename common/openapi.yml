@@ -100,7 +100,7 @@ paths:
       summary: Get the original passport from this provider
       tags: [ oidc ]
       operationId: getProviderPassport
-      description: Gets passport signed by provider, not Terra, containing only visas from provider
+      description: Gets passport signed by provider, not Terra, containing only visas from provider. Passport and visas should be valid.
       responses:
         '200':
           description: A JSON object
