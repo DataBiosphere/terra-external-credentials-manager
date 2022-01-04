@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -306,7 +307,7 @@ public class ProviderService {
         Map.of(
             "linkedAccountId", visaDetails.getLinkedAccountId(),
             "providerName", visaDetails.getProviderName(),
-            "validationResponse", responseBody));
+            "validationResponse", Objects.requireNonNullElse(responseBody, "[null]")));
 
     var visaValid = "valid".equalsIgnoreCase(responseBody);
 
