@@ -23,6 +23,7 @@ import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -282,7 +283,9 @@ class OidcApiControllerTest extends BaseTest {
       var accessToken = "testToken";
       var userId = UUID.randomUUID().toString();
       var providerName = UUID.randomUUID().toString();
-      var passport = TestUtils.createRandomPassport();
+      var passport =
+          TestUtils.createRandomPassport()
+              .withExpires(new Timestamp(System.currentTimeMillis() + 1000));
 
       mockSamUser(userId, accessToken);
 
@@ -293,6 +296,25 @@ class OidcApiControllerTest extends BaseTest {
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isOk())
           .andExpect(content().json("\"" + passport.getJwt() + "\""));
+    }
+
+    @Test
+    void testGetProviderPassportDoesNotReturnExpired() throws Exception {
+      var accessToken = "testToken";
+      var userId = UUID.randomUUID().toString();
+      var providerName = UUID.randomUUID().toString();
+      var passport =
+          TestUtils.createRandomPassport()
+              .withExpires(new Timestamp(System.currentTimeMillis() - 1000));
+
+      mockSamUser(userId, accessToken);
+
+      when(passportServiceMock.getPassport(userId, providerName)).thenReturn(Optional.of(passport));
+
+      mvc.perform(
+              get("/api/oidc/v1/{provider}/passport", providerName)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isNotFound());
     }
 
     @Test

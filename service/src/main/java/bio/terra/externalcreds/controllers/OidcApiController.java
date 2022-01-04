@@ -16,9 +16,11 @@ import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
@@ -160,7 +162,7 @@ public class OidcApiController implements OidcApi {
   @Override
   public ResponseEntity<String> getProviderPassport(String providerName) {
     var userId = getUserIdFromSam();
-    var passport = passportService.getPassport(userId, providerName);
+    var maybePassport = passportService.getPassport(userId, providerName);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
@@ -170,7 +172,18 @@ public class OidcApiController implements OidcApi {
             .clientIP(request.getRemoteAddr())
             .build());
 
-    return ResponseEntity.of(passport.map(p -> jsonString(p.getJwt())));
+    var response =
+        maybePassport.flatMap(
+            passport -> {
+              // passport should not be expired but if it is (due to some failure in ECM)
+              // don't pass that failure on to the caller
+              if (passport.getExpires().before(new Timestamp(System.currentTimeMillis()))) {
+                return Optional.empty();
+              } else {
+                return Optional.of(jsonString(passport.getJwt()));
+              }
+            });
+    return ResponseEntity.of(response);
   }
 
   /** Helper method to format a string as json. Otherwise it isn't quoted or escaped correctly. */
