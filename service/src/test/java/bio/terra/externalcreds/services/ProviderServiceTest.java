@@ -47,9 +47,9 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken.TokenType;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
-import org.springframework.web.client.HttpClientErrorException;
 
 public class ProviderServiceTest extends BaseTest {
 
@@ -211,7 +211,7 @@ public class ProviderServiceTest extends BaseTest {
     }
 
     @Test
-    void testOathBadRequestException() {
+    void testUnrecoverableOAuth2Exception() {
 
       // save a non-expired linked account and nearly-expired passport and visa
       var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
@@ -236,8 +236,7 @@ public class ProviderServiceTest extends BaseTest {
               new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
           .thenThrow(
               new OAuth2AuthorizationException(
-                  new OAuth2Error(HttpStatus.BAD_REQUEST.toString()),
-                  new HttpClientErrorException(HttpStatus.BAD_REQUEST)));
+                  new OAuth2Error(OAuth2ErrorCodes.INSUFFICIENT_SCOPE)));
 
       // attempt to auth and refresh
       providerService.authAndRefreshPassport(savedLinkedAccount);
@@ -277,7 +276,7 @@ public class ProviderServiceTest extends BaseTest {
               clientRegistration,
               new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
           .thenThrow(
-              new OAuth2AuthorizationException(new OAuth2Error(HttpStatus.BAD_REQUEST.toString())));
+              new OAuth2AuthorizationException(new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR)));
 
       // check that the expected exception is thrown
       assertThrows(
