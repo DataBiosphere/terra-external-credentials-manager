@@ -17,7 +17,6 @@ public class ListProviders extends TestScript {
   @Override
   public void userJourney(TestUserSpecification testUser) throws Exception {
     log.info("Checking the version endpoint.");
-    // TODO: figure out why this passes without authentication
     var apiClient = ClientTestUtils.getClientWithoutAccessToken(server);
     var oidcApi = new OidcApi(apiClient);
 
