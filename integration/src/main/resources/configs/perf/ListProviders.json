@@ -1,6 +1,6 @@
 {
   "name": "ListProviders",
-  "description": "Lists the available OIDC providers. Authentication required.",
+  "description": "Lists the available OIDC providers.",
   "serverSpecificationFile": "ecm-local.json",
   "kubernetes": {},
   "application": {},
