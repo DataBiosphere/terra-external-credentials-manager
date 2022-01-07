@@ -22,5 +22,5 @@ To run the tests locally:
    - To run a test suite (ex. Full Integration suite):
      `./gradlew runTest --args="suites/FullIntegration.json /tmp/test-results"`
    - To run a single test (ex. Service Status test)
-     `./gradlew runTest --args="suites/FullIntegration.json /tmp/test-results"`
+     `./gradlew runTest --args="configs/integration/GetStatus.json /tmp/test-results"`
    - To debug, add `--stacktrace`.
