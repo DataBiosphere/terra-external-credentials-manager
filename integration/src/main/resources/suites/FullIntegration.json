@@ -4,7 +4,8 @@
   "serverSpecificationFile": "ecm-local.json",
   "testConfigurationFiles": [
     "integration/GetStatus.json",
-    "integration/GetVersion.json"
+    "integration/GetVersion.json",
+    "integration/ListProviders.json"
   ]
 }
 
