@@ -2,7 +2,6 @@ package scripts.testscripts;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.api.OidcApi;
 import bio.terra.testrunner.runner.TestScript;
@@ -29,6 +28,5 @@ public class ListProviders extends TestScript {
 
     // check the response body
     assertNotNull(providers);
-    assertTrue(providers.size() > 0);
   }
 }
