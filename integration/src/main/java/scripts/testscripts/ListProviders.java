@@ -15,7 +15,7 @@ public class ListProviders extends TestScript {
 
   @Override
   public void userJourney(TestUserSpecification testUser) throws Exception {
-    log.info("Checking the version endpoint.");
+    log.info("Checking the list providers endpoint.");
     var apiClient = ClientTestUtils.getClientWithoutAccessToken(server);
     var oidcApi = new OidcApi(apiClient);
 
@@ -24,7 +24,7 @@ public class ListProviders extends TestScript {
     // check the response code
     var httpCode = oidcApi.getApiClient().getStatusCode();
     assertEquals(HttpStatusCodes.STATUS_CODE_OK, httpCode);
-    log.info("Service status return code: {}", httpCode);
+    log.info("List providers return code: {}", httpCode);
 
     // check the response body
     assertNotNull(providers);
