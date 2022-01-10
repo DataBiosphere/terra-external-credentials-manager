@@ -1,7 +1,7 @@
 {
   "name": "FullPerf",
   "description": "All perf tests",
-  "serverSpecificationFile": "ecm-local.json",
+  "serverSpecificationFile": "ecm-perf.json",
   "testConfigurationFiles": [
     "perf/GetStatus.json",
     "perf/GetVersion.json",

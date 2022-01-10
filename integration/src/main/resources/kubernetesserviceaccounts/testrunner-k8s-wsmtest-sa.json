@@ -1,0 +1,6 @@
+{
+  "name": "testrunner-k8s-sa",
+  "clientKeyFilename": "testrunner-k8s-sa-key",
+  "tokenFilename": "testrunner-k8s-sa-token",
+  "clientKeyDirectoryPath": "./src/main/resources/rendered"
+}

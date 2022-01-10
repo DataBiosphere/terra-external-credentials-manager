@@ -1,0 +1,24 @@
+{
+  "name": "ecm-perf",
+  "description": "ECM Performance Testing Environment",
+
+  "samUri": "https://sam.dsde-perf.broadinstitute.org",
+  "policyManagerUri": "https://externalcreds.dsde-perf.broadinstitute.org/",
+
+  "cluster": {
+    "clusterName": "terra-perf",
+    "clusterShortName": "terra-perf",
+    "region": "us-central1",
+    "zone": "us-central1-a",
+    "project": "broad-dsde-perf",
+    "namespace": "terra-perf",
+    "containerName": "externalcreds",
+    "apiComponentLabel":  "externalcreds"
+  },
+  "deploymentScript": {},
+  "testRunnerServiceAccountFile": "testrunner-sa.json",
+  "testRunnerK8SServiceAccountFile": "testrunner-k8s-wsmtest-sa.json",
+
+  "skipDeployment": true,
+  "skipKubernetes": false
+}
