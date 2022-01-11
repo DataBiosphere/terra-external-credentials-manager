@@ -14,13 +14,19 @@ This Gradle project contains Test Runner integration tests for the External Cred
 
 The test runner task `runTest` can be used to launch individual tests or entire test suites.
 
-To run the tests locally:
+To run the integration tests locally:
 
 1. Follow the initial setup instructions described in the [DEVELOPMENT.md](../DEVELOPMENT.md).
 2. Run the `ExternalCredsApplication` (in IntelliJ).
 3. Then, run the integration tests in IntelliJ using the "Run local Integration" run configuration, or on the command line using the `runTest` command:
-   - To run a test suite (ex. Full Integration suite):
+   - To run the test suite (ex. Full Integration suite):
      `./gradlew runTest --args="suites/FullIntegration.json /tmp/test-results"`
    - To run a single test (ex. Service Status test)
      `./gradlew runTest --args="configs/integration/GetStatus.json /tmp/test-results"`
    - To debug, add `--stacktrace`.
+
+To run performance tests against the [perf environment](https://externalcreds.dsde-perf.broadinstitute.org/):
+
+1. Connect to the Non-split VPN.
+2. Run `./render_configs perf`
+3. Run `./gradlew :integration:runTest --args="suites/FullPerf.json /tmp/test-results"`
