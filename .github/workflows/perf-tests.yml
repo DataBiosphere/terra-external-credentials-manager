@@ -32,7 +32,7 @@ jobs:
           repository: broadinstitute/terra-helmfile
           ref: master
           token: ${{ secrets.BROADBOT_TOKEN }}
-          path: ./terra-helmfile
+          path: integration/terra-helmfile
 
       # Github workflows shouldn't have access to vault, so we read from GitHub secrets instead.
       - name: Render GitHub Secrets
@@ -41,6 +41,8 @@ jobs:
           TESTRUNNER_PERF_SA: ${{ secrets.TESTRUNNER_PERF_SA }}
         run: |
           ls -l integration/src/main/resources/suites
+          ls -l integration/terra-helmfile/versions/app
+          ls -l integration/terra-helmfile/environments/live
           echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
           echo "$TESTRUNNER_PERF_SA" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
 
