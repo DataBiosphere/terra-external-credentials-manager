@@ -5,7 +5,7 @@ plugins {
 	id 'application'
 	id 'io.freefair.lombok'
 	id 'com.diffplug.spotless'
-	id 'bio.terra.test-runner-plugin' version '0.0.8-SNAPSHOT'
+	id 'bio.terra.test-runner-plugin' version '0.0.10-SNAPSHOT'
 }
 
 compileJava { options.release = 11 }
@@ -27,7 +27,7 @@ dependencies {
 	implementation project(':client')
 
 	// Terra Test Runner Library
-	implementation 'bio.terra:terra-test-runner:0.0.8-SNAPSHOT'
+	implementation 'bio.terra:terra-test-runner:0.0.10-SNAPSHOT'
 }
 
 spotless {
