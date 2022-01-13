@@ -15,4 +15,5 @@ fi
 
 $VAULT_COMMAND -field=providers "$VAULT_PATH/providers" >"$SERVICE_OUTPUT_LOCATION/providers.yaml"
 $VAULT_COMMAND -field=swagger-client-id "$VAULT_PATH/swagger-client-id" >"$SERVICE_OUTPUT_LOCATION/swagger-client-id"
+
 $VAULT_COMMAND -field=data -format=json "secret/dsde/firecloud/$ENV/common/firecloud-account.json" >"$INTEGRATION_OUTPUT_LOCATION/user-delegated-sa.json"
