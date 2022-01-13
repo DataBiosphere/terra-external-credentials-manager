@@ -32,6 +32,7 @@ jobs:
           DEV_FIRECLOUD_ACCOUNT_B64: ${{ secrets.DEV_FIRECLOUD_ACCOUNT_B64 }}
           TESTRUNNER_PERF_SA: ${{ secrets.TESTRUNNER_PERF_SA }}
         run: |
+          ls -l
           echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
           echo "$TESTRUNNER_PERF_SA" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
 
