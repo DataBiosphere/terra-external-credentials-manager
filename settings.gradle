@@ -14,8 +14,8 @@ pluginManagement {
 	}
 
 	plugins {
-		id 'io.freefair.lombok' version '6.2.0'
-		id 'org.hidetake.swagger.generator' version '2.18.2'
+		id 'io.freefair.lombok' version '6.3.0'
+		id 'org.hidetake.swagger.generator' version '2.19.1'
 	}
 }
 

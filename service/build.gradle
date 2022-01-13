@@ -6,8 +6,8 @@ plugins {
 	id 'org.springframework.boot'
 
 	id 'com.diffplug.spotless'
-	id 'com.github.ben-manes.versions' version '0.39.0'
-	id 'com.github.spotbugs' version '4.7.9'
+	id 'com.github.ben-manes.versions' version '0.40.0'
+	id 'com.github.spotbugs' version '5.0.3'
 	id 'com.google.cloud.tools.jib'
 	id 'com.gorylenko.gradle-git-properties' version '2.3.1'
 	id 'io.freefair.lombok'
@@ -31,7 +31,7 @@ apply from: 'analysis.gradle'
 
 dependencies {
 	// google
-	implementation platform('com.google.cloud:libraries-bom:24.0.0')
+	implementation platform('com.google.cloud:libraries-bom:24.1.1')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 
 	annotationProcessor 'org.immutables:value:2.8.8'
@@ -53,4 +53,4 @@ sonarqube {
 }
 
 
-test { maxParallelForks = 2 }
+test { maxParallelForks = 1 }

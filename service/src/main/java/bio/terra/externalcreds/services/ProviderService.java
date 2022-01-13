@@ -15,8 +15,10 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -24,9 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -43,6 +45,20 @@ public class ProviderService {
   private final PassportService passportService;
   private final JwtUtils jwtUtils;
   private final AuditLogger auditLogger;
+  private static final Collection<String> unrecoverableOAuth2ErrorCodes =
+      Set.of(
+          OAuth2ErrorCodes.ACCESS_DENIED,
+          OAuth2ErrorCodes.INSUFFICIENT_SCOPE,
+          OAuth2ErrorCodes.INVALID_CLIENT,
+          OAuth2ErrorCodes.INVALID_GRANT,
+          OAuth2ErrorCodes.INVALID_REDIRECT_URI,
+          OAuth2ErrorCodes.INVALID_REQUEST,
+          OAuth2ErrorCodes.INVALID_SCOPE,
+          OAuth2ErrorCodes.INVALID_TOKEN,
+          OAuth2ErrorCodes.UNAUTHORIZED_CLIENT,
+          OAuth2ErrorCodes.UNSUPPORTED_GRANT_TYPE,
+          OAuth2ErrorCodes.UNSUPPORTED_RESPONSE_TYPE,
+          OAuth2ErrorCodes.UNSUPPORTED_TOKEN_TYPE);
 
   public ProviderService(
       ExternalCredsConfig externalCredsConfig,
@@ -228,8 +244,8 @@ public class ProviderService {
                 "Could not contact issuer for provider %s", linkedAccount.getProviderName()),
             iae);
       } catch (OAuth2AuthorizationException oauthEx) {
-        // if the cause is a 4xx response, delete the passport
-        if (oauthEx.getCause() instanceof HttpClientErrorException) {
+        // if it looks like the refresh token will never work, delete the passport
+        if (unrecoverableOAuth2ErrorCodes.contains(oauthEx.getError().getErrorCode())) {
           if (linkedAccount.getId().isEmpty()) {
             throw new ExternalCredsException("linked account id missing");
           }
@@ -306,7 +322,7 @@ public class ProviderService {
         Map.of(
             "linkedAccountId", visaDetails.getLinkedAccountId(),
             "providerName", visaDetails.getProviderName(),
-            "validationResponse", responseBody));
+            "validationResponse", Objects.requireNonNullElse(responseBody, "[null]")));
 
     var visaValid = "valid".equalsIgnoreCase(responseBody);
 
