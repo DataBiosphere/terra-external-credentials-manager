@@ -19,5 +19,5 @@
   "testRunnerServiceAccountFile": "testrunner-sa.json",
 
   "skipDeployment": true,
-  "skipKubernetes": false
+  "skipKubernetes": true
 }
