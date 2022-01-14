@@ -42,6 +42,7 @@ jobs:
         run: |
           echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
           echo "$TESTRUNNER_PERF_SA" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
+          ls -l ./integration/src/main/resources/rendered/
 
       - name: Run the perf test suite
         run: |
