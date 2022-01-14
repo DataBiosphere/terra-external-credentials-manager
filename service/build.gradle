@@ -12,6 +12,7 @@ plugins {
 	id 'com.gorylenko.gradle-git-properties' version '2.3.1'
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
+	id 'org.sonarqube'
 }
 
 compileJava { options.release = 11 }
@@ -40,5 +41,16 @@ dependencies {
 	// for testing with mock web server
 	testImplementation 'org.mock-server:mockserver-netty:5.11.2'
 }
+
+sonarqube {
+	properties {
+		property "sonar.projectName", "terra-external-credentials-manager-service"
+		property "sonar.projectKey", "DataBiosphere_terra-external-credentials-manager"
+		property "sonar.organization", "broad-databiosphere"
+		property "sonar.host.url", "https://sonarcloud.io"
+		property "sonar.sources", "src/main/java,src/main/resources/templates"
+	}
+}
+
 
 test { maxParallelForks = 1 }
