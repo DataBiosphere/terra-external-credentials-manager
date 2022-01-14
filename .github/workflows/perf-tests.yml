@@ -40,13 +40,11 @@ jobs:
           DEV_FIRECLOUD_ACCOUNT_B64: ${{ secrets.DEV_FIRECLOUD_ACCOUNT_B64 }}
           TESTRUNNER_PERF_SA: ${{ secrets.TESTRUNNER_PERF_SA }}
         run: |
-          ls -l integration/src/main/resources/suites
-          ls -l integration/terra-helmfile/versions/app
-          ls -l integration/terra-helmfile/environments/live
           echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
           echo "$TESTRUNNER_PERF_SA" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
 
       - name: Run the perf test suite
         run: |
-          ls -l
-          ./gradlew --build-cache :integration:runTest --args="suites/FullPerf.json /tmp/foo"
+          resultsDir=/tmp/foo$RANDOM
+          ./gradlew --build-cache :integration:runTest --args="suites/FullPerf.json $resultsDir"
+          ./gradlew :integration:uploadResults --args="CompressAndUploadResults.json $resultsDir"
