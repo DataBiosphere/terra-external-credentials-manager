@@ -6,6 +6,8 @@ on:
   workflow_dispatch: {}
   schedule:
     - cron: '0 7 * * *' # run at 7 AM UTC, 2 AM ET.
+  pull_request:
+    branches: [ '**' ]
 
 jobs:
   test-setup:
