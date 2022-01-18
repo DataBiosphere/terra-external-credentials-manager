@@ -239,6 +239,8 @@ components:
         expirationTimestamp:
           type: string
           format: date-time
+        authenticated:
+          type: boolean
     ErrorReport:
       type: object
       required: [ message, statusCode ]
