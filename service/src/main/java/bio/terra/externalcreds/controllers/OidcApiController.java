@@ -77,7 +77,8 @@ public class OidcApiController implements OidcApi {
   LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
     return new LinkInfo()
         .externalUserId(linkedAccount.getExternalUserId())
-        .expirationTimestamp(linkedAccount.getExpires());
+        .expirationTimestamp(linkedAccount.getExpires())
+        .authenticated(linkedAccount.isAuthenticated());
   }
 
   @Override

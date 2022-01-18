@@ -5,5 +5,6 @@ public enum AuditLogEventType {
   LinkCreationFailed,
   LinkDeleted,
   LinkExpired,
-  GetPassport
+  GetPassport,
+  LinkRefreshed
 }
