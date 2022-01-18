@@ -38,7 +38,7 @@ jobs:
         run: |
           echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
           echo "$TESTRUNNER_PERF_SA" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
-          
+
       - name: Run the perf test suite
         run: ./gradlew --build-cache :integration:runTest --args="suites/FullPerf.json /tmp/foo"
 
@@ -46,7 +46,7 @@ jobs:
     needs: [ performance-tests ]
     runs-on: ubuntu-latest
 
-    if: failure() && github.ref == 'refs/heads/dev'
+    if: failure()
 
     steps:
       - name: Notify slack on failure
