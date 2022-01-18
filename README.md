@@ -7,3 +7,7 @@
 * [Developer Setup Guide](/DEVELOPMENT.md)
 * [Integration & Performance Testing Guide](/integration/README.md)
 * [Swagger Page (Dev)](https://externalcreds.dsde-dev.broadinstitute.org/)
+
+## Other Notes
+
+Dependency locking is turned on, to update the lockfiles run `./gradlew dependencies --write-locks`

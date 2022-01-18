@@ -15,6 +15,7 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -238,6 +239,14 @@ public class ProviderService {
         var linkedAccountWithRefreshedPassport = getRefreshedPassportsAndVisas(linkedAccount);
         linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
             linkedAccountWithRefreshedPassport);
+
+        auditLogger.logEvent(
+            new AuditLogEvent.Builder()
+                .auditLogEventType(AuditLogEventType.LinkRefreshed)
+                .providerName(linkedAccount.getProviderName())
+                .userId(linkedAccount.getUserId())
+                .build());
+
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
             String.format(
@@ -245,7 +254,12 @@ public class ProviderService {
             iae);
       } catch (OAuth2AuthorizationException oauthEx) {
         // if it looks like the refresh token will never work, delete the passport
-        if (unrecoverableOAuth2ErrorCodes.contains(oauthEx.getError().getErrorCode())) {
+        if (unrecoverableOAuth2ErrorCodes.contains(getRootOAuth2ErrorCode(oauthEx))) {
+          log.info(
+              String.format(
+                  "Caught unrecoverable oauth2 error code refreshing passport for user id [%s].",
+                  linkedAccount.getUserId()),
+              oauthEx);
           if (linkedAccount.getId().isEmpty()) {
             throw new ExternalCredsException("linked account id missing");
           }
@@ -256,6 +270,29 @@ public class ProviderService {
         }
       }
     }
+  }
+
+  /**
+   * Traverse causes for oauthEx until the cause is null or there is a cycle in the causes. Return
+   * the last oauth2 error code found. This is needed because Spring likes to wrap
+   * OAuth2AuthorizationExceptions with other OAuth2AuthorizationExceptions that have non-standard
+   * error codes. We just want to handle standard error codes which should be in the root cause.
+   */
+  private String getRootOAuth2ErrorCode(OAuth2AuthorizationException oauthEx) {
+    var errorCode = oauthEx.getError().getErrorCode();
+    Throwable currentThrowable = oauthEx.getCause();
+    var visitedThrowables = new ArrayList<Throwable>();
+    visitedThrowables.add(oauthEx);
+
+    while (currentThrowable != null && !visitedThrowables.contains(currentThrowable)) {
+      if (currentThrowable instanceof OAuth2AuthorizationException) {
+        errorCode = ((OAuth2AuthorizationException) currentThrowable).getError().getErrorCode();
+      }
+      visitedThrowables.add(currentThrowable);
+      currentThrowable = currentThrowable.getCause();
+    }
+
+    return errorCode;
   }
 
   private LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
