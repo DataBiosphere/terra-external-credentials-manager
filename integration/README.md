@@ -41,3 +41,7 @@ To run performance tests against the [perf environment](https://externalcreds.ds
 1. Connect to the Non-split VPN.
 2. Run `./render_configs perf`
 3. Run `./gradlew :integration:runTest --args="suites/FullPerf.json /tmp/test-results"`
+
+## Other Notes
+
+Dependency locking is turned on, to update the lockfiles run `./gradlew dependencies --write-locks`
