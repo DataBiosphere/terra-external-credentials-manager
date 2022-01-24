@@ -16,7 +16,7 @@ public class ListProviders extends TestScript {
   @Override
   public void userJourney(TestUserSpecification testUser) throws Exception {
     log.info("Checking the list providers endpoint.");
-    var apiClient = ClientTestUtils.getClientForTestUser(testUser, server);
+    var apiClient = ClientTestUtils.getClientWithTestUserAuth(testUser, server);
     var oidcApi = new OidcApi(apiClient);
 
     var providers = oidcApi.listProviders();
