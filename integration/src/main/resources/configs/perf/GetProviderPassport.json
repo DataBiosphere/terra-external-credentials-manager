@@ -1,0 +1,17 @@
+{
+  "name": "GetProviderPassport",
+  "description": "Gets a user's passport from the specified provider.",
+  "serverSpecificationFile": "ecm-local.json",
+  "kubernetes": {},
+  "application": {},
+  "testScripts": [
+    {
+      "name": "GetProviderPassport",
+      "numberOfUserJourneyThreadsToRun": 10,
+      "userJourneyThreadPoolSize": 2,
+      "expectedTimeForEach": 5,
+      "expectedTimeForEachUnit": "SECONDS"
+    }
+  ],
+  "testUserFiles": ["scarlett.json"]
+}

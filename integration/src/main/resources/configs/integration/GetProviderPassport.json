@@ -1,0 +1,17 @@
+{
+  "name": "GetProviderPassport",
+  "description": "Gets a user's passport from the specified provider. Requires an authenticated user.",
+  "serverSpecificationFile": "ecm-local.json",
+  "kubernetes": {},
+  "application": {},
+  "testScripts": [
+    {
+      "name": "GetProviderPassport",
+      "numberOfUserJourneyThreadsToRun": 1,
+      "userJourneyThreadPoolSize": 2,
+      "expectedTimeForEach": 5,
+      "expectedTimeForEachUnit": "SECONDS"
+    }
+  ],
+  "testUserFiles": []
+}
