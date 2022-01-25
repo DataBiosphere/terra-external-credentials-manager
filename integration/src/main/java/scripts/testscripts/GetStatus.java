@@ -15,7 +15,7 @@ public class GetStatus extends TestScript {
   @Override
   public void userJourney(TestUserSpecification testUser) throws Exception {
     log.info("Checking the service status endpoint.");
-    var apiClient = ClientTestUtils.getClientWithoutAccessToken(server);
+    var apiClient = ClientTestUtils.getClientWithoutAuth(server);
     var publicApi = new PublicApi(apiClient);
     publicApi.getStatus();
     var httpCode = publicApi.getApiClient().getStatusCode();
