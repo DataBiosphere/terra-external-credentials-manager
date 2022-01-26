@@ -7,8 +7,8 @@
   "testScripts": [
     {
       "name": "GetProviderPassport",
-      "numberOfUserJourneyThreadsToRun": 10,
-      "userJourneyThreadPoolSize": 2,
+      "numberOfUserJourneyThreadsToRun": 1000,
+      "userJourneyThreadPoolSize": 500,
       "expectedTimeForEach": 5,
       "expectedTimeForEachUnit": "SECONDS"
     }
