@@ -39,7 +39,7 @@ To run the tests locally:
 To run performance tests against the [perf environment](https://externalcreds.dsde-perf.broadinstitute.org/):
 
 1. Connect to the Non-split VPN.
-2. Run `./render_config perf`
+2. Run `./render_config.sh perf`
 3. Run `./gradlew :integration:runTest --args="suites/FullPerf.json /tmp/test-results"`
 
 ## Other Notes

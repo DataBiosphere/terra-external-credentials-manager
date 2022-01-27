@@ -8,8 +8,8 @@
     {
       "name": "GetProviderPassport",
       "numberOfUserJourneyThreadsToRun": 1000,
-      "userJourneyThreadPoolSize": 500,
-      "expectedTimeForEach": 5,
+      "userJourneyThreadPoolSize": 800,
+      "expectedTimeForEach": 1,
       "expectedTimeForEachUnit": "SECONDS"
     }
   ],

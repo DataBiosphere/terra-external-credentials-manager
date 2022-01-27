@@ -35,8 +35,6 @@ public class GetProviderPassport extends TestScript {
 
     assertEquals(HttpStatusCodes.STATUS_CODE_OK, httpCode);
     log.info("Get provider passport return code: {}", httpCode);
-    // TODO: probably don't actually log the jwt
-    log.info("passport retrieved: {}", passport);
 
     // check the response body
     assertNotNull(provider);
