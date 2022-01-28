@@ -28,9 +28,6 @@ $$;
 -- delete all of the existing data
 TRUNCATE linked_account, ga4gh_passport, ga4gh_visa;
 
--- Insert Linked Accounts and Passports for specific users that already exist in SAM
-CALL insert_test_record('114925642006220098835', 'Scarlett.Flowerpicker@test.firecloud.org');
-
 -- Insert semi-randomized records
 do $$
 declare 
@@ -43,9 +40,8 @@ begin
    end loop;
 end$$;
 
+-- Insert Linked Accounts and Passports for specific users that already exist in SAM
+CALL insert_test_record('114925642006220098835', 'Scarlett.Flowerpicker@test.firecloud.org');
+
 
 DROP PROCEDURE insert_test_record(text, text);
-
--- TODO: determine how the db is indexed - does the order of insertion matter here?
--- TODO: see if there's a way to improve the readibility of the function or select * syntax
--- TODO: decide if we want to have more than one authed user
