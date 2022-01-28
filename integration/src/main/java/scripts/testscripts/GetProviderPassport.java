@@ -22,6 +22,7 @@ public class GetProviderPassport extends TestScript {
     var apiClient = ClientTestUtils.getClientWithTestUserAuth(testUsers.get(0), server);
     oidcApi = new OidcApi(apiClient);
     provider = oidcApi.listProviders().get(0);
+    if (provider == null) throw new Exception("No provider found.");
   }
 
   @Override
