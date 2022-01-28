@@ -18,7 +18,7 @@ Results from nightly runs are uploaded to the [testrunner dashboard](https://trd
 
 1. Create a new script in the [test scripts directory](src/main/java/scripts/testscripts).
 2. Make a config file for the test.
-2. Add a reference to the test script in our test suite [here](src/main/resources/suites/FullIntegration.json) or here.
+2. Add a reference to the test script in our test suite [here](src/main/resources/suites/FullIntegration.json) or [here](src/main/resources/suites/FullPerf.json).
 3. Debug the test locally using the instructions below.
 
 
@@ -39,7 +39,7 @@ To run the tests locally:
 To run performance tests against the [perf environment](https://externalcreds.dsde-perf.broadinstitute.org/):
 
 1. Connect to the Non-split VPN.
-2. Run `./render_configs perf`
+2. Run `./render_config.sh perf`
 3. Run `./gradlew :integration:runTest --args="suites/FullPerf.json /tmp/test-results"`
 
 ## Other Notes
