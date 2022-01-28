@@ -6,7 +6,15 @@ jobs:
     # Parse Dockerfile and build, scan image if a "blessed" base image is not used
     name: DSP AppSec Trivy check
     runs-on: ubuntu-latest
+    env:
+      # only used to name the image for this scan; it is not pushed anywhere
+      image: databiosphere/terra-external-credentials-manager
     steps:
       - uses: actions/checkout@v2
 
+      - name: Build image locally with Jib
+        run: ./gradlew :service:jibDockerBuild --image=${{ env.image }} -Djib.console=plain
+
       - uses: broadinstitute/dsp-appsec-trivy-action@v1
+        with:
+          image: {{ env.image }}
