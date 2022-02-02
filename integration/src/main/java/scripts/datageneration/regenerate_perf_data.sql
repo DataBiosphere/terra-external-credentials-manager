@@ -1,5 +1,3 @@
--- TODO: test out and debug again
-
 -- Generate a random string of the correct length (to stand in for the JWTs)
 CREATE FUNCTION generate_random_string(approximate_length int) RETURNS text 
 LANGUAGE SQL AS $$
