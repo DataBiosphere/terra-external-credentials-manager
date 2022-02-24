@@ -13,6 +13,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
@@ -24,13 +25,14 @@ import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
-import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -630,7 +632,7 @@ public class ProviderServiceTest extends BaseTest {
 
   @Nested
   @TestComponent
-  class ProviderAuthorizationUrl {
+  class OAuth2State {
     @MockBean OAuth2Service oAuth2ServiceMock;
     @MockBean ProviderClientCache providerClientCacheMock;
     @MockBean ExternalCredsConfig externalCredsConfigMock;
@@ -639,12 +641,13 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired OAuth2StateDAO oAuth2StateDAO;
     @Autowired ObjectMapper objectMapper;
 
+    private final String redirectUri = "https://foo.bar.com";
+    private final Set<String> scopes = Set.of("email", "profile");
+
     @Test
     void testOAuth2StatePersisted() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
       var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
-      var redirectUri = "https://foo.bar.com";
-      var scopes = Set.of("email", "profile");
       ProviderProperties providerProperties = ProviderProperties.create();
 
       when(externalCredsConfigMock.getProviders())
@@ -668,12 +671,114 @@ public class ProviderServiceTest extends BaseTest {
               linkedAccount.getUserId(), linkedAccount.getProviderName(), redirectUri, scopes);
       assertPresent(result);
       // the result here should be only the state because of the mock above
-      var savedState = OAuth2State.decode(objectMapper, result.get());
+      var savedState =
+          bio.terra.externalcreds.models.OAuth2State.decode(objectMapper, result.get());
       assertEquals(linkedAccount.getProviderName(), savedState.getProvider());
 
       assertTrue(oAuth2StateDAO.deleteOidcStateIfExists(linkedAccount.getUserId(), savedState));
       // double check that the state gets removed just in case
       assertFalse(oAuth2StateDAO.deleteOidcStateIfExists(linkedAccount.getUserId(), savedState));
+    }
+
+    @Test
+    void testWrongRandom() {
+      var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var state =
+          new bio.terra.externalcreds.models.OAuth2State.Builder()
+              .provider(expectedLinkedAccount.getProviderName())
+              .random(
+                  bio.terra.externalcreds.models.OAuth2State.generateRandomState(
+                      new SecureRandom()))
+              .build();
+
+      oAuth2StateDAO.upsertOidcState(expectedLinkedAccount.getUserId(), state);
+
+      assertThrows(
+          BadRequestException.class,
+          () ->
+              providerService.createLink(
+                  expectedLinkedAccount.getProviderName(),
+                  expectedLinkedAccount.getUserId(),
+                  UUID.randomUUID().toString(),
+                  redirectUri,
+                  scopes,
+                  state.withRandom("wrong").encode(objectMapper)));
+    }
+
+    @Test
+    void testWrongProvider() {
+      var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var state =
+          new bio.terra.externalcreds.models.OAuth2State.Builder()
+              .provider(expectedLinkedAccount.getProviderName())
+              .random(
+                  bio.terra.externalcreds.models.OAuth2State.generateRandomState(
+                      new SecureRandom()))
+              .build();
+
+      oAuth2StateDAO.upsertOidcState(expectedLinkedAccount.getUserId(), state);
+
+      assertThrows(
+          BadRequestException.class,
+          () ->
+              providerService.createLink(
+                  expectedLinkedAccount.getProviderName(),
+                  expectedLinkedAccount.getUserId(),
+                  UUID.randomUUID().toString(),
+                  redirectUri,
+                  scopes,
+                  state.withProvider("wrong").encode(objectMapper)));
+    }
+
+    @Test
+    void testNotBase64() {
+      var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
+
+      assertThrows(
+          BadRequestException.class,
+          () ->
+              providerService.createLink(
+                  expectedLinkedAccount.getProviderName(),
+                  expectedLinkedAccount.getUserId(),
+                  UUID.randomUUID().toString(),
+                  redirectUri,
+                  scopes,
+                  "not base64 encoded"));
+    }
+
+    @Test
+    void testNotJson() {
+      var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
+
+      assertThrows(
+          BadRequestException.class,
+          () ->
+              providerService.createLink(
+                  expectedLinkedAccount.getProviderName(),
+                  expectedLinkedAccount.getUserId(),
+                  UUID.randomUUID().toString(),
+                  redirectUri,
+                  scopes,
+                  new String(Base64.getEncoder().encode("not json".getBytes()))));
+    }
+
+    @Test
+    void testWrongJson() {
+      var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
+
+      assertThrows(
+          BadRequestException.class,
+          () ->
+              providerService.createLink(
+                  expectedLinkedAccount.getProviderName(),
+                  expectedLinkedAccount.getUserId(),
+                  UUID.randomUUID().toString(),
+                  redirectUri,
+                  scopes,
+                  new String(
+                      Base64.getEncoder()
+                          .encode(
+                              objectMapper.writeValueAsString(Map.of("foo", "bar")).getBytes()))));
     }
   }
 

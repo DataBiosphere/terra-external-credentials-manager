@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
@@ -9,7 +10,6 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.JwtSigningTestUtils;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -39,6 +39,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken.TokenType;
+import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -53,7 +55,6 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   @Autowired LinkedAccountService linkedAccountService;
   @Autowired JwtUtils jwtUtils;
   @Autowired ObjectMapper objectMapper;
-  @Autowired OAuth2StateDAO oAuth2StateDAO;
 
   private static JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
 
@@ -118,49 +119,50 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   @Test
-  void testInvalidOAuth2StateRandom() {
-    var expectedLinkedAccount = createTestLinkedAccount();
-    var state =
-        new OAuth2State.Builder()
-            .provider(expectedLinkedAccount.getProviderName())
-            .random(OAuth2State.generateRandomState(new SecureRandom()))
+  void testInvalidAuthorizationCode() throws URISyntaxException {
+    var linkedAccount = createTestLinkedAccount();
+    var providerInfo = TestUtils.createRandomProvider();
+    var providerClient =
+        ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .build();
 
-    oAuth2StateDAO.upsertOidcState(expectedLinkedAccount.getUserId(), state);
-
-    assertThrows(
-        BadRequestException.class,
-        () ->
-            providerService.createLink(
-                expectedLinkedAccount.getProviderName(),
-                expectedLinkedAccount.getUserId(),
-                authorizationCode,
-                redirectUri,
-                scopes,
-                state.withRandom("wrong").encode(objectMapper)));
-  }
-
-  @Test
-  void testInvalidOAuth2StateProvider() {
-    var expectedLinkedAccount = createTestLinkedAccount();
     var state =
         new OAuth2State.Builder()
-            .provider(expectedLinkedAccount.getProviderName())
+            .provider(linkedAccount.getProviderName())
             .random(OAuth2State.generateRandomState(new SecureRandom()))
             .build();
+    linkedAccountService.upsertOAuth2State(linkedAccount.getUserId(), state);
 
-    oAuth2StateDAO.upsertOidcState(expectedLinkedAccount.getUserId(), state);
+    String encodedState = state.encode(objectMapper);
 
-    assertThrows(
-        BadRequestException.class,
-        () ->
-            providerService.createLink(
-                expectedLinkedAccount.getProviderName(),
-                expectedLinkedAccount.getUserId(),
-                authorizationCode,
-                redirectUri,
-                scopes,
-                state.withProvider("wrong").encode(objectMapper)));
+    when(externalCredsConfigMock.getProviders())
+        .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
+    when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+        .thenReturn(Optional.of(providerClient));
+    when(oAuth2ServiceMock.authorizationCodeExchange(
+            providerClient,
+            authorizationCode,
+            redirectUri,
+            scopes,
+            encodedState,
+            providerInfo.getAdditionalAuthorizationParameters()))
+        .thenThrow(new OAuth2AuthorizationException(new OAuth2Error("bad code")));
+
+    var exception =
+        assertThrows(
+            BadRequestException.class,
+            () ->
+                providerService.createLink(
+                    linkedAccount.getProviderName(),
+                    linkedAccount.getUserId(),
+                    authorizationCode,
+                    redirectUri,
+                    scopes,
+                    encodedState));
+
+    // make sure the BadRequestException is for the right reason
+    assertInstanceOf(OAuth2AuthorizationException.class, exception.getCause());
   }
 
   private void setupMocks(

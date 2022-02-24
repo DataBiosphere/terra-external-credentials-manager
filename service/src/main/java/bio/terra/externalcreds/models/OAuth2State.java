@@ -3,7 +3,6 @@ package bio.terra.externalcreds.models;
 import bio.terra.externalcreds.ExternalCredsException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -27,12 +26,13 @@ public interface OAuth2State extends WithOAuth2State {
     }
   }
 
-  static OAuth2State decode(ObjectMapper objectMapper, String encodedState) {
+  static OAuth2State decode(ObjectMapper objectMapper, String encodedState)
+      throws CannotDecodeOAuth2State {
     try {
       var decodedState = Base64.getDecoder().decode(encodedState);
       return objectMapper.readValue(decodedState, ImmutableOAuth2State.class);
-    } catch (IOException e) {
-      throw new ExternalCredsException(e);
+    } catch (Exception e) {
+      throw new CannotDecodeOAuth2State(e);
     }
   }
 

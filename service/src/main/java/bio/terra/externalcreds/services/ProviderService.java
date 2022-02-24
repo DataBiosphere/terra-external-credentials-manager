@@ -8,6 +8,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
+import bio.terra.externalcreds.models.CannotDecodeOAuth2State;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.OAuth2State;
@@ -152,23 +153,32 @@ public class ProviderService {
     return providerClientCache
         .getProviderClient(providerName)
         .map(
-            providerClient ->
-                createLinkInternal(
+            providerClient -> {
+              try {
+                return createLinkInternal(
                     providerName,
                     userId,
                     authorizationCode,
                     redirectUri,
                     scopes,
                     encodedState,
-                    providerClient));
+                    providerClient);
+              } catch (OAuth2AuthorizationException oauthEx) {
+                throw new BadRequestException(oauthEx);
+              }
+            });
   }
 
   private void validateOAuth2State(String providerName, String userId, String encodedState) {
-    OAuth2State oAuth2State = OAuth2State.decode(objectMapper, encodedState);
-    if (!providerName.equals(oAuth2State.getProvider())) {
+    try {
+      OAuth2State oAuth2State = OAuth2State.decode(objectMapper, encodedState);
+      if (!providerName.equals(oAuth2State.getProvider())) {
+        throw new BadRequestException("OAuth2 state incorrect, restart authorization sequence.");
+      }
+      linkedAccountService.validateAndDeleteOAuth2State(userId, oAuth2State);
+    } catch (CannotDecodeOAuth2State e) {
       throw new BadRequestException("OAuth2 state incorrect, restart authorization sequence.");
     }
-    linkedAccountService.validateAndDeleteOAuth2State(userId, oAuth2State);
   }
 
   private LinkedAccountWithPassportAndVisas createLinkInternal(
