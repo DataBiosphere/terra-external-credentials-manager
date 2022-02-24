@@ -2,6 +2,7 @@ package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,10 +25,13 @@ import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
+import bio.terra.externalcreds.models.CannotDecodeOAuth2State;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -734,51 +738,65 @@ public class ProviderServiceTest extends BaseTest {
     void testNotBase64() {
       var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
 
-      assertThrows(
-          BadRequestException.class,
-          () ->
-              providerService.createLink(
-                  expectedLinkedAccount.getProviderName(),
-                  expectedLinkedAccount.getUserId(),
-                  UUID.randomUUID().toString(),
-                  redirectUri,
-                  scopes,
-                  "not base64 encoded"));
+      var e =
+          assertThrows(
+              BadRequestException.class,
+              () ->
+                  providerService.createLink(
+                      expectedLinkedAccount.getProviderName(),
+                      expectedLinkedAccount.getUserId(),
+                      UUID.randomUUID().toString(),
+                      redirectUri,
+                      scopes,
+                      "not base64 encoded"));
+
+      assertInstanceOf(CannotDecodeOAuth2State.class, e.getCause());
+      assertInstanceOf(IllegalArgumentException.class, e.getCause().getCause());
     }
 
     @Test
     void testNotJson() {
       var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
 
-      assertThrows(
-          BadRequestException.class,
-          () ->
-              providerService.createLink(
-                  expectedLinkedAccount.getProviderName(),
-                  expectedLinkedAccount.getUserId(),
-                  UUID.randomUUID().toString(),
-                  redirectUri,
-                  scopes,
-                  new String(Base64.getEncoder().encode("not json".getBytes()))));
+      var e =
+          assertThrows(
+              BadRequestException.class,
+              () ->
+                  providerService.createLink(
+                      expectedLinkedAccount.getProviderName(),
+                      expectedLinkedAccount.getUserId(),
+                      UUID.randomUUID().toString(),
+                      redirectUri,
+                      scopes,
+                      new String(Base64.getEncoder().encode("not json".getBytes()))));
+
+      assertInstanceOf(CannotDecodeOAuth2State.class, e.getCause());
+      assertInstanceOf(JsonParseException.class, e.getCause().getCause());
     }
 
     @Test
     void testWrongJson() {
       var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
 
-      assertThrows(
-          BadRequestException.class,
-          () ->
-              providerService.createLink(
-                  expectedLinkedAccount.getProviderName(),
-                  expectedLinkedAccount.getUserId(),
-                  UUID.randomUUID().toString(),
-                  redirectUri,
-                  scopes,
-                  new String(
-                      Base64.getEncoder()
-                          .encode(
-                              objectMapper.writeValueAsString(Map.of("foo", "bar")).getBytes()))));
+      var e =
+          assertThrows(
+              BadRequestException.class,
+              () ->
+                  providerService.createLink(
+                      expectedLinkedAccount.getProviderName(),
+                      expectedLinkedAccount.getUserId(),
+                      UUID.randomUUID().toString(),
+                      redirectUri,
+                      scopes,
+                      new String(
+                          Base64.getEncoder()
+                              .encode(
+                                  objectMapper
+                                      .writeValueAsString(Map.of("foo", "bar"))
+                                      .getBytes()))));
+
+      assertInstanceOf(CannotDecodeOAuth2State.class, e.getCause());
+      assertInstanceOf(ValueInstantiationException.class, e.getCause().getCause());
     }
   }
 

@@ -173,11 +173,11 @@ public class ProviderService {
     try {
       OAuth2State oAuth2State = OAuth2State.decode(objectMapper, encodedState);
       if (!providerName.equals(oAuth2State.getProvider())) {
-        throw new BadRequestException("OAuth2 state incorrect, restart authorization sequence.");
+        throw new InvalidOAuth2State();
       }
       linkedAccountService.validateAndDeleteOAuth2State(userId, oAuth2State);
     } catch (CannotDecodeOAuth2State e) {
-      throw new BadRequestException("OAuth2 state incorrect, restart authorization sequence.");
+      throw new InvalidOAuth2State(e);
     }
   }
 

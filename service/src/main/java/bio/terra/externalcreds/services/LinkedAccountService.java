@@ -2,7 +2,6 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
-import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
@@ -96,7 +95,7 @@ public class LinkedAccountService {
   @WriteTransaction
   public void validateAndDeleteOAuth2State(String userId, OAuth2State oAuth2State) {
     if (!oAuth2StateDAO.deleteOidcStateIfExists(userId, oAuth2State)) {
-      throw new BadRequestException("OAuth2 state incorrect, restart authorization sequence.");
+      throw new InvalidOAuth2State();
     }
   }
 
