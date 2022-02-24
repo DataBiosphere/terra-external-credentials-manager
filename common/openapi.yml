@@ -179,7 +179,7 @@ components:
         type: string
     stateParam:
       name: state
-      description: oidc authorization state
+      description: oidc authorization state, must be identical to state embedded in response from getAuthUrl
       in: query
       required: false
       schema:
