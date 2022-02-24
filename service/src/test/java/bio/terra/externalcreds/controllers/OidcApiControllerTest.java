@@ -68,14 +68,17 @@ class OidcApiControllerTest extends BaseTest {
 
     @Test
     void testGetAuthUrl() throws Exception {
+      var userId = "fakeUser";
+      var accessToken = "fakeAccessToken";
       var result = "https://test/authorization/uri";
       var providerName = "fake";
       var redirectUri = "fakeuri";
       var scopes = Set.of("openid", "email");
-      String state = null;
+
+      mockSamUser(userId, accessToken);
 
       when(providerServiceMock.getProviderAuthorizationUrl(
-              providerName, redirectUri, scopes, state))
+              userId, providerName, redirectUri, scopes))
           .thenReturn(Optional.of(result));
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -83,19 +86,23 @@ class OidcApiControllerTest extends BaseTest {
       queryParams.addAll("scopes", List.copyOf(scopes));
       mvc.perform(
               get("/api/oidc/v1/{provider}/authorization-url", providerName)
+                  .header("authorization", "Bearer " + accessToken)
                   .queryParams(queryParams))
           .andExpect(content().json("\"" + result + "\""));
     }
 
     @Test
     void testGetAuthUrl404() throws Exception {
+      var userId = "fakeUser";
+      var accessToken = "fakeAccessToken";
       var providerName = "fake";
       var redirectUri = "fakeuri";
       var scopes = Set.of("openid", "email");
-      String state = null;
+
+      mockSamUser(userId, accessToken);
 
       when(providerServiceMock.getProviderAuthorizationUrl(
-              providerName, redirectUri, scopes, state))
+              userId, providerName, redirectUri, scopes))
           .thenReturn(Optional.empty());
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -103,6 +110,7 @@ class OidcApiControllerTest extends BaseTest {
       queryParams.addAll("scopes", List.copyOf(scopes));
       mvc.perform(
               get("/api/oidc/v1/{provider}/authorization-url", providerName)
+                  .header("authorization", "Bearer " + accessToken)
                   .queryParams(queryParams))
           .andExpect(status().isNotFound());
     }

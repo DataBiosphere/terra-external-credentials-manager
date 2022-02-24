@@ -53,7 +53,6 @@ paths:
       - $ref: '#/components/parameters/providerParam'
       - $ref: '#/components/parameters/scopesParam'
       - $ref: '#/components/parameters/redirectUriParam'
-      - $ref: '#/components/parameters/stateParam'
     get:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
       tags: [ oidc ]

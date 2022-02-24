@@ -17,3 +17,6 @@ databaseChangeLog:
   - include:
       file: changesets/20210930_rename_provider_id.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/20220222_oauth2_state.yaml
+      relativeToChangelogFile: true

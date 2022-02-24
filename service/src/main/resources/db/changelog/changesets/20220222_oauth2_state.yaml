@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_oauth2_state"
+      author: dvoet
+      changes:
+        - createTable:
+            tableName: oauth2_state
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: provider_name
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: random
+                  type: text
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: oauth2_state
+            columnNames: user_id, provider_name

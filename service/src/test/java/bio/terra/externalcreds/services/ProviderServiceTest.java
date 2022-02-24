@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -17,12 +18,16 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -30,10 +35,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -377,12 +384,6 @@ public class ProviderServiceTest extends BaseTest {
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(providerName, TestUtils.createRandomProvider()));
     }
-
-    private ClientRegistration createClientRegistration(String providerName) {
-      return ClientRegistration.withRegistrationId(providerName)
-          .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-          .build();
-    }
   }
 
   @Nested
@@ -625,5 +626,60 @@ public class ProviderServiceTest extends BaseTest {
                 .visas(List.of(visaNeedingVerification))
                 .build());
     return savedLinkedAccountWithPassportAndVisa;
+  }
+
+  @Nested
+  @TestComponent
+  class ProviderAuthorizationUrl {
+    @MockBean OAuth2Service oAuth2ServiceMock;
+    @MockBean ProviderClientCache providerClientCacheMock;
+    @MockBean ExternalCredsConfig externalCredsConfigMock;
+
+    @Autowired ProviderService providerService;
+    @Autowired OAuth2StateDAO oAuth2StateDAO;
+    @Autowired ObjectMapper objectMapper;
+
+    @Test
+    void testOAuth2StatePersisted() {
+      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
+      var redirectUri = "https://foo.bar.com";
+      var scopes = Set.of("email", "profile");
+      ProviderProperties providerProperties = ProviderProperties.create();
+
+      when(externalCredsConfigMock.getProviders())
+          .thenReturn(Map.of(linkedAccount.getProviderName(), providerProperties));
+      when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+          .thenReturn(Optional.of(clientRegistration));
+
+      // this mock captures the `state` parameter and returns it
+      // we do this because the state is randomly generated and this test tests that what is
+      // sent to getAuthorizationRequestUri is saved in the database
+      when(oAuth2ServiceMock.getAuthorizationRequestUri(
+              eq(clientRegistration),
+              eq(redirectUri),
+              eq(scopes),
+              anyString(),
+              eq(providerProperties.getAdditionalAuthorizationParameters())))
+          .thenAnswer((Answer<String>) invocation -> (String) invocation.getArgument(3));
+
+      var result =
+          providerService.getProviderAuthorizationUrl(
+              linkedAccount.getUserId(), linkedAccount.getProviderName(), redirectUri, scopes);
+      assertPresent(result);
+      // the result here should be only the state because of the mock above
+      var savedState = OAuth2State.decode(objectMapper, result.get());
+      assertEquals(linkedAccount.getProviderName(), savedState.getProvider());
+
+      assertTrue(oAuth2StateDAO.deleteOidcStateIfExists(linkedAccount.getUserId(), savedState));
+      // double check that the state gets removed just in case
+      assertFalse(oAuth2StateDAO.deleteOidcStateIfExists(linkedAccount.getUserId(), savedState));
+    }
+  }
+
+  private ClientRegistration createClientRegistration(String providerName) {
+    return ClientRegistration.withRegistrationId(providerName)
+        .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+        .build();
   }
 }

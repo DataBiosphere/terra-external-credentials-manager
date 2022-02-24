@@ -1,20 +1,26 @@
 package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.JwtSigningTestUtils;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.models.TokenTypeEnum;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.Date;
@@ -44,14 +50,16 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
   @Autowired ProviderService providerService;
   @Autowired PassportService passportService;
+  @Autowired LinkedAccountService linkedAccountService;
   @Autowired JwtUtils jwtUtils;
+  @Autowired ObjectMapper objectMapper;
+  @Autowired OAuth2StateDAO oAuth2StateDAO;
 
   private static JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
 
   private final String authorizationCode = UUID.randomUUID().toString();
   private final String redirectUri = "https://test/redirect/uri";
   private final Set<String> scopes = Set.of("email", "ga4gh");
-  private final String state = UUID.randomUUID().toString();
   private final String userEmail = "test@user.com";
   // Round the expiration to the nearest second because it will be rounded in the JWT.
   private final Date passportExpires = new Date((new Date().getTime() + 60 * 1000) / 1000 * 1000);
@@ -109,6 +117,52 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     runTest(expectedLinkedAccount, null, Collections.emptyList());
   }
 
+  @Test
+  void testInvalidOAuth2StateRandom() {
+    var expectedLinkedAccount = createTestLinkedAccount();
+    var state =
+        new OAuth2State.Builder()
+            .provider(expectedLinkedAccount.getProviderName())
+            .random(OAuth2State.generateRandomState(new SecureRandom()))
+            .build();
+
+    oAuth2StateDAO.upsertOidcState(expectedLinkedAccount.getUserId(), state);
+
+    assertThrows(
+        BadRequestException.class,
+        () ->
+            providerService.createLink(
+                expectedLinkedAccount.getProviderName(),
+                expectedLinkedAccount.getUserId(),
+                authorizationCode,
+                redirectUri,
+                scopes,
+                state.withRandom("wrong").encode(objectMapper)));
+  }
+
+  @Test
+  void testInvalidOAuth2StateProvider() {
+    var expectedLinkedAccount = createTestLinkedAccount();
+    var state =
+        new OAuth2State.Builder()
+            .provider(expectedLinkedAccount.getProviderName())
+            .random(OAuth2State.generateRandomState(new SecureRandom()))
+            .build();
+
+    oAuth2StateDAO.upsertOidcState(expectedLinkedAccount.getUserId(), state);
+
+    assertThrows(
+        BadRequestException.class,
+        () ->
+            providerService.createLink(
+                expectedLinkedAccount.getProviderName(),
+                expectedLinkedAccount.getUserId(),
+                authorizationCode,
+                redirectUri,
+                scopes,
+                state.withProvider("wrong").encode(objectMapper)));
+  }
+
   private void setupMocks(
       LinkedAccount linkedAccount,
       GA4GHPassport passport,
@@ -160,8 +214,22 @@ class AuthorizationCodeExchangeTest extends BaseTest {
       List<GA4GHVisa> expectedVisas)
       throws URISyntaxException {
 
+    var state =
+        new OAuth2State.Builder()
+            .provider(expectedLinkedAccount.getProviderName())
+            .random(OAuth2State.generateRandomState(new SecureRandom()))
+            .build();
+
+    String encodedState = state.encode(objectMapper);
     setupMocks(
-        expectedLinkedAccount, expectedPassport, authorizationCode, redirectUri, scopes, state);
+        expectedLinkedAccount,
+        expectedPassport,
+        authorizationCode,
+        redirectUri,
+        scopes,
+        encodedState);
+
+    linkedAccountService.upsertOAuth2State(expectedLinkedAccount.getUserId(), state);
 
     var linkedAccountWithPassportAndVisas =
         providerService.createLink(
@@ -170,7 +238,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             authorizationCode,
             redirectUri,
             scopes,
-            state);
+            encodedState);
 
     assertPresent(linkedAccountWithPassportAndVisas);
 
@@ -198,6 +266,13 @@ class AuthorizationCodeExchangeTest extends BaseTest {
                         .withPassportId(Optional.empty()))
             .collect(Collectors.toList());
     assertEquals(expectedVisas, stableVisas);
+
+    // state should have been removed from the db
+    assertThrows(
+        BadRequestException.class,
+        () ->
+            linkedAccountService.validateAndDeleteOAuth2State(
+                expectedLinkedAccount.getUserId(), state));
   }
 
   private String createPassportJwtString(Date expires, List<String> visaJwts) throws JOSEException {
