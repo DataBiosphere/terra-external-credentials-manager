@@ -57,7 +57,7 @@ paths:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
       tags: [ oidc ]
       operationId: getAuthUrl
-      description: First step to link a new provider.
+      description: First step to link a new provider. Creates a 1 time use link. There can only be 1 active link per user per provider. The last link created will invalidate any prior links.
       responses:
         '200':
           description: The authorization URL
