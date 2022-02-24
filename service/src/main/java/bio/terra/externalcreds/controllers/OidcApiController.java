@@ -98,10 +98,12 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<String> getAuthUrl(
-      String providerName, List<String> scopes, String redirectUri, String state) {
+      String providerName, List<String> scopes, String redirectUri) {
+    var userId = getUserIdFromSam();
+
     var authorizationUrl =
         providerService.getProviderAuthorizationUrl(
-            providerName, redirectUri, Set.copyOf(scopes), state);
+            userId, providerName, redirectUri, Set.copyOf(scopes));
 
     return ResponseEntity.of(authorizationUrl.map(this::jsonString));
   }

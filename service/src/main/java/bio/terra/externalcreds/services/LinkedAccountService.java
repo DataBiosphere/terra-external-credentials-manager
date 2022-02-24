@@ -5,10 +5,12 @@ import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
 import bio.terra.externalcreds.models.AuthorizationChangeEvent;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
 import java.sql.Timestamp;
 import java.util.Collection;
@@ -27,18 +29,21 @@ public class LinkedAccountService {
   private final GA4GHVisaDAO ga4ghVisaDAO;
   private final Collection<VisaComparator> visaComparators;
   private final EventPublisher eventPublisher;
+  private final OAuth2StateDAO oAuth2StateDAO;
 
   public LinkedAccountService(
       LinkedAccountDAO linkedAccountDAO,
       GA4GHPassportDAO ga4ghPassportDAO,
       GA4GHVisaDAO ga4ghVisaDAO,
       Collection<VisaComparator> visaComparators,
-      EventPublisher eventPublisher) {
+      EventPublisher eventPublisher,
+      OAuth2StateDAO oAuth2StateDAO) {
     this.linkedAccountDAO = linkedAccountDAO;
     this.ga4ghPassportDAO = ga4ghPassportDAO;
     this.ga4ghVisaDAO = ga4ghVisaDAO;
     this.visaComparators = visaComparators;
     this.eventPublisher = eventPublisher;
+    this.oAuth2StateDAO = oAuth2StateDAO;
   }
 
   @ReadTransaction
@@ -80,6 +85,18 @@ public class LinkedAccountService {
   @WriteTransaction
   public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
     return linkedAccountDAO.upsertLinkedAccount(linkedAccount);
+  }
+
+  @WriteTransaction
+  public OAuth2State upsertOAuth2State(String userId, OAuth2State oAuth2State) {
+    return oAuth2StateDAO.upsertOidcState(userId, oAuth2State);
+  }
+
+  @WriteTransaction
+  public void validateAndDeleteOAuth2State(String userId, OAuth2State oAuth2State) {
+    if (!oAuth2StateDAO.deleteOidcStateIfExists(userId, oAuth2State)) {
+      throw new InvalidOAuth2State();
+    }
   }
 
   @WriteTransaction

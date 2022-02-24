@@ -2,9 +2,11 @@ package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -12,28 +14,39 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
+import bio.terra.externalcreds.models.CannotDecodeOAuth2State;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -377,12 +390,6 @@ public class ProviderServiceTest extends BaseTest {
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(providerName, TestUtils.createRandomProvider()));
     }
-
-    private ClientRegistration createClientRegistration(String providerName) {
-      return ClientRegistration.withRegistrationId(providerName)
-          .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-          .build();
-    }
   }
 
   @Nested
@@ -625,5 +632,177 @@ public class ProviderServiceTest extends BaseTest {
                 .visas(List.of(visaNeedingVerification))
                 .build());
     return savedLinkedAccountWithPassportAndVisa;
+  }
+
+  @Nested
+  @TestComponent
+  class OAuth2State {
+    @MockBean OAuth2Service oAuth2ServiceMock;
+    @MockBean ProviderClientCache providerClientCacheMock;
+    @MockBean ExternalCredsConfig externalCredsConfigMock;
+
+    @Autowired ProviderService providerService;
+    @Autowired OAuth2StateDAO oAuth2StateDAO;
+    @Autowired ObjectMapper objectMapper;
+
+    private final String redirectUri = "https://foo.bar.com";
+    private final Set<String> scopes = Set.of("email", "profile");
+
+    @Test
+    void testOAuth2StatePersisted() {
+      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
+      ProviderProperties providerProperties = ProviderProperties.create();
+
+      when(externalCredsConfigMock.getProviders())
+          .thenReturn(Map.of(linkedAccount.getProviderName(), providerProperties));
+      when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+          .thenReturn(Optional.of(clientRegistration));
+
+      // this mock captures the `state` parameter and returns it
+      // we do this because the state is randomly generated and this test tests that what is
+      // sent to getAuthorizationRequestUri is saved in the database
+      when(oAuth2ServiceMock.getAuthorizationRequestUri(
+              eq(clientRegistration),
+              eq(redirectUri),
+              eq(scopes),
+              anyString(),
+              eq(providerProperties.getAdditionalAuthorizationParameters())))
+          .thenAnswer((Answer<String>) invocation -> (String) invocation.getArgument(3));
+
+      var result =
+          providerService.getProviderAuthorizationUrl(
+              linkedAccount.getUserId(), linkedAccount.getProviderName(), redirectUri, scopes);
+      assertPresent(result);
+      // the result here should be only the state because of the mock above
+      var savedState =
+          bio.terra.externalcreds.models.OAuth2State.decode(objectMapper, result.get());
+      assertEquals(linkedAccount.getProviderName(), savedState.getProvider());
+
+      assertTrue(oAuth2StateDAO.deleteOidcStateIfExists(linkedAccount.getUserId(), savedState));
+      // double check that the state gets removed just in case
+      assertFalse(oAuth2StateDAO.deleteOidcStateIfExists(linkedAccount.getUserId(), savedState));
+    }
+
+    @Test
+    void testWrongRandom() {
+      var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var state =
+          new bio.terra.externalcreds.models.OAuth2State.Builder()
+              .provider(expectedLinkedAccount.getProviderName())
+              .random(
+                  bio.terra.externalcreds.models.OAuth2State.generateRandomState(
+                      new SecureRandom()))
+              .build();
+
+      oAuth2StateDAO.upsertOidcState(expectedLinkedAccount.getUserId(), state);
+
+      assertThrows(
+          BadRequestException.class,
+          () ->
+              providerService.createLink(
+                  expectedLinkedAccount.getProviderName(),
+                  expectedLinkedAccount.getUserId(),
+                  UUID.randomUUID().toString(),
+                  redirectUri,
+                  scopes,
+                  state.withRandom("wrong").encode(objectMapper)));
+    }
+
+    @Test
+    void testWrongProvider() {
+      var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var state =
+          new bio.terra.externalcreds.models.OAuth2State.Builder()
+              .provider(expectedLinkedAccount.getProviderName())
+              .random(
+                  bio.terra.externalcreds.models.OAuth2State.generateRandomState(
+                      new SecureRandom()))
+              .build();
+
+      oAuth2StateDAO.upsertOidcState(expectedLinkedAccount.getUserId(), state);
+
+      assertThrows(
+          BadRequestException.class,
+          () ->
+              providerService.createLink(
+                  expectedLinkedAccount.getProviderName(),
+                  expectedLinkedAccount.getUserId(),
+                  UUID.randomUUID().toString(),
+                  redirectUri,
+                  scopes,
+                  state.withProvider("wrong").encode(objectMapper)));
+    }
+
+    @Test
+    void testNotBase64() {
+      var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
+
+      var e =
+          assertThrows(
+              BadRequestException.class,
+              () ->
+                  providerService.createLink(
+                      expectedLinkedAccount.getProviderName(),
+                      expectedLinkedAccount.getUserId(),
+                      UUID.randomUUID().toString(),
+                      redirectUri,
+                      scopes,
+                      "not base64 encoded"));
+
+      assertInstanceOf(CannotDecodeOAuth2State.class, e.getCause());
+      assertInstanceOf(IllegalArgumentException.class, e.getCause().getCause());
+    }
+
+    @Test
+    void testNotJson() {
+      var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
+
+      var e =
+          assertThrows(
+              BadRequestException.class,
+              () ->
+                  providerService.createLink(
+                      expectedLinkedAccount.getProviderName(),
+                      expectedLinkedAccount.getUserId(),
+                      UUID.randomUUID().toString(),
+                      redirectUri,
+                      scopes,
+                      new String(Base64.getEncoder().encode("not json".getBytes()))));
+
+      assertInstanceOf(CannotDecodeOAuth2State.class, e.getCause());
+      assertInstanceOf(JsonParseException.class, e.getCause().getCause());
+    }
+
+    @Test
+    void testWrongJson() {
+      var expectedLinkedAccount = TestUtils.createRandomLinkedAccount();
+
+      var e =
+          assertThrows(
+              BadRequestException.class,
+              () ->
+                  providerService.createLink(
+                      expectedLinkedAccount.getProviderName(),
+                      expectedLinkedAccount.getUserId(),
+                      UUID.randomUUID().toString(),
+                      redirectUri,
+                      scopes,
+                      new String(
+                          Base64.getEncoder()
+                              .encode(
+                                  objectMapper
+                                      .writeValueAsString(Map.of("foo", "bar"))
+                                      .getBytes()))));
+
+      assertInstanceOf(CannotDecodeOAuth2State.class, e.getCause());
+      assertInstanceOf(ValueInstantiationException.class, e.getCause().getCause());
+    }
+  }
+
+  private ClientRegistration createClientRegistration(String providerName) {
+    return ClientRegistration.withRegistrationId(providerName)
+        .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+        .build();
   }
 }

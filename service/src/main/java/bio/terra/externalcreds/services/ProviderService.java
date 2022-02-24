@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.services;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
@@ -7,10 +8,14 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
+import bio.terra.externalcreds.models.CannotDecodeOAuth2State;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -46,6 +51,8 @@ public class ProviderService {
   private final PassportService passportService;
   private final JwtUtils jwtUtils;
   private final AuditLogger auditLogger;
+  private final SecureRandom secureRandom = new SecureRandom();
+  private final ObjectMapper objectMapper;
   private static final Collection<String> unrecoverableOAuth2ErrorCodes =
       Set.of(
           OAuth2ErrorCodes.ACCESS_DENIED,
@@ -68,7 +75,8 @@ public class ProviderService {
       LinkedAccountService linkedAccountService,
       PassportService passportService,
       JwtUtils jwtUtils,
-      AuditLogger auditLogger) {
+      AuditLogger auditLogger,
+      ObjectMapper objectMapper) {
     this.externalCredsConfig = externalCredsConfig;
     this.providerClientCache = providerClientCache;
     this.oAuth2Service = oAuth2Service;
@@ -76,6 +84,7 @@ public class ProviderService {
     this.passportService = passportService;
     this.jwtUtils = jwtUtils;
     this.auditLogger = auditLogger;
+    this.objectMapper = objectMapper;
   }
 
   public Set<String> getProviderList() {
@@ -105,18 +114,28 @@ public class ProviderService {
   }
 
   public Optional<String> getProviderAuthorizationUrl(
-      String providerName, String redirectUri, Set<String> scopes, String state) {
+      String userId, String providerName, String redirectUri, Set<String> scopes) {
     return providerClientCache
         .getProviderClient(providerName)
         .map(
             providerClient -> {
               var providerInfo = externalCredsConfig.getProviders().get(providerName);
 
+              // oAuth2State is used to prevent CRSF attacks
+              // see https://auth0.com/docs/secure/attack-protection/state-parameters
+              // a random value is generated and stored here then validated in createLink below
+              var oAuth2State =
+                  new OAuth2State.Builder()
+                      .provider(providerName)
+                      .random(OAuth2State.generateRandomState(secureRandom))
+                      .build();
+              linkedAccountService.upsertOAuth2State(userId, oAuth2State);
+
               return oAuth2Service.getAuthorizationRequestUri(
                   providerClient,
                   redirectUri,
                   scopes,
-                  state,
+                  oAuth2State.encode(objectMapper),
                   providerInfo.getAdditionalAuthorizationParameters());
             });
   }
@@ -127,20 +146,39 @@ public class ProviderService {
       String authorizationCode,
       String redirectUri,
       Set<String> scopes,
-      String state) {
+      String encodedState) {
+
+    validateOAuth2State(providerName, userId, encodedState);
 
     return providerClientCache
         .getProviderClient(providerName)
         .map(
-            providerClient ->
-                createLinkInternal(
+            providerClient -> {
+              try {
+                return createLinkInternal(
                     providerName,
                     userId,
                     authorizationCode,
                     redirectUri,
                     scopes,
-                    state,
-                    providerClient));
+                    encodedState,
+                    providerClient);
+              } catch (OAuth2AuthorizationException oauthEx) {
+                throw new BadRequestException(oauthEx);
+              }
+            });
+  }
+
+  private void validateOAuth2State(String providerName, String userId, String encodedState) {
+    try {
+      OAuth2State oAuth2State = OAuth2State.decode(objectMapper, encodedState);
+      if (!providerName.equals(oAuth2State.getProvider())) {
+        throw new InvalidOAuth2State();
+      }
+      linkedAccountService.validateAndDeleteOAuth2State(userId, oAuth2State);
+    } catch (CannotDecodeOAuth2State e) {
+      throw new InvalidOAuth2State(e);
+    }
   }
 
   private LinkedAccountWithPassportAndVisas createLinkInternal(

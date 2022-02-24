@@ -53,12 +53,11 @@ paths:
       - $ref: '#/components/parameters/providerParam'
       - $ref: '#/components/parameters/scopesParam'
       - $ref: '#/components/parameters/redirectUriParam'
-      - $ref: '#/components/parameters/stateParam'
     get:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
       tags: [ oidc ]
       operationId: getAuthUrl
-      description: First step to link a new provider.
+      description: First step to link a new provider. Creates a 1 time use link. There can only be 1 active link per user per provider. The last link created will invalidate any prior links.
       responses:
         '200':
           description: The authorization URL
@@ -88,6 +87,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/LinkInfoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -180,7 +181,7 @@ components:
         type: string
     stateParam:
       name: state
-      description: oidc authorization state
+      description: oidc authorization state, must be identical to state embedded in response from getAuthUrl
       in: query
       required: false
       schema:
