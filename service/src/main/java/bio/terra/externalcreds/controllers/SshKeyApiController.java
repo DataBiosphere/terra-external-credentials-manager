@@ -11,8 +11,7 @@ import org.springframework.stereotype.Controller;
 @Controller
 public class SshKeyApiController implements SshKeyApi {
 
-  public SshKeyApiController() {
-  }
+  public SshKeyApiController() {}
 
   @Override
   public ResponseEntity<Void> getGitHubSshKey() {
