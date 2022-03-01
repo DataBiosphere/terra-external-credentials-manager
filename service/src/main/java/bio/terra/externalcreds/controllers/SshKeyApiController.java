@@ -1,41 +1,41 @@
 package bio.terra.externalcreds.controllers;
 
 import bio.terra.externalcreds.generated.api.SshKeyApi;
-import bio.terra.externalcreds.generated.model.AddGitHubSshKeyRequestBody;
-import bio.terra.externalcreds.generated.model.GitHubSshKey;
-import bio.terra.externalcreds.generated.model.UpdateGitHubSshKeyRequestBody;
-import java.util.List;
+import bio.terra.externalcreds.generated.model.SshKeyInfo;
+import bio.terra.externalcreds.generated.model.SshKeyType;
+import bio.terra.externalcreds.generated.model.UpdateSshKeyRequestBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 @Controller
 public class SshKeyApiController implements SshKeyApi {
 
-  public SshKeyApiController() {
+  public SshKeyApiController() {}
+
+  @Override
+  public ResponseEntity<Void> deleteSshKey(SshKeyType provider) {
+    throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
-  public ResponseEntity<Void> getGitHubSshKey() {
-    return null;
+  public ResponseEntity<Void> getSshKey(SshKeyType provider) {
+    throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
-  public ResponseEntity<List<GitHubSshKey>> enumerateSshKeys() {
-    return null;
+  public ResponseEntity<SshKeyInfo> storeSshKey(
+      SshKeyType provider,
+      String name,
+      String description,
+      byte[] key,
+      String externalUserName,
+      String externalUserEmail) {
+    throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
-  public ResponseEntity<GitHubSshKey> storeGitHubSshKey(AddGitHubSshKeyRequestBody body) {
-    return null;
-  }
-
-  @Override
-  public ResponseEntity<Void> deleteGitHubSshKey() {
-    return null;
-  }
-
-  @Override
-  public ResponseEntity<GitHubSshKey> updateGitHubSshKey(UpdateGitHubSshKeyRequestBody body) {
-    return null;
+  public ResponseEntity<SshKeyInfo> updateSshKey(
+      SshKeyType provider, UpdateSshKeyRequestBody body) {
+    throw new UnsupportedOperationException("not implemented");
   }
 }
