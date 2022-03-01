@@ -145,6 +145,89 @@ paths:
           description: "Version not configured"
         '500':
           $ref: '#/components/responses/ServerError'
+  /api/secrets/sshkeys:
+    get:
+      summary: Enumerate all the ssh keys stored for the user.
+      tags: [ ssh_key ]
+      operationId: enumerateSshKeys
+      responses:
+        '200':
+          description: A JSON array of ssh keys providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GitHubSshKey'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/secrets/sshkeys/github:
+    get:
+      summary: Get the ssh key of the linked github account.
+      tags: [ ssh_key ]
+      operationId: getGitHubSshKey
+      responses:
+        '200':
+          $ref: '#components/responses/GitHubSshKeyResponse'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      summary: Store an ssh key to link a github account
+      tags: [ssh_key]
+      operationId: storeGitHubSshKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddGitHubSshKeyRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/GitHubSshKeyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: delete the github ssh key
+      tags: [ ssh_key ]
+      operationId: deleteGitHubSshKey
+      responses:
+        '204':
+          description: Deletes the GitHub ssh key.
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    patch:
+      summary: update the github ssh key
+      tags: [ ssh_key ]
+      operationId: updateGitHubSshKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGitHubSshKeyRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/GitHubSshKeyResponse'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
 
 components:
   parameters:
@@ -203,6 +286,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/SystemStatus'
+    GitHubSshKeyResponse:
+      description: A JSON object of the github ssh key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GitHubSshKey'
 
     # Error Responses
     BadRequest:
@@ -229,8 +318,81 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorReport'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorReport'
 
   schemas:
+    GitHubSshKeyAttributes:
+      type: object
+      required: [key]
+      properties:
+        key:
+          description: private ssh key for the gitHub account.
+          type: string
+        accountName:
+          description: GitHub account name
+          type: string
+        accountEmail:
+          description: GitHub account email.
+          type: string
+
+    SshKeyType:
+      description: Enum containing valid secret types.
+      type: string
+      enum:
+        - GitHub
+        - GitLab
+        - AzureDevOp
+    SshKeyMetadata:
+      type: object
+      required: [name, keyType]
+      properties:
+        name:
+          type:  string
+        description:
+          type: string
+        keyType:
+          $ref: '#/components/schemas/SshKeyType'
+        id:
+          type: string
+          format: uuid
+    SecretAddRequestCommonFields:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    GitHubSshKey:
+      type: object
+      required: [metadata, attributes]
+      properties:
+        metadata:
+          $ref: '#/components/schemas/SshKeyMetadata'
+        attributes:
+          $ref: '#/components/schemas/GitHubSshKeyAttributes'
+    AddGitHubSshKeyRequestBody:
+      type: object
+      required: [metadata, attributes]
+      properties:
+        metadata:
+          $ref: '#/components/schemas/SecretAddRequestCommonFields'
+        attributes:
+          $ref: '#/components/schemas/GitHubSshKeyAttributes'
+    UpdateGitHubSshKeyRequestBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        attributes:
+          $ref: '#/components/schemas/GitHubSshKeyAttributes'
     LinkInfo:
       type: object
       required: [ externalUserId, expirationTimestamp ]
