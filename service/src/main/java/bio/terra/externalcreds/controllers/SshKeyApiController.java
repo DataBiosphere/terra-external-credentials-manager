@@ -1,10 +1,10 @@
 package bio.terra.externalcreds.controllers;
 
 import bio.terra.externalcreds.generated.api.SshKeyApi;
-import bio.terra.externalcreds.generated.model.AddGitHubSshKeyRequestBody;
-import bio.terra.externalcreds.generated.model.GitHubSshKey;
-import bio.terra.externalcreds.generated.model.UpdateGitHubSshKeyRequestBody;
-import java.util.List;
+import bio.terra.externalcreds.generated.model.SshKeyCommonFields;
+import bio.terra.externalcreds.generated.model.SshKeyType;
+import bio.terra.externalcreds.generated.model.Sshkey;
+import bio.terra.externalcreds.generated.model.UpdateSshKeyRequestBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -12,29 +12,24 @@ import org.springframework.stereotype.Controller;
 public class SshKeyApiController implements SshKeyApi {
 
   public SshKeyApiController() {}
-
   @Override
-  public ResponseEntity<Void> getGitHubSshKey() {
-    return null;
+  public ResponseEntity<Void> deleteSshKey(SshKeyType provider) {
+    throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
-  public ResponseEntity<List<GitHubSshKey>> enumerateSshKeys() {
-    return null;
+  public ResponseEntity<Sshkey> getSshKey(SshKeyType provider) {
+    throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
-  public ResponseEntity<GitHubSshKey> storeGitHubSshKey(AddGitHubSshKeyRequestBody body) {
-    return null;
+  public ResponseEntity<Void> storeSshKey(
+      SshKeyType provider, byte[] key, SshKeyCommonFields keyInfo) {
+    throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
-  public ResponseEntity<Void> deleteGitHubSshKey() {
-    return null;
-  }
-
-  @Override
-  public ResponseEntity<GitHubSshKey> updateGitHubSshKey(UpdateGitHubSshKeyRequestBody body) {
-    return null;
+  public ResponseEntity<Sshkey> updateSshKey(SshKeyType provider, UpdateSshKeyRequestBody body) {
+    throw new UnsupportedOperationException("not implemented");
   }
 }
