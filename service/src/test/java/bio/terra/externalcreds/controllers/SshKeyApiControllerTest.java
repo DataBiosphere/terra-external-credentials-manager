@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.ErrorReport;
-import bio.terra.externalcreds.generated.model.StoreSshKeyRequest;
+import bio.terra.externalcreds.generated.model.SshKeyInfo;
 import bio.terra.externalcreds.generated.model.UpdateSshKeyRequestBody;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
@@ -41,14 +41,14 @@ public class SshKeyApiControllerTest extends BaseTest {
   @Test
   void storeSshKey_throws500() throws Exception {
     var providerName = "GITHUB";
-    StoreSshKeyRequest storeSshKeyRequest = new StoreSshKeyRequest();
+    SshKeyInfo sshkeyInfo = new SshKeyInfo();
 
     var sshKey =
         "-----BEGIN OPENSSH PRIVATE KEY-----\n"
             + "abcde12345/+xXXXYZ//890=\n"
             + "-----END OPENSSH PRIVATE KEY-----";
-    storeSshKeyRequest.key(sshKey.getBytes());
-    String requestBody = objectMapper.writeValueAsString(storeSshKeyRequest);
+    sshkeyInfo.key(sshKey.getBytes());
+    String requestBody = objectMapper.writeValueAsString(sshkeyInfo);
 
     MvcResult failedResult =
         mvc.perform(

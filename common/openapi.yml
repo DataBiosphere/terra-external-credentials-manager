@@ -169,24 +169,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              title: storeSshKeyRequest
-              type: object
-              required: [ key, type ]
-              properties:
-                name:
-                  type: string
-                description:
-                  type: string
-                key:
-                  type: string
-                  format: byte
-                  description: Base64-encoded contents of the key
-                externalUserName:
-                  description: account name
-                  type: string
-                externalUserEmail:
-                  description: account email.
-                  type: string
+              $ref: '#/components/schemas/SshKeyInfo'
       responses:
         '204':
           description: Successfully stored the ssh key.
@@ -344,7 +327,7 @@ components:
         - AZURE
     SshKeyInfo:
       type: object
-      required: [key, type]
+      required: [key]
       properties:
         name:
           type: string
@@ -354,8 +337,6 @@ components:
           type: string
           format: byte
           description: Base64-encoded contents of the key
-        type:
-          $ref: '#/components/schemas/SshKeyType'
         externalUserName:
           description: account name
           type: string
