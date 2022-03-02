@@ -169,14 +169,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              required: [key]
-              type: object
-              properties:
-                key:
-                  type: string
-                  format: byte
-                keyInfo:
-                  $ref: '#/components/schemas/SshKeyCommonFields'
+              $ref: '#/components/schemas/SshKeyInfo'
       responses:
         '204':
           description: Successfully stored the ssh key.
@@ -290,15 +283,7 @@ components:
       content:
         multipart/form-data:
           schema:
-            type: object
-            title: sshkey
-            properties:
-              keyInfo:
-                $ref: '#/components/schemas/SshKeyCommonFields'
-              key:
-                type: string
-                format: byte
-                description: Base64-encoded contents of the key
+            $ref: '#/components/schemas/SshKeyInfo'
 
     # Error Responses
     BadRequest:
@@ -340,16 +325,18 @@ components:
         - GITHUB
         - GITLAB
         - AZURE
-    SshKeyCommonFields:
+    SshKeyInfo:
       type: object
-      required: [type]
+      required: [key]
       properties:
         name:
           type: string
         description:
           type: string
-        type:
-          $ref: '#/components/schemas/SshKeyType'
+        key:
+          type: string
+          format: byte
+          description: Base64-encoded contents of the key
         externalUserName:
           description: account name
           type: string
