@@ -4,7 +4,7 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface Secret extends WithSecret {
+public interface SshKey extends WithSshKey {
   Integer getId();
 
   String getUserId();
@@ -15,9 +15,11 @@ public interface Secret extends WithSecret {
 
   SecretType getType();
 
-  Optional<String> getAttributes();
+  Optional<String> getExternalUserName();
+
+  Optional<String> getExternalUserEmail();
 
   String getSecretContent();
 
-  class Builder extends ImmutableSecret.Builder {}
+  class Builder extends ImmutableSshKey.Builder {}
 }

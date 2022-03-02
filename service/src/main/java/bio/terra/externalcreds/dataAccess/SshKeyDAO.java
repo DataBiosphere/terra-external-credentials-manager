@@ -1,7 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
-import bio.terra.externalcreds.models.Secret;
 import bio.terra.externalcreds.models.SecretType;
+import bio.terra.externalcreds.models.SshKey;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
@@ -13,65 +13,67 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class SecretDAO {
+public class SshKeyDAO {
   private final NamedParameterJdbcTemplate jdbcTemplate;
 
-  public SecretDAO(NamedParameterJdbcTemplate jdbcTemplate) {
+  public SshKeyDAO(NamedParameterJdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  public Optional<Secret> getSecret(String userId, SecretType type) {
+  public Optional<SshKey> getSecret(String userId, SecretType type) {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
-    var query = "SELECT * FROM secret WHERE user_id = :userId AND type = :type";
+    var query = "SELECT * FROM ssh_key WHERE user_id = :userId AND type = :type";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
-            jdbcTemplate.query(query, namedParameters, new SecretRowMapper())));
+            jdbcTemplate.query(query, namedParameters, new SshKeyRowMapper())));
   }
 
   public boolean deleteSecret(String userId, SecretType type) {
-    var query = "DELETE FROM secret WHERE user_id = :userId and type = :type";
+    var query = "DELETE FROM ssh_key WHERE user_id = :userId and type = :type";
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type);
 
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
-  public Secret insertSecret(Secret secret) {
+  public SshKey insertSshKey(SshKey sshKey) {
     var query =
-        "INSERT INTO secret (user_id, secret_id, name, description, type, secret_content, attributes)"
+        "INSERT INTO ssh_key (user_id, id, name, description, type, key, external_user_name, external_user_email)"
             + " VALUES (:userId, :secretId, :name, :description, :type, :secret_content, cast(:attributes AS jsonb)";
 
     var namedParameters =
         new MapSqlParameterSource()
-            .addValue("userId", secret.getUserId())
-            .addValue("secretId", secret.getId())
-            .addValue("name", secret.getName())
-            .addValue("description", secret.getDescription().orElse(""))
-            .addValue("type", secret.getType().name())
-            .addValue("secret_content", secret.getSecretContent())
-            .addValue("attributes", secret.getAttributes().orElse(""));
+            .addValue("userId", sshKey.getUserId())
+            .addValue("id", sshKey.getId())
+            .addValue("name", sshKey.getName())
+            .addValue("description", sshKey.getDescription().orElse(""))
+            .addValue("type", sshKey.getType().name())
+            .addValue("key", sshKey.getSecretContent())
+            .addValue("externalUserName", sshKey.getExternalUserName().orElse(""))
+            .addValue("externalUserEmail", sshKey.getExternalUserEmail().orElse(""));
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
     var generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
-    return secret;
+    return sshKey;
   }
 
-  private static class SecretRowMapper implements RowMapper<Secret> {
+  private static class SshKeyRowMapper implements RowMapper<SshKey> {
 
     @Override
-    public Secret mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new Secret.Builder()
+    public SshKey mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new SshKey.Builder()
           .id(rs.getInt("id"))
           .userId(rs.getString("user_id"))
           .type(SecretType.valueOf(rs.getString("type")))
           .name(rs.getString("name"))
           .description(rs.getString("description"))
-          .attributes(rs.getString("attributes"))
-          .secretContent(rs.getString("secret_content"))
+          .externalUserEmail(rs.getString("external_user_email"))
+          .externalUserName(rs.getString("external_user_name"))
+          .secretContent(rs.getString("key"))
           .build();
     }
   }

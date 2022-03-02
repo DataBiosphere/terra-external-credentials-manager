@@ -1,13 +1,13 @@
 databaseChangeLog:
   - changeSet:
-      id: "add_secret_table"
+      id: "add_sshkey_table"
       author: yuhuyoyo
       changes:
         - createTable:
-            tableName: secret
+            tableName: ssh_key
             columns:
               - column:
-                  name: secret_id
+                  name: id
                   type: text
                   constraints:
                     primaryKey: true
@@ -20,8 +20,6 @@ databaseChangeLog:
               - column:
                   name: name
                   type: text
-                  constraints:
-                    nullable: false
               - column:
                   name: description
                   type: text
@@ -31,15 +29,16 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: secret_content
+                  name: key
                   type: text
                   constraints:
                     nullable: false
               - column:
-                  name: attributes
-                  type: jsonb
-                  constraints:
-                    nullable: false
+                  name: external_user_name
+                  type: text
+              - column:
+                  name: external_user_email
+                  type: text
         - addUniqueConstraint:
             constraintName: unique_secret_per_type
             tableName: secret
