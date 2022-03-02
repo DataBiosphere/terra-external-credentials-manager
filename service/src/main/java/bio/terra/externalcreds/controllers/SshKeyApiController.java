@@ -1,8 +1,9 @@
 package bio.terra.externalcreds.controllers;
 
 import bio.terra.externalcreds.generated.api.SshKeyApi;
-import bio.terra.externalcreds.generated.model.SshKeyInfo;
+import bio.terra.externalcreds.generated.model.SshKeyCommonFields;
 import bio.terra.externalcreds.generated.model.SshKeyType;
+import bio.terra.externalcreds.generated.model.Sshkey;
 import bio.terra.externalcreds.generated.model.UpdateSshKeyRequestBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -18,24 +19,18 @@ public class SshKeyApiController implements SshKeyApi {
   }
 
   @Override
-  public ResponseEntity<Void> getSshKey(SshKeyType provider) {
+  public ResponseEntity<Sshkey> getSshKey(SshKeyType provider) {
     throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
-  public ResponseEntity<SshKeyInfo> storeSshKey(
-      SshKeyType provider,
-      String name,
-      String description,
-      byte[] key,
-      String externalUserName,
-      String externalUserEmail) {
+  public ResponseEntity<Void> storeSshKey(
+      SshKeyType provider, byte[] key, SshKeyCommonFields keyInfo) {
     throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
-  public ResponseEntity<SshKeyInfo> updateSshKey(
-      SshKeyType provider, UpdateSshKeyRequestBody body) {
+  public ResponseEntity<Sshkey> updateSshKey(SshKeyType provider, UpdateSshKeyRequestBody body) {
     throw new UnsupportedOperationException("not implemented");
   }
 }

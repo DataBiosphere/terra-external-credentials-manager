@@ -154,7 +154,7 @@ paths:
       operationId: getSshKey
       responses:
         '200':
-          $ref: '#components/responses/SshKeyResponse'
+          $ref: '#/components/responses/SshKeyResponse'
         '403':
           $ref: '#/components/responses/PermissionDenied'
         '404':
@@ -172,21 +172,14 @@ paths:
               required: [key]
               type: object
               properties:
-                name:
-                  type: string
-                description:
-                  type: string
                 key:
                   type: string
-                  format: base64
-                externalAccountName:
-                  type: string
-                externalAccountEmail:
-                  type: string
-
+                  format: byte
+                keyInfo:
+                  $ref: '#/components/schemas/SshKeyCommonFields'
       responses:
-        '200':
-          $ref: '#/components/responses/SshKeyResponse'
+        '204':
+          description: Successfully stored the ssh key.
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -295,9 +288,17 @@ components:
     SshKeyResponse:
       description: A JSON object of the ssh key.
       content:
-        application/json:
+        multipart/form-data:
           schema:
-            $ref: '#/components/schemas/SshKeyInfo'
+            type: object
+            title: sshkey
+            properties:
+              keyInfo:
+                $ref: '#/components/schemas/SshKeyCommonFields'
+              key:
+                type: string
+                format: byte
+                description: Base64-encoded contents of the key
 
     # Error Responses
     BadRequest:
@@ -339,9 +340,9 @@ components:
         - GITHUB
         - GITLAB
         - AZURE
-    SshKeyInfo:
+    SshKeyCommonFields:
       type: object
-      required: [type, key]
+      required: [type]
       properties:
         name:
           type: string
@@ -349,9 +350,6 @@ components:
           type: string
         type:
           $ref: '#/components/schemas/SshKeyType'
-        key:
-          type: string
-          format: byte
         externalUserName:
           description: account name
           type: string
