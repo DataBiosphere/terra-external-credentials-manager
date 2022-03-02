@@ -145,9 +145,9 @@ paths:
           description: "Version not configured"
         '500':
           $ref: '#/components/responses/ServerError'
-  /api/secrets/sshkeys/v1/{provider}:
+  /api/sshkey/v1/{sshkey_type}:
     parameters:
-      - $ref: '#/components/parameters/sshkeyProviderParam'
+      - $ref: '#/components/parameters/sshKeyProviderParam'
     get:
       summary: Get the ssh key of the given provider.
       tags: [ ssh_key ]
@@ -155,13 +155,11 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SshKeyResponse'
-        '403':
-          $ref: '#/components/responses/PermissionDenied'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
-    post:
+    put:
       summary: Store an ssh key to the given provider.
       tags: [ssh_key]
       operationId: storeSshKey
@@ -175,8 +173,6 @@ paths:
           description: Successfully stored the ssh key.
         '400':
           $ref: '#/components/responses/BadRequest'
-        '403':
-          $ref: '#/components/responses/PermissionDenied'
         '409':
           $ref: '#/components/responses/Conflict'
         '500':
@@ -188,27 +184,6 @@ paths:
       responses:
         '204':
           description: Deletes the ssh key.
-        '403':
-          $ref: '#/components/responses/PermissionDenied'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-    patch:
-      summary: update the ssh key of the given provider
-      tags: [ ssh_key ]
-      operationId: updateSshKey
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateSshKeyRequestBody'
-      responses:
-        '200':
-          $ref: '#/components/responses/SshKeyResponse'
-        '403':
-          $ref: '#/components/responses/PermissionDenied'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -216,12 +191,11 @@ paths:
 
 components:
   parameters:
-    sshkeyProviderParam:
-      name: provider
+    sshKeyProviderParam:
+      name: sshkey_type
       in: path
       schema:
         $ref: '#/components/schemas/SshKeyType'
-      example: ["GITHUB", "GITLAB", "AZURE"]
       required: true
     providerParam:
       name: provider
@@ -281,7 +255,7 @@ components:
     SshKeyResponse:
       description: A JSON object of the ssh key.
       content:
-        multipart/form-data:
+        application/json:
           schema:
             $ref: '#/components/schemas/SshKeyInfo'
 
@@ -327,37 +301,16 @@ components:
         - AZURE
     SshKeyInfo:
       type: object
-      required: [key]
+      required: [key, externalUserEmail]
       properties:
-        name:
-          type: string
-        description:
-          type: string
         key:
           type: string
           format: byte
           description: Base64-encoded contents of the key
-        externalUserName:
-          description: account name
-          type: string
         externalUserEmail:
           description: account email.
           type: string
 
-    UpdateSshKeyRequestBody:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        externalUserName:
-          type: string
-        externalUserEmail:
-          type: string
-        key:
-          description: ssh private key
-          type: string
     LinkInfo:
       type: object
       required: [ externalUserId, expirationTimestamp ]

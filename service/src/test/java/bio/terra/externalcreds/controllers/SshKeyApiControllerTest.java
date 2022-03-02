@@ -3,14 +3,12 @@ package bio.terra.externalcreds.controllers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.ErrorReport;
 import bio.terra.externalcreds.generated.model.SshKeyInfo;
-import bio.terra.externalcreds.generated.model.UpdateSshKeyRequestBody;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -28,9 +26,9 @@ class SshKeyApiControllerTest extends BaseTest {
 
   @Test
   void getSshKey_throws500() throws Exception {
-    var providerName = "GITHUB";
+    var sshKeyType = "GITHUB";
     MvcResult failedResult =
-        mvc.perform(get("/api/secrets/sshkeys/v1/{provider}", providerName))
+        mvc.perform(get("/api/sshkey/v1/{sshkey_type}", sshKeyType))
             .andExpect(status().is(500))
             .andReturn();
     ErrorReport requestError =
@@ -40,7 +38,7 @@ class SshKeyApiControllerTest extends BaseTest {
 
   @Test
   void storeSshKey_throws500() throws Exception {
-    var providerName = "GITHUB";
+    var sshKeyType = "GITHUB";
     SshKeyInfo sshkeyInfo = new SshKeyInfo();
 
     var sshKey =
@@ -48,11 +46,12 @@ class SshKeyApiControllerTest extends BaseTest {
             + "abcde12345/+xXXXYZ//890=\n"
             + "-----END OPENSSH PRIVATE KEY-----";
     sshkeyInfo.key(sshKey.getBytes());
+    sshkeyInfo.externalUserEmail("yuhuyoyo@google.com");
     String requestBody = objectMapper.writeValueAsString(sshkeyInfo);
 
     MvcResult failedResult =
         mvc.perform(
-                post("/api/secrets/sshkeys/v1/{provider}", providerName)
+                put("/api/sshkey/v1/{sshkey_type}", sshKeyType)
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .content(requestBody))
             .andExpect(status().is(500))
@@ -63,30 +62,11 @@ class SshKeyApiControllerTest extends BaseTest {
   }
 
   @Test
-  void deleteSshKey() throws Exception {
-    var providerName = "GITLAB";
+  void deleteSshKey_throws500() throws Exception {
+    var sshKeyType = "GITLAB";
 
     MvcResult failedResult =
-        mvc.perform(delete("/api/secrets/sshkeys/v1/{provider}", providerName))
-            .andExpect(status().is(500))
-            .andReturn();
-    ErrorReport requestError =
-        objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
-    assertThat(requestError.getMessage(), Matchers.containsString("Not implemented"));
-  }
-
-  @Test
-  void updateSshKey_throws500() throws Exception {
-    var providerName = "AZURE";
-    UpdateSshKeyRequestBody updateSshKeyRequestBody = new UpdateSshKeyRequestBody();
-    updateSshKeyRequestBody.name("new_name");
-    updateSshKeyRequestBody.description("new description");
-
-    MvcResult failedResult =
-        mvc.perform(
-                patch("/api/secrets/sshkeys/v1/{provider}", providerName)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(updateSshKeyRequestBody)))
+        mvc.perform(delete("/api/sshkey/v1/{sshkey_type}", sshKeyType))
             .andExpect(status().is(500))
             .andReturn();
     ErrorReport requestError =
@@ -96,16 +76,9 @@ class SshKeyApiControllerTest extends BaseTest {
 
   @Test
   void updateSshKey_invalidProvider_throwsBadRequest() throws Exception {
-    var invalidProvider = "AZURES";
-    UpdateSshKeyRequestBody updateSshKeyRequestBody = new UpdateSshKeyRequestBody();
-    updateSshKeyRequestBody.name("new_name");
-    updateSshKeyRequestBody.description("new description");
-
+    var invalidSshKeyType = "AZURES";
     MvcResult failedResult =
-        mvc.perform(
-                patch("/api/secrets/sshkeys/v1/{provider}", invalidProvider)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(updateSshKeyRequestBody)))
+        mvc.perform(get("/api/sshkey/v1/{sshkey_type}", invalidSshKeyType))
             .andExpect(status().isBadRequest())
             .andReturn();
     ErrorReport requestError =
