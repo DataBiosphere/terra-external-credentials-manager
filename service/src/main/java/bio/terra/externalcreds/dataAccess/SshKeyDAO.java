@@ -37,10 +37,18 @@ public class SshKeyDAO {
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
-  public SshKey insertSshKey(SshKey sshKey) {
+  public SshKey upsertSshKey(SshKey sshKey) {
     var query =
         "INSERT INTO ssh_key (user_id, id, name, description, type, key, external_user_name, external_user_email)"
-            + " VALUES (:userId, :secretId, :name, :description, :type, :secret_content, cast(:attributes AS jsonb)";
+            + " VALUES (:userId, :secretId, :name, :description, :type, :secret_content, cast(:attributes AS jsonb)"
+            + " ON CONFLICT (type, user_id) DO UPDATE SET"
+            + " id = excluded.id,"
+            + " name = excluded.name,"
+            + " description = excluded.description,"
+            + " key = excluded.key,"
+            + " external_user_name = excluded.external_user_name"
+            + " external_user_email = excluded.external_user_email"
+            + " RETURNING id";
 
     var namedParameters =
         new MapSqlParameterSource()
@@ -53,10 +61,7 @@ public class SshKeyDAO {
             .addValue("externalUserName", sshKey.getExternalUserName().orElse(""))
             .addValue("externalUserEmail", sshKey.getExternalUserEmail().orElse(""));
 
-    // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
-    // clause
-    var generatedKeyHolder = new GeneratedKeyHolder();
-    jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
+    jdbcTemplate.update(query, namedParameters);
 
     return sshKey;
   }
