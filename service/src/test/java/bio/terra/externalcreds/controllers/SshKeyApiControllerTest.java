@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 @AutoConfigureMockMvc
-public class SshKeyApiControllerTest extends BaseTest {
+class SshKeyApiControllerTest extends BaseTest {
 
   @Autowired private MockMvc mvc;
   @Autowired private ObjectMapper objectMapper;
