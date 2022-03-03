@@ -14,33 +14,33 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class SshKeyDAO {
+public class SshKeyPairDAO {
   private final NamedParameterJdbcTemplate jdbcTemplate;
 
-  public SshKeyDAO(NamedParameterJdbcTemplate jdbcTemplate) {
+  public SshKeyPairDAO(NamedParameterJdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
   }
 
   public Optional<SshKeyPair> getSecret(String userId, SshKeyPairType type) {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
-    var query = "SELECT * FROM ssh_key WHERE user_id = :userId AND type = :type";
+    var query = "SELECT * FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, new SshKeyPairRowMapper())));
   }
 
   public boolean deleteSecret(String userId, SshKeyPairType type) {
-    var query = "DELETE FROM ssh_key WHERE user_id = :userId and type = :type";
+    var query = "DELETE FROM ssh_key_pair WHERE user_id = :userId and type = :type";
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
 
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
-  public SshKeyPair upsertSshKey(SshKeyPair sshKey) {
+  public SshKeyPair upsertSshKey(SshKeyPair sshKeyPair) {
     var query =
-        "INSERT INTO ssh_key (user_id, type, private_key, public_key, external_user_email)"
+        "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email)"
             + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail)"
             + " ON CONFLICT (type, user_id) DO UPDATE SET"
             + " private_key = excluded.private_key,"
@@ -50,18 +50,18 @@ public class SshKeyDAO {
 
     var namedParameters =
         new MapSqlParameterSource()
-            .addValue("userId", sshKey.getUserId())
-            .addValue("type", sshKey.getType().name())
-            .addValue("privateKey", sshKey.getPrivateKey())
-            .addValue("publicKey", sshKey.getPublicKey())
-            .addValue("externalUserEmail", sshKey.getExternalUserEmail());
+            .addValue("userId", sshKeyPair.getUserId())
+            .addValue("type", sshKeyPair.getType().name())
+            .addValue("privateKey", sshKeyPair.getPrivateKey())
+            .addValue("publicKey", sshKeyPair.getPublicKey())
+            .addValue("externalUserEmail", sshKeyPair.getExternalUserEmail());
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
     var generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
-    return sshKey.withId(Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
+    return sshKeyPair.withId(Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
   }
 
   private static class SshKeyPairRowMapper implements RowMapper<SshKeyPair> {

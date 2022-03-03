@@ -4,7 +4,7 @@ databaseChangeLog:
       author: yuhuyoyo
       changes:
         - createTable:
-            tableName: ssh_key
+            tableName: ssh_key_pair
             columns:
               - column:
                   name: id
@@ -40,7 +40,7 @@ databaseChangeLog:
                     nullable: false
         - addUniqueConstraint:
             constraintName: unique_key_per_type
-            tableName: ssh_key
+            tableName: ssh_key_pair
             columnNames: user_id, type
             remarks: |
               There can only be one secret per type per user.

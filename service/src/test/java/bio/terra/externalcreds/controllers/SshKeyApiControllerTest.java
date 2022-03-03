@@ -28,7 +28,7 @@ class SshKeyApiControllerTest extends BaseTest {
   void getSshKeyPair_throws500() throws Exception {
     var sshKeyType = "GITHUB";
     var failedResult =
-        mvc.perform(get("/api/sshkeypair/v1/{sshkey_type}", sshKeyType))
+        mvc.perform(get("/api/sshkeypair/v1/{ype}", sshKeyType))
             .andExpect(status().is(500))
             .andReturn();
     var requestError =
@@ -68,7 +68,7 @@ class SshKeyApiControllerTest extends BaseTest {
   void deleteSshKeyPair_throws500() throws Exception {
     var sshKeyType = "GITLAB";
     var failedResult =
-        mvc.perform(delete("/api/sshkeypair/v1/{sshkey_type}", sshKeyType))
+        mvc.perform(delete("/api/sshkeypair/v1/{type}", sshKeyType))
             .andExpect(status().is(500))
             .andReturn();
 
@@ -81,7 +81,7 @@ class SshKeyApiControllerTest extends BaseTest {
   void updateSshKeyPair_invalidProvider_throwsBadRequest() throws Exception {
     var invalidSshKeyType = "AZURES";
     var failedResult =
-        mvc.perform(get("/api/sshkeypair/v1/{sshkey_type}", invalidSshKeyType))
+        mvc.perform(get("/api/sshkeypair/v1/{type}", invalidSshKeyType))
             .andExpect(status().isBadRequest())
             .andReturn();
 
