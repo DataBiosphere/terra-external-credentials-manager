@@ -115,6 +115,31 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
 
+  /passport/v1/validate:
+    post:
+      summary: Given passport and criteria validate that passport is valid and has a matching visa
+      tags: [passport]
+      operationId: validatePassport
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/ValidatePassportRequest'
+        required: true
+      responses:
+        '200':
+          description: JSON object indicating passport validity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateVisaResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+
+
   /status:
     get:
       summary: Check status of the service.
@@ -197,6 +222,13 @@ components:
     LinkNotFound:
       description: Unable to find a link for the user to the provider. Consider re-linking with an oauthcode.
 
+    ValidateVisaResponse:
+      description: results of visa validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidateVisaResult'
+
     SystemStatusResponse:
       description: A JSON description of the subsystems and their statuses.
       content:
@@ -274,6 +306,46 @@ components:
           type: string
         build:
           type: string
+
+    ValidatePassportRequest:
+      type: object
+      required: [ passports, criteria ]
+      properties:
+        passports:
+          description: JWT encoded passports
+          type: array
+          items:
+            type: string
+        criteria:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/RASv11'
+    ValidateVisaResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+
+    VisaCriteria:
+      type: object
+      required: [ issuer, type ]
+      properties:
+        type:
+          type: string
+        issuer:
+          type: string
+
+    RASv11:
+      allOf:
+        - $ref: '#/components/schemas/VisaCriteria'
+        - description: 'Criteria for matching RAS v1.1 visas, visa `type` claim = "https://ras.nih.gov/visas/v1.1"'
+          type: object
+          properties:
+            phsId:
+              type: string
+            consentCode:
+              type: string
 
   securitySchemes:
     authorization:
