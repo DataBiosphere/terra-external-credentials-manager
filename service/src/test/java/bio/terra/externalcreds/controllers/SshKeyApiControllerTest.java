@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 @AutoConfigureMockMvc
 class SshKeyApiControllerTest extends BaseTest {
@@ -28,11 +27,11 @@ class SshKeyApiControllerTest extends BaseTest {
   @Test
   void getSshKeyPair_throws500() throws Exception {
     var sshKeyType = "GITHUB";
-    MvcResult failedResult =
+    var failedResult =
         mvc.perform(get("/api/sshkeypair/v1/{sshkey_type}", sshKeyType))
             .andExpect(status().is(500))
             .andReturn();
-    ErrorReport requestError =
+    var requestError =
         objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
     assertThat(requestError.getMessage(), Matchers.containsString("Not implemented"));
   }
@@ -50,9 +49,9 @@ class SshKeyApiControllerTest extends BaseTest {
             .privateKey(sshPrivateKey.getBytes())
             .publicKey(sshPublicKey.getBytes())
             .externalUserEmail("yuhuyoyo@google.com");
-    String requestBody = objectMapper.writeValueAsString(sshKeyPair);
+    var requestBody = objectMapper.writeValueAsString(sshKeyPair);
 
-    MvcResult failedResult =
+    var failedResult =
         mvc.perform(
                 put("/api/sshkeypair/v1/{type}", sshKeyPairType)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -60,7 +59,7 @@ class SshKeyApiControllerTest extends BaseTest {
             .andExpect(status().is(500))
             .andReturn();
 
-    ErrorReport requestError =
+    var requestError =
         objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
     assertThat(requestError.getMessage(), Matchers.containsString("Not implemented"));
   }
@@ -68,12 +67,12 @@ class SshKeyApiControllerTest extends BaseTest {
   @Test
   void deleteSshKeyPair_throws500() throws Exception {
     var sshKeyType = "GITLAB";
-    MvcResult failedResult =
+    var failedResult =
         mvc.perform(delete("/api/sshkeypair/v1/{sshkey_type}", sshKeyType))
             .andExpect(status().is(500))
             .andReturn();
 
-    ErrorReport requestError =
+    var requestError =
         objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
     assertThat(requestError.getMessage(), Matchers.containsString("Not implemented"));
   }
@@ -81,12 +80,12 @@ class SshKeyApiControllerTest extends BaseTest {
   @Test
   void updateSshKeyPair_invalidProvider_throwsBadRequest() throws Exception {
     var invalidSshKeyType = "AZURES";
-    MvcResult failedResult =
+    var failedResult =
         mvc.perform(get("/api/sshkeypair/v1/{sshkey_type}", invalidSshKeyType))
             .andExpect(status().isBadRequest())
             .andReturn();
 
-    ErrorReport requestError =
+    var requestError =
         objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
     assertThat(
         requestError.getMessage(),
