@@ -8,7 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.ErrorReport;
-import bio.terra.externalcreds.generated.model.SshKeyPairInfo;
+import bio.terra.externalcreds.generated.model.SshKeyPair;
+import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -37,23 +38,24 @@ class SshKeyApiControllerTest extends BaseTest {
   }
 
   @Test
-  void storeSshKeyPair_throws500() throws Exception {
-    var sshKeyType = "GITHUB";
-    SshKeyPairInfo sshKeyPairInfo = new SshKeyPairInfo();
+  void putSshKeyPair_throws500() throws Exception {
+    var sshKeyPairType = SshKeyPairType.GITHUB;
     var sshPrivateKey =
         "-----BEGIN OPENSSH PRIVATE KEY-----\n"
             + "abcde12345/+xXXXYZ//890=\n"
             + "-----END OPENSSH PRIVATE KEY-----";
     var sshPublicKey = "ssh-ed25519 AAABBBccc123 yuhuyoyo@google.com";
-    sshKeyPairInfo.privateKey(sshPrivateKey.getBytes());
-    sshKeyPairInfo.publicKey(sshPublicKey.getBytes());
-    sshKeyPairInfo.externalUserEmail("yuhuyoyo@google.com");
-    String requestBody = objectMapper.writeValueAsString(sshKeyPairInfo);
+    var sshKeyPair =
+        new SshKeyPair()
+            .privateKey(sshPrivateKey.getBytes())
+            .publicKey(sshPublicKey.getBytes())
+            .externalUserEmail("yuhuyoyo@google.com");
+    String requestBody = objectMapper.writeValueAsString(sshKeyPair);
 
     MvcResult failedResult =
         mvc.perform(
-                put("/api/sshkeypair/v1/{sshkey_type}", sshKeyType)
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                put("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                    .contentType(MediaType.APPLICATION_JSON)
                     .content(requestBody))
             .andExpect(status().is(500))
             .andReturn();

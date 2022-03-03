@@ -145,12 +145,12 @@ paths:
           description: "Version not configured"
         '500':
           $ref: '#/components/responses/ServerError'
-  /api/sshkeypair/v1/{sshkey_type}:
+  /api/sshkeypair/v1/{type}:
     parameters:
-      - $ref: '#/components/parameters/sshKeyProviderParam'
+      - $ref: '#/components/parameters/sshKeyPairTypeParam'
     get:
       summary: Get the ssh key pair of the given provider.
-      tags: [ ssh_key ]
+      tags: [ ssh key pair ]
       operationId: getSshKeyPair
       responses:
         '200':
@@ -161,25 +161,23 @@ paths:
           $ref: '#/components/responses/ServerError'
     put:
       summary: Store an ssh key pair to the given provider.
-      tags: [ssh_key]
-      operationId: storeSshKeyPair
+      tags: [ssh key pair]
+      operationId: putSshKeyPair
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              $ref: '#/components/schemas/SshKeyPairInfo'
+              $ref: '#/components/schemas/SshKeyPair'
       responses:
         '204':
           description: Successfully stored the ssh key pair.
         '400':
           $ref: '#/components/responses/BadRequest'
-        '409':
-          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/ServerError'
     delete:
       summary: delete the ssh key pair of the given provider
-      tags: [ ssh_key ]
+      tags: [ ssh key pair ]
       operationId: deleteSshKeyPair
       responses:
         '204':
@@ -191,11 +189,11 @@ paths:
 
 components:
   parameters:
-    sshKeyProviderParam:
-      name: sshkey_type
+    sshKeyPairTypeParam:
+      name: type
       in: path
       schema:
-        $ref: '#/components/schemas/SshKeyType'
+        $ref: '#/components/schemas/SshKeyPairType'
       required: true
     providerParam:
       name: provider
@@ -203,12 +201,6 @@ components:
       schema:
         type: string
         default: ras
-      required: true
-    userIdParam:
-      name: user_id
-      in: path
-      schema:
-        type: string
       required: true
     scopesParam:
       name: scopes
@@ -257,7 +249,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SshKeyPairInfo'
+            $ref: '#/components/schemas/SshKeyPair'
 
     # Error Responses
     BadRequest:
@@ -284,22 +276,16 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorReport'
-    Conflict:
-      description: Conflict
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorReport'
 
   schemas:
-    SshKeyType:
+    SshKeyPairType:
       description: Enum containing valid ssh key types.
       type: string
       enum:
         - GITHUB
         - GITLAB
         - AZURE
-    SshKeyPairInfo:
+    SshKeyPair:
       type: object
       required: [privateKey, publicKey, externalUserEmail]
       properties:
