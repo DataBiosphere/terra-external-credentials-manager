@@ -5,16 +5,18 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface SshKey extends WithSshKey {
-  Integer getId();
+public interface SshKeyPair extends WithSshKeyPair {
+  Optional<Integer> getId();
 
   String getUserId();
 
   SshKeyType getType();
 
-  Optional<String> getExternalUserEmail();
+  String getExternalUserEmail();
 
   String getPrivateKey();
 
-  class Builder extends ImmutableSshKey.Builder {}
+  String getPublicKey();
+
+  class Builder extends ImmutableSshKeyPair.Builder {}
 }

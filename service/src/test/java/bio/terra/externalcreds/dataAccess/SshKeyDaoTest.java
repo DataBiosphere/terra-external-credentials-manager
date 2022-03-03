@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.SshKeyType;
-import bio.terra.externalcreds.models.SshKey;
+import bio.terra.externalcreds.models.SshKeyPair;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,22 +19,27 @@ class SshKeyDaoTest extends BaseTest {
   private static final String DEFAULT_USER_ID = UUID.randomUUID().toString();
   private static final SshKeyType DEFAULT_KEY_TYPE = SshKeyType.GITHUB;
   private static final String DEFAULT_EXTERNAL_USER_EMAIL = "foo@monkeyseesmonkeydo.com";
+  private static final String DEFAULT_PRIVATE_KEY =
+      "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+          + "abcde12345/+xXXXYZ//890=\n"
+          + "-----END OPENSSH PRIVATE KEY-----";
+  private static final String DEFAULT_PUBLIC_KEY =
+      "ssh-ed25519 AAAA12345 " + DEFAULT_EXTERNAL_USER_EMAIL;
 
   @Nested
   class upsertKeyTest {
     @Test
     void upsertSshKey_upsertTwice_secondKeyOverrideTheFirstKey() {
+      var externalUserEmail = "bar@monkeyseesmonkeydo.com";
       var sshKeyOne = createSshKey();
-      var sshKeyTwo = createSshKey(DEFAULT_USER_ID, DEFAULT_KEY_TYPE, "bar@monkeyseesmonkeydo.com");
+      var sshKeyTwo = createSshKey(DEFAULT_USER_ID, DEFAULT_KEY_TYPE, externalUserEmail);
 
       sshKeyDAO.upsertSshKey(sshKeyOne);
-      var storedSshKeyTwo = sshKeyDAO.upsertSshKey(sshKeyTwo);
+      sshKeyDAO.upsertSshKey(sshKeyTwo);
       var loadedSshKeyTwoOptional = sshKeyDAO.getSecret(DEFAULT_USER_ID, DEFAULT_KEY_TYPE);
 
       assertPresent(loadedSshKeyTwoOptional);
-      assertEquals(
-          storedSshKeyTwo.withId(loadedSshKeyTwoOptional.get().getId()),
-          loadedSshKeyTwoOptional.get());
+      assertEquals(externalUserEmail, loadedSshKeyTwoOptional.get().getExternalUserEmail());
     }
 
     @Test
@@ -42,7 +47,7 @@ class SshKeyDaoTest extends BaseTest {
       var sshKey = createSshKey();
       var storedSshKey = sshKeyDAO.upsertSshKey(sshKey);
 
-      assertEquals(sshKey.withId(storedSshKey.getId()), storedSshKey);
+      verifySshKeyPair(storedSshKey);
     }
   }
 
@@ -63,44 +68,49 @@ class SshKeyDaoTest extends BaseTest {
       var loadedSshKeyOptional = sshKeyDAO.getSecret(DEFAULT_USER_ID, DEFAULT_KEY_TYPE);
 
       assertPresent(loadedSshKeyOptional);
-      assertEquals(
-          savedSshKey.withId(loadedSshKeyOptional.get().getId()), loadedSshKeyOptional.get());
+      verifySshKeyPair(loadedSshKeyOptional.get());
     }
   }
 
   @Nested
   class DeleteKeyTest {
     @Test
-    void deleteSshKey_successfullyDeleted () {
-    var sshKey = createSshKey();
-    sshKeyDAO.upsertSshKey(sshKey);
+    void deleteSshKey_successfullyDeleted() {
+      var sshKey = createSshKey();
+      sshKeyDAO.upsertSshKey(sshKey);
 
-    assertTrue(sshKeyDAO.deleteSecret(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
+      assertTrue(sshKeyDAO.deleteSecret(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
 
-    assertEmpty(sshKeyDAO.getSecret(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
-    assertFalse(sshKeyDAO.deleteSecret(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
-  }
+      assertEmpty(sshKeyDAO.getSecret(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
+      assertFalse(sshKeyDAO.deleteSecret(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
+    }
 
     @Test
-    void deleteSshKey_keyNotExist_returnsFalse () {
-    assertFalse(sshKeyDAO.deleteSecret(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
-  }
+    void deleteSshKey_keyNotExist_returnsFalse() {
+      assertFalse(sshKeyDAO.deleteSecret(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
+    }
   }
 
-  private static SshKey createSshKey() {
+  private static SshKeyPair createSshKey() {
     return createSshKey(DEFAULT_USER_ID, DEFAULT_KEY_TYPE, DEFAULT_EXTERNAL_USER_EMAIL);
   }
 
-  private static SshKey createSshKey(String userId, SshKeyType keyType, String externalUserEmail) {
-    String key =
-        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
-            + "abcde12345/+xXXXYZ//890=\n"
-            + "-----END OPENSSH PRIVATE KEY-----";
-    return new SshKey.Builder()
+  private static SshKeyPair createSshKey(
+      String userId, SshKeyType keyType, String externalUserEmail) {
+    return new SshKeyPair.Builder()
         .type(keyType)
-        .secretContent(key)
+        .privateKey(DEFAULT_PRIVATE_KEY)
+        .publicKey(DEFAULT_PUBLIC_KEY)
         .userId(userId)
         .externalUserEmail(externalUserEmail)
         .build();
+  }
+
+  private void verifySshKeyPair(SshKeyPair storedSshKey) {
+    assertEquals(DEFAULT_USER_ID, storedSshKey.getUserId());
+    assertEquals(DEFAULT_KEY_TYPE, storedSshKey.getType());
+    assertEquals(DEFAULT_EXTERNAL_USER_EMAIL, storedSshKey.getExternalUserEmail());
+    assertEquals(DEFAULT_PRIVATE_KEY, storedSshKey.getPrivateKey());
+    assertEquals(DEFAULT_PUBLIC_KEY, storedSshKey.getPublicKey());
   }
 }

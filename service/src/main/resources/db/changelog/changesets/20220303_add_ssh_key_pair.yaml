@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: "add_sshkey_table"
+      id: "add_ssh_key_pair"
       author: yuhuyoyo
       changes:
         - createTable:
@@ -8,7 +8,8 @@ databaseChangeLog:
             columns:
               - column:
                   name: id
-                  type: text
+                  type: int
+                  autoIncrement: true
                   constraints:
                     primaryKey: true
                     nullable: false
@@ -23,7 +24,12 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: key
+                  name: private_key
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: public_key
                   type: text
                   constraints:
                     nullable: false
@@ -36,7 +42,5 @@ databaseChangeLog:
             constraintName: unique_key_per_type
             tableName: ssh_key
             columnNames: user_id, type
-            deferrable: true
             remarks: |
               There can only be one secret per type per user.
-
