@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.ErrorReport;
-import bio.terra.externalcreds.generated.model.SshKeyInfo;
+import bio.terra.externalcreds.generated.model.SshKeyPairInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -25,10 +25,10 @@ class SshKeyApiControllerTest extends BaseTest {
   @Autowired private ObjectMapper objectMapper;
 
   @Test
-  void getSshKey_throws500() throws Exception {
+  void getSshKeyPair_throws500() throws Exception {
     var sshKeyType = "GITHUB";
     MvcResult failedResult =
-        mvc.perform(get("/api/sshkey/v1/{sshkey_type}", sshKeyType))
+        mvc.perform(get("/api/sshkeypair/v1/{sshkey_type}", sshKeyType))
             .andExpect(status().is(500))
             .andReturn();
     ErrorReport requestError =
@@ -37,50 +37,53 @@ class SshKeyApiControllerTest extends BaseTest {
   }
 
   @Test
-  void storeSshKey_throws500() throws Exception {
+  void storeSshKeyPair_throws500() throws Exception {
     var sshKeyType = "GITHUB";
-    SshKeyInfo sshkeyInfo = new SshKeyInfo();
-
-    var sshKey =
+    SshKeyPairInfo sshKeyPairInfo = new SshKeyPairInfo();
+    var sshPrivateKey =
         "-----BEGIN OPENSSH PRIVATE KEY-----\n"
             + "abcde12345/+xXXXYZ//890=\n"
             + "-----END OPENSSH PRIVATE KEY-----";
-    sshkeyInfo.key(sshKey.getBytes());
-    sshkeyInfo.externalUserEmail("yuhuyoyo@google.com");
-    String requestBody = objectMapper.writeValueAsString(sshkeyInfo);
+    var sshPublicKey = "ssh-ed25519 AAABBBccc123 yuhuyoyo@google.com";
+    sshKeyPairInfo.privateKey(sshPrivateKey.getBytes());
+    sshKeyPairInfo.publicKey(sshPublicKey.getBytes());
+    sshKeyPairInfo.externalUserEmail("yuhuyoyo@google.com");
+    String requestBody = objectMapper.writeValueAsString(sshKeyPairInfo);
 
     MvcResult failedResult =
         mvc.perform(
-                put("/api/sshkey/v1/{sshkey_type}", sshKeyType)
+                put("/api/sshkeypair/v1/{sshkey_type}", sshKeyType)
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .content(requestBody))
             .andExpect(status().is(500))
             .andReturn();
+
     ErrorReport requestError =
         objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
     assertThat(requestError.getMessage(), Matchers.containsString("Not implemented"));
   }
 
   @Test
-  void deleteSshKey_throws500() throws Exception {
+  void deleteSshKeyPair_throws500() throws Exception {
     var sshKeyType = "GITLAB";
-
     MvcResult failedResult =
-        mvc.perform(delete("/api/sshkey/v1/{sshkey_type}", sshKeyType))
+        mvc.perform(delete("/api/sshkeypair/v1/{sshkey_type}", sshKeyType))
             .andExpect(status().is(500))
             .andReturn();
+
     ErrorReport requestError =
         objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
     assertThat(requestError.getMessage(), Matchers.containsString("Not implemented"));
   }
 
   @Test
-  void updateSshKey_invalidProvider_throwsBadRequest() throws Exception {
+  void updateSshKeyPair_invalidProvider_throwsBadRequest() throws Exception {
     var invalidSshKeyType = "AZURES";
     MvcResult failedResult =
-        mvc.perform(get("/api/sshkey/v1/{sshkey_type}", invalidSshKeyType))
+        mvc.perform(get("/api/sshkeypair/v1/{sshkey_type}", invalidSshKeyType))
             .andExpect(status().isBadRequest())
             .andReturn();
+
     ErrorReport requestError =
         objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
     assertThat(

@@ -145,32 +145,32 @@ paths:
           description: "Version not configured"
         '500':
           $ref: '#/components/responses/ServerError'
-  /api/sshkey/v1/{sshkey_type}:
+  /api/sshkeypair/v1/{sshkey_type}:
     parameters:
       - $ref: '#/components/parameters/sshKeyProviderParam'
     get:
-      summary: Get the ssh key of the given provider.
+      summary: Get the ssh key pair of the given provider.
       tags: [ ssh_key ]
-      operationId: getSshKey
+      operationId: getSshKeyPair
       responses:
         '200':
-          $ref: '#/components/responses/SshKeyResponse'
+          $ref: '#/components/responses/SshKeyPairResponse'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
     put:
-      summary: Store an ssh key to the given provider.
+      summary: Store an ssh key pair to the given provider.
       tags: [ssh_key]
-      operationId: storeSshKey
+      operationId: storeSshKeyPair
       requestBody:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/SshKeyInfo'
+              $ref: '#/components/schemas/SshKeyPairInfo'
       responses:
         '204':
-          description: Successfully stored the ssh key.
+          description: Successfully stored the ssh key pair.
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -178,12 +178,12 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
     delete:
-      summary: delete the ssh key of the given provider
+      summary: delete the ssh key pair of the given provider
       tags: [ ssh_key ]
-      operationId: deleteSshKey
+      operationId: deleteSshKeyPair
       responses:
         '204':
-          description: Deletes the ssh key.
+          description: Deletes the ssh key pair.
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -252,12 +252,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/SystemStatus'
-    SshKeyResponse:
+    SshKeyPairResponse:
       description: A JSON object of the ssh key.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SshKeyInfo'
+            $ref: '#/components/schemas/SshKeyPairInfo'
 
     # Error Responses
     BadRequest:
@@ -299,14 +299,18 @@ components:
         - GITHUB
         - GITLAB
         - AZURE
-    SshKeyInfo:
+    SshKeyPairInfo:
       type: object
-      required: [key, externalUserEmail]
+      required: [privateKey, publicKey, externalUserEmail]
       properties:
-        key:
+        privateKey:
           type: string
           format: byte
-          description: Base64-encoded contents of the key
+          description: Base64-encoded contents of the private ssh key
+        publicKey:
+          type: string
+          format: byte
+          description: Base64-encoded contents of the public ssh key
         externalUserEmail:
           description: account email.
           type: string
