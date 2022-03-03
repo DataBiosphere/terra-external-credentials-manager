@@ -18,12 +18,6 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: name
-                  type: text
-              - column:
-                  name: description
-                  type: text
-              - column:
                   name: type
                   type: text
                   constraints:
@@ -34,15 +28,14 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: external_user_name
-                  type: text
-              - column:
                   name: external_user_email
                   type: text
+                  constraints:
+                    nullable: false
         - addUniqueConstraint:
-            constraintName: unique_secret_per_type
-            tableName: secret
-            columnNames: user_id, secret_type
+            constraintName: unique_key_per_type
+            tableName: ssh_key
+            columnNames: user_id, type
             deferrable: true
             remarks: |
               There can only be one secret per type per user.

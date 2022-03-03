@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.models;
 
+import bio.terra.externalcreds.generated.model.SshKeyType;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -9,17 +10,11 @@ public interface SshKey extends WithSshKey {
 
   String getUserId();
 
-  String getName();
-
-  Optional<String> getDescription();
-
-  SecretType getType();
-
-  Optional<String> getExternalUserName();
+  SshKeyType getType();
 
   Optional<String> getExternalUserEmail();
 
-  String getSecretContent();
+  String getPrivateKey();
 
   class Builder extends ImmutableSshKey.Builder {}
 }
