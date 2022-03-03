@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.generated.model.SshKeyType;
+import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPair;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -17,7 +17,7 @@ class SshKeyDaoTest extends BaseTest {
   @Autowired SshKeyDAO sshKeyDAO;
 
   private static final String DEFAULT_USER_ID = UUID.randomUUID().toString();
-  private static final SshKeyType DEFAULT_KEY_TYPE = SshKeyType.GITHUB;
+  private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
   private static final String DEFAULT_EXTERNAL_USER_EMAIL = "foo@monkeyseesmonkeydo.com";
   private static final String DEFAULT_PRIVATE_KEY =
       "-----BEGIN OPENSSH PRIVATE KEY-----\n"
@@ -96,7 +96,7 @@ class SshKeyDaoTest extends BaseTest {
   }
 
   private static SshKeyPair createSshKey(
-      String userId, SshKeyType keyType, String externalUserEmail) {
+      String userId, SshKeyPairType keyType, String externalUserEmail) {
     return new SshKeyPair.Builder()
         .type(keyType)
         .privateKey(DEFAULT_PRIVATE_KEY)

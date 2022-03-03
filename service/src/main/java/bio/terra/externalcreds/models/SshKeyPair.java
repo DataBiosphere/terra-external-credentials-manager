@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.models;
 
-import bio.terra.externalcreds.generated.model.SshKeyType;
+import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -10,7 +10,7 @@ public interface SshKeyPair extends WithSshKeyPair {
 
   String getUserId();
 
-  SshKeyType getType();
+  SshKeyPairType getType();
 
   String getExternalUserEmail();
 

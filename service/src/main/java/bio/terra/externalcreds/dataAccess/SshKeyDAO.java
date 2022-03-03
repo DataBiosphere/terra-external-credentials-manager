@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
-import bio.terra.externalcreds.generated.model.SshKeyType;
+import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPair;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,7 +21,7 @@ public class SshKeyDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  public Optional<SshKeyPair> getSecret(String userId, SshKeyType type) {
+  public Optional<SshKeyPair> getSecret(String userId, SshKeyPairType type) {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
     var query = "SELECT * FROM ssh_key WHERE user_id = :userId AND type = :type";
@@ -30,7 +30,7 @@ public class SshKeyDAO {
             jdbcTemplate.query(query, namedParameters, new SshKeyPairRowMapper())));
   }
 
-  public boolean deleteSecret(String userId, SshKeyType type) {
+  public boolean deleteSecret(String userId, SshKeyPairType type) {
     var query = "DELETE FROM ssh_key WHERE user_id = :userId and type = :type";
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
@@ -71,7 +71,7 @@ public class SshKeyDAO {
       return new SshKeyPair.Builder()
           .id(rs.getInt("id"))
           .userId(rs.getString("user_id"))
-          .type(SshKeyType.valueOf(rs.getString("type")))
+          .type(SshKeyPairType.valueOf(rs.getString("type")))
           .externalUserEmail(rs.getString("external_user_email"))
           .privateKey(rs.getString("private_key"))
           .publicKey(rs.getString("public_key"))
