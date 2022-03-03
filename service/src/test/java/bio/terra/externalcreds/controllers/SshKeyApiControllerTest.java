@@ -28,7 +28,7 @@ class SshKeyApiControllerTest extends BaseTest {
   void getSshKeyPair_throws500() throws Exception {
     var sshKeyType = "GITHUB";
     var failedResult =
-        mvc.perform(get("/api/sshkeypair/v1/{ype}", sshKeyType))
+        mvc.perform(get("/api/sshkeypair/v1/{type}", sshKeyType))
             .andExpect(status().is(500))
             .andReturn();
     var requestError =
