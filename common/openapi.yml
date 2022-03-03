@@ -161,7 +161,7 @@ paths:
           $ref: '#/components/responses/ServerError'
     put:
       summary: Store an ssh key pair to the given provider.
-      tags: [ssh key pair]
+      tags: [ ssh key pair ]
       operationId: putSshKeyPair
       requestBody:
         content:
@@ -282,12 +282,12 @@ components:
       description: Enum containing valid ssh key types.
       type: string
       enum:
-        - GITHUB
-        - GITLAB
-        - AZURE
+        - github
+        - gitlab
+        - azure
     SshKeyPair:
       type: object
-      required: [privateKey, publicKey, externalUserEmail]
+      required: [ privateKey, publicKey, externalUserEmail ]
       properties:
         privateKey:
           type: string

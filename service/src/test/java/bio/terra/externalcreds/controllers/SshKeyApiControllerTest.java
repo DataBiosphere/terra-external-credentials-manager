@@ -1,9 +1,11 @@
 package bio.terra.externalcreds.controllers;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
@@ -11,7 +13,6 @@ import bio.terra.externalcreds.generated.model.ErrorReport;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -26,14 +27,14 @@ class SshKeyApiControllerTest extends BaseTest {
 
   @Test
   void getSshKeyPair_throws500() throws Exception {
-    var sshKeyType = "GITHUB";
+    var sshKeyType = "github";
     var failedResult =
         mvc.perform(get("/api/sshkeypair/v1/{sshkey_type}", sshKeyType))
-            .andExpect(status().is(500))
+            .andExpect(status().is5xxServerError())
             .andReturn();
     var requestError =
         objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
-    assertThat(requestError.getMessage(), Matchers.containsString("Not implemented"));
+    assertThat(requestError.getMessage(), containsString("Not implemented"));
   }
 
   @Test
@@ -56,40 +57,32 @@ class SshKeyApiControllerTest extends BaseTest {
                 put("/api/sshkeypair/v1/{type}", sshKeyPairType)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(requestBody))
-            .andExpect(status().is(500))
+            .andExpect(status().is5xxServerError())
             .andReturn();
 
     var requestError =
         objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
-    assertThat(requestError.getMessage(), Matchers.containsString("Not implemented"));
+    assertThat(requestError.getMessage(), containsString("Not implemented"));
   }
 
   @Test
   void deleteSshKeyPair_throws500() throws Exception {
-    var sshKeyType = "GITLAB";
+    var sshKeyType = "gitlab";
     var failedResult =
         mvc.perform(delete("/api/sshkeypair/v1/{sshkey_type}", sshKeyType))
-            .andExpect(status().is(500))
+            .andExpect(status().is5xxServerError())
             .andReturn();
 
     var requestError =
         objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
-    assertThat(requestError.getMessage(), Matchers.containsString("Not implemented"));
+    assertThat(requestError.getMessage(), containsString("Not implemented"));
   }
 
   @Test
   void updateSshKeyPair_invalidProvider_throwsBadRequest() throws Exception {
-    var invalidSshKeyType = "AZURES";
-    var failedResult =
-        mvc.perform(get("/api/sshkeypair/v1/{sshkey_type}", invalidSshKeyType))
-            .andExpect(status().isBadRequest())
-            .andReturn();
-
-    var requestError =
-        objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
-    assertThat(
-        requestError.getMessage(),
-        Matchers.containsString(
-            "Request could not be parsed or was invalid: MethodArgumentTypeMismatchException. Ensure that all types are correct and that enums have valid values."));
+    var invalidSshKeyType = "azures";
+    mvc.perform(get("/api/sshkeypair/v1/{sshkey_type}", invalidSshKeyType))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().string(containsString("Invalid SSH key pair type")));
   }
 }
