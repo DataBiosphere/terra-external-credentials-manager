@@ -11,7 +11,6 @@ import org.springframework.stereotype.Controller;
 public class SshKeyApiController implements SshKeyPairApi {
 
   public SshKeyApiController() {}
-
   @Override
   public ResponseEntity<Void> deleteSshKeyPair(SshKeyPairType type) {
     throw new UnsupportedOperationException("Not implemented");
