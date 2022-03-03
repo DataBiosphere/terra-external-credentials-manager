@@ -117,7 +117,7 @@ paths:
 
   /passport/v1/validate:
     post:
-      summary: Given passport and criteria validate that passport is valid and has a matching visa
+      summary: Given passports and criteria validate that at least one passport is valid and has a visa that matches at least one crition
       tags: [passport]
       operationId: validatePassport
       requestBody:
