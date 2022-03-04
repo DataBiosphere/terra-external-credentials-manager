@@ -1,6 +1,9 @@
 package bio.terra.externalcreds.visaComparators;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
+import bio.terra.externalcreds.generated.model.RASv11;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -9,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.nimbusds.jwt.JWTParser;
 import java.text.ParseException;
+import java.util.Objects;
 import java.util.Set;
 import org.immutables.value.Value;
 import org.springframework.stereotype.Component;
@@ -44,16 +48,37 @@ public class RASv1_1 implements VisaComparator {
     }
   }
 
+  @Override
+  public boolean matchesCriterion(GA4GHVisa visa, OneOfValidatePassportRequestCriteriaItems criterion) {
+    try {
+      assert criterion instanceof RASv11;
+      var rasCriterion = (RASv11) criterion;
+
+      var permissions = getVisaPermissions(visa);
+      return permissions.stream().anyMatch(p ->
+          p.getPhsId().equals(rasCriterion.getPhsId()) && p.getConsentGroup()
+              .equals(rasCriterion.getConsentCode())
+      );
+    } catch (ParseException | JsonProcessingException e) {
+      throw new BadRequestException("Error parsing visa.", e);
+    }
+  }
+
   private Set<DbGapPermission> getVisaPermissions(GA4GHVisa visa)
       throws ParseException, JsonProcessingException {
     var visaClaim =
         JWTParser.parse(visa.getJwt()).getJWTClaimsSet().getClaim(DBGAP_CLAIM).toString();
-    return objectMapper.readValue(visaClaim, new TypeReference<Set<DbGapPermission>>() {});
+    return objectMapper.readValue(visaClaim, new TypeReference<>() {});
   }
 
   @Override
   public boolean visaTypeSupported(GA4GHVisa visa) {
     return visa.getVisaType().equalsIgnoreCase(RAS_VISAS_V_1_1);
+  }
+
+  @Override
+  public boolean criterionTypeSupported(OneOfValidatePassportRequestCriteriaItems criterion) {
+    return criterion instanceof RASv11;
   }
 
   /**
