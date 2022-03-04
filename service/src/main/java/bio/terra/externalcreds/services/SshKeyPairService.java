@@ -23,17 +23,20 @@ public class SshKeyPairService {
   }
 
   @WriteTransaction
-  public SshKeyPair putSshKeyPair(String userId, SshKeyPairType type,
-      String privateKey, String publicKey, String externalUserEmail) {
-        return sshKeyPairDAO.upsertSshKey(
-          new SshKeyPair.Builder()
-              .privateKey(privateKey)
-              .publicKey(publicKey)
-              .externalUserEmail(externalUserEmail)
-              .userId(userId)
-              .type(type)
-              .build()
-        );
+  public SshKeyPair putSshKeyPair(
+      String userId,
+      SshKeyPairType type,
+      String privateKey,
+      String publicKey,
+      String externalUserEmail) {
+    return sshKeyPairDAO.upsertSshKey(
+        new SshKeyPair.Builder()
+            .privateKey(privateKey)
+            .publicKey(publicKey)
+            .externalUserEmail(externalUserEmail)
+            .userId(userId)
+            .type(type)
+            .build());
   }
 
   public boolean deleteSshKeyPair(String userId, SshKeyPairType type) {
