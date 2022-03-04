@@ -38,7 +38,8 @@ class SshKeyApiControllerTest extends BaseTest {
       "-----BEGIN OPENSSH PRIVATE KEY-----\n"
           + "abcde12345/+xXXXYZ//890=\n"
           + "-----END OPENSSH PRIVATE KEY-----";
-  private static final String SSH_PUBLIC_KEY = "ssh-ed25519 AAABBBccc123 yuhuyoyo@google.com";
+  private static final String SSH_PUBLIC_KEY =
+      "ssh-ed25519 AAABBBccc123 foo@monkeyseesmonkeydo.com";
   private static final String EXTERNAL_USER_EMAIL = "foo@monkeyseesmonkeydo.com";
 
   @Test

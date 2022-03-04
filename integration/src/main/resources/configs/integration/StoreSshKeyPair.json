@@ -1,0 +1,17 @@
+{
+  "name": "StoreSshKeyPair",
+  "description": "Store ssh key pair. Authentication required.",
+  "serverSpecificationFile": "ecm-local.json",
+  "kubernetes": {},
+  "application": {},
+  "testScripts": [
+    {
+      "name": "StoreSshKeyPair",
+      "numberOfUserJourneyThreadsToRun": 1,
+      "userJourneyThreadPoolSize": 2,
+      "expectedTimeForEach": 5,
+      "expectedTimeForEachUnit": "SECONDS"
+    }
+  ],
+  "testUserFiles": []
+}
