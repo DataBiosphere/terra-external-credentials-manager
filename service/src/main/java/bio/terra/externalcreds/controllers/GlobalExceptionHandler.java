@@ -4,6 +4,8 @@ import bio.terra.common.exception.ErrorReportException;
 import bio.terra.externalcreds.generated.model.ErrorReport;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.NestedRuntimeException;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -26,10 +28,14 @@ public class GlobalExceptionHandler {
     return buildErrorReport(ex, ex.getStatusCode());
   }
 
+  @ExceptionHandler({ConversionFailedException.class, MethodArgumentTypeMismatchException.class})
+  public ResponseEntity<ErrorReport> conversionFailedExceptionHandler(NestedRuntimeException ex) {
+    return buildErrorReport(ex.getMostSpecificCause(), HttpStatus.BAD_REQUEST);
+  }
+
   // -- validation exceptions - we don't control the exception raised
   @ExceptionHandler({
     MethodArgumentNotValidException.class,
-    MethodArgumentTypeMismatchException.class,
     HttpMessageNotReadableException.class,
     IllegalArgumentException.class,
     NoHandlerFoundException.class
