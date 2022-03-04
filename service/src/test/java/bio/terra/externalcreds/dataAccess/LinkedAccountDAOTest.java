@@ -193,4 +193,29 @@ class LinkedAccountDAOTest extends BaseTest {
           linkedAccountDAO.getExpiringLinkedAccounts(testExpirationCutoff));
     }
   }
+
+  @Nested
+  class GetLinkedAccountByPassportJwtId {
+    @Test
+    void testLinkedAccountExists() {
+      var savedAccount =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      var savedPassport =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedAccount.getId()));
+
+      var loadedAccount =
+          linkedAccountDAO.getLinkedAccountByPassportJwtId(savedPassport.getJwtId());
+      assertEquals(Optional.of(savedAccount), loadedAccount);
+    }
+
+    @Test
+    void testLinkedAccountDoesNotExist() {
+      linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+
+      var loadedAccount =
+          linkedAccountDAO.getLinkedAccountByPassportJwtId(UUID.randomUUID().toString());
+      assertEmpty(loadedAccount);
+    }
+  }
 }

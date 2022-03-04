@@ -103,6 +103,17 @@ public class LinkedAccountDAO {
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
+  public Optional<LinkedAccount> getLinkedAccountByPassportJwtId(String jwtId) {
+    var namedParameters = new MapSqlParameterSource("jwtId", jwtId);
+    var query =
+        "SELECT la.* FROM linked_account la"
+            + " INNER JOIN ga4gh_passport p ON la.id = p.linked_account_id"
+            + " WHERE p.jwt_id = :jwtId";
+    return Optional.ofNullable(
+        DataAccessUtils.singleResult(
+            jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper())));
+  }
+
   private static class LinkedAccountRowMapper implements RowMapper<LinkedAccount> {
 
     @Override
