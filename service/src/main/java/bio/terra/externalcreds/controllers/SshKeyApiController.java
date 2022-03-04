@@ -74,13 +74,4 @@ public class SshKeyApiController implements SshKeyPairApi {
         .publicKey(sshKeyPair.getPublicKey())
         .privateKey(sshKeyPair.getPrivateKey());
   }
-
-  // @Override
-  public ResponseEntity<SshKeyPair> putSshKeyPair(
-      SshKeyPairType type, String privateKey, String publicKey, String externalUserEmail) {
-    var sshKeyPair =
-        sshKeyPairService.putSshKeyPair(
-            getUserIdFromSam(), type, privateKey, publicKey, externalUserEmail);
-    return new ResponseEntity(sshKeyPair, HttpStatus.OK);
-  }
 }

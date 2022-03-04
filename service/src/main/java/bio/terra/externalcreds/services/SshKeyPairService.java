@@ -19,7 +19,7 @@ public class SshKeyPairService {
 
   @ReadTransaction
   public Optional<SshKeyPair> getSshKeyPair(String userId, SshKeyPairType type) {
-    return sshKeyPairDAO.getSecret(userId, type);
+    return sshKeyPairDAO.getSshKeyPair(userId, type);
   }
 
   @WriteTransaction
@@ -29,7 +29,7 @@ public class SshKeyPairService {
       String privateKey,
       String publicKey,
       String externalUserEmail) {
-    return sshKeyPairDAO.upsertSshKey(
+    return sshKeyPairDAO.upsertSshKeyPair(
         new SshKeyPair.Builder()
             .privateKey(privateKey)
             .publicKey(publicKey)
@@ -40,6 +40,6 @@ public class SshKeyPairService {
   }
 
   public boolean deleteSshKeyPair(String userId, SshKeyPairType type) {
-    return sshKeyPairDAO.deleteSecret(userId, type);
+    return sshKeyPairDAO.deleteSshKeyPair(userId, type);
   }
 }

@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.controllers;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -12,9 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.generated.model.ErrorReport;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
-import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
@@ -37,9 +34,15 @@ class SshKeyApiControllerTest extends BaseTest {
 
   private static final String DEFAULT_USER_ID = "foo";
   private static final String DEFAULT_ACCESS_TOKEN = "foo_access_token";
+  private static final String SSH_PRIVATE_KEY =
+      "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+          + "abcde12345/+xXXXYZ//890=\n"
+          + "-----END OPENSSH PRIVATE KEY-----";
+  private static final String SSH_PUBLIC_KEY = "ssh-ed25519 AAABBBccc123 yuhuyoyo@google.com";
+  private static final String EXTERNAL_USER_EMAIL = "foo@monkeyseesmonkeydo.com";
 
   @Test
-  void getSshKeyPair() throws Exception {
+  void getNonExistingSshKeyPair() throws Exception {
     mockSamUser();
     var sshKeyType = "github";
 
@@ -51,53 +54,47 @@ class SshKeyApiControllerTest extends BaseTest {
   }
 
   @Test
-  void putSshKeyPair() throws Exception {
+  void putGetAndDeleteSshKeyPair() throws Exception {
     mockSamUser();
-    var sshKeyPairType = SshKeyPairType.GITHUB;
-    var sshPrivateKey =
-        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
-            + "abcde12345/+xXXXYZ//890=\n"
-            + "-----END OPENSSH PRIVATE KEY-----";
-    var sshPublicKey = "ssh-ed25519 AAABBBccc123 yuhuyoyo@google.com";
+    var sshKeyPairType = "gitlab";
     var sshKeyPair =
         new SshKeyPair()
-            .privateKey(sshPrivateKey)
-            .publicKey(sshPublicKey)
-            .externalUserEmail("yuhuyoyo@google.com");
+            .privateKey(SSH_PRIVATE_KEY)
+            .publicKey(SSH_PUBLIC_KEY)
+            .externalUserEmail(EXTERNAL_USER_EMAIL);
     var requestBody = objectMapper.writeValueAsString(sshKeyPair);
-
-    var result =
+    var putResult =
         mvc.perform(
                 put("/api/sshkeypair/v1/{type}", sshKeyPairType)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_JSON)
                     .content(requestBody)
                     .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
             .andExpect(status().isOk())
             .andReturn();
+    assertEquals(
+        sshKeyPair,
+        objectMapper.readValue(putResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
 
-    var sshKeyPairResult =
-        objectMapper.readValue(result.getResponse().getContentAsString(), SshKeyPair.class);
-    assertEquals(sshKeyPair, sshKeyPairResult);
-  }
-
-  @Test
-  void deleteSshKeyPair_throws500() throws Exception {
-    var sshKeyType = "gitlab";
-    var failedResult =
+    var getResult =
         mvc.perform(
-                delete("/api/sshkeypair/v1/{type}", sshKeyType)
+                get("/api/sshkeypair/v1/{type}", sshKeyPairType)
                     .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
-            .andExpect(status().is5xxServerError())
+            .andExpect(status().isOk())
             .andReturn();
+    assertEquals(
+        sshKeyPair,
+        objectMapper.readValue(getResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
 
-    var requestError =
-        objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
-    assertThat(requestError.getMessage(), containsString("Not implemented"));
+    mvc.perform(
+            delete("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
+        .andExpect(status().isOk())
+        .andReturn();
   }
 
   @Test
-  void getSshKeyPair_invalidProvider_throwsBadRequest() throws Exception {
+  void getSshKeyPairWithInvalidKeyType() throws Exception {
+    mockSamUser();
     var invalidSshKeyType = "azures";
     mvc.perform(
             get("/api/sshkeypair/v1/{type}", invalidSshKeyType)
