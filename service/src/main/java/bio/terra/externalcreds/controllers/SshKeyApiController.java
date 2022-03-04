@@ -70,7 +70,7 @@ public class SshKeyApiController implements SshKeyPairApi {
   }
 
   @Override
-  public ResponseEntity<Void> putSshKeyPair(
+  public ResponseEntity<SshKeyPair> putSshKeyPair(
       SshKeyPairType type, String privateKey, String publicKey, String externalUserEmail) {
     var sshKeyPair = sshKeyPairService.putSshKeyPair(getUserIdFromSam(), type, privateKey, publicKey, externalUserEmail);
     return ResponseEntity.ok().build();
