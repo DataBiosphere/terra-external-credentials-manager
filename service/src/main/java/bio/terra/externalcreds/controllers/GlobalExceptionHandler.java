@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler({ConversionFailedException.class, MethodArgumentTypeMismatchException.class})
   public ResponseEntity<ErrorReport> conversionFailedExceptionHandler(NestedRuntimeException ex) {
-    return buildErrorReport(ex.getRootCause(), HttpStatus.BAD_REQUEST);
+    return buildErrorReport(ex.getMostSpecificCause(), HttpStatus.BAD_REQUEST);
   }
 
   // -- validation exceptions - we don't control the exception raised
