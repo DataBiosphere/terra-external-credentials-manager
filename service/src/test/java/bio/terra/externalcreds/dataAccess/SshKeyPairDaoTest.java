@@ -27,7 +27,7 @@ class SshKeyPairDaoTest extends BaseTest {
       "ssh-ed25519 AAAA12345 " + DEFAULT_EXTERNAL_USER_EMAIL;
 
   @Nested
-  class upsertKeyPair {
+  class UpsertKeyPair {
     @Test
     void testUpsertTwiceWithSameUserId() {
       var externalUserEmail = "bar@monkeyseesmonkeydo.com";
