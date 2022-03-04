@@ -55,7 +55,7 @@ class SshKeyApiControllerTest extends BaseTest {
     var failedResult =
         mvc.perform(
                 put("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .contentType(MediaType.APPLICATION_JSON)
                     .content(requestBody))
             .andExpect(status().is5xxServerError())
             .andReturn();
