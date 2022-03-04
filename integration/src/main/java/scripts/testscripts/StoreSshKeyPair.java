@@ -1,8 +1,10 @@
 package scripts.testscripts;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import bio.terra.externalcreds.api.SshKeyPairApi;
+import bio.terra.externalcreds.client.ApiException;
 import bio.terra.externalcreds.model.SshKeyPair;
 import bio.terra.externalcreds.model.SshKeyPairType;
 import bio.terra.testrunner.runner.TestScript;
@@ -23,6 +25,7 @@ public class StoreSshKeyPair extends TestScript {
 
   @Override
   public void userJourney(TestUserSpecification testUser) throws Exception {
+    log.info("Checking the ssh key pair endpoint.");
     var apiClient = ClientTestUtils.getClientWithTestUserAuth(testUser, server);
     var sshKeyPairApi = new SshKeyPairApi(apiClient);
     var sshKeyPair =
@@ -33,18 +36,17 @@ public class StoreSshKeyPair extends TestScript {
     sshKeyPairApi.putSshKeyPair(SshKeyPairType.GITHUB, sshKeyPair);
     var httpCodeForPut = sshKeyPairApi.getApiClient().getStatusCode();
     assertEquals(HttpStatusCodes.STATUS_CODE_OK, httpCodeForPut);
+    log.info("Put ssh key returns code {}", httpCodeForPut);
 
     var getResult = sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITHUB);
     assertEquals(sshKeyPair, getResult);
     var httpCodeForGet = sshKeyPairApi.getApiClient().getStatusCode();
     assertEquals(HttpStatusCodes.STATUS_CODE_OK, httpCodeForGet);
+    log.info("Get ssh key returns code {}", httpCodeForGet);
 
     sshKeyPairApi.deleteSshKeyPair(SshKeyPairType.GITHUB);
     var httpCodeForDelete = sshKeyPairApi.getApiClient().getStatusCode();
     assertEquals(HttpStatusCodes.STATUS_CODE_OK, httpCodeForDelete);
-
-    sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITHUB);
-    var httpCodeForGetEmpty = sshKeyPairApi.getApiClient().getStatusCode();
-    assertEquals(HttpStatusCodes.STATUS_CODE_NOT_FOUND, httpCodeForGet);
+    log.info("Delete ssh key returns code {}", httpCodeForDelete);
   }
 }
