@@ -35,6 +35,7 @@ public class JwtUtils {
   public static final String GA4GH_VISA_V1_CLAIM = "ga4gh_visa_v1";
   public static final String VISA_TYPE_CLAIM = "type";
   public static final String JKU_HEADER = "jku";
+  public static final String JWT_ID_CLAIM = "jti";
 
   private final ExternalCredsConfig externalCredsConfig;
 
@@ -74,6 +75,7 @@ public class JwtUtils {
     return new GA4GHPassport.Builder()
         .jwt(passportJwt.getTokenValue())
         .expires(passportExpiresAt)
+        .jwtId(getJwtClaim(passportJwt, JWT_ID_CLAIM))
         .build();
   }
 

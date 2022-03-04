@@ -33,6 +33,7 @@ public class TestUtils {
     return new GA4GHPassport.Builder()
         .jwt(UUID.randomUUID().toString())
         .expires(getRandomTimestamp())
+        .jwtId(UUID.randomUUID().toString())
         .build();
   }
 

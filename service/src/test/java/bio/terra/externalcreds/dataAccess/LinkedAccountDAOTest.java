@@ -113,6 +113,7 @@ class LinkedAccountDAOTest extends BaseTest {
               .linkedAccountId(savedLinkedAccount.getId())
               .expires(new Timestamp(100))
               .jwt("jwt")
+              .jwtId(UUID.randomUUID().toString())
               .build();
       passportDAO.insertPassport(passport);
       linkedAccountDAO.deleteLinkedAccountIfExists(

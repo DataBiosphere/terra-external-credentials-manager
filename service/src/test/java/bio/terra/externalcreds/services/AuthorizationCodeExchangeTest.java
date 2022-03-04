@@ -277,13 +277,15 @@ class AuthorizationCodeExchangeTest extends BaseTest {
                 expectedLinkedAccount.getUserId(), state));
   }
 
-  private String createPassportJwtString(Date expires, List<String> visaJwts) throws JOSEException {
+  private String createPassportJwtString(Date expires, List<String> visaJwts, String jwtId)
+      throws JOSEException {
 
     var passportClaimSetBuilder =
         new JWTClaimsSet.Builder()
             .subject(UUID.randomUUID().toString())
             .claim(ProviderService.EXTERNAL_USERID_ATTR, userEmail)
             .issuer(jwtSigningTestUtils.getIssuer())
+            .jwtID(jwtId)
             .expirationTime(expires);
 
     if (!visaJwts.isEmpty()) {
@@ -302,8 +304,13 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
   private GA4GHPassport createTestPassport(List<GA4GHVisa> visas) throws JOSEException {
     var visaJwts = visas.stream().map(GA4GHVisa::getJwt).collect(Collectors.toList());
-    var jwtString = createPassportJwtString(passportExpires, visaJwts);
-    return new GA4GHPassport.Builder().jwt(jwtString).expires(passportExpiresTime).build();
+    var jwtId = UUID.randomUUID().toString();
+    var jwtString = createPassportJwtString(passportExpires, visaJwts, jwtId);
+    return new GA4GHPassport.Builder()
+        .jwt(jwtString)
+        .expires(passportExpiresTime)
+        .jwtId(jwtId)
+        .build();
   }
 
   private GA4GHVisa createTestVisa(TokenTypeEnum tokenType)

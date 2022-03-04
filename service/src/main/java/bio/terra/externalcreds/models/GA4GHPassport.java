@@ -14,5 +14,11 @@ public interface GA4GHPassport extends WithGA4GHPassport {
 
   Timestamp getExpires();
 
+  /**
+   * This comes from the jti claim of a jwt
+   * https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.7
+   */
+  String getJwtId();
+
   class Builder extends ImmutableGA4GHPassport.Builder {}
 }
