@@ -21,7 +21,7 @@ public class SshKeyPairDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  public Optional<SshKeyPair> getSecret(String userId, SshKeyPairType type) {
+  public Optional<SshKeyPair> getSshKeyPair(String userId, SshKeyPairType type) {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
     var query = "SELECT * FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
@@ -30,7 +30,7 @@ public class SshKeyPairDAO {
             jdbcTemplate.query(query, namedParameters, new SshKeyPairRowMapper())));
   }
 
-  public boolean deleteSecret(String userId, SshKeyPairType type) {
+  public boolean deleteSshKeyPair(String userId, SshKeyPairType type) {
     var query = "DELETE FROM ssh_key_pair WHERE user_id = :userId and type = :type";
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
@@ -38,7 +38,7 @@ public class SshKeyPairDAO {
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
-  public SshKeyPair upsertSshKey(SshKeyPair sshKeyPair) {
+  public SshKeyPair upsertSshKeyPair(SshKeyPair sshKeyPair) {
     var query =
         "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email)"
             + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail)"
