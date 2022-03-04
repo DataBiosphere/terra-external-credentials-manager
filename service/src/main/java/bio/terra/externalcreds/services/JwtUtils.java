@@ -6,6 +6,7 @@ import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.GA4GHVisa.Builder;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.models.PassportWithVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.google.common.annotations.VisibleForTesting;
 import com.nimbusds.jose.JWSHeader;
@@ -47,26 +48,35 @@ public class JwtUtils {
       LinkedAccount linkedAccount, OAuth2User userInfo) {
     String passportJwtString = userInfo.getAttribute(PASSPORT_JWT_V11_CLAIM);
     if (passportJwtString != null) {
-      var passportJwt = decodeJwt(passportJwtString);
-
-      List<String> visaJwtStrings =
-          Objects.requireNonNullElse(
-              passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM), Collections.emptyList());
-
-      var visas =
-          visaJwtStrings.stream()
-              .map(this::decodeJwt)
-              .map(JwtUtils::buildVisa)
-              .collect(Collectors.toList());
+      var passportWithVisas = parsePassportJwtString(passportJwtString);
 
       return new LinkedAccountWithPassportAndVisas.Builder()
           .linkedAccount(linkedAccount)
-          .passport(buildPassport(passportJwt))
-          .visas(visas)
+          .passport(passportWithVisas.getPassport())
+          .visas(passportWithVisas.getVisas())
           .build();
     } else {
       return new LinkedAccountWithPassportAndVisas.Builder().linkedAccount(linkedAccount).build();
     }
+  }
+
+  public PassportWithVisas parsePassportJwtString(String passportJwtString) {
+    var passportJwt = decodeJwt(passportJwtString);
+
+    List<String> visaJwtStrings =
+        Objects.requireNonNullElse(
+            passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM), Collections.emptyList());
+
+    var visas =
+        visaJwtStrings.stream()
+            .map(this::decodeJwt)
+            .map(JwtUtils::buildVisa)
+            .collect(Collectors.toList());
+
+    return new PassportWithVisas.Builder()
+        .passport(buildPassport(passportJwt))
+        .visas(visas)
+        .build();
   }
 
   private static GA4GHPassport buildPassport(Jwt passportJwt) {
