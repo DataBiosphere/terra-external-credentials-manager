@@ -23,14 +23,20 @@ public class SshKeyPairService {
   }
 
   @WriteTransaction
-  public SshKeyPair upsertSshKeyPair(
-      bio.terra.externalcreds.generated.model.SshKeyPair sshKeyPair) {
-    return null;
-//        return sshKeyPairDAO.upsertSshKey(
-//          new SshKeyPair.Builder()
-//              .privateKey(sshKeyPair.getPrivateKey())
-//              .publicKey(sshKeyPair.getPublicKey())
-//              .
-//        );
+  public SshKeyPair putSshKeyPair(String userId, SshKeyPairType type,
+      String privateKey, String publicKey, String externalUserEmail) {
+        return sshKeyPairDAO.upsertSshKey(
+          new SshKeyPair.Builder()
+              .privateKey(privateKey)
+              .publicKey(publicKey)
+              .externalUserEmail(externalUserEmail)
+              .userId(userId)
+              .type(type)
+              .build()
+        );
+  }
+
+  public boolean deleteSshKeyPair(String userId, SshKeyPairType type) {
+    return sshKeyPairDAO.deleteSecret(userId, type);
   }
 }
