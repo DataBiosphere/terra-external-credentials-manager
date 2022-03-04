@@ -78,7 +78,7 @@ class SshKeyApiControllerTest extends BaseTest {
   }
 
   @Test
-  void updateSshKeyPair_invalidProvider_throwsBadRequest() throws Exception {
+  void getSshKeyPair_invalidProvider_throwsBadRequest() throws Exception {
     var invalidSshKeyType = "AZURES";
     var failedResult =
         mvc.perform(get("/api/sshkeypair/v1/{type}", invalidSshKeyType))
