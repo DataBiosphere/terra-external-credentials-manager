@@ -23,7 +23,8 @@ public class SshKeyApiController implements SshKeyPairApi {
   }
 
   @Override
-  public ResponseEntity<Void> putSshKeyPair(SshKeyPairType type, SshKeyPair sshKeyPair) {
+  public ResponseEntity<Void> putSshKeyPair(
+      SshKeyPairType type, String privateKey, String publicKey, String externalUserEmail) {
     throw new UnsupportedOperationException("Not implemented");
   }
 }

@@ -47,15 +47,15 @@ class SshKeyApiControllerTest extends BaseTest {
     var sshPublicKey = "ssh-ed25519 AAABBBccc123 yuhuyoyo@google.com";
     var sshKeyPair =
         new SshKeyPair()
-            .privateKey(sshPrivateKey.getBytes())
-            .publicKey(sshPublicKey.getBytes())
+            .privateKey(sshPrivateKey)
+            .publicKey(sshPublicKey)
             .externalUserEmail("yuhuyoyo@google.com");
     var requestBody = objectMapper.writeValueAsString(sshKeyPair);
 
     var failedResult =
         mvc.perform(
                 put("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                    .contentType(MediaType.APPLICATION_JSON)
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
                     .content(requestBody))
             .andExpect(status().is5xxServerError())
             .andReturn();
@@ -79,7 +79,7 @@ class SshKeyApiControllerTest extends BaseTest {
   }
 
   @Test
-  void updateSshKeyPair_invalidProvider_throwsBadRequest() throws Exception {
+  void getSshKeyPair_invalidProvider_throwsBadRequest() throws Exception {
     var invalidSshKeyType = "azures";
     mvc.perform(get("/api/sshkeypair/v1/{type}", invalidSshKeyType))
         .andExpect(status().isBadRequest())

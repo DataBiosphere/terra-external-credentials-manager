@@ -165,7 +165,7 @@ paths:
       operationId: putSshKeyPair
       requestBody:
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/SshKeyPair'
       responses:
@@ -291,12 +291,10 @@ components:
       properties:
         privateKey:
           type: string
-          format: byte
-          description: Base64-encoded contents of the private ssh key
+          description: private ssh key
         publicKey:
           type: string
-          format: byte
-          description: Base64-encoded contents of the public ssh key
+          description: public ssh key
         externalUserEmail:
           description: account email.
           type: string
