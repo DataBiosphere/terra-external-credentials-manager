@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 @Controller
 // TODO(PF-1354): implement the service.
 public class SshKeyApiController implements SshKeyPairApi {
+
   public SshKeyApiController() {}
 
   @Override
