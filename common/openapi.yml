@@ -128,11 +128,7 @@ paths:
         required: true
       responses:
         '200':
-          description: JSON object indicating passport validity
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidateVisaResult'
+          $ref: '#/components/responses/ValidateVisaResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -319,8 +315,8 @@ components:
         criteria:
           type: array
           items:
-            oneOf:
-              - $ref: '#/components/schemas/RASv11'
+            $ref: '#/components/schemas/VisaCriteria'
+
     ValidateVisaResult:
       type: object
       properties:
@@ -333,8 +329,13 @@ components:
       properties:
         type:
           type: string
+          enum: [ ras ]
         issuer:
           type: string
+      discriminator:
+        propertyName: type
+        mapping:
+          ras: RASv11
 
     RASv11:
       allOf:

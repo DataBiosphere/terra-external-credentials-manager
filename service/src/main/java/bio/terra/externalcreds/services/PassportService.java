@@ -7,7 +7,7 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
-import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
+import bio.terra.externalcreds.generated.model.VisaCriteria;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
@@ -63,8 +63,7 @@ public class PassportService {
     visaDAO.updateLastValidated(visaId, new Timestamp(Instant.now().toEpochMilli()));
   }
 
-  public boolean validatePassport(
-      String passportJwtString, List<OneOfValidatePassportRequestCriteriaItems> criteria) {
+  public boolean validatePassport(String passportJwtString, List<VisaCriteria> criteria) {
     // parse and validate passport jwt, extract passport and visa objects - throw exception if not
     // valid
     var passportWithVisas = jwtUtils.decodeAndValidatePassportJwtString(passportJwtString);
@@ -83,8 +82,7 @@ public class PassportService {
         .anyMatch(v -> comparator.get().matchesCriterion(v, criteria.get(0)));
   }
 
-  private Optional<VisaComparator> getVisaComparator(
-      OneOfValidatePassportRequestCriteriaItems criterion) {
+  private Optional<VisaComparator> getVisaComparator(VisaCriteria criterion) {
     return visaComparators.stream().filter(c -> c.criterionTypeSupported(criterion)).findFirst();
   }
 }
