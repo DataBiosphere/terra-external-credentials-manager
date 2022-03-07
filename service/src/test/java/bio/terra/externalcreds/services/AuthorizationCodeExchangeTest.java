@@ -193,6 +193,8 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
     when(externalCredsConfigMock.getProviders())
         .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
+    when(externalCredsConfigMock.getAllowedJwtIssuers())
+        .thenReturn(List.of(new URI(jwtSigningTestUtils.getIssuer())));
     when(externalCredsConfigMock.getAllowedJwksUris())
         .thenReturn(
             List.of(new URI(jwtSigningTestUtils.getIssuer() + JwtSigningTestUtils.JKU_PATH)));

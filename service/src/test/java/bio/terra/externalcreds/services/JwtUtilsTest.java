@@ -1,5 +1,8 @@
 package bio.terra.externalcreds.services;
 
+import static bio.terra.externalcreds.TestUtils.getRootCause;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -12,6 +15,7 @@ import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.nimbusds.jose.JOSEException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,7 +52,7 @@ public class JwtUtilsTest extends BaseTest {
           jwtSigningTestUtils.createTestVisaWithJwt(
               TokenTypeEnum.access_token, TestUtils.getRandomTimestamp());
       var invalidJwt = visa.getJwt() + "foo";
-      assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(invalidJwt));
+      assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(invalidJwt));
     }
 
     @Test
@@ -58,17 +62,46 @@ public class JwtUtilsTest extends BaseTest {
               .createTestVisaWithJwt(TokenTypeEnum.access_token, TestUtils.getRandomTimestamp())
               .withIssuer("null");
       var jwtMissingIssuer = jwtSigningTestUtils.createVisaJwtString(visa);
-      assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtMissingIssuer));
+      assertThrows(
+          InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(jwtMissingIssuer));
+    }
+
+    @Test
+    void testJwtIssuerAllowed() throws URISyntaxException, JOSEException {
+      when(externalCredsConfigMock.getAllowedJwtIssuers())
+          .thenReturn(List.of(new URI(jwtSigningTestUtils.getIssuer())));
+      var jwt =
+          jwtSigningTestUtils.createVisaJwtString(
+              jwtSigningTestUtils
+                  .createTestVisaWithJwt(TokenTypeEnum.access_token, TestUtils.getRandomTimestamp())
+                  .withIssuer(jwtSigningTestUtils.getIssuer()));
+      assertNotNull(jwtUtils.decodeAndValidateJwt(jwt));
+    }
+
+    @Test
+    void testJwtIssuerNotAllowed() throws URISyntaxException, JOSEException {
+      var jwt =
+          jwtSigningTestUtils.createVisaJwtString(
+              jwtSigningTestUtils
+                  .createTestVisaWithJwt(TokenTypeEnum.access_token, TestUtils.getRandomTimestamp())
+                  .withIssuer(jwtSigningTestUtils.getIssuer()));
+      assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(jwt));
     }
 
     @Test
     void testJwtIssuerNotReal() throws URISyntaxException, JOSEException {
+      String testIssuer = "http://does.not.exist";
+      when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(testIssuer)));
       var jwtNotRealIssuer =
           jwtSigningTestUtils.createVisaJwtString(
               jwtSigningTestUtils
                   .createTestVisaWithJwt(TokenTypeEnum.access_token, TestUtils.getRandomTimestamp())
-                  .withIssuer("http://does.not.exist"));
-      assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtNotRealIssuer));
+                  .withIssuer(testIssuer));
+      var e =
+          assertThrows(
+              InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(jwtNotRealIssuer));
+
+      assertInstanceOf(UnknownHostException.class, getRootCause(e));
     }
 
     @Test
@@ -77,7 +110,8 @@ public class JwtUtilsTest extends BaseTest {
           jwtSigningTestUtils
               .createTestVisaWithJwt(TokenTypeEnum.document_token, TestUtils.getRandomTimestamp())
               .getJwt();
-      var exception = assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(badJwt));
+      var exception =
+          assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(badJwt));
 
       assertTrue(exception.getMessage().contains("not on allowed list"));
     }
@@ -85,6 +119,7 @@ public class JwtUtilsTest extends BaseTest {
     @Test
     void testJwtJkuNotResponsive() throws URISyntaxException, JOSEException {
       String testIssuer = "http://localhost:10";
+      when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(testIssuer)));
       when(externalCredsConfigMock.getAllowedJwksUris())
           .thenReturn(List.of(new URI(testIssuer + JwtSigningTestUtils.JKU_PATH)));
 
@@ -96,13 +131,15 @@ public class JwtUtilsTest extends BaseTest {
                   .withIssuer(testIssuer));
 
       var exception =
-          assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtNotResponsiveJku));
+          assertThrows(
+              InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(jwtNotResponsiveJku));
       assertTrue(exception.getMessage().contains("Connection refused"));
     }
 
     @Test
     void testJwtJkuMalformed() throws URISyntaxException, JOSEException {
       String testIssuer = "foobar";
+      when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(testIssuer)));
       when(externalCredsConfigMock.getAllowedJwksUris())
           .thenReturn(List.of(new URI(testIssuer + JwtSigningTestUtils.JKU_PATH)));
 
@@ -114,7 +151,8 @@ public class JwtUtilsTest extends BaseTest {
                   .withIssuer(testIssuer));
 
       var exception =
-          assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeJwt(jwtMalformedJku));
+          assertThrows(
+              InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(jwtMalformedJku));
       assertTrue(exception.getMessage().contains("URI is not absolute"));
     }
   }

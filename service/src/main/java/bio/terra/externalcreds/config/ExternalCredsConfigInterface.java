@@ -30,6 +30,9 @@ public interface ExternalCredsConfigInterface {
   /** List of URIs that are allowable in jku headers of JWTs */
   Collection<URI> getAllowedJwksUris();
 
+  /** List of URIs that are allowable in iss claims of JWTs */
+  Collection<URI> getAllowedJwtIssuers();
+
   boolean getAuthorizationChangeEventsEnabled();
 
   Optional<String> getAuthorizationChangeEventTopicName();

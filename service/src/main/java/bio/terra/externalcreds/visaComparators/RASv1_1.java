@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.nimbusds.jwt.JWTParser;
 import java.text.ParseException;
-import java.util.Objects;
 import java.util.Set;
 import org.immutables.value.Value;
 import org.springframework.stereotype.Component;
@@ -49,16 +48,18 @@ public class RASv1_1 implements VisaComparator {
   }
 
   @Override
-  public boolean matchesCriterion(GA4GHVisa visa, OneOfValidatePassportRequestCriteriaItems criterion) {
+  public boolean matchesCriterion(
+      GA4GHVisa visa, OneOfValidatePassportRequestCriteriaItems criterion) {
     try {
       assert criterion instanceof RASv11;
       var rasCriterion = (RASv11) criterion;
 
       var permissions = getVisaPermissions(visa);
-      return permissions.stream().anyMatch(p ->
-          p.getPhsId().equals(rasCriterion.getPhsId()) && p.getConsentGroup()
-              .equals(rasCriterion.getConsentCode())
-      );
+      return permissions.stream()
+          .anyMatch(
+              p ->
+                  p.getPhsId().equals(rasCriterion.getPhsId())
+                      && p.getConsentGroup().equals(rasCriterion.getConsentCode()));
     } catch (ParseException | JsonProcessingException e) {
       throw new BadRequestException("Error parsing visa.", e);
     }

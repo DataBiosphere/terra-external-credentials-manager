@@ -2,6 +2,7 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
@@ -66,16 +67,20 @@ public class PassportService {
       String passportJwtString, List<OneOfValidatePassportRequestCriteriaItems> criteria) {
     // parse and validate passport jwt, extract passport and visa objects - throw exception if not
     // valid
-    var passportWithVisas = jwtUtils.parsePassportJwtString(passportJwtString);
+    var passportWithVisas = jwtUtils.decodeAndValidatePassportJwtString(passportJwtString);
 
     // lookup passport by jwt id in database - throw exception if not present
-    var jwtId = passportWithVisas.getPassport().get().getJwtId();
+    var jwtId = passportWithVisas.getPassport().getJwtId();
     var linkedAccount = linkedAccountDAO.getLinkedAccountByPassportJwtId(jwtId);
+    if (linkedAccount.isEmpty()) {
+      throw new BadRequestException("Passport not associated to linked account");
+    }
 
     // for each criteria find appropriate VisaComparator and check each appropriate visa
     // return true if a visa is found that matches one of the criteria
     var comparator = getVisaComparator(criteria.get(0));
-    return passportWithVisas.getVisas().stream().anyMatch(v -> comparator.get().matchesCriterion(v, criteria.get(0)));
+    return passportWithVisas.getVisas().stream()
+        .anyMatch(v -> comparator.get().matchesCriterion(v, criteria.get(0)));
   }
 
   private Optional<VisaComparator> getVisaComparator(

@@ -48,7 +48,7 @@ public class JwtUtils {
       LinkedAccount linkedAccount, OAuth2User userInfo) {
     String passportJwtString = userInfo.getAttribute(PASSPORT_JWT_V11_CLAIM);
     if (passportJwtString != null) {
-      var passportWithVisas = parsePassportJwtString(passportJwtString);
+      var passportWithVisas = decodeAndValidatePassportJwtString(passportJwtString);
 
       return new LinkedAccountWithPassportAndVisas.Builder()
           .linkedAccount(linkedAccount)
@@ -60,8 +60,8 @@ public class JwtUtils {
     }
   }
 
-  public PassportWithVisas parsePassportJwtString(String passportJwtString) {
-    var passportJwt = decodeJwt(passportJwtString);
+  public PassportWithVisas decodeAndValidatePassportJwtString(String passportJwtString) {
+    var passportJwt = decodeAndValidateJwt(passportJwtString);
 
     List<String> visaJwtStrings =
         Objects.requireNonNullElse(
@@ -69,7 +69,7 @@ public class JwtUtils {
 
     var visas =
         visaJwtStrings.stream()
-            .map(this::decodeJwt)
+            .map(this::decodeAndValidateJwt)
             .map(JwtUtils::buildVisa)
             .collect(Collectors.toList());
 
@@ -128,7 +128,7 @@ public class JwtUtils {
   }
 
   @VisibleForTesting
-  Jwt decodeJwt(String jwtString) {
+  Jwt decodeAndValidateJwt(String jwtString) {
     try {
       // first we need to get the issuer from the jwt, the issuer is needed to validate
       var jwt = JWTParser.parse(jwtString);
@@ -136,6 +136,12 @@ public class JwtUtils {
       if (issuer == null) {
         throw new InvalidJwtException("jwt missing issuer (iss) claim");
       }
+
+      if (!externalCredsConfig.getAllowedJwtIssuers().contains(URI.create(issuer))) {
+        throw new InvalidJwtException(
+            String.format("URI [%s] specified by iss claim not on allowed list", issuer));
+      }
+
       var jkuOption = Optional.ofNullable(((JWSHeader) jwt.getHeader()).getJWKURL());
       if (jkuOption.isPresent()) {
         // presence of the jku header means the url it specifies contains the key set that must be
