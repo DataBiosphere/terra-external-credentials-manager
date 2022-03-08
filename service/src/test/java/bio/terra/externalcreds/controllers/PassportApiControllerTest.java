@@ -23,7 +23,7 @@ public class PassportApiControllerTest extends BaseTest {
         "{\n"
             + "  \"passports\" : [ \"I am a passport\" ],\n"
             + "  \"criteria\" : [ {\n"
-            + "    \"type\" : \"ras\",\n"
+            + "    \"type\" : \"RASv11\",\n"
             + "    \"issuer\" : \"visa issuer\",\n"
             + "    \"phsId\" : \"phs001234\",\n"
             + "    \"consentCode\" : \"c1\"\n"

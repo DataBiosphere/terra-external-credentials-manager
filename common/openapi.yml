@@ -313,9 +313,13 @@ components:
           items:
             type: string
         criteria:
-          type: array
-          items:
-            $ref: '#/components/schemas/VisaCriteria'
+          $ref: '#/components/schemas/VisaCriteriaInterface'
+
+    VisaCriteriaInterface:
+      type: array
+      items:
+        oneOf:
+            - $ref: '#/components/schemas/RASv11'
 
     ValidateVisaResult:
       type: object
@@ -329,13 +333,11 @@ components:
       properties:
         type:
           type: string
-          enum: [ ras ]
+          enum: [ RASV11 ]
         issuer:
           type: string
       discriminator:
         propertyName: type
-        mapping:
-          ras: RASv11
 
     RASv11:
       allOf:

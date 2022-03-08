@@ -2,8 +2,8 @@ package bio.terra.externalcreds.visaComparators;
 
 import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.generated.model.OneOfVisaCriteriaInterfaceItems;
 import bio.terra.externalcreds.generated.model.RASv11;
-import bio.terra.externalcreds.generated.model.VisaCriteria;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,7 +48,7 @@ public class RASv1_1 implements VisaComparator {
   }
 
   @Override
-  public boolean matchesCriterion(GA4GHVisa visa, VisaCriteria criterion) {
+  public boolean matchesCriterion(GA4GHVisa visa, OneOfVisaCriteriaInterfaceItems criterion) {
     try {
       assert criterion instanceof RASv11;
       var rasCriterion = (RASv11) criterion;
@@ -77,7 +77,7 @@ public class RASv1_1 implements VisaComparator {
   }
 
   @Override
-  public boolean criterionTypeSupported(VisaCriteria criterion) {
+  public boolean criterionTypeSupported(OneOfVisaCriteriaInterfaceItems criterion) {
     return criterion instanceof RASv11;
   }
 
