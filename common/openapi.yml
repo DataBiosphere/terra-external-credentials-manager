@@ -223,7 +223,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ValidateVisaResult'
+            $ref: '#/components/schemas/ValidatePassportResult'
 
     SystemStatusResponse:
       description: A JSON description of the subsystems and their statuses.
@@ -321,13 +321,23 @@ components:
         oneOf:
             - $ref: '#/components/schemas/RASv11'
 
-    ValidateVisaResult:
+    ValidatePassportResult:
       type: object
+      required: [valid]
       properties:
         valid:
           type: boolean
+        matchedCriterion:
+          oneOf:
+            - $ref: '#/components/schemas/RASv11'
+        auditInfo:
+          type: object
+          additionalProperties:
+            type: string
 
-    VisaCriteria:
+
+
+    VisaCriterion:
       type: object
       required: [ issuer, type ]
       properties:
@@ -341,7 +351,7 @@ components:
 
     RASv11:
       allOf:
-        - $ref: '#/components/schemas/VisaCriteria'
+        - $ref: '#/components/schemas/VisaCriterion'
         - description: 'Criteria for matching RAS v1.1 visas, visa `type` claim = "https://ras.nih.gov/visas/v1.1"'
           type: object
           properties:
