@@ -7,12 +7,11 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
-import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
-import bio.terra.externalcreds.generated.model.OneOfValidatePassportResultMatchedCriterion;
-import bio.terra.externalcreds.generated.model.ValidatePassportResult;
 import bio.terra.externalcreds.models.GA4GHPassport;
+import bio.terra.externalcreds.models.ValidatePassportResult;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
+import bio.terra.externalcreds.visaComparators.VisaCriterion;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collection;
@@ -67,8 +66,7 @@ public class PassportService {
   }
 
   public ValidatePassportResult findMatchingVisa(
-      Collection<String> passportJwtStrings,
-      Collection<OneOfValidatePassportRequestCriteriaItems> criteria) {
+      Collection<String> passportJwtStrings, Collection<VisaCriterion> criteria) {
     for (var passportJwtString : passportJwtStrings) {
       // parse and validate passport jwt, extract passport and visa objects
       // throws exception if not valid
@@ -83,9 +81,9 @@ public class PassportService {
         for (var criterion : criteria) {
           for (var visa : passportWithVisas.getVisas()) {
             if (getVisaComparator(criterion).matchesCriterion(visa, criterion)) {
-              return new ValidatePassportResult()
+              return new ValidatePassportResult.Builder()
                   .valid(true)
-                  .matchedCriterion((OneOfValidatePassportResultMatchedCriterion) criterion)
+                  .matchedCriterion(criterion)
                   .auditInfo(
                       Map.of(
                           "passport_jti",
@@ -93,17 +91,18 @@ public class PassportService {
                           "external_user_id",
                           maybeLinkedAccount.get().getExternalUserId(),
                           "internal_user_id",
-                          maybeLinkedAccount.get().getUserId()));
+                          maybeLinkedAccount.get().getUserId()))
+                  .build();
             }
           }
         }
       }
     }
 
-    return new ValidatePassportResult().valid(false);
+    return new ValidatePassportResult.Builder().valid(false).build();
   }
 
-  private VisaComparator getVisaComparator(OneOfValidatePassportRequestCriteriaItems criterion) {
+  private VisaComparator getVisaComparator(VisaCriterion criterion) {
     return visaComparators.stream()
         .filter(c -> c.criterionTypeSupported(criterion))
         .findFirst()

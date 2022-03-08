@@ -8,14 +8,12 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
-import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.VisibleForTesting;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,14 +71,6 @@ public class OidcApiController implements OidcApi {
     }
   }
 
-  @VisibleForTesting
-  LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
-    return new LinkInfo()
-        .externalUserId(linkedAccount.getExternalUserId())
-        .expirationTimestamp(linkedAccount.getExpires())
-        .authenticated(linkedAccount.isAuthenticated());
-  }
-
   @Override
   public ResponseEntity<List<String>> listProviders() {
     var providerNames = new ArrayList<>(providerService.getProviderList());
@@ -93,7 +83,8 @@ public class OidcApiController implements OidcApi {
   public ResponseEntity<LinkInfo> getLink(String providerName) {
     var userId = getUserIdFromSam();
     var linkedAccount = linkedAccountService.getLinkedAccount(userId, providerName);
-    return ResponseEntity.of(linkedAccount.map(this::getLinkInfoFromLinkedAccount));
+    return ResponseEntity.of(
+        linkedAccount.map(linkedAccount1 -> OpenApiConverters.Output.convert(linkedAccount1)));
   }
 
   @Override
@@ -138,7 +129,7 @@ public class OidcApiController implements OidcApi {
 
       return ResponseEntity.of(
           linkedAccountWithPassportAndVisas.map(
-              x -> getLinkInfoFromLinkedAccount(x.getLinkedAccount())));
+              x -> OpenApiConverters.Output.convert(x.getLinkedAccount())));
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());
