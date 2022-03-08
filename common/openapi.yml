@@ -313,13 +313,10 @@ components:
           items:
             type: string
         criteria:
-          $ref: '#/components/schemas/VisaCriteriaInterface'
-
-    VisaCriteriaInterface:
-      type: array
-      items:
-        oneOf:
-            - $ref: '#/components/schemas/RASv11'
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/RASv11'
 
     ValidatePassportResult:
       type: object
@@ -343,11 +340,8 @@ components:
       properties:
         type:
           type: string
-          enum: [ RASV11 ]
         issuer:
           type: string
-      discriminator:
-        propertyName: type
 
     RASv11:
       allOf:

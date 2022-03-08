@@ -3,7 +3,12 @@ package bio.terra.externalcreds.controllers;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
+import bio.terra.externalcreds.generated.model.RASv11;
+import bio.terra.externalcreds.generated.model.ValidatePassportRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,6 +34,17 @@ public class PassportApiControllerTest extends BaseTest {
             + "    \"consentCode\" : \"c1\"\n"
             + "  } ]\n"
             + "}";
+
+    var criteria = new ArrayList<OneOfValidatePassportRequestCriteriaItems>();
+    var criterion = new RASv11().consentCode("c1").phsId("phs001234");
+    criterion.issuer("visa issuer");
+    criteria.add(criterion);
+    var req =
+        new ValidatePassportRequest().passports(List.of("I am a passport")).criteria(criteria);
+
+    raw = objectMapper.writeValueAsString(req);
+
+    System.out.println(raw);
 
     mvc.perform(post("/passport/v1/validate").contentType(MediaType.APPLICATION_JSON).content(raw));
   }

@@ -7,8 +7,8 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportResultMatchedCriterion;
-import bio.terra.externalcreds.generated.model.OneOfVisaCriteriaInterfaceItems;
 import bio.terra.externalcreds.generated.model.ValidatePassportResult;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
@@ -67,7 +67,8 @@ public class PassportService {
   }
 
   public ValidatePassportResult findMatchingVisa(
-      Collection<String> passportJwtStrings, Collection<OneOfVisaCriteriaInterfaceItems> criteria) {
+      Collection<String> passportJwtStrings,
+      Collection<OneOfValidatePassportRequestCriteriaItems> criteria) {
     for (var passportJwtString : passportJwtStrings) {
       // parse and validate passport jwt, extract passport and visa objects
       // throws exception if not valid
@@ -102,7 +103,7 @@ public class PassportService {
     return new ValidatePassportResult().valid(false);
   }
 
-  private VisaComparator getVisaComparator(OneOfVisaCriteriaInterfaceItems criterion) {
+  private VisaComparator getVisaComparator(OneOfValidatePassportRequestCriteriaItems criterion) {
     return visaComparators.stream()
         .filter(c -> c.criterionTypeSupported(criterion))
         .findFirst()
