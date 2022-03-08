@@ -128,13 +128,11 @@ paths:
         required: true
       responses:
         '200':
-          $ref: '#/components/responses/ValidateVisaResponse'
+          $ref: '#/components/responses/ValidatePassportResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/ServerError'
-
-
 
   /status:
     get:
@@ -218,7 +216,7 @@ components:
     LinkNotFound:
       description: Unable to find a link for the user to the provider. Consider re-linking with an oauthcode.
 
-    ValidateVisaResponse:
+    ValidatePassportResponse:
       description: results of visa validation
       content:
         application/json:
@@ -331,8 +329,6 @@ components:
           type: object
           additionalProperties:
             type: string
-
-
 
     VisaCriterion:
       type: object

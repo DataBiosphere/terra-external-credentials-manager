@@ -22,11 +22,4 @@ public interface LinkedAccount extends WithLinkedAccount {
   boolean isAuthenticated();
 
   class Builder extends ImmutableLinkedAccount.Builder {}
-
-  default LinkInfo toLinkInfo() {
-    return new LinkInfo()
-        .externalUserId(getExternalUserId())
-        .expirationTimestamp(getExpires())
-        .authenticated(isAuthenticated());
-  }
 }
