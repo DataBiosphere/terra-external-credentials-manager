@@ -21,7 +21,6 @@ generateSwaggerCode {
 			springBootVersion: dependencyManagement.managedVersions['org.springframework.boot:spring-boot']
 	]
 	rawOptions = ['--import-mappings', "VersionProperties=${artifactGroup}.config.VersionProperties"]
-	templateDir = file('./codegen-templates')
 }
 
 String swaggerOutputSrc = "${generateSwaggerCode.outputDir}/src/main/java"
