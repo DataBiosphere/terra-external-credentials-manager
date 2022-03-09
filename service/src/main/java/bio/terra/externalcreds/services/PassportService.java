@@ -81,37 +81,41 @@ public class PassportService {
     var passports = decodeAndValidatePassports(passportJwtStrings);
     var linkedAccount = getSingleLinkedAccountForAllPassports(passports);
 
-    for (var passportWithVisas : passports) {
-      for (var criterion : criteria) {
-        for (var visa : passportWithVisas.getVisas()) {
-          if (getVisaComparator(criterion).matchesCriterion(visa, criterion)) {
-            return new ValidatePassportResult.Builder()
-                .valid(true)
-                .matchedCriterion(criterion)
+    return criteria.stream()
+        .flatMap(
+            criterion ->
+                passports.stream()
+                    .flatMap(
+                        passport ->
+                            passport.getVisas().stream()
+                                .map(
+                                    visa ->
+                                        new ValidatePassportResult.Builder()
+                                            .valid(
+                                                getVisaComparator(criterion)
+                                                    .matchesCriterion(visa, criterion))
+                                            .matchedCriterion(criterion)
+                                            .auditInfo(
+                                                Map.of(
+                                                    "passport_jti",
+                                                    passport.getPassport().getJwtId(),
+                                                    "external_user_id",
+                                                    linkedAccount.getExternalUserId(),
+                                                    "internal_user_id",
+                                                    linkedAccount.getUserId()))
+                                            .build())))
+        .filter(ValidatePassportResult::getValid)
+        .findFirst()
+        .orElse(
+            new ValidatePassportResult.Builder()
+                .valid(false)
                 .auditInfo(
                     Map.of(
-                        "passport_jti",
-                        passportWithVisas.getPassport().getJwtId(),
                         "external_user_id",
                         linkedAccount.getExternalUserId(),
                         "internal_user_id",
                         linkedAccount.getUserId()))
-                .build();
-          }
-        }
-      }
-    }
-
-    // if we got this far there was no matching visa
-    return new ValidatePassportResult.Builder()
-        .valid(false)
-        .auditInfo(
-            Map.of(
-                "external_user_id",
-                linkedAccount.getExternalUserId(),
-                "internal_user_id",
-                linkedAccount.getUserId()))
-        .build();
+                .build());
   }
 
   private Collection<PassportWithVisas> decodeAndValidatePassports(
