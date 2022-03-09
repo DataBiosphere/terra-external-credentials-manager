@@ -2,12 +2,15 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
+import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.PassportWithVisas;
 import bio.terra.externalcreds.models.ValidatePassportResult;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
@@ -18,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -65,41 +69,81 @@ public class PassportService {
     visaDAO.updateLastValidated(visaId, new Timestamp(Instant.now().toEpochMilli()));
   }
 
-  public ValidatePassportResult findMatchingVisa(
+  /**
+   * @param passportJwtStrings
+   * @param criteria
+   * @return
+   */
+  @ReadTransaction
+  public ValidatePassportResult validatePassport(
       Collection<String> passportJwtStrings, Collection<VisaCriterion> criteria) {
-    for (var passportJwtString : passportJwtStrings) {
-      // parse and validate passport jwt, extract passport and visa objects
-      // throws exception if not valid
-      var passportWithVisas = jwtUtils.decodeAndValidatePassportJwtString(passportJwtString);
 
-      // lookup passport by jwt id in database - don't process passport if not present
-      var jwtId = passportWithVisas.getPassport().getJwtId();
-      var maybeLinkedAccount = linkedAccountDAO.getLinkedAccountByPassportJwtId(jwtId);
-      if (maybeLinkedAccount.isPresent()) {
-        // for each criteria find appropriate VisaComparator and check each appropriate visa
-        // return true if a visa is found that matches one of the criteria
-        for (var criterion : criteria) {
-          for (var visa : passportWithVisas.getVisas()) {
-            if (getVisaComparator(criterion).matchesCriterion(visa, criterion)) {
-              return new ValidatePassportResult.Builder()
-                  .valid(true)
-                  .matchedCriterion(criterion)
-                  .auditInfo(
-                      Map.of(
-                          "passport_jti",
-                          passportWithVisas.getPassport().getJwtId(),
-                          "external_user_id",
-                          maybeLinkedAccount.get().getExternalUserId(),
-                          "internal_user_id",
-                          maybeLinkedAccount.get().getUserId()))
-                  .build();
-            }
+    var passports = decodeAndValidatePassports(passportJwtStrings);
+    var linkedAccount = getSingleLinkedAccountForAllPassports(passports);
+
+    for (var passportWithVisas : passports) {
+      for (var criterion : criteria) {
+        for (var visa : passportWithVisas.getVisas()) {
+          if (getVisaComparator(criterion).matchesCriterion(visa, criterion)) {
+            return new ValidatePassportResult.Builder()
+                .valid(true)
+                .matchedCriterion(criterion)
+                .auditInfo(
+                    Map.of(
+                        "passport_jti",
+                        passportWithVisas.getPassport().getJwtId(),
+                        "external_user_id",
+                        linkedAccount.getExternalUserId(),
+                        "internal_user_id",
+                        linkedAccount.getUserId()))
+                .build();
           }
         }
       }
     }
 
-    return new ValidatePassportResult.Builder().valid(false).build();
+    // if we got this far there was no matching visa
+    return new ValidatePassportResult.Builder()
+        .valid(false)
+        .auditInfo(
+            Map.of(
+                "external_user_id",
+                linkedAccount.getExternalUserId(),
+                "internal_user_id",
+                linkedAccount.getUserId()))
+        .build();
+  }
+
+  private Collection<PassportWithVisas> decodeAndValidatePassports(
+      Collection<String> passportJwtStrings) {
+    try {
+      return passportJwtStrings.stream()
+          .map(jwtUtils::decodeAndValidatePassportJwtString)
+          .collect(Collectors.toList());
+    } catch (InvalidJwtException e) {
+      throw new BadRequestException("invalid passport jwt", e);
+    }
+  }
+
+  private LinkedAccount getSingleLinkedAccountForAllPassports(
+      Collection<PassportWithVisas> passportWithVisas) {
+    var linkedAccounts =
+        passportWithVisas.stream()
+            .flatMap(
+                p ->
+                    linkedAccountDAO
+                        .getLinkedAccountByPassportJwtId(p.getPassport().getJwtId())
+                        .stream())
+            .collect(Collectors.toSet());
+
+    if (linkedAccounts.isEmpty()) {
+      throw new BadRequestException("unknown passport");
+    }
+    if (linkedAccounts.size() > 1) {
+      throw new BadRequestException(
+          "a single request validate passport can contain only passports from the same linked account");
+    }
+    return linkedAccounts.iterator().next();
   }
 
   private VisaComparator getVisaComparator(VisaCriterion criterion) {

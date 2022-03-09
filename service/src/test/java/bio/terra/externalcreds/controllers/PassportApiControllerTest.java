@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
@@ -24,17 +25,6 @@ public class PassportApiControllerTest extends BaseTest {
 
   @Test
   void testValidatePassport() throws Exception {
-    var raw =
-        "{\n"
-            + "  \"passports\" : [ \"I am a passport\" ],\n"
-            + "  \"criteria\" : [ {\n"
-            + "    \"type\" : \"RASv11\",\n"
-            + "    \"issuer\" : \"visa issuer\",\n"
-            + "    \"phsId\" : \"phs001234\",\n"
-            + "    \"consentCode\" : \"c1\"\n"
-            + "  } ]\n"
-            + "}";
-
     var criteria = new ArrayList<OneOfValidatePassportRequestCriteriaItems>();
     var criterion = new RASv11().consentCode("c1").phsId("phs001234");
     criterion.issuer("visa issuer");
@@ -42,10 +32,9 @@ public class PassportApiControllerTest extends BaseTest {
     var req =
         new ValidatePassportRequest().passports(List.of("I am a passport")).criteria(criteria);
 
-    raw = objectMapper.writeValueAsString(req);
+    var raw = objectMapper.writeValueAsString(req);
 
-    System.out.println(raw);
-
-    mvc.perform(post("/passport/v1/validate").contentType(MediaType.APPLICATION_JSON).content(raw));
+    mvc.perform(post("/passport/v1/validate").contentType(MediaType.APPLICATION_JSON).content(raw))
+        .andExpect(status().isBadRequest());
   }
 }

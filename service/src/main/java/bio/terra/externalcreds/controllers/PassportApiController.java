@@ -17,9 +17,8 @@ public class PassportApiController implements PassportApi {
 
   @Override
   public ResponseEntity<ValidatePassportResult> validatePassport(ValidatePassportRequest body) {
-    System.out.println(body);
     var result =
-        passportService.findMatchingVisa(
+        passportService.validatePassport(
             body.getPassports(), OpenApiConverters.Input.convert(body.getCriteria()));
     return ResponseEntity.ok(OpenApiConverters.Output.convert(result));
   }
