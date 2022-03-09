@@ -137,7 +137,7 @@ public class PassportService {
             .collect(Collectors.toSet());
 
     if (linkedAccounts.isEmpty()) {
-      throw new BadRequestException("unknown passport");
+      throw new BadRequestException("unknown user");
     }
     if (linkedAccounts.size() > 1) {
       throw new BadRequestException(
