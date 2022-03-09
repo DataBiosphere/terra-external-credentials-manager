@@ -17,13 +17,10 @@ import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jwt.JWTClaimsSet;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.SecureRandom;
-import java.sql.Timestamp;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,9 +59,6 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   private final String redirectUri = "https://test/redirect/uri";
   private final Set<String> scopes = Set.of("email", "ga4gh");
   private final String userEmail = "test@user.com";
-  // Round the expiration to the nearest second because it will be rounded in the JWT.
-  private final Date passportExpires = new Date((new Date().getTime() + 60 * 1000) / 1000 * 1000);
-  private final Timestamp passportExpiresTime = new Timestamp(passportExpires.getTime());
 
   @BeforeAll
   static void setUpJwtVerification() throws JOSEException {
@@ -78,23 +72,24 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
   @Test
   void testNoVisas() throws JOSEException, URISyntaxException {
-    var expectedPassport = createTestPassport(Collections.emptyList());
+    var expectedPassport =
+        jwtSigningTestUtils.createTestPassport(Collections.emptyList(), userEmail);
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, expectedPassport, Collections.emptyList());
   }
 
   @Test
   void testAccessTokenVisa() throws JOSEException, URISyntaxException {
-    var visa = createTestVisa(TokenTypeEnum.access_token);
-    var expectedPassport = createTestPassport(List.of(visa));
+    var visa = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token);
+    var expectedPassport = jwtSigningTestUtils.createTestPassport(List.of(visa), userEmail);
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, expectedPassport, List.of(visa));
   }
 
   @Test
   void testDocumentTokenVisa() throws JOSEException, URISyntaxException {
-    var visa = createTestVisa(TokenTypeEnum.document_token);
-    var expectedPassport = createTestPassport(List.of(visa));
+    var visa = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token);
+    var expectedPassport = jwtSigningTestUtils.createTestPassport(List.of(visa), userEmail);
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, expectedPassport, List.of(visa));
   }
@@ -103,11 +98,11 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   void testMultipleVisas() throws URISyntaxException, JOSEException {
     var visas =
         List.of(
-            createTestVisa(TokenTypeEnum.document_token),
-            createTestVisa(TokenTypeEnum.access_token),
-            createTestVisa(TokenTypeEnum.document_token),
-            createTestVisa(TokenTypeEnum.access_token));
-    var expectedPassport = createTestPassport(visas);
+            jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token),
+            jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token),
+            jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token),
+            jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token));
+    var expectedPassport = jwtSigningTestUtils.createTestPassport(visas, userEmail);
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, expectedPassport, visas);
   }
@@ -251,7 +246,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
         linkedAccountWithPassportAndVisas
             .get()
             .getLinkedAccount()
-            .withExpires(passportExpiresTime)
+            .withExpires(jwtSigningTestUtils.passportExpiresTime)
             .withId(Optional.empty()));
 
     var stablePassport =
@@ -279,44 +274,9 @@ class AuthorizationCodeExchangeTest extends BaseTest {
                 expectedLinkedAccount.getUserId(), state));
   }
 
-  private String createPassportJwtString(Date expires, List<String> visaJwts, String jwtId)
-      throws JOSEException {
-
-    var passportClaimSetBuilder =
-        new JWTClaimsSet.Builder()
-            .subject(UUID.randomUUID().toString())
-            .claim(ProviderService.EXTERNAL_USERID_ATTR, userEmail)
-            .issuer(jwtSigningTestUtils.getIssuer())
-            .jwtID(jwtId)
-            .expirationTime(expires);
-
-    if (!visaJwts.isEmpty()) {
-      passportClaimSetBuilder.claim(JwtUtils.GA4GH_PASSPORT_V1_CLAIM, visaJwts);
-    }
-
-    var claimsSet = passportClaimSetBuilder.build();
-    return jwtSigningTestUtils.createSignedJwt(claimsSet);
-  }
-
   private LinkedAccount createTestLinkedAccount() {
     return TestUtils.createRandomLinkedAccount()
         .withExternalUserId(userEmail)
-        .withExpires(passportExpiresTime);
-  }
-
-  private GA4GHPassport createTestPassport(List<GA4GHVisa> visas) throws JOSEException {
-    var visaJwts = visas.stream().map(GA4GHVisa::getJwt).collect(Collectors.toList());
-    var jwtId = UUID.randomUUID().toString();
-    var jwtString = createPassportJwtString(passportExpires, visaJwts, jwtId);
-    return new GA4GHPassport.Builder()
-        .jwt(jwtString)
-        .expires(passportExpiresTime)
-        .jwtId(jwtId)
-        .build();
-  }
-
-  private GA4GHVisa createTestVisa(TokenTypeEnum tokenType)
-      throws URISyntaxException, JOSEException {
-    return jwtSigningTestUtils.createTestVisaWithJwt(tokenType, passportExpiresTime);
+        .withExpires(jwtSigningTestUtils.passportExpiresTime);
   }
 }

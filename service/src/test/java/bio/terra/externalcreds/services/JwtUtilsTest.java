@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.JwtSigningTestUtils;
-import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.nimbusds.jose.JOSEException;
@@ -48,9 +47,7 @@ public class JwtUtilsTest extends BaseTest {
 
     @Test
     void testInvalidJwtSignature() throws URISyntaxException, JOSEException {
-      var visa =
-          jwtSigningTestUtils.createTestVisaWithJwt(
-              TokenTypeEnum.access_token, TestUtils.getRandomTimestamp());
+      var visa = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token);
       var invalidJwt = visa.getJwt() + "foo";
       assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(invalidJwt));
     }
@@ -58,9 +55,7 @@ public class JwtUtilsTest extends BaseTest {
     @Test
     void testJwtMissingIssuer() throws URISyntaxException, JOSEException {
       var visa =
-          jwtSigningTestUtils
-              .createTestVisaWithJwt(TokenTypeEnum.access_token, TestUtils.getRandomTimestamp())
-              .withIssuer("null");
+          jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token).withIssuer("null");
       var jwtMissingIssuer = jwtSigningTestUtils.createVisaJwtString(visa);
       assertThrows(
           InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(jwtMissingIssuer));
@@ -73,7 +68,7 @@ public class JwtUtilsTest extends BaseTest {
       var jwt =
           jwtSigningTestUtils.createVisaJwtString(
               jwtSigningTestUtils
-                  .createTestVisaWithJwt(TokenTypeEnum.access_token, TestUtils.getRandomTimestamp())
+                  .createTestVisaWithJwt(TokenTypeEnum.access_token)
                   .withIssuer(jwtSigningTestUtils.getIssuer()));
       assertNotNull(jwtUtils.decodeAndValidateJwt(jwt));
     }
@@ -83,7 +78,7 @@ public class JwtUtilsTest extends BaseTest {
       var jwt =
           jwtSigningTestUtils.createVisaJwtString(
               jwtSigningTestUtils
-                  .createTestVisaWithJwt(TokenTypeEnum.access_token, TestUtils.getRandomTimestamp())
+                  .createTestVisaWithJwt(TokenTypeEnum.access_token)
                   .withIssuer(jwtSigningTestUtils.getIssuer()));
       assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(jwt));
     }
@@ -95,7 +90,7 @@ public class JwtUtilsTest extends BaseTest {
       var jwtNotRealIssuer =
           jwtSigningTestUtils.createVisaJwtString(
               jwtSigningTestUtils
-                  .createTestVisaWithJwt(TokenTypeEnum.access_token, TestUtils.getRandomTimestamp())
+                  .createTestVisaWithJwt(TokenTypeEnum.access_token)
                   .withIssuer(testIssuer));
       var e =
           assertThrows(
@@ -106,10 +101,7 @@ public class JwtUtilsTest extends BaseTest {
 
     @Test
     void testJwtJkuNotOnAllowList() throws URISyntaxException, JOSEException {
-      var badJwt =
-          jwtSigningTestUtils
-              .createTestVisaWithJwt(TokenTypeEnum.document_token, TestUtils.getRandomTimestamp())
-              .getJwt();
+      var badJwt = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token).getJwt();
       var exception =
           assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(badJwt));
 
@@ -126,8 +118,7 @@ public class JwtUtilsTest extends BaseTest {
       var jwtNotResponsiveJku =
           jwtSigningTestUtils.createVisaJwtString(
               jwtSigningTestUtils
-                  .createTestVisaWithJwt(
-                      TokenTypeEnum.document_token, TestUtils.getRandomTimestamp())
+                  .createTestVisaWithJwt(TokenTypeEnum.document_token)
                   .withIssuer(testIssuer));
 
       var exception =
@@ -146,8 +137,7 @@ public class JwtUtilsTest extends BaseTest {
       var jwtMalformedJku =
           jwtSigningTestUtils.createVisaJwtString(
               jwtSigningTestUtils
-                  .createTestVisaWithJwt(
-                      TokenTypeEnum.document_token, TestUtils.getRandomTimestamp())
+                  .createTestVisaWithJwt(TokenTypeEnum.document_token)
                   .withIssuer(testIssuer));
 
       var exception =

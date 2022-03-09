@@ -2,13 +2,13 @@ package bio.terra.externalcreds.visaComparators;
 
 import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.ExternalCredsException;
-import bio.terra.externalcreds.generated.model.RASv11;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.nimbusds.jwt.JWTParser;
 import java.text.ParseException;
 import java.util.Set;
@@ -49,8 +49,8 @@ public class RASv1_1 implements VisaComparator {
   @Override
   public boolean matchesCriterion(GA4GHVisa visa, VisaCriterion criterion) {
     try {
-      assert criterion instanceof RASv11;
-      var rasCriterion = (RASv11) criterion;
+      assert criterion instanceof RASv1Dot1Criterion;
+      var rasCriterion = (RASv1Dot1Criterion) criterion;
 
       var permissions = getVisaPermissions(visa);
       return permissions.stream()
@@ -65,9 +65,8 @@ public class RASv1_1 implements VisaComparator {
 
   private Set<DbGapPermission> getVisaPermissions(GA4GHVisa visa)
       throws ParseException, JsonProcessingException {
-    var visaClaim =
-        JWTParser.parse(visa.getJwt()).getJWTClaimsSet().getClaim(DBGAP_CLAIM).toString();
-    return objectMapper.readValue(visaClaim, new TypeReference<>() {});
+    var visaClaim = JWTParser.parse(visa.getJwt()).getJWTClaimsSet().getClaim(DBGAP_CLAIM);
+    return objectMapper.convertValue(visaClaim, new TypeReference<>() {});
   }
 
   @Override
@@ -86,7 +85,8 @@ public class RASv1_1 implements VisaComparator {
    */
   @Value.Immutable
   @JsonDeserialize(as = ImmutableDbGapPermission.class)
-  interface DbGapPermission extends WithDbGapPermission {
+  @JsonSerialize(as = ImmutableDbGapPermission.class)
+  public interface DbGapPermission extends WithDbGapPermission {
     @JsonProperty("phs_id")
     String getPhsId();
 
