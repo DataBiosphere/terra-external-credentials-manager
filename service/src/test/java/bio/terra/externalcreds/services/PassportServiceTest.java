@@ -182,7 +182,8 @@ class PassportServiceTest extends BaseTest {
     }
 
     /**
-     * Parameters used to vary how runValidPassportTest works. Default values represent the golden path.
+     * Parameters used to vary how runValidPassportTest works. Default values represent the golden
+     * path.
      */
     class ValidPassportTestParams {
       boolean valid = true;
