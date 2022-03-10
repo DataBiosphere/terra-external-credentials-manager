@@ -1,19 +1,26 @@
 package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.JwtSigningTestUtils;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.models.GA4GHPassport;
+import bio.terra.externalcreds.models.GA4GHVisa;
+import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.ValidatePassportResult;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1Criterion;
 import bio.terra.externalcreds.visaComparators.RASv1_1;
+import bio.terra.externalcreds.visaComparators.RASv1_1.DbGapPermission;
+import bio.terra.externalcreds.visaComparators.RASv1_1.DbGapPermission.Builder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
@@ -23,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
@@ -100,8 +109,159 @@ class PassportServiceTest extends BaseTest {
 
     @Test
     void testValidPassportMatchingCriteria() throws URISyntaxException, JsonProcessingException {
-      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      runValidPassportTest(new ValidPassportTestParams());
+    }
 
+    @Test
+    void testValidPassportNotMatchingIssuer() throws URISyntaxException {
+      var params = new ValidPassportTestParams();
+      params.valid = false;
+      params.issuer = "https://some.other.issuer";
+      runValidPassportTest(params);
+    }
+
+    @Test
+    void testValidPassportNotMatchingVisaType() throws URISyntaxException {
+      var params = new ValidPassportTestParams();
+      params.valid = false;
+      params.visaType = "wrong visa type";
+      runValidPassportTest(params);
+    }
+
+    @Test
+    void testValidPassportNotMatchingCriteria() throws URISyntaxException {
+      var params = new ValidPassportTestParams();
+      params.valid = false;
+      params.criterionPhsId = "phsDIFFERENT";
+      runValidPassportTest(params);
+    }
+
+    @Test
+    void testValidPassportWithoutUserThrows() throws URISyntaxException {
+      var params = new ValidPassportTestParams();
+      params.persistLinkedAccount = false;
+      assertThrows(BadRequestException.class, () -> runValidPassportTest(params));
+    }
+
+    @Test
+    void testInvalidPassportThrows() throws URISyntaxException {
+      var criterion = new RASv1Dot1Criterion.Builder().phsId("").consentCode("").issuer("").build();
+
+      assertThrows(
+          BadRequestException.class,
+          () -> passportService.validatePassport(List.of("garbage"), List.of(criterion)));
+    }
+
+    @Test
+    void testPassportsWithDifferentUsersThrows() throws URISyntaxException {
+      var linkedAccount1 = TestUtils.createRandomLinkedAccount();
+      var linkedAccount2 = linkedAccount1.withExternalUserId(UUID.randomUUID().toString());
+      mockProviderConfig(linkedAccount1);
+
+      var passport1 =
+          jwtSigningTestUtils.createTestPassport(List.of(), linkedAccount1.getExternalUserId());
+      var passport2 =
+          jwtSigningTestUtils.createTestPassport(List.of(), linkedAccount2.getExternalUserId());
+
+      linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+          new LinkedAccountWithPassportAndVisas.Builder()
+              .linkedAccount(linkedAccount1)
+              .passport(passport1)
+              .build());
+      linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+          new LinkedAccountWithPassportAndVisas.Builder()
+              .linkedAccount(linkedAccount2)
+              .passport(passport2)
+              .build());
+
+      var criterion = new RASv1Dot1Criterion.Builder().phsId("").consentCode("").issuer("").build();
+
+      assertThrows(
+          BadRequestException.class,
+          () -> passportService.validatePassport(List.of(passport1.getJwt()), List.of(criterion)));
+    }
+
+    /**
+     * Parameters used to vary how runValidPassportTest works. Default values represent the golden path.
+     */
+    class ValidPassportTestParams {
+      boolean valid = true;
+      String issuer = jwtSigningTestUtils.getIssuer();
+      String visaType = RASv1_1.RAS_VISAS_V_1_1;
+      String visaPhsId = "phs000123";
+      String criterionPhsId = visaPhsId;
+      boolean persistLinkedAccount = true;
+    }
+
+    private void runValidPassportTest(ValidPassportTestParams params) throws URISyntaxException {
+      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      mockProviderConfig(linkedAccount);
+
+      var matchingPermission =
+          new Builder().phsId(params.visaPhsId).consentGroup("c33").role("bar").build();
+
+      var visaWithMatchingPermission = createDbGapVisa(Set.of(matchingPermission), params.visaType);
+
+      var visas = List.of(visaWithMatchingPermission);
+      var passport =
+          jwtSigningTestUtils.createTestPassport(visas, linkedAccount.getExternalUserId());
+
+      if (params.persistLinkedAccount) {
+        linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+            new LinkedAccountWithPassportAndVisas.Builder()
+                .linkedAccount(linkedAccount)
+                .passport(passport)
+                .visas(visas)
+                .build());
+      }
+
+      var criterion =
+          new RASv1Dot1Criterion.Builder()
+              .phsId(params.criterionPhsId)
+              .consentCode(matchingPermission.getConsentGroup())
+              .issuer(params.issuer)
+              .build();
+
+      var result = passportService.validatePassport(List.of(passport.getJwt()), List.of(criterion));
+
+      if (params.valid) {
+        assertEquals(
+            new ValidatePassportResult.Builder()
+                .valid(true)
+                .auditInfo(expectedAuditInfo(linkedAccount, passport))
+                .matchedCriterion(criterion)
+                .build(),
+            result);
+      } else {
+        assertEquals(
+            new ValidatePassportResult.Builder()
+                .valid(false)
+                .auditInfo(expectedAuditInfo(linkedAccount))
+                .build(),
+            result);
+      }
+    }
+
+    private Map<String, String> expectedAuditInfo(
+        LinkedAccount linkedAccount, GA4GHPassport passport) {
+      return Map.of(
+          "passport_jti",
+          passport.getJwtId(),
+          "external_user_id",
+          linkedAccount.getExternalUserId(),
+          "internal_user_id",
+          linkedAccount.getUserId());
+    }
+
+    private Map<String, String> expectedAuditInfo(LinkedAccount linkedAccount) {
+      return Map.of(
+          "external_user_id",
+          linkedAccount.getExternalUserId(),
+          "internal_user_id",
+          linkedAccount.getUserId());
+    }
+
+    private void mockProviderConfig(LinkedAccount linkedAccount) throws URISyntaxException {
       var providerInfo = TestUtils.createRandomProvider();
       var providerClient =
           ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
@@ -117,89 +277,29 @@ class PassportServiceTest extends BaseTest {
               List.of(new URI(jwtSigningTestUtils.getIssuer() + JwtSigningTestUtils.JKU_PATH)));
       when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
           .thenReturn(Optional.of(providerClient));
+    }
 
-      var matchingConsentGroup = "c33";
-      var matchingPhsId = "phs987";
+    private GA4GHVisa createDbGapVisa(Set<DbGapPermission> permissions) {
+      return createDbGapVisa(permissions, RASv1_1.RAS_VISAS_V_1_1);
+    }
 
-      var visaNoMatch =
-          jwtSigningTestUtils.createTestVisaWithJwtWithClaims(
-              TokenTypeEnum.access_token,
-              Map.of(
-                  RASv1_1.DBGAP_CLAIM,
-                  Set.of(
+    private GA4GHVisa createDbGapVisa(Set<DbGapPermission> permissions, String visaType) {
+      // we spend too much time trying to figure out how to get the innards of the JWT building
+      // to serialize DbGapPermission as the right json - instead just make it a Map
+      var permissionsAsMaps =
+          permissions.stream()
+              .map(
+                  p ->
                       Map.of(
                           "phs_id",
-                          "phs789",
+                          p.getPhsId(),
                           "consent_group",
-                          matchingConsentGroup,
+                          p.getConsentGroup(),
                           "role",
-                          "bar"))));
-      var visaYesMatch =
-          jwtSigningTestUtils.createTestVisaWithJwtWithClaims(
-              TokenTypeEnum.access_token,
-              Map.of(
-                  RASv1_1.DBGAP_CLAIM,
-                  Set.of(
-                      Map.of(
-                          "phs_id",
-                          matchingPhsId,
-                          "consent_group",
-                          matchingConsentGroup,
-                          "role",
-                          "bar"))));
-
-      var visas = List.of(visaYesMatch, visaNoMatch);
-      var matchingPassport =
-          jwtSigningTestUtils.createTestPassport(visas, linkedAccount.getExternalUserId());
-
-      linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-          new LinkedAccountWithPassportAndVisas.Builder()
-              .linkedAccount(linkedAccount)
-              .passport(matchingPassport)
-              .visas(visas)
-              .build());
-
-      // more than one criterion
-      // one criterion matches one passport
-      var criterion =
-          new RASv1Dot1Criterion.Builder()
-              .phsId(matchingPhsId)
-              .consentCode(matchingConsentGroup)
-              .issuer(jwtSigningTestUtils.getIssuer())
-              .build();
-      var result =
-          passportService.validatePassport(List.of(matchingPassport.getJwt()), List.of(criterion));
-
-      assertEquals(
-          new ValidatePassportResult.Builder()
-              .valid(true)
-              .auditInfo(
-                  Map.of(
-                      "passport_jti",
-                      matchingPassport.getJwtId(),
-                      "external_user_id",
-                      linkedAccount.getExternalUserId(),
-                      "internal_user_id",
-                      linkedAccount.getUserId()))
-              .matchedCriterion(criterion)
-              .build(),
-          result);
+                          p.getRole()))
+              .collect(Collectors.toSet());
+      return jwtSigningTestUtils.createTestVisaWithJwtWithClaims(
+          TokenTypeEnum.access_token, Map.of(RASv1_1.DBGAP_CLAIM, permissionsAsMaps), visaType);
     }
-
-    @Test
-    void testValidPassportNotMatchingCriteria() {}
-
-    @Test
-    void testInvalidPassport() {
-      // one valid passport with matching criteria, one invalid passport
-    }
-
-    @Test
-    void testPassportsWithDifferentUsers() {
-      // 2 passports but each from a different linked account
-    }
-
-    @Test
-    void testPassportsWithoutUser() {}
   }
 }

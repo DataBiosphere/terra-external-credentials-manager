@@ -138,14 +138,14 @@ public class JwtSigningTestUtils {
   }
 
   public GA4GHVisa createTestVisaWithJwt(TokenTypeEnum tokenType) {
-    return createTestVisaWithJwtWithClaims(tokenType, Map.of());
+    return createTestVisaWithJwtWithClaims(tokenType, Map.of(), UUID.randomUUID().toString());
   }
 
   public GA4GHVisa createTestVisaWithJwtWithClaims(
-      TokenTypeEnum tokenType, Map<String, Object> claims) {
+      TokenTypeEnum tokenType, Map<String, Object> claims, String visaType) {
     var visa =
         new GA4GHVisa.Builder()
-            .visaType(UUID.randomUUID().toString())
+            .visaType(visaType)
             .tokenType(tokenType)
             .issuer(getIssuer())
             .expires(passportExpiresTime)

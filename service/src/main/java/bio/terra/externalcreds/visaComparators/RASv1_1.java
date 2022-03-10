@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.nimbusds.jwt.JWTParser;
 import java.text.ParseException;
 import java.util.Set;
@@ -85,7 +84,6 @@ public class RASv1_1 implements VisaComparator {
    */
   @Value.Immutable
   @JsonDeserialize(as = ImmutableDbGapPermission.class)
-  @JsonSerialize(as = ImmutableDbGapPermission.class)
   public interface DbGapPermission extends WithDbGapPermission {
     @JsonProperty("phs_id")
     String getPhsId();

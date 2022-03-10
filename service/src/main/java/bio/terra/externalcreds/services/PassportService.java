@@ -84,7 +84,10 @@ public class PassportService {
     for (var passportWithVisas : passports) {
       for (var criterion : criteria) {
         for (var visa : passportWithVisas.getVisas()) {
-          if (getVisaComparator(criterion).matchesCriterion(visa, criterion)) {
+          VisaComparator visaComparator = getVisaComparator(criterion);
+          if (visaComparator.visaTypeSupported(visa)
+              && visa.getIssuer().equals(criterion.getIssuer())
+              && visaComparator.matchesCriterion(visa, criterion)) {
             return new ValidatePassportResult.Builder()
                 .valid(true)
                 .matchedCriterion(criterion)
