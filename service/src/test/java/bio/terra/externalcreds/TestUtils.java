@@ -87,7 +87,7 @@ public class TestUtils {
   public static SshKeyPair createRandomGithubSshKey() throws NoSuchAlgorithmException, IOException {
     var randomExternalUserEmail =
         RandomStringUtils.random(5, /*letters=*/ true, /*numbers=*/ true) + "@gmail.com";
-    var keyPair = generateRSAKeyPair();
+    KeyPair keyPair = generateRSAKeyPair();
     return new SshKeyPair.Builder()
         .type(SshKeyPairType.GITHUB)
         .privateKey(encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate()))
@@ -101,7 +101,7 @@ public class TestUtils {
   /** Gets a pair of private - public RSA key. */
   public static Pair<String, String> getRSAEncodedKeyPair(String externalUser)
       throws NoSuchAlgorithmException, IOException {
-    var keyPair = generateRSAKeyPair();
+    KeyPair keyPair = generateRSAKeyPair();
     return Pair.of(
         encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate()),
         encodeRSAPublicKey((RSAPublicKey) keyPair.getPublic(), externalUser));
@@ -117,8 +117,8 @@ public class TestUtils {
 
   private static String encodeRSAPublicKey(RSAPublicKey rsaPublicKey, String user)
       throws IOException {
-    ByteArrayOutputStream byteOs = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream(byteOs);
+    var byteOs = new ByteArrayOutputStream();
+    var dos = new DataOutputStream(byteOs);
     dos.writeInt("ssh-rsa".getBytes().length);
     dos.write("ssh-rsa".getBytes());
     dos.writeInt(rsaPublicKey.getPublicExponent().toByteArray().length);
