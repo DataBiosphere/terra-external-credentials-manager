@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,12 +35,6 @@ class SshKeyApiControllerTest extends BaseTest {
 
   private static final String DEFAULT_USER_ID = "foo";
   private static final String DEFAULT_ACCESS_TOKEN = "foo_access_token";
-  private static final String SSH_PRIVATE_KEY =
-      "-----BEGIN OPENSSH PRIVATE KEY-----\n"
-          + "abcde12345/+xXXXYZ//890=\n"
-          + "-----END OPENSSH PRIVATE KEY-----";
-  private static final String SSH_PUBLIC_KEY =
-      "ssh-ed25519 AAABBBccc123 foo@monkeyseesmonkeydo.com";
   private static final String EXTERNAL_USER_EMAIL = "foo@monkeyseesmonkeydo.com";
 
   @Test
@@ -58,10 +53,11 @@ class SshKeyApiControllerTest extends BaseTest {
   void putGetAndDeleteSshKeyPair() throws Exception {
     mockSamUser();
     var sshKeyPairType = "gitlab";
+    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(EXTERNAL_USER_EMAIL);
     var sshKeyPair =
         new SshKeyPair()
-            .privateKey(SSH_PRIVATE_KEY)
-            .publicKey(SSH_PUBLIC_KEY)
+            .privateKey(rsaEncodedKeyPair.getLeft())
+            .publicKey(rsaEncodedKeyPair.getRight())
             .externalUserEmail(EXTERNAL_USER_EMAIL);
     var requestBody = objectMapper.writeValueAsString(sshKeyPair);
     var putResult =
