@@ -2,8 +2,6 @@ package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPair;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.dao.support.DataAccessUtils;

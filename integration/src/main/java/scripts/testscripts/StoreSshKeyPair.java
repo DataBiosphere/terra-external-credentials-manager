@@ -1,10 +1,8 @@
 package scripts.testscripts;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import bio.terra.externalcreds.api.SshKeyPairApi;
-import bio.terra.externalcreds.client.ApiException;
 import bio.terra.externalcreds.model.SshKeyPair;
 import bio.terra.externalcreds.model.SshKeyPairType;
 import bio.terra.testrunner.runner.TestScript;
