@@ -53,6 +53,12 @@ public class SshKeyApiController implements SshKeyPairApi {
   }
 
   @Override
+  public ResponseEntity<SshKeyPair> generateSshKeyPair(
+      SshKeyPairType type) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
   public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type) {
     var sshKeyPair = sshKeyPairService.getSshKeyPair(getUserIdFromSam(), type);
     return ResponseEntity.of(sshKeyPair.map(keyPair -> getSshKeyPair(keyPair)));
