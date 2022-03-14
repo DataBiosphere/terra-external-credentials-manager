@@ -141,12 +141,6 @@ class SshKeyPairDaoTest extends BaseTest {
   }
 
   private static String encodeRSAPrivateKey(RSAPrivateKey privateKey) {
-    System.out.println(
-        "DEFAULT_PRIVATE_KEY_BEGIN\n"
-            + "        + \"\\n\"\n"
-            + "        + new String(Base64.encodeBase64(privateKey.getEncoded()))\n"
-            + "        + \"\\n\"\n"
-            + "        + DEFAULT_PRIVATE_KEY_END");
     return DEFAULT_PRIVATE_KEY_BEGIN
         + "\n"
         + new String(Base64.encodeBase64(privateKey.getEncoded()))
@@ -154,7 +148,8 @@ class SshKeyPairDaoTest extends BaseTest {
         + DEFAULT_PRIVATE_KEY_END;
   }
 
-  private static String encodeRSAPublicKey(RSAPublicKey rsaPublicKey, String user) throws IOException {
+  private static String encodeRSAPublicKey(RSAPublicKey rsaPublicKey, String user)
+      throws IOException {
     ByteArrayOutputStream byteOs = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(byteOs);
     dos.writeInt("ssh-rsa".getBytes().length);
