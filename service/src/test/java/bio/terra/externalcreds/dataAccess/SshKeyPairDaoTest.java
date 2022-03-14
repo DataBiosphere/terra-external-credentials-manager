@@ -8,6 +8,17 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPair;
 import java.util.UUID;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.UUID;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,43 +27,39 @@ class SshKeyPairDaoTest extends BaseTest {
 
   @Autowired SshKeyPairDAO sshKeyPairDAO;
 
-  private static final String DEFAULT_USER_ID = UUID.randomUUID().toString();
   private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
-  private static final String DEFAULT_EXTERNAL_USER_EMAIL = "foo@monkeyseesmonkeydo.com";
-  private static final String DEFAULT_PRIVATE_KEY =
-      "-----BEGIN OPENSSH PRIVATE KEY-----\n"
-          + "abcde12345/+xXXXYZ//890=\n"
-          + "-----END OPENSSH PRIVATE KEY-----";
-  private static final String DEFAULT_PUBLIC_KEY =
-      "ssh-ed25519 AAAA12345 " + DEFAULT_EXTERNAL_USER_EMAIL;
+  private static final String DEFAULT_PRIVATE_KEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----";
+  private static final String DEFAULT_PRIVATE_KEY_END = "-----END RSA PRIVATE KEY-----";
+  private static final String DEFAULT_PUBLIC_KEY_BEGIN = "ssh-rsa";
 
   @Nested
   class UpsertKeyPair {
     @Test
-    void testUpsertTwiceWithSameUserId() {
+    void testUpsertTwiceWithSameUserId() throws NoSuchAlgorithmException, IOException {
       var externalUserEmail = "bar@monkeyseesmonkeydo.com";
-      var sshKeyOne = createDefaultSshKey();
-      var sshKeyTwo = createSshKey(DEFAULT_USER_ID, DEFAULT_KEY_TYPE, externalUserEmail);
+      var sshKeyOne = createRandomGithubSshKey();
+      var sshKeyTwo = sshKeyOne.withExternalUserEmail(externalUserEmail);
 
       sshKeyPairDAO.upsertSshKeyPair(sshKeyOne);
       sshKeyPairDAO.upsertSshKeyPair(sshKeyTwo);
-      var loadedSshKeyTwo = sshKeyPairDAO.getSshKeyPair(DEFAULT_USER_ID, DEFAULT_KEY_TYPE);
+      var loadedSshKeyTwo = sshKeyPairDAO.getSshKeyPair(sshKeyOne.getUserId(), sshKeyOne.getType());
 
       assertPresent(loadedSshKeyTwo);
       verifySshKeyPair(sshKeyTwo, loadedSshKeyTwo.get());
     }
 
     @Test
-    void testUpsertTwiceWithDifferentUserId() {
+    void testUpsertTwiceWithDifferentUserId() throws NoSuchAlgorithmException, IOException {
       var userId = UUID.randomUUID().toString();
       var externalUserEmail = "bar@monkeyseesmonkeydo.com";
-      var sshKeyOne = createDefaultSshKey();
-      var sshKeyTwo = createSshKey(userId, DEFAULT_KEY_TYPE, externalUserEmail);
+      var sshKeyOne = createRandomGithubSshKey();
+      var sshKeyTwo =
+          createRandomGithubSshKey().withUserId(userId).withExternalUserEmail(externalUserEmail);
       sshKeyPairDAO.upsertSshKeyPair(sshKeyOne);
       sshKeyPairDAO.upsertSshKeyPair(sshKeyTwo);
 
-      var loadedKeyOne = sshKeyPairDAO.getSshKeyPair(DEFAULT_USER_ID, DEFAULT_KEY_TYPE);
-      var loadedKeyTwo = sshKeyPairDAO.getSshKeyPair(userId, DEFAULT_KEY_TYPE);
+      var loadedKeyOne = sshKeyPairDAO.getSshKeyPair(sshKeyOne.getUserId(), sshKeyOne.getType());
+      var loadedKeyTwo = sshKeyPairDAO.getSshKeyPair(userId, sshKeyTwo.getType());
 
       assertPresent(loadedKeyOne);
       assertPresent(loadedKeyTwo);
@@ -61,8 +68,8 @@ class SshKeyPairDaoTest extends BaseTest {
     }
 
     @Test
-    void upsertSshKey() {
-      var sshKey = createDefaultSshKey();
+    void upsertSshKey() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
       var storedSshKey = sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
       verifySshKeyPair(sshKey, storedSshKey);
@@ -79,11 +86,11 @@ class SshKeyPairDaoTest extends BaseTest {
     }
 
     @Test
-    void testGetSshKeyPair() {
-      var sshKey = createDefaultSshKey();
+    void testGetSshKeyPair() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
-      var loadedSshKeyOptional = sshKeyPairDAO.getSshKeyPair(DEFAULT_USER_ID, DEFAULT_KEY_TYPE);
+      var loadedSshKeyOptional = sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
 
       assertPresent(loadedSshKeyOptional);
       verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
@@ -93,46 +100,76 @@ class SshKeyPairDaoTest extends BaseTest {
   @Nested
   class DeleteKeyPair {
     @Test
-    void testDeleteSshKeyPair() {
-      sshKeyPairDAO.upsertSshKeyPair(createDefaultSshKey());
+    void testDeleteSshKeyPair() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
-      assertTrue(sshKeyPairDAO.deleteSshKeyPair(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
+      assertTrue(sshKeyPairDAO.deleteSshKeyPair(sshKey.getUserId(), sshKey.getType()));
 
-      assertEmpty(sshKeyPairDAO.getSshKeyPair(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
-      assertFalse(sshKeyPairDAO.deleteSshKeyPair(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
+      assertEmpty(sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType()));
+      assertFalse(sshKeyPairDAO.deleteSshKeyPair(sshKey.getUserId(), sshKey.getType()));
     }
 
     @Test
     void testDeleteNonExistingSshKeyPair() {
-      assertFalse(sshKeyPairDAO.deleteSshKeyPair(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
+      assertFalse(sshKeyPairDAO.deleteSshKeyPair("", DEFAULT_KEY_TYPE));
     }
 
     @Test
-    void deleteSshKeyPairWithWrongType() {
-      sshKeyPairDAO.upsertSshKeyPair(createDefaultSshKey());
+    void deleteSshKeyPairWithWrongType() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
-      assertFalse(sshKeyPairDAO.deleteSshKeyPair(DEFAULT_USER_ID, SshKeyPairType.AZURE));
+      assertFalse(sshKeyPairDAO.deleteSshKeyPair(sshKey.getUserId(), SshKeyPairType.AZURE));
 
-      assertTrue(sshKeyPairDAO.deleteSshKeyPair(DEFAULT_USER_ID, DEFAULT_KEY_TYPE));
+      assertTrue(sshKeyPairDAO.deleteSshKeyPair(sshKey.getUserId(), sshKey.getType()));
     }
   }
 
-  private static SshKeyPair createDefaultSshKey() {
-    return createSshKey(DEFAULT_USER_ID, DEFAULT_KEY_TYPE, DEFAULT_EXTERNAL_USER_EMAIL);
-  }
-
-  private static SshKeyPair createSshKey(
-      String userId, SshKeyPairType keyType, String externalUserEmail) {
+  private static SshKeyPair createRandomGithubSshKey()
+      throws NoSuchAlgorithmException, IOException {
+    var randomExternalUserEmail =
+        RandomStringUtils.random(5, /*letters=*/ true, /*numbers=*/ true) + "@gmail.com";
+    var keyPair = generateRSAKeyPair();
     return new SshKeyPair.Builder()
-        .type(keyType)
-        .privateKey(DEFAULT_PRIVATE_KEY)
-        .publicKey(DEFAULT_PUBLIC_KEY)
-        .userId(userId)
-        .externalUserEmail(externalUserEmail)
+        .type(DEFAULT_KEY_TYPE)
+        .privateKey(encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate()))
+        .publicKey(encodeRSAPublicKey((RSAPublicKey) keyPair.getPublic(), randomExternalUserEmail))
+        .userId(UUID.randomUUID().toString())
+        .externalUserEmail(
+            RandomStringUtils.random(5, /*letters=*/ true, /*numbers=*/ true) + "@gmail.com")
         .build();
   }
 
+  private static String encodeRSAPrivateKey(RSAPrivateKey privateKey) {
+    return DEFAULT_PRIVATE_KEY_BEGIN
+        + "\n"
+        + new String(Base64.encodeBase64(privateKey.getEncoded()))
+        + "\n"
+        + DEFAULT_PRIVATE_KEY_END;
+  }
+
+  private static String encodeRSAPublicKey(RSAPublicKey rsaPublicKey, String user)
+      throws IOException {
+    ByteArrayOutputStream byteOs = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(byteOs);
+    dos.writeInt("ssh-rsa".getBytes().length);
+    dos.write("ssh-rsa".getBytes());
+    dos.writeInt(rsaPublicKey.getPublicExponent().toByteArray().length);
+    dos.write(rsaPublicKey.getPublicExponent().toByteArray());
+    dos.writeInt(rsaPublicKey.getModulus().toByteArray().length);
+    dos.write(rsaPublicKey.getModulus().toByteArray());
+    var publicKeyEncoded = new String(Base64.encodeBase64(byteOs.toByteArray()));
+    return DEFAULT_PUBLIC_KEY_BEGIN + " " + publicKeyEncoded + " " + user;
+  }
+
+  private static KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException {
+    var generator = KeyPairGenerator.getInstance("RSA");
+    generator.initialize(2048);
+    return generator.generateKeyPair();
+  }
+
   private void verifySshKeyPair(SshKeyPair expectedSshKey, SshKeyPair actualSshKey) {
-    assertEquals(expectedSshKey.withId(actualSshKey.getId().orElse(-1)), actualSshKey);
+    assertEquals(expectedSshKey.withId(actualSshKey.getId()), actualSshKey);
   }
 }

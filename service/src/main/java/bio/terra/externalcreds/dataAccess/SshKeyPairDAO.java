@@ -17,6 +17,17 @@ import org.springframework.stereotype.Repository;
 public class SshKeyPairDAO {
   private final NamedParameterJdbcTemplate jdbcTemplate;
 
+  private static final RowMapper<SshKeyPair> SSH_KEY_PAIR_ROW_MAPPER =
+      (rs, rowNum) ->
+          new SshKeyPair.Builder()
+              .id(rs.getInt("id"))
+              .userId(rs.getString("user_id"))
+              .type(SshKeyPairType.valueOf(rs.getString("type")))
+              .externalUserEmail(rs.getString("external_user_email"))
+              .privateKey(rs.getString("private_key"))
+              .publicKey(rs.getString("public_key"))
+              .build();
+
   public SshKeyPairDAO(NamedParameterJdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
   }
@@ -24,10 +35,12 @@ public class SshKeyPairDAO {
   public Optional<SshKeyPair> getSshKeyPair(String userId, SshKeyPairType type) {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
-    var query = "SELECT * FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
+    var resourceSelectSql =
+        "SELECT id, user_id, type, external_user_email, private_key, public_key"
+            + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
-            jdbcTemplate.query(query, namedParameters, new SshKeyPairRowMapper())));
+            jdbcTemplate.query(resourceSelectSql, namedParameters, SSH_KEY_PAIR_ROW_MAPPER)));
   }
 
   public boolean deleteSshKeyPair(String userId, SshKeyPairType type) {
@@ -62,20 +75,5 @@ public class SshKeyPairDAO {
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
     return sshKeyPair.withId(Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
-  }
-
-  private static class SshKeyPairRowMapper implements RowMapper<SshKeyPair> {
-
-    @Override
-    public SshKeyPair mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new SshKeyPair.Builder()
-          .id(rs.getInt("id"))
-          .userId(rs.getString("user_id"))
-          .type(SshKeyPairType.valueOf(rs.getString("type")))
-          .externalUserEmail(rs.getString("external_user_email"))
-          .privateKey(rs.getString("private_key"))
-          .publicKey(rs.getString("public_key"))
-          .build();
-    }
   }
 }
