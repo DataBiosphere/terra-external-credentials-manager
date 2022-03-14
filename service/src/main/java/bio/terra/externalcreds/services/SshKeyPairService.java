@@ -39,6 +39,7 @@ public class SshKeyPairService {
             .build());
   }
 
+  @WriteTransaction
   public boolean deleteSshKeyPair(String userId, SshKeyPairType type) {
     return sshKeyPairDAO.deleteSshKeyPair(userId, type);
   }

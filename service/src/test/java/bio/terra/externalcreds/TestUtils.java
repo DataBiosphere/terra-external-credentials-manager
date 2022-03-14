@@ -1,18 +1,33 @@
 package bio.terra.externalcreds;
 
 import bio.terra.externalcreds.config.ProviderProperties;
+import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.SshKeyPair;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.UUID;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class TestUtils {
+  private static final String DEFAULT_PRIVATE_KEY_BEGIN = "-----BEGIN SSH PRIVATE KEY-----";
+  private static final String DEFAULT_PRIVATE_KEY_END = "-----END SSH PRIVATE KEY-----";
+  private static final String DEFAULT_PUBLIC_KEY_BEGIN = "ssh-rsa";
 
   public static Timestamp getRandomTimestamp() {
     return new Timestamp(System.currentTimeMillis());
@@ -67,5 +82,56 @@ public class TestUtils {
         .providerName(UUID.randomUUID().toString())
         .visaJwt(UUID.randomUUID().toString())
         .build();
+  }
+
+  public static SshKeyPair createRandomGithubSshKey() throws NoSuchAlgorithmException, IOException {
+    var randomExternalUserEmail =
+        RandomStringUtils.random(5, /*letters=*/ true, /*numbers=*/ true) + "@gmail.com";
+    var keyPair = generateRSAKeyPair();
+    return new SshKeyPair.Builder()
+        .type(SshKeyPairType.GITHUB)
+        .privateKey(encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate()))
+        .publicKey(encodeRSAPublicKey((RSAPublicKey) keyPair.getPublic(), randomExternalUserEmail))
+        .userId(UUID.randomUUID().toString())
+        .externalUserEmail(
+            RandomStringUtils.random(5, /*letters=*/ true, /*numbers=*/ true) + "@gmail.com")
+        .build();
+  }
+
+  /** Gets a pair of private - public RSA key. */
+  public static Pair<String, String> getRSAEncodedKeyPair(String externalUser)
+      throws NoSuchAlgorithmException, IOException {
+    var keyPair = generateRSAKeyPair();
+    return Pair.of(
+        encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate()),
+        encodeRSAPublicKey((RSAPublicKey) keyPair.getPublic(), externalUser));
+  }
+
+  private static String encodeRSAPrivateKey(RSAPrivateKey privateKey) {
+    return DEFAULT_PRIVATE_KEY_BEGIN
+        + "\n"
+        + new String(Base64.encodeBase64(privateKey.getEncoded()))
+        + "\n"
+        + DEFAULT_PRIVATE_KEY_END;
+  }
+
+  private static String encodeRSAPublicKey(RSAPublicKey rsaPublicKey, String user)
+      throws IOException {
+    ByteArrayOutputStream byteOs = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(byteOs);
+    dos.writeInt("ssh-rsa".getBytes().length);
+    dos.write("ssh-rsa".getBytes());
+    dos.writeInt(rsaPublicKey.getPublicExponent().toByteArray().length);
+    dos.write(rsaPublicKey.getPublicExponent().toByteArray());
+    dos.writeInt(rsaPublicKey.getModulus().toByteArray().length);
+    dos.write(rsaPublicKey.getModulus().toByteArray());
+    var publicKeyEncoded = new String(Base64.encodeBase64(byteOs.toByteArray()));
+    return DEFAULT_PUBLIC_KEY_BEGIN + " " + publicKeyEncoded + " " + user;
+  }
+
+  private static KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException {
+    var generator = KeyPairGenerator.getInstance("RSA");
+    generator.initialize(2048);
+    return generator.generateKeyPair();
   }
 }

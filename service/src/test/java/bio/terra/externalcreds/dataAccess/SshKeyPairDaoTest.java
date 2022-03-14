@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
+import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -7,17 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPair;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.UUID;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +20,6 @@ class SshKeyPairDaoTest extends BaseTest {
   @Autowired SshKeyPairDAO sshKeyPairDAO;
 
   private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
-  private static final String DEFAULT_PRIVATE_KEY_BEGIN = "-----BEGIN SSH PRIVATE KEY-----";
-  private static final String DEFAULT_PRIVATE_KEY_END = "-----END SSH PRIVATE KEY-----";
-  private static final String DEFAULT_PUBLIC_KEY_BEGIN = "ssh-rsa";
 
   @Nested
   class UpsertKeyPair {
@@ -123,49 +113,6 @@ class SshKeyPairDaoTest extends BaseTest {
 
       assertTrue(sshKeyPairDAO.deleteSshKeyPair(sshKey.getUserId(), sshKey.getType()));
     }
-  }
-
-  private static SshKeyPair createRandomGithubSshKey()
-      throws NoSuchAlgorithmException, IOException {
-    var randomExternalUserEmail =
-        RandomStringUtils.random(5, /*letters=*/ true, /*numbers=*/ true) + "@gmail.com";
-    var keyPair = generateRSAKeyPair();
-    return new SshKeyPair.Builder()
-        .type(DEFAULT_KEY_TYPE)
-        .privateKey(encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate()))
-        .publicKey(encodeRSAPublicKey((RSAPublicKey) keyPair.getPublic(), randomExternalUserEmail))
-        .userId(UUID.randomUUID().toString())
-        .externalUserEmail(
-            RandomStringUtils.random(5, /*letters=*/ true, /*numbers=*/ true) + "@gmail.com")
-        .build();
-  }
-
-  private static String encodeRSAPrivateKey(RSAPrivateKey privateKey) {
-    return DEFAULT_PRIVATE_KEY_BEGIN
-        + "\n"
-        + new String(Base64.encodeBase64(privateKey.getEncoded()))
-        + "\n"
-        + DEFAULT_PRIVATE_KEY_END;
-  }
-
-  private static String encodeRSAPublicKey(RSAPublicKey rsaPublicKey, String user)
-      throws IOException {
-    ByteArrayOutputStream byteOs = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream(byteOs);
-    dos.writeInt("ssh-rsa".getBytes().length);
-    dos.write("ssh-rsa".getBytes());
-    dos.writeInt(rsaPublicKey.getPublicExponent().toByteArray().length);
-    dos.write(rsaPublicKey.getPublicExponent().toByteArray());
-    dos.writeInt(rsaPublicKey.getModulus().toByteArray().length);
-    dos.write(rsaPublicKey.getModulus().toByteArray());
-    var publicKeyEncoded = new String(Base64.encodeBase64(byteOs.toByteArray()));
-    return DEFAULT_PUBLIC_KEY_BEGIN + " " + publicKeyEncoded + " " + user;
-  }
-
-  private static KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException {
-    var generator = KeyPairGenerator.getInstance("RSA");
-    generator.initialize(2048);
-    return generator.generateKeyPair();
   }
 
   private void verifySshKeyPair(SshKeyPair expectedSshKey, SshKeyPair actualSshKey) {
