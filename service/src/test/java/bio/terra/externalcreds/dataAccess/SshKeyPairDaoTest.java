@@ -27,8 +27,8 @@ class SshKeyPairDaoTest extends BaseTest {
   @Autowired SshKeyPairDAO sshKeyPairDAO;
 
   private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
-  private static final String DEFAULT_PRIVATE_KEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----";
-  private static final String DEFAULT_PRIVATE_KEY_END = "-----END RSA PRIVATE KEY-----";
+  private static final String DEFAULT_PRIVATE_KEY_BEGIN = "-----BEGIN SSH PRIVATE KEY-----";
+  private static final String DEFAULT_PRIVATE_KEY_END = "-----END SSH PRIVATE KEY-----";
   private static final String DEFAULT_PUBLIC_KEY_BEGIN = "ssh-rsa";
 
   @Nested
