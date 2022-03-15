@@ -3,6 +3,7 @@ package bio.terra.externalcreds.config;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -28,7 +29,16 @@ public interface ExternalCredsConfigInterface {
   Duration getVisaAndPassportRefreshDuration();
 
   /** List of URIs that are allowable in jku headers of JWTs */
-  Collection<URI> getAllowedJwksUris();
+  @Value.Default
+  default Collection<URI> getAllowedJwksUris() {
+    return List.of();
+  }
+
+  /** List of URIs that are allowable in iss claims of JWTs */
+  @Value.Default
+  default Collection<URI> getAllowedJwtIssuers() {
+    return List.of();
+  }
 
   boolean getAuthorizationChangeEventsEnabled();
 

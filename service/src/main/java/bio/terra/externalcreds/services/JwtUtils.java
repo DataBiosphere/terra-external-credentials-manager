@@ -6,6 +6,7 @@ import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.GA4GHVisa.Builder;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.models.PassportWithVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.google.common.annotations.VisibleForTesting;
 import com.nimbusds.jose.JWSHeader;
@@ -35,6 +36,7 @@ public class JwtUtils {
   public static final String GA4GH_VISA_V1_CLAIM = "ga4gh_visa_v1";
   public static final String VISA_TYPE_CLAIM = "type";
   public static final String JKU_HEADER = "jku";
+  public static final String JWT_ID_CLAIM = "jti";
 
   private final ExternalCredsConfig externalCredsConfig;
 
@@ -46,26 +48,35 @@ public class JwtUtils {
       LinkedAccount linkedAccount, OAuth2User userInfo) {
     String passportJwtString = userInfo.getAttribute(PASSPORT_JWT_V11_CLAIM);
     if (passportJwtString != null) {
-      var passportJwt = decodeJwt(passportJwtString);
-
-      List<String> visaJwtStrings =
-          Objects.requireNonNullElse(
-              passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM), Collections.emptyList());
-
-      var visas =
-          visaJwtStrings.stream()
-              .map(this::decodeJwt)
-              .map(JwtUtils::buildVisa)
-              .collect(Collectors.toList());
+      var passportWithVisas = decodeAndValidatePassportJwtString(passportJwtString);
 
       return new LinkedAccountWithPassportAndVisas.Builder()
           .linkedAccount(linkedAccount)
-          .passport(buildPassport(passportJwt))
-          .visas(visas)
+          .passport(passportWithVisas.getPassport())
+          .visas(passportWithVisas.getVisas())
           .build();
     } else {
       return new LinkedAccountWithPassportAndVisas.Builder().linkedAccount(linkedAccount).build();
     }
+  }
+
+  public PassportWithVisas decodeAndValidatePassportJwtString(String passportJwtString) {
+    var passportJwt = decodeAndValidateJwt(passportJwtString);
+
+    List<String> visaJwtStrings =
+        Objects.requireNonNullElse(
+            passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM), Collections.emptyList());
+
+    var visas =
+        visaJwtStrings.stream()
+            .map(this::decodeAndValidateJwt)
+            .map(JwtUtils::buildVisa)
+            .collect(Collectors.toList());
+
+    return new PassportWithVisas.Builder()
+        .passport(buildPassport(passportJwt))
+        .visas(visas)
+        .build();
   }
 
   private static GA4GHPassport buildPassport(Jwt passportJwt) {
@@ -74,6 +85,7 @@ public class JwtUtils {
     return new GA4GHPassport.Builder()
         .jwt(passportJwt.getTokenValue())
         .expires(passportExpiresAt)
+        .jwtId(getJwtClaim(passportJwt, JWT_ID_CLAIM))
         .build();
   }
 
@@ -116,7 +128,7 @@ public class JwtUtils {
   }
 
   @VisibleForTesting
-  Jwt decodeJwt(String jwtString) {
+  Jwt decodeAndValidateJwt(String jwtString) {
     try {
       // first we need to get the issuer from the jwt, the issuer is needed to validate
       var jwt = JWTParser.parse(jwtString);
@@ -124,6 +136,12 @@ public class JwtUtils {
       if (issuer == null) {
         throw new InvalidJwtException("jwt missing issuer (iss) claim");
       }
+
+      if (!externalCredsConfig.getAllowedJwtIssuers().contains(URI.create(issuer))) {
+        throw new InvalidJwtException(
+            String.format("URI [%s] specified by iss claim not on allowed list", issuer));
+      }
+
       var jkuOption = Optional.ofNullable(((JWSHeader) jwt.getHeader()).getJWKURL());
       if (jkuOption.isPresent()) {
         // presence of the jku header means the url it specifies contains the key set that must be

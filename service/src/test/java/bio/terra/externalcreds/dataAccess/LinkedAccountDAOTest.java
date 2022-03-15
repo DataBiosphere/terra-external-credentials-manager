@@ -12,7 +12,9 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -113,6 +115,7 @@ class LinkedAccountDAOTest extends BaseTest {
               .linkedAccountId(savedLinkedAccount.getId())
               .expires(new Timestamp(100))
               .jwt("jwt")
+              .jwtId(UUID.randomUUID().toString())
               .build();
       passportDAO.insertPassport(passport);
       linkedAccountDAO.deleteLinkedAccountIfExists(
@@ -190,6 +193,54 @@ class LinkedAccountDAOTest extends BaseTest {
       assertEquals(
           List.of(savedLinkedAccount),
           linkedAccountDAO.getExpiringLinkedAccounts(testExpirationCutoff));
+    }
+  }
+
+  @Nested
+  class GetLinkedAccountByPassportJwtId {
+    @Test
+    void testLinkedAccountExists() {
+      var savedAccount =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      var savedPassport =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedAccount.getId()));
+
+      var loadedAccount =
+          linkedAccountDAO.getLinkedAccountByPassportJwtIds(Set.of(savedPassport.getJwtId()));
+      assertEquals(Map.of(savedPassport.getJwtId(), savedAccount), loadedAccount);
+    }
+
+    @Test
+    void testMultipleLinkedAccountExists() {
+      var savedAccount1 =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      var savedPassport1 =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedAccount1.getId()));
+
+      var savedAccount2 =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+      var savedPassport2 =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedAccount2.getId()));
+
+      var loadedAccount =
+          linkedAccountDAO.getLinkedAccountByPassportJwtIds(
+              Set.of(savedPassport1.getJwtId(), savedPassport2.getJwtId()));
+      assertEquals(
+          Map.of(
+              savedPassport1.getJwtId(), savedAccount1, savedPassport2.getJwtId(), savedAccount2),
+          loadedAccount);
+    }
+
+    @Test
+    void testLinkedAccountDoesNotExist() {
+      linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+
+      var loadedAccount =
+          linkedAccountDAO.getLinkedAccountByPassportJwtIds(Set.of(UUID.randomUUID().toString()));
+      assertTrue(loadedAccount.isEmpty());
     }
   }
 }

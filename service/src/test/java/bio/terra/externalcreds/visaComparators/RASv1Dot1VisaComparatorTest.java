@@ -19,10 +19,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-class RASv1_1Test extends BaseTest {
+class RASv1Dot1VisaComparatorTest extends BaseTest {
   private static final JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
 
-  @Autowired private RASv1_1 comparator;
+  @Autowired private RASv1Dot1VisaComparator comparator;
 
   @BeforeAll
   static void setUpJwtVerification() throws JOSEException {
@@ -114,7 +114,7 @@ class RASv1_1Test extends BaseTest {
   private ImmutableGA4GHVisa createTestRasVisa(Map<String, String>... dbgapPermissions) {
     return new GA4GHVisa.Builder()
         .jwt(createVisaJwtString(dbgapPermissions))
-        .visaType(RASv1_1.RAS_VISAS_V_1_1)
+        .visaType(RASv1Dot1VisaComparator.RAS_VISAS_V_1_1)
         .tokenType(TokenTypeEnum.access_token)
         .expires(new Timestamp(0))
         .issuer("https://stsstg.nih.gov")
@@ -129,8 +129,8 @@ class RASv1_1Test extends BaseTest {
             .issuer("https://stsstg.nih.gov")
             .claim(
                 JwtUtils.GA4GH_VISA_V1_CLAIM,
-                Map.of(JwtUtils.VISA_TYPE_CLAIM, RASv1_1.RAS_VISAS_V_1_1))
-            .claim(RASv1_1.DBGAP_CLAIM, dbgapPermissions)
+                Map.of(JwtUtils.VISA_TYPE_CLAIM, RASv1Dot1VisaComparator.RAS_VISAS_V_1_1))
+            .claim(RASv1Dot1VisaComparator.DBGAP_CLAIM, dbgapPermissions)
             .build();
 
     return jwtSigningTestUtils.createSignedJwt(visaClaimSet);

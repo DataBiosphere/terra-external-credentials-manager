@@ -19,6 +19,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.UUID;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -48,6 +49,7 @@ public class TestUtils {
     return new GA4GHPassport.Builder()
         .jwt(UUID.randomUUID().toString())
         .expires(getRandomTimestamp())
+        .jwtId(UUID.randomUUID().toString())
         .build();
   }
 
@@ -83,6 +85,7 @@ public class TestUtils {
         .visaJwt(UUID.randomUUID().toString())
         .build();
   }
+
 
   public static SshKeyPair createRandomGithubSshKey() throws NoSuchAlgorithmException, IOException {
     var randomExternalUserEmail =
@@ -133,5 +136,15 @@ public class TestUtils {
     var generator = KeyPairGenerator.getInstance("RSA");
     generator.initialize(2048);
     return generator.generateKeyPair();
+
+    
+  public static Throwable getRootCause(Throwable throwable) {
+    // https://www.baeldung.com/java-exception-root-cause
+    Objects.requireNonNull(throwable);
+    Throwable rootCause = throwable;
+    while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+      rootCause = rootCause.getCause();
+    }
+    return rootCause;
   }
 }

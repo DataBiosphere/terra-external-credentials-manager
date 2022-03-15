@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.visaComparators;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,13 +15,13 @@ import org.immutables.value.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RASv1_1 implements VisaComparator {
+public class RASv1Dot1VisaComparator implements VisaComparator {
   public static final String RAS_VISAS_V_1_1 = "https://ras.nih.gov/visas/v1.1";
   public static final String DBGAP_CLAIM = "ras_dbgap_permissions";
 
   private final ObjectMapper objectMapper;
 
-  public RASv1_1(ObjectMapper objectMapper) {
+  public RASv1Dot1VisaComparator(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
   }
 
@@ -44,16 +45,37 @@ public class RASv1_1 implements VisaComparator {
     }
   }
 
+  @Override
+  public boolean matchesCriterion(GA4GHVisa visa, VisaCriterionInternal criterion) {
+    try {
+      assert criterion instanceof RASv1Dot1VisaCriterionInternal;
+      var rasCriterion = (RASv1Dot1VisaCriterionInternal) criterion;
+
+      var permissions = getVisaPermissions(visa);
+      return permissions.stream()
+          .anyMatch(
+              p ->
+                  p.getPhsId().equals(rasCriterion.getPhsId())
+                      && p.getConsentGroup().equals(rasCriterion.getConsentCode()));
+    } catch (ParseException | JsonProcessingException e) {
+      throw new BadRequestException("Error parsing visa.", e);
+    }
+  }
+
   private Set<DbGapPermission> getVisaPermissions(GA4GHVisa visa)
       throws ParseException, JsonProcessingException {
-    var visaClaim =
-        JWTParser.parse(visa.getJwt()).getJWTClaimsSet().getClaim(DBGAP_CLAIM).toString();
-    return objectMapper.readValue(visaClaim, new TypeReference<Set<DbGapPermission>>() {});
+    var visaClaim = JWTParser.parse(visa.getJwt()).getJWTClaimsSet().getClaim(DBGAP_CLAIM);
+    return objectMapper.convertValue(visaClaim, new TypeReference<>() {});
   }
 
   @Override
   public boolean visaTypeSupported(GA4GHVisa visa) {
     return visa.getVisaType().equalsIgnoreCase(RAS_VISAS_V_1_1);
+  }
+
+  @Override
+  public boolean criterionTypeSupported(VisaCriterionInternal criterion) {
+    return criterion instanceof RASv1Dot1VisaCriterionInternal;
   }
 
   /**
@@ -62,7 +84,7 @@ public class RASv1_1 implements VisaComparator {
    */
   @Value.Immutable
   @JsonDeserialize(as = ImmutableDbGapPermission.class)
-  interface DbGapPermission extends WithDbGapPermission {
+  public interface DbGapPermission extends WithDbGapPermission {
     @JsonProperty("phs_id")
     String getPhsId();
 
