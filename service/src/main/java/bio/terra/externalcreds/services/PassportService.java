@@ -79,7 +79,7 @@ public class PassportService {
       Collection<String> passportJwtStrings, Collection<VisaCriterion> criteria) {
 
     var passports = decodeAndValidatePassports(passportJwtStrings);
-    var linkedAccount = getSingleLinkedAccountForAllPassports(passports);
+    var linkedAccountsByJwtId = getLinkedAccountsForAllPassports(passports);
 
     for (var passportWithVisas : passports) {
       for (var criterion : criteria) {
@@ -88,6 +88,8 @@ public class PassportService {
           if (visaComparator.visaTypeSupported(visa)
               && visa.getIssuer().equals(criterion.getIssuer())
               && visaComparator.matchesCriterion(visa, criterion)) {
+            var linkedAccount =
+                linkedAccountsByJwtId.get(passportWithVisas.getPassport().getJwtId());
             return new ValidatePassportResult.Builder()
                 .valid(true)
                 .matchedCriterion(criterion)
@@ -106,14 +108,10 @@ public class PassportService {
     }
 
     // if we got this far there was no matching visa
+    var linkedAccount = linkedAccountsByJwtId.values().iterator().next();
     return new ValidatePassportResult.Builder()
         .valid(false)
-        .auditInfo(
-            Map.of(
-                "external_user_id",
-                linkedAccount.getExternalUserId(),
-                "internal_user_id",
-                linkedAccount.getUserId()))
+        .auditInfo(Map.of("internal_user_id", linkedAccount.getUserId()))
         .build();
   }
 
@@ -128,25 +126,26 @@ public class PassportService {
     }
   }
 
-  private LinkedAccount getSingleLinkedAccountForAllPassports(
+  private Map<String, LinkedAccount> getLinkedAccountsForAllPassports(
       Collection<PassportWithVisas> passportWithVisas) {
     var linkedAccounts =
-        passportWithVisas.stream()
-            .flatMap(
-                p ->
-                    linkedAccountDAO
-                        .getLinkedAccountByPassportJwtId(p.getPassport().getJwtId())
-                        .stream())
-            .collect(Collectors.toSet());
+        linkedAccountDAO.getLinkedAccountByPassportJwtIds(
+            passportWithVisas.stream()
+                .map(p -> p.getPassport().getJwtId())
+                .collect(Collectors.toSet()));
 
     if (linkedAccounts.isEmpty()) {
       throw new BadRequestException("unknown user");
     }
-    if (linkedAccounts.size() > 1) {
+    if (linkedAccounts.values().stream()
+            .map(LinkedAccount::getUserId)
+            .collect(Collectors.toSet())
+            .size()
+        > 1) {
       throw new BadRequestException(
-          "a single request validate passport can contain only passports from the same linked account");
+          "a single request to validate passports can contain only passports from the same user");
     }
-    return linkedAccounts.iterator().next();
+    return linkedAccounts;
   }
 
   private VisaComparator getVisaComparator(VisaCriterion criterion) {

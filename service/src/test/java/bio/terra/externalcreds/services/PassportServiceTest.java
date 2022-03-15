@@ -20,12 +20,13 @@ import bio.terra.externalcreds.models.ValidatePassportResult;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1Criterion;
 import bio.terra.externalcreds.visaComparators.RASv1_1;
 import bio.terra.externalcreds.visaComparators.RASv1_1.DbGapPermission;
-import bio.terra.externalcreds.visaComparators.RASv1_1.DbGapPermission.Builder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -196,16 +197,30 @@ class PassportServiceTest extends BaseTest {
 
     private void runValidPassportTest(ValidPassportTestParams params) throws URISyntaxException {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
-      mockProviderConfig(linkedAccount);
+      var otherLinkedAccount =
+          TestUtils.createRandomLinkedAccount().withUserId(linkedAccount.getUserId());
+      mockProviderConfig(linkedAccount, otherLinkedAccount);
 
       var matchingPermission =
-          new Builder().phsId(params.visaPhsId).consentGroup("c33").role("bar").build();
+          new DbGapPermission.Builder()
+              .phsId(params.visaPhsId)
+              .consentGroup("c33")
+              .role("bar")
+              .build();
+      var notMatchingPermission = matchingPermission.withPhsId("something_else");
 
       var visaWithMatchingPermission = createDbGapVisa(Set.of(matchingPermission), params.visaType);
+      var visaWithoutMatchingPermission =
+          createDbGapVisa(Set.of(notMatchingPermission), params.visaType);
 
       var visas = List.of(visaWithMatchingPermission);
       var passport =
           jwtSigningTestUtils.createTestPassport(visas, linkedAccount.getExternalUserId());
+
+      var otherVisas = List.of(visaWithoutMatchingPermission);
+      var otherPassport =
+          jwtSigningTestUtils.createTestPassport(
+              otherVisas, otherLinkedAccount.getExternalUserId());
 
       if (params.persistLinkedAccount) {
         linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
@@ -213,6 +228,12 @@ class PassportServiceTest extends BaseTest {
                 .linkedAccount(linkedAccount)
                 .passport(passport)
                 .visas(visas)
+                .build());
+        linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+            new LinkedAccountWithPassportAndVisas.Builder()
+                .linkedAccount(otherLinkedAccount)
+                .passport(otherPassport)
+                .visas(otherVisas)
                 .build());
       }
 
@@ -223,7 +244,9 @@ class PassportServiceTest extends BaseTest {
               .issuer(params.issuer)
               .build();
 
-      var result = passportService.validatePassport(List.of(passport.getJwt()), List.of(criterion));
+      var result =
+          passportService.validatePassport(
+              List.of(otherPassport.getJwt(), passport.getJwt()), List.of(criterion));
 
       if (params.valid) {
         assertEquals(
@@ -255,29 +278,39 @@ class PassportServiceTest extends BaseTest {
     }
 
     private Map<String, String> expectedAuditInfo(LinkedAccount linkedAccount) {
-      return Map.of(
-          "external_user_id",
-          linkedAccount.getExternalUserId(),
-          "internal_user_id",
-          linkedAccount.getUserId());
+      return Map.of("internal_user_id", linkedAccount.getUserId());
     }
 
-    private void mockProviderConfig(LinkedAccount linkedAccount) throws URISyntaxException {
-      var providerInfo = TestUtils.createRandomProvider();
-      var providerClient =
-          ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
-              .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-              .build();
+    private void mockProviderConfig(LinkedAccount... linkedAccounts) throws URISyntaxException {
+      var providerInfos =
+          Arrays.stream(linkedAccounts)
+              .map(
+                  linkedAccount ->
+                      Map.of(linkedAccount.getProviderName(), TestUtils.createRandomProvider()))
+              .reduce(
+                  new HashMap(),
+                  (a, b) -> {
+                    a.putAll(b);
+                    return a;
+                  });
 
-      when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
+      when(externalCredsConfigMock.getProviders()).thenReturn(providerInfos);
       when(externalCredsConfigMock.getAllowedJwtIssuers())
           .thenReturn(List.of(new URI(jwtSigningTestUtils.getIssuer())));
       when(externalCredsConfigMock.getAllowedJwksUris())
           .thenReturn(
               List.of(new URI(jwtSigningTestUtils.getIssuer() + JwtSigningTestUtils.JKU_PATH)));
-      when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
-          .thenReturn(Optional.of(providerClient));
+
+      Arrays.stream(linkedAccounts)
+          .forEach(
+              linkedAccount -> {
+                var providerClient =
+                    ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
+                        .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                        .build();
+                when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+                    .thenReturn(Optional.of(providerClient));
+              });
     }
 
     private GA4GHVisa createDbGapVisa(Set<DbGapPermission> permissions) {
