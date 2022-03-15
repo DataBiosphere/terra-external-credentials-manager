@@ -14,7 +14,7 @@ import bio.terra.externalcreds.models.PassportWithVisas;
 import bio.terra.externalcreds.models.ValidatePassportResult;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
-import bio.terra.externalcreds.visaComparators.VisaCriterion;
+import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collection;
@@ -76,7 +76,7 @@ public class PassportService {
    */
   @ReadTransaction
   public ValidatePassportResult validatePassport(
-      Collection<String> passportJwtStrings, Collection<VisaCriterion> criteria) {
+      Collection<String> passportJwtStrings, Collection<VisaCriterionInternal> criteria) {
 
     var passports = decodeAndValidatePassports(passportJwtStrings);
     var linkedAccountsByJwtId = getLinkedAccountsForAllPassports(passports);
@@ -148,7 +148,7 @@ public class PassportService {
     return linkedAccounts;
   }
 
-  private VisaComparator getVisaComparator(VisaCriterion criterion) {
+  private VisaComparator getVisaComparator(VisaCriterionInternal criterion) {
     return visaComparators.stream()
         .filter(c -> c.criterionTypeSupported(criterion))
         .findFirst()

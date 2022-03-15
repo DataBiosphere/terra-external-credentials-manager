@@ -17,9 +17,9 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.ValidatePassportResult;
-import bio.terra.externalcreds.visaComparators.RASv1Dot1Criterion;
-import bio.terra.externalcreds.visaComparators.RASv1_1;
-import bio.terra.externalcreds.visaComparators.RASv1_1.DbGapPermission;
+import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator;
+import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator.DbGapPermission;
+import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
@@ -146,7 +146,8 @@ class PassportServiceTest extends BaseTest {
 
     @Test
     void testInvalidPassportThrows() throws URISyntaxException {
-      var criterion = new RASv1Dot1Criterion.Builder().phsId("").consentCode("").issuer("").build();
+      var criterion =
+          new RASv1Dot1VisaCriterionInternal.Builder().phsId("").consentCode("").issuer("").build();
 
       assertThrows(
           BadRequestException.class,
@@ -175,7 +176,8 @@ class PassportServiceTest extends BaseTest {
               .passport(passport2)
               .build());
 
-      var criterion = new RASv1Dot1Criterion.Builder().phsId("").consentCode("").issuer("").build();
+      var criterion =
+          new RASv1Dot1VisaCriterionInternal.Builder().phsId("").consentCode("").issuer("").build();
 
       assertThrows(
           BadRequestException.class,
@@ -189,7 +191,7 @@ class PassportServiceTest extends BaseTest {
     class ValidPassportTestParams {
       boolean valid = true;
       String issuer = jwtSigningTestUtils.getIssuer();
-      String visaType = RASv1_1.RAS_VISAS_V_1_1;
+      String visaType = RASv1Dot1VisaComparator.RAS_VISAS_V_1_1;
       String visaPhsId = "phs000123";
       String criterionPhsId = visaPhsId;
       boolean persistLinkedAccount = true;
@@ -238,7 +240,7 @@ class PassportServiceTest extends BaseTest {
       }
 
       var criterion =
-          new RASv1Dot1Criterion.Builder()
+          new RASv1Dot1VisaCriterionInternal.Builder()
               .phsId(params.criterionPhsId)
               .consentCode(matchingPermission.getConsentGroup())
               .issuer(params.issuer)
@@ -314,7 +316,7 @@ class PassportServiceTest extends BaseTest {
     }
 
     private GA4GHVisa createDbGapVisa(Set<DbGapPermission> permissions) {
-      return createDbGapVisa(permissions, RASv1_1.RAS_VISAS_V_1_1);
+      return createDbGapVisa(permissions, RASv1Dot1VisaComparator.RAS_VISAS_V_1_1);
     }
 
     private GA4GHVisa createDbGapVisa(Set<DbGapPermission> permissions, String visaType) {
@@ -333,7 +335,9 @@ class PassportServiceTest extends BaseTest {
                           p.getRole()))
               .collect(Collectors.toSet());
       return jwtSigningTestUtils.createTestVisaWithJwtWithClaims(
-          TokenTypeEnum.access_token, Map.of(RASv1_1.DBGAP_CLAIM, permissionsAsMaps), visaType);
+          TokenTypeEnum.access_token,
+          Map.of(RASv1Dot1VisaComparator.DBGAP_CLAIM, permissionsAsMaps),
+          visaType);
     }
   }
 }

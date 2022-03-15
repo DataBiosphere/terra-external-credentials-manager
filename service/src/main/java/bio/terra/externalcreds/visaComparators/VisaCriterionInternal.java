@@ -1,5 +1,5 @@
 package bio.terra.externalcreds.visaComparators;
 
-public interface VisaCriterion {
+public interface VisaCriterionInternal {
   String getIssuer();
 }

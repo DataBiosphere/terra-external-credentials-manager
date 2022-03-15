@@ -15,13 +15,13 @@ import org.immutables.value.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RASv1_1 implements VisaComparator {
+public class RASv1Dot1VisaComparator implements VisaComparator {
   public static final String RAS_VISAS_V_1_1 = "https://ras.nih.gov/visas/v1.1";
   public static final String DBGAP_CLAIM = "ras_dbgap_permissions";
 
   private final ObjectMapper objectMapper;
 
-  public RASv1_1(ObjectMapper objectMapper) {
+  public RASv1Dot1VisaComparator(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
   }
 
@@ -46,10 +46,10 @@ public class RASv1_1 implements VisaComparator {
   }
 
   @Override
-  public boolean matchesCriterion(GA4GHVisa visa, VisaCriterion criterion) {
+  public boolean matchesCriterion(GA4GHVisa visa, VisaCriterionInternal criterion) {
     try {
-      assert criterion instanceof RASv1Dot1Criterion;
-      var rasCriterion = (RASv1Dot1Criterion) criterion;
+      assert criterion instanceof RASv1Dot1VisaCriterionInternal;
+      var rasCriterion = (RASv1Dot1VisaCriterionInternal) criterion;
 
       var permissions = getVisaPermissions(visa);
       return permissions.stream()
@@ -74,8 +74,8 @@ public class RASv1_1 implements VisaComparator {
   }
 
   @Override
-  public boolean criterionTypeSupported(VisaCriterion criterion) {
-    return criterion instanceof RASv1Dot1Criterion;
+  public boolean criterionTypeSupported(VisaCriterionInternal criterion) {
+    return criterion instanceof RASv1Dot1VisaCriterionInternal;
   }
 
   /**

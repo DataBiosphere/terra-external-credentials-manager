@@ -5,11 +5,11 @@ import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportResultMatchedCriterion;
-import bio.terra.externalcreds.generated.model.RASv11;
+import bio.terra.externalcreds.generated.model.RASv1Dot1VisaCriterion;
 import bio.terra.externalcreds.generated.model.ValidatePassportResult;
 import bio.terra.externalcreds.models.LinkedAccount;
-import bio.terra.externalcreds.visaComparators.RASv1Dot1Criterion;
-import bio.terra.externalcreds.visaComparators.VisaCriterion;
+import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
+import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -19,16 +19,16 @@ import java.util.stream.Collectors;
  */
 public class OpenApiConverters {
 
-  /** Converts openapi inputs to ECM models */
+  /** Converts openapi inputs to internal ECM models */
   public static class Input {
-    public static Collection<VisaCriterion> convert(
+    public static Collection<VisaCriterionInternal> convert(
         Collection<OneOfValidatePassportRequestCriteriaItems> criteria) {
       return criteria.stream()
           .map(
               c -> {
-                if (c instanceof RASv11) {
-                  var rasCrit = (RASv11) c;
-                  return new RASv1Dot1Criterion.Builder()
+                if (c instanceof RASv1Dot1VisaCriterionInternal) {
+                  var rasCrit = (RASv1Dot1VisaCriterionInternal) c;
+                  return new RASv1Dot1VisaCriterionInternal.Builder()
                       .issuer(rasCrit.getIssuer())
                       .phsId(rasCrit.getPhsId())
                       .consentCode(rasCrit.getConsentCode())
@@ -41,7 +41,7 @@ public class OpenApiConverters {
     }
   }
 
-  /** Converts ECM models to openapi outputs */
+  /** Converts internal ECM models to openapi outputs */
   public static class Output {
     public static ValidatePassportResult convert(
         bio.terra.externalcreds.models.ValidatePassportResult result) {
@@ -52,11 +52,14 @@ public class OpenApiConverters {
       return returnVal;
     }
 
-    public static OneOfValidatePassportResultMatchedCriterion convert(VisaCriterion visaCriterion) {
-      if (visaCriterion instanceof RASv1Dot1Criterion) {
-        var rasCrit = (RASv1Dot1Criterion) visaCriterion;
+    public static OneOfValidatePassportResultMatchedCriterion convert(
+        VisaCriterionInternal visaCriterion) {
+      if (visaCriterion instanceof RASv1Dot1VisaCriterionInternal) {
+        var rasCrit = (RASv1Dot1VisaCriterionInternal) visaCriterion;
         var converted =
-            new RASv11().consentCode(rasCrit.getConsentCode()).phsId(rasCrit.getPhsId());
+            new RASv1Dot1VisaCriterion()
+                .consentCode(rasCrit.getConsentCode())
+                .phsId(rasCrit.getPhsId());
         converted.issuer(rasCrit.getIssuer());
         return converted;
       } else {

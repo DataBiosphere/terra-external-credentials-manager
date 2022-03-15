@@ -314,7 +314,7 @@ components:
           type: array
           items:
             oneOf:
-              - $ref: '#/components/schemas/RASv11'
+              - $ref: '#/components/schemas/RASv1Dot1VisaCriterion'
 
     ValidatePassportResult:
       type: object
@@ -324,7 +324,7 @@ components:
           type: boolean
         matchedCriterion:
           oneOf:
-            - $ref: '#/components/schemas/RASv11'
+            - $ref: '#/components/schemas/RASv1Dot1VisaCriterion'
         auditInfo:
           type: object
           additionalProperties:
@@ -339,7 +339,7 @@ components:
         issuer:
           type: string
 
-    RASv11:
+    RASv1Dot1VisaCriterion:
       allOf:
         - $ref: '#/components/schemas/VisaCriterion'
         - description: 'Criteria for matching RAS v1.1 visas, visa `type` claim = "https://ras.nih.gov/visas/v1.1"'

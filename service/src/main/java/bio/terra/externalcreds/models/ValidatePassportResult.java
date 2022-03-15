@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.models;
 
-import bio.terra.externalcreds.visaComparators.VisaCriterion;
+import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
 import java.util.Map;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 public interface ValidatePassportResult extends WithValidatePassportResult {
   Boolean getValid();
 
-  Optional<VisaCriterion> getMatchedCriterion();
+  Optional<VisaCriterionInternal> getMatchedCriterion();
 
   Optional<Map<String, String>> getAuditInfo();
 

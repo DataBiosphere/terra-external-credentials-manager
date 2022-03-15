@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
-import bio.terra.externalcreds.generated.model.RASv11;
+import bio.terra.externalcreds.generated.model.RASv1Dot1VisaCriterion;
 import bio.terra.externalcreds.generated.model.ValidatePassportRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -26,7 +26,7 @@ public class PassportApiControllerTest extends BaseTest {
   @Test
   void testValidatePassport() throws Exception {
     var criteria = new ArrayList<OneOfValidatePassportRequestCriteriaItems>();
-    var criterion = new RASv11().consentCode("c1").phsId("phs001234");
+    var criterion = new RASv1Dot1VisaCriterion().consentCode("c1").phsId("phs001234");
     criterion.issuer("visa issuer");
     criteria.add(criterion);
     var req =
