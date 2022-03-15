@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_ssh_key_pair"
+      author: yuhuyoyo
+      changes:
+        - createTable:
+            tableName: ssh_key_pair
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: private_key
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: public_key
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: external_user_email
+                  type: text
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            constraintName: unique_key_per_type
+            tableName: ssh_key_pair
+            columnNames: user_id, type
+            remarks: |
+              There can only be one secret per type per user.

@@ -21,5 +21,8 @@ databaseChangeLog:
       file: changesets/20220222_oauth2_state.yaml
       relativeToChangelogFile: true
   - include:
+      file: changesets/20220303_add_ssh_key_pair.yaml
+      relativeToChangelogFile: true
+  - include:
       file: changesets/20220304_passport_jti.yaml
       relativeToChangelogFile: true
