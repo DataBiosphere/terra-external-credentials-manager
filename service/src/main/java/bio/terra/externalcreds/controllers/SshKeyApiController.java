@@ -9,9 +9,9 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.services.SamService;
 import bio.terra.externalcreds.services.SshKeyPairService;
 import java.util.Optional;
-import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
+import org.broadinstitute.dsde.workbench.client.sam.model.UserStatusInfo;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -32,8 +32,9 @@ public class SshKeyApiController implements SshKeyPairApi {
 
   private String getUserIdFromSam() {
     try {
-      var header = Optional.ofNullable(request.getHeader("authorization"))
-          .orElseThrow(() -> new UnauthorizedException("User is not authorized"));
+      var header =
+          Optional.ofNullable(request.getHeader("authorization"))
+              .orElseThrow(() -> new UnauthorizedException("User is not authorized"));
       var accessToken = BearerTokenParser.parse(header);
 
       return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
@@ -53,9 +54,10 @@ public class SshKeyApiController implements SshKeyPairApi {
   }
 
   @Override
-  public ResponseEntity<SshKeyPair> generateSshKeyPair(
-      SshKeyPairType type) {
-    throw new UnsupportedOperationException("Not implemented");
+  public ResponseEntity<SshKeyPair> generateSshKeyPair(SshKeyPairType type, String email) {
+    return new ResponseEntity(
+        sshKeyPairService.generateSshKeyPair(getUserIdFromSam(), email, type),
+        HttpStatus.OK);
   }
 
   @Override

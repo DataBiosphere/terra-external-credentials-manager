@@ -95,6 +95,17 @@ public class SshKeyPairServiceTest extends BaseTest {
     verifySshKeyPair(newSshKeyPair, storedSshKey);
   }
 
+  @Test
+  void generateSshKey() {
+    var userId = UUID.randomUUID().toString();
+    var externalUser = "foo@gmail.com";
+    var sshKeyPair =
+        sshKeyPairService.generateSshKeyPair(userId, externalUser, SshKeyPairType.GITHUB);
+
+    var loadedSshKeyPair = sshKeyPairService.getSshKeyPair(userId, SshKeyPairType.GITHUB);
+    verifySshKeyPair(sshKeyPair, loadedSshKeyPair.get());
+  }
+
   private void verifySshKeyPair(SshKeyPair expectedSshKey, SshKeyPair actualSshKey) {
     assertEquals(expectedSshKey.withId(actualSshKey.getId()), actualSshKey);
   }

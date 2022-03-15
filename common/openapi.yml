@@ -190,6 +190,14 @@ paths:
       summary: generate a pair of ssh keys
       tags: [ ssh key pair ]
       operationId: generateSshKeyPair
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              description: external user email. If not specified, will use the terra user email.
+              example: foo@bar.com
       responses:
         '200':
           $ref: '#/components/responses/SshKeyPairResponse'
@@ -309,7 +317,11 @@ components:
         externalUserEmail:
           description: account email.
           type: string
-
+    ExternalUserEmail:
+      type: object
+      properties:
+        email:
+          type: string
     LinkInfo:
       type: object
       required: [ externalUserId, expirationTimestamp ]

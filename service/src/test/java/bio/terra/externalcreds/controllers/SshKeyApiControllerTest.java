@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +37,7 @@ class SshKeyApiControllerTest extends BaseTest {
   private static final String DEFAULT_USER_ID = "foo";
   private static final String DEFAULT_ACCESS_TOKEN = "foo_access_token";
   private static final String EXTERNAL_USER_EMAIL = "foo@monkeyseesmonkeydo.com";
+  private static final String DEFAULT_TERRA_EMAIL = "bar@monkeyseesmonkeydo.com";
 
   @Test
   void getNonExistingSshKeyPair() throws Exception {
@@ -100,9 +102,37 @@ class SshKeyApiControllerTest extends BaseTest {
         .andExpect(content().string(containsString("Invalid SSH key pair type")));
   }
 
+  @Test
+  void generateSshKeyPair() throws Exception {
+    mockSamUser();
+    var sshKeyPairType = "github";
+    var postResult =
+        mvc.perform(
+                post("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                    .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .content(EXTERNAL_USER_EMAIL))
+            .andExpect(status().isOk())
+            .andReturn();
+    var generatedSshKeyPair =
+        objectMapper.readValue(postResult.getResponse().getContentAsByteArray(), SshKeyPair.class);
+    assertEquals(EXTERNAL_USER_EMAIL, generatedSshKeyPair.getExternalUserEmail());
+
+    var getResult =
+        mvc.perform(
+                get("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                    .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
+            .andExpect(status().isOk())
+            .andReturn();
+    var loadedSshKeyPair =
+        objectMapper.readValue(getResult.getResponse().getContentAsByteArray(), SshKeyPair.class);
+    assertEquals(generatedSshKeyPair, loadedSshKeyPair);
+  }
+
   private void mockSamUser() throws ApiException {
     var usersApiMock = mock(UsersApi.class);
-    var userStatusInfo = new UserStatusInfo().userSubjectId(DEFAULT_USER_ID);
+    var userStatusInfo =
+        new UserStatusInfo().userSubjectId(DEFAULT_USER_ID).userEmail(DEFAULT_TERRA_EMAIL);
     when(samServiceMock.samUsersApi(DEFAULT_ACCESS_TOKEN)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
   }
