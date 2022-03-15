@@ -37,15 +37,16 @@ public class GA4GHPassportDAO {
 
   public GA4GHPassport insertPassport(GA4GHPassport passport) {
     var query =
-        "INSERT INTO ga4gh_passport (linked_account_id, jwt, expires)"
-            + " VALUES (:linkedAccountId, :jwt, :expires)"
+        "INSERT INTO ga4gh_passport (linked_account_id, jwt, expires, jwt_id)"
+            + " VALUES (:linkedAccountId, :jwt, :expires, :jwtId)"
             + " RETURNING id";
 
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("linkedAccountId", passport.getLinkedAccountId().orElseThrow())
             .addValue("jwt", passport.getJwt())
-            .addValue("expires", passport.getExpires());
+            .addValue("expires", passport.getExpires())
+            .addValue("jwtId", passport.getJwtId());
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
@@ -77,6 +78,7 @@ public class GA4GHPassportDAO {
           .linkedAccountId(rs.getInt("linked_account_id"))
           .jwt(rs.getString("jwt"))
           .expires(rs.getTimestamp("expires"))
+          .jwtId(rs.getString("jwt_id"))
           .build();
     }
   }

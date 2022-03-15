@@ -10,6 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.UUID;
 
 public class TestUtils {
@@ -33,6 +34,7 @@ public class TestUtils {
     return new GA4GHPassport.Builder()
         .jwt(UUID.randomUUID().toString())
         .expires(getRandomTimestamp())
+        .jwtId(UUID.randomUUID().toString())
         .build();
   }
 
@@ -67,5 +69,15 @@ public class TestUtils {
         .providerName(UUID.randomUUID().toString())
         .visaJwt(UUID.randomUUID().toString())
         .build();
+  }
+
+  public static Throwable getRootCause(Throwable throwable) {
+    // https://www.baeldung.com/java-exception-root-cause
+    Objects.requireNonNull(throwable);
+    Throwable rootCause = throwable;
+    while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+      rootCause = rootCause.getCause();
+    }
+    return rootCause;
   }
 }
