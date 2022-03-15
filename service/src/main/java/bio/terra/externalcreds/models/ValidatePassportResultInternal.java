@@ -6,12 +6,12 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface ValidatePassportResult extends WithValidatePassportResult {
+public interface ValidatePassportResultInternal extends WithValidatePassportResultInternal {
   Boolean getValid();
 
   Optional<VisaCriterionInternal> getMatchedCriterion();
 
   Optional<Map<String, String>> getAuditInfo();
 
-  class Builder extends ImmutableValidatePassportResult.Builder {}
+  class Builder extends ImmutableValidatePassportResultInternal.Builder {}
 }

@@ -8,6 +8,7 @@ import bio.terra.externalcreds.generated.model.OneOfValidatePassportResultMatche
 import bio.terra.externalcreds.generated.model.RASv1Dot1VisaCriterion;
 import bio.terra.externalcreds.generated.model.ValidatePassportResult;
 import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
 import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
 import java.util.Collection;
@@ -26,8 +27,8 @@ public class OpenApiConverters {
       return criteria.stream()
           .map(
               c -> {
-                if (c instanceof RASv1Dot1VisaCriterionInternal) {
-                  var rasCrit = (RASv1Dot1VisaCriterionInternal) c;
+                if (c instanceof RASv1Dot1VisaCriterion) {
+                  var rasCrit = (RASv1Dot1VisaCriterion) c;
                   return new RASv1Dot1VisaCriterionInternal.Builder()
                       .issuer(rasCrit.getIssuer())
                       .phsId(rasCrit.getPhsId())
@@ -43,8 +44,7 @@ public class OpenApiConverters {
 
   /** Converts internal ECM models to openapi outputs */
   public static class Output {
-    public static ValidatePassportResult convert(
-        bio.terra.externalcreds.models.ValidatePassportResult result) {
+    public static ValidatePassportResult convert(ValidatePassportResultInternal result) {
       var returnVal = new ValidatePassportResult();
       returnVal.setValid(result.getValid());
       result.getAuditInfo().ifPresent(returnVal::setAuditInfo);

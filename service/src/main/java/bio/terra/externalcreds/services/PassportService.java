@@ -11,7 +11,7 @@ import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.PassportWithVisas;
-import bio.terra.externalcreds.models.ValidatePassportResult;
+import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
 import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
@@ -75,7 +75,7 @@ public class PassportService {
    * @return
    */
   @ReadTransaction
-  public ValidatePassportResult validatePassport(
+  public ValidatePassportResultInternal validatePassport(
       Collection<String> passportJwtStrings, Collection<VisaCriterionInternal> criteria) {
 
     var passports = decodeAndValidatePassports(passportJwtStrings);
@@ -90,7 +90,7 @@ public class PassportService {
               && visaComparator.matchesCriterion(visa, criterion)) {
             var linkedAccount =
                 linkedAccountsByJwtId.get(passportWithVisas.getPassport().getJwtId());
-            return new ValidatePassportResult.Builder()
+            return new ValidatePassportResultInternal.Builder()
                 .valid(true)
                 .matchedCriterion(criterion)
                 .auditInfo(
@@ -109,7 +109,7 @@ public class PassportService {
 
     // if we got this far there was no matching visa
     var linkedAccount = linkedAccountsByJwtId.values().iterator().next();
-    return new ValidatePassportResult.Builder()
+    return new ValidatePassportResultInternal.Builder()
         .valid(false)
         .auditInfo(Map.of("internal_user_id", linkedAccount.getUserId()))
         .build();

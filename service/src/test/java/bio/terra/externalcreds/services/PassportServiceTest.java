@@ -16,7 +16,7 @@ import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
-import bio.terra.externalcreds.models.ValidatePassportResult;
+import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator.DbGapPermission;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
@@ -252,7 +252,7 @@ class PassportServiceTest extends BaseTest {
 
       if (params.valid) {
         assertEquals(
-            new ValidatePassportResult.Builder()
+            new ValidatePassportResultInternal.Builder()
                 .valid(true)
                 .auditInfo(expectedAuditInfo(linkedAccount, passport))
                 .matchedCriterion(criterion)
@@ -260,7 +260,7 @@ class PassportServiceTest extends BaseTest {
             result);
       } else {
         assertEquals(
-            new ValidatePassportResult.Builder()
+            new ValidatePassportResultInternal.Builder()
                 .valid(false)
                 .auditInfo(expectedAuditInfo(linkedAccount))
                 .build(),
