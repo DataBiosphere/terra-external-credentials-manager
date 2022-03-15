@@ -15,6 +15,7 @@ import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.HttpStatus;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.broadinstitute.dsde.workbench.client.sam.api.UsersApi;
 import org.broadinstitute.dsde.workbench.client.sam.model.UserStatusInfo;
@@ -100,7 +101,52 @@ class SshKeyApiControllerTest extends BaseTest {
         .andExpect(content().string(containsString("Invalid SSH key pair type")));
   }
 
-  private void mockSamUser() throws ApiException {
+  @Test
+  void samThrowsApiException() throws Exception {
+    var usersApiMock = mock(UsersApi.class);
+    when(samServiceMock.samUsersApi(DEFAULT_ACCESS_TOKEN)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo()).thenThrow(new ApiException());
+
+    var sshKeyPairType = "gitlab";
+    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(EXTERNAL_USER_EMAIL);
+    var sshKeyPair =
+        new SshKeyPair()
+            .privateKey(rsaEncodedKeyPair.getLeft())
+            .publicKey(rsaEncodedKeyPair.getRight())
+            .externalUserEmail(EXTERNAL_USER_EMAIL);
+    var requestBody = objectMapper.writeValueAsString(sshKeyPair);
+    mvc.perform(
+            put("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody)
+                .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
+        .andExpect(status().is5xxServerError());
+  }
+
+  @Test
+  void samThrowsNotFoundException() throws Exception {
+    var usersApiMock = mock(UsersApi.class);
+    when(samServiceMock.samUsersApi(DEFAULT_ACCESS_TOKEN)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo())
+        .thenThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "user status info not found"));
+
+    var sshKeyPairType = "gitlab";
+    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(EXTERNAL_USER_EMAIL);
+    var sshKeyPair =
+        new SshKeyPair()
+            .privateKey(rsaEncodedKeyPair.getLeft())
+            .publicKey(rsaEncodedKeyPair.getRight())
+            .externalUserEmail(EXTERNAL_USER_EMAIL);
+    var requestBody = objectMapper.writeValueAsString(sshKeyPair);
+    mvc.perform(
+            put("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody)
+                .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
+        .andExpect(status().isForbidden());
+  }
+
+  private void mockSamUser() throws Exception {
     var usersApiMock = mock(UsersApi.class);
     var userStatusInfo = new UserStatusInfo().userSubjectId(DEFAULT_USER_ID);
     when(samServiceMock.samUsersApi(DEFAULT_ACCESS_TOKEN)).thenReturn(usersApiMock);

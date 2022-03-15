@@ -9,7 +9,6 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.services.SamService;
 import bio.terra.externalcreds.services.SshKeyPairService;
 import java.util.Optional;
-import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.springframework.http.HttpStatus;
@@ -32,8 +31,9 @@ public class SshKeyApiController implements SshKeyPairApi {
 
   private String getUserIdFromSam() {
     try {
-      var header = Optional.ofNullable(request.getHeader("authorization"))
-          .orElseThrow(() -> new UnauthorizedException("User is not authorized"));
+      var header =
+          Optional.ofNullable(request.getHeader("authorization"))
+              .orElseThrow(() -> new UnauthorizedException("User is not authorized"));
       var accessToken = BearerTokenParser.parse(header);
 
       return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
