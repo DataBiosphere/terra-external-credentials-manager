@@ -86,7 +86,6 @@ public class TestUtils {
         .build();
   }
 
-
   public static SshKeyPair createRandomGithubSshKey() throws NoSuchAlgorithmException, IOException {
     var randomExternalUserEmail =
         RandomStringUtils.random(5, /*letters=*/ true, /*numbers=*/ true) + "@gmail.com";
@@ -136,8 +135,8 @@ public class TestUtils {
     var generator = KeyPairGenerator.getInstance("RSA");
     generator.initialize(2048);
     return generator.generateKeyPair();
+  }
 
-    
   public static Throwable getRootCause(Throwable throwable) {
     // https://www.baeldung.com/java-exception-root-cause
     Objects.requireNonNull(throwable);
