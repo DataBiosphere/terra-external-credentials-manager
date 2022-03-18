@@ -1,7 +1,5 @@
 plugins {
-	id 'idea'
 	id 'jacoco'
-	id 'java'
 
 	id 'org.springframework.boot'
 
