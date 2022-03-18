@@ -15,8 +15,6 @@ plugins {
 	id 'org.sonarqube'
 }
 
-compileJava { options.release = 11 }
-
 repositories {
 	mavenCentral()
 	maven { url 'https://broadinstitute.jfrog.io/artifactory/libs-snapshot' }

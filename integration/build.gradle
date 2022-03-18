@@ -8,8 +8,6 @@ plugins {
 	id 'bio.terra.test-runner-plugin' version '0.0.8-SNAPSHOT'
 }
 
-compileJava { options.release = 11 }
-
 repositories {
 	mavenCentral()
 	maven { url 'https://broadinstitute.jfrog.io/artifactory/libs-snapshot' }
@@ -24,7 +22,7 @@ dependencies {
 	implementation 'com.google.auth:google-auth-library-oauth2-http:1.2.2'
 
 	// ECM client library
-	implementation project(':client')
+	implementation project(':client-resttemplate')
 
 	// Terra Test Runner Library
 	implementation 'bio.terra:terra-test-runner:0.0.8-SNAPSHOT'

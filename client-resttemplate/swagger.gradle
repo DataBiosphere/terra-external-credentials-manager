@@ -1,9 +1,6 @@
 // All version controlled by dependency management plugin
 dependencies {
-	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-	implementation 'org.glassfish.jersey.core:jersey-client'
-	implementation 'org.glassfish.jersey.media:jersey-media-json-jackson'
-	implementation 'org.glassfish.jersey.media:jersey-media-multipart'
+	api 'org.springframework.boot:spring-boot-starter-json:+'
 
 	implementation 'io.swagger.core.v3:swagger-annotations'
 	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli'
@@ -13,7 +10,7 @@ dependencies {
 generateSwaggerCode {
 	inputFile = file('../common/openapi.yml')
 	language = 'java'
-	library = 'jersey2'
+	library = 'resttemplate'
 
 	components = [
 			apiDocs  : false, apiTests: false,
@@ -24,10 +21,7 @@ generateSwaggerCode {
 			modelPackage  : "${artifactGroup}.model",
 			apiPackage    : "${artifactGroup}.api",
 			invokerPackage: "${artifactGroup}.client",
-			dateLibrary   : 'java11',
-			java8         : true
-			// this is needed because everything outside of the generated date library still checks this flag to decide
-			// whether or not to use native libraries (search for 'java11' in swagger-codegen-generators)
+			dateLibrary   : 'java11'
 	]
 
 	rawOptions = ["--ignore-file-override", "${projectDir}/.swagger-codegen-ignore"]

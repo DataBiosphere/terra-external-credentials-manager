@@ -17,8 +17,8 @@ java {
 
 publishing {
 	publications {
-		externalcredsClientLibrary(MavenPublication) {
-			artifactId = "externalcreds-client"
+		externalcredsResttemplateClientLibrary(MavenPublication) {
+			artifactId = "externalcreds-client-resttemplate"
 			from components.java
 			versionMapping {
 				usage("java-runtime") {
@@ -40,7 +40,7 @@ artifactory {
 		defaults {
 			// This is how we tell the Artifactory Plugin which artifacts should be published to Artifactory.
 			// Reference to Gradle publications defined in the build script.
-			publications("externalcredsClientLibrary")
+			publications("externalcredsResttemplateClientLibrary")
 			publishArtifacts = true
 			publishPom = true
 		}

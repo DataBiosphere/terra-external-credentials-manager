@@ -20,4 +20,4 @@ pluginManagement {
 }
 
 rootProject.name = 'externalcreds'
-include 'service', 'client', 'integration'
+include 'service', 'client-resttemplate', 'integration'

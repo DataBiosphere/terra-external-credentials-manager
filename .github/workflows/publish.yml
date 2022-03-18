@@ -29,12 +29,12 @@ jobs:
         id: tag
         run: echo ::set-output name=tag::$(git describe --tags)
 
-      #    - name: "Publish to Artifactory"
-      #      run: ./gradlew --build-cache :client:artifactoryPublish
-      #      env:
-      #        ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
-      #        ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-      #        ARTIFACTORY_REPO_KEY: "libs-snapshot-local"
+      - name: "Publish to Artifactory"
+        run: ./gradlew --build-cache :client-resttemplate:artifactoryPublish
+        env:
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          ARTIFACTORY_REPO_KEY: "libs-snapshot-local"
 
       - name: Auth to GCR
         uses: google-github-actions/setup-gcloud@master
