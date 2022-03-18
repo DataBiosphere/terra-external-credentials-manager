@@ -22,6 +22,10 @@ subprojects {
 	group = 'bio.terra'
 	version = '0.70.0-SNAPSHOT'
 
+	apply plugin: 'idea'
+	apply plugin: 'java'
+	compileJava { options.release = 11 }
+
 	ext {
 		artifactGroup = "${group}.${rootProject.name}"
 	}
