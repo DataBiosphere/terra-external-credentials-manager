@@ -29,7 +29,7 @@ jobs:
         id: tag
         run: echo ::set-output name=tag::$(git describe --tags)
 
-      - name: "Publish to Artifactory"
+      - name: Publish to Artifactory
         run: ./gradlew --build-cache :client-resttemplate:artifactoryPublish
         env:
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
