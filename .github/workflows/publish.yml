@@ -34,7 +34,7 @@ jobs:
         env:
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-          ARTIFACTORY_REPO_KEY: "libs-snapshot-local"
+          ARTIFACTORY_REPO_KEY: libs-snapshot-local
 
       - name: Auth to GCR
         uses: google-github-actions/setup-gcloud@master

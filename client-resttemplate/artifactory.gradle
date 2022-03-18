@@ -2,6 +2,7 @@
 // to publish without the environment variables defined.
 def artifactory_username = System.getenv('ARTIFACTORY_USERNAME')
 def artifactory_password = System.getenv('ARTIFACTORY_PASSWORD')
+def artifactory_repo_key = System.getenv('ARTIFACTORY_REPO_KEY') ?: 'libs-snapshot-local'
 
 gradle.taskGraph.whenReady { taskGraph ->
 	if (taskGraph.hasTask(artifactoryPublish) &&
@@ -33,9 +34,9 @@ artifactory {
 	publish {
 		contextUrl = 'https://broadinstitute.jfrog.io/broadinstitute/'
 		repository {
-			repoKey = 'libs-snapshot-local' // The Artifactory repository key to publish to
-			username = '${artifactory_username}' // The publisher user name
-			password = '${artifactory_password}' // The publisher password
+			repoKey = artifactory_repo_key // The Artifactory repository key to publish to
+			username = artifactory_username // The publisher user name
+			password = artifactory_password // The publisher password
 		}
 		defaults {
 			// This is how we tell the Artifactory Plugin which artifacts should be published to Artifactory.
