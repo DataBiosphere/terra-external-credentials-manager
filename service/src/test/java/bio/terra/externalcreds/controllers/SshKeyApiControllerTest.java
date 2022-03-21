@@ -1,13 +1,11 @@
 package bio.terra.externalcreds.controllers;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
@@ -15,6 +13,7 @@ import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.broadinstitute.dsde.workbench.client.sam.api.UsersApi;
@@ -34,39 +33,38 @@ class SshKeyApiControllerTest extends BaseTest {
 
   @MockBean private SamService samServiceMock;
 
-  private static final String DEFAULT_USER_ID = "foo";
-  private static final String DEFAULT_ACCESS_TOKEN = "foo_access_token";
-  private static final String EXTERNAL_USER_EMAIL = "foo@monkeyseesmonkeydo.com";
-
   @Test
   void getNonExistingSshKeyPair() throws Exception {
-    mockSamUser();
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    mockSamUser(accessToken);
     var sshKeyType = "github";
 
     mvc.perform(
             get("/api/sshkeypair/v1/{type}", sshKeyType)
-                .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
+                .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isNotFound())
         .andReturn();
   }
 
   @Test
   void putGetAndDeleteSshKeyPair() throws Exception {
-    mockSamUser();
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
+    mockSamUser(accessToken);
     var sshKeyPairType = "gitlab";
-    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(EXTERNAL_USER_EMAIL);
+    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
     var sshKeyPair =
         new SshKeyPair()
             .privateKey(rsaEncodedKeyPair.getLeft())
             .publicKey(rsaEncodedKeyPair.getRight())
-            .externalUserEmail(EXTERNAL_USER_EMAIL);
+            .externalUserEmail(externalUserEmail);
     var requestBody = objectMapper.writeValueAsString(sshKeyPair);
     var putResult =
         mvc.perform(
                 put("/api/sshkeypair/v1/{type}", sshKeyPairType)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(requestBody)
-                    .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
+                    .header("authorization", "Bearer " + accessToken))
             .andExpect(status().isOk())
             .andReturn();
     assertEquals(
@@ -76,7 +74,7 @@ class SshKeyApiControllerTest extends BaseTest {
     var getResult =
         mvc.perform(
                 get("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                    .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
+                    .header("authorization", "Bearer " + accessToken))
             .andExpect(status().isOk())
             .andReturn();
     assertEquals(
@@ -85,71 +83,76 @@ class SshKeyApiControllerTest extends BaseTest {
 
     mvc.perform(
             delete("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
+                .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isOk())
         .andReturn();
   }
 
   @Test
   void getSshKeyPairWithInvalidKeyType() throws Exception {
-    mockSamUser();
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    mockSamUser(accessToken);
     var invalidSshKeyType = "azures";
     mvc.perform(
             get("/api/sshkeypair/v1/{type}", invalidSshKeyType)
-                .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
-        .andExpect(status().isBadRequest())
-        .andExpect(content().string(containsString("Invalid SSH key pair type")));
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
   void samThrowsApiException() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
     var usersApiMock = mock(UsersApi.class);
-    when(samServiceMock.samUsersApi(DEFAULT_ACCESS_TOKEN)).thenReturn(usersApiMock);
+    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo()).thenThrow(new ApiException());
 
     var sshKeyPairType = "gitlab";
-    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(EXTERNAL_USER_EMAIL);
+    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
     var sshKeyPair =
         new SshKeyPair()
             .privateKey(rsaEncodedKeyPair.getLeft())
             .publicKey(rsaEncodedKeyPair.getRight())
-            .externalUserEmail(EXTERNAL_USER_EMAIL);
+            .externalUserEmail(externalUserEmail);
     var requestBody = objectMapper.writeValueAsString(sshKeyPair);
     mvc.perform(
             put("/api/sshkeypair/v1/{type}", sshKeyPairType)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
-                .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
+                .header("authorization", "Bearer " + accessToken))
         .andExpect(status().is5xxServerError());
   }
 
   @Test
   void samThrowsNotFoundException() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
     var usersApiMock = mock(UsersApi.class);
-    when(samServiceMock.samUsersApi(DEFAULT_ACCESS_TOKEN)).thenReturn(usersApiMock);
+    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo())
         .thenThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "user status info not found"));
 
     var sshKeyPairType = "gitlab";
-    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(EXTERNAL_USER_EMAIL);
+    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
     var sshKeyPair =
         new SshKeyPair()
             .privateKey(rsaEncodedKeyPair.getLeft())
             .publicKey(rsaEncodedKeyPair.getRight())
-            .externalUserEmail(EXTERNAL_USER_EMAIL);
+            .externalUserEmail(externalUserEmail);
     var requestBody = objectMapper.writeValueAsString(sshKeyPair);
     mvc.perform(
             put("/api/sshkeypair/v1/{type}", sshKeyPairType)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
-                .header("authorization", "Bearer " + DEFAULT_ACCESS_TOKEN))
+                .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isForbidden());
   }
 
-  private void mockSamUser() throws Exception {
+  private void mockSamUser(String accessToken) throws Exception {
     var usersApiMock = mock(UsersApi.class);
-    var userStatusInfo = new UserStatusInfo().userSubjectId(DEFAULT_USER_ID);
-    when(samServiceMock.samUsersApi(DEFAULT_ACCESS_TOKEN)).thenReturn(usersApiMock);
+    var userStatusInfo =
+        new UserStatusInfo().userSubjectId(RandomStringUtils.randomAlphanumeric(5));
+    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
   }
 }

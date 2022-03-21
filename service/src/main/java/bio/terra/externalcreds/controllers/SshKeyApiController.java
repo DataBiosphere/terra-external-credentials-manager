@@ -1,16 +1,14 @@
 package bio.terra.externalcreds.controllers;
 
-import bio.terra.common.exception.UnauthorizedException;
-import bio.terra.common.iam.BearerTokenParser;
-import bio.terra.externalcreds.ExternalCredsException;
+import static bio.terra.externalcreds.controllers.OpenApiConverters.Output.convert;
+import static bio.terra.externalcreds.controllers.UserStatusInfoUtils.getUserIdFromSam;
+
 import bio.terra.externalcreds.generated.api.SshKeyPairApi;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.services.SamService;
 import bio.terra.externalcreds.services.SshKeyPairService;
-import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
-import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -29,51 +27,22 @@ public class SshKeyApiController implements SshKeyPairApi {
     this.sshKeyPairService = sshKeyPairService;
   }
 
-  private String getUserIdFromSam() {
-    try {
-      var header =
-          Optional.ofNullable(request.getHeader("authorization"))
-              .orElseThrow(() -> new UnauthorizedException("User is not authorized"));
-      var accessToken = BearerTokenParser.parse(header);
-
-      return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
-    } catch (ApiException e) {
-      throw new ExternalCredsException(
-          e,
-          e.getCode() == HttpStatus.NOT_FOUND.value()
-              ? HttpStatus.FORBIDDEN
-              : HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
   @Override
   public ResponseEntity<Void> deleteSshKeyPair(SshKeyPairType type) {
-    sshKeyPairService.deleteSshKeyPair(getUserIdFromSam(), type);
+    sshKeyPairService.deleteSshKeyPair(getUserIdFromSam(request, samService), type);
     return ResponseEntity.ok().build();
   }
 
   @Override
   public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type) {
-    var sshKeyPair = sshKeyPairService.getSshKeyPair(getUserIdFromSam(), type);
-    return ResponseEntity.of(sshKeyPair.map(keyPair -> getSshKeyPair(keyPair)));
+    var sshKeyPair = sshKeyPairService.getSshKeyPair(getUserIdFromSam(request, samService), type);
+    return ResponseEntity.of(sshKeyPair.map(keyPair -> convert(keyPair)));
   }
 
   @Override
   public ResponseEntity<SshKeyPair> putSshKeyPair(SshKeyPairType type, SshKeyPair body) {
     var sshKeyPair =
-        sshKeyPairService.putSshKeyPair(
-            getUserIdFromSam(),
-            type,
-            body.getPrivateKey(),
-            body.getPublicKey(),
-            body.getExternalUserEmail());
+        sshKeyPairService.putSshKeyPair(getUserIdFromSam(request, samService), type, body);
     return new ResponseEntity(sshKeyPair, HttpStatus.OK);
-  }
-
-  private SshKeyPair getSshKeyPair(bio.terra.externalcreds.models.SshKeyPair sshKeyPair) {
-    return new SshKeyPair()
-        .externalUserEmail(sshKeyPair.getExternalUserEmail())
-        .publicKey(sshKeyPair.getPublicKey())
-        .privateKey(sshKeyPair.getPrivateKey());
   }
 }

@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
-import bio.terra.externalcreds.models.SshKeyPair;
+import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-class SshKeyPairDaoTest extends BaseTest {
+class SshKeyPairInternalDaoTest extends BaseTest {
 
   @Autowired SshKeyPairDAO sshKeyPairDAO;
 
@@ -66,7 +66,7 @@ class SshKeyPairDaoTest extends BaseTest {
   }
 
   @Nested
-  class GetSshKeyPair {
+  class GetSshKeyPairInternal {
     @Test
     void testGetSshKeyPairWithoutUserId() {
       var empty = sshKeyPairDAO.getSshKeyPair("", DEFAULT_KEY_TYPE);
@@ -115,7 +115,8 @@ class SshKeyPairDaoTest extends BaseTest {
     }
   }
 
-  private void verifySshKeyPair(SshKeyPair expectedSshKey, SshKeyPair actualSshKey) {
+  private void verifySshKeyPair(
+      SshKeyPairInternal expectedSshKey, SshKeyPairInternal actualSshKey) {
     assertEquals(expectedSshKey.withId(actualSshKey.getId()), actualSshKey);
   }
 }

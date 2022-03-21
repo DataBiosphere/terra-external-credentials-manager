@@ -5,8 +5,7 @@
   "testConfigurationFiles": [
     "integration/GetStatus.json",
     "integration/GetVersion.json",
-    "integration/ListProviders.json",
-    "integration/StoreSshKeyPair.json"
+    "integration/ListProviders.json"
   ]
 }
 

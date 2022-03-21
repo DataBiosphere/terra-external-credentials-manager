@@ -3,8 +3,9 @@ package bio.terra.externalcreds.services;
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.dataAccess.SshKeyPairDAO;
+import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
-import bio.terra.externalcreds.models.SshKeyPair;
+import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
@@ -18,22 +19,18 @@ public class SshKeyPairService {
   }
 
   @ReadTransaction
-  public Optional<SshKeyPair> getSshKeyPair(String userId, SshKeyPairType type) {
+  public Optional<SshKeyPairInternal> getSshKeyPair(String userId, SshKeyPairType type) {
     return sshKeyPairDAO.getSshKeyPair(userId, type);
   }
 
   @WriteTransaction
-  public SshKeyPair putSshKeyPair(
-      String userId,
-      SshKeyPairType type,
-      String privateKey,
-      String publicKey,
-      String externalUserEmail) {
+  public SshKeyPairInternal putSshKeyPair(
+      String userId, SshKeyPairType type, SshKeyPair sshKeyPair) {
     return sshKeyPairDAO.upsertSshKeyPair(
-        new SshKeyPair.Builder()
-            .privateKey(privateKey)
-            .publicKey(publicKey)
-            .externalUserEmail(externalUserEmail)
+        new SshKeyPairInternal.Builder()
+            .privateKey(sshKeyPair.getPrivateKey())
+            .publicKey(sshKeyPair.getPublicKey())
+            .externalUserEmail(sshKeyPair.getExternalUserEmail())
             .userId(userId)
             .type(type)
             .build());

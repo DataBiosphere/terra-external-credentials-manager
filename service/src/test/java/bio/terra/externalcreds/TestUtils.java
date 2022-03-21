@@ -5,7 +5,7 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
-import bio.terra.externalcreds.models.SshKeyPair;
+import bio.terra.externalcreds.models.SshKeyPairInternal;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import java.io.ByteArrayOutputStream;
@@ -86,11 +86,12 @@ public class TestUtils {
         .build();
   }
 
-  public static SshKeyPair createRandomGithubSshKey() throws NoSuchAlgorithmException, IOException {
+  public static SshKeyPairInternal createRandomGithubSshKey()
+      throws NoSuchAlgorithmException, IOException {
     var randomExternalUserEmail =
         RandomStringUtils.random(5, /*letters=*/ true, /*numbers=*/ true) + "@gmail.com";
     KeyPair keyPair = generateRSAKeyPair();
-    return new SshKeyPair.Builder()
+    return new SshKeyPairInternal.Builder()
         .type(SshKeyPairType.GITHUB)
         .privateKey(encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate()))
         .publicKey(encodeRSAPublicKey((RSAPublicKey) keyPair.getPublic(), randomExternalUserEmail))

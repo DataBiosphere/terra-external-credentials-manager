@@ -6,8 +6,10 @@ import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportResultMatchedCriterion;
 import bio.terra.externalcreds.generated.model.RASv1Dot1VisaCriterion;
+import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.ValidatePassportResult;
 import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.SshKeyPairInternal;
 import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
 import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
@@ -72,6 +74,13 @@ public class OpenApiConverters {
           .externalUserId(linkedAccount.getExternalUserId())
           .expirationTimestamp(linkedAccount.getExpires())
           .authenticated(linkedAccount.isAuthenticated());
+    }
+
+    public static SshKeyPair convert(SshKeyPairInternal sshKeyPairInternal) {
+      return new SshKeyPair()
+          .externalUserEmail(sshKeyPairInternal.getExternalUserEmail())
+          .publicKey(sshKeyPairInternal.getPublicKey())
+          .privateKey(sshKeyPairInternal.getPrivateKey());
     }
   }
 }
