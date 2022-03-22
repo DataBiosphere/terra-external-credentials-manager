@@ -9,6 +9,7 @@ import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -60,20 +61,21 @@ public class SshKeyPairService {
   }
 
   private static String encodeRSAPrivateKey(RSAPrivateKey privateKey) {
-    return new String(Base64.encodeBase64(privateKey.getEncoded()));
+    return new String(Base64.encodeBase64(privateKey.getEncoded()), StandardCharsets.UTF_8);
   }
 
   private static String encodeRSAPublicKey(RSAPublicKey rsaPublicKey, String user)
       throws IOException {
     ByteArrayOutputStream byteOs = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(byteOs);
-    dos.writeInt("ssh-rsa".getBytes().length);
-    dos.write("ssh-rsa".getBytes());
+    dos.writeInt("ssh-rsa".getBytes(StandardCharsets.UTF_8).length);
+    dos.write("ssh-rsa".getBytes(StandardCharsets.UTF_8));
     dos.writeInt(rsaPublicKey.getPublicExponent().toByteArray().length);
     dos.write(rsaPublicKey.getPublicExponent().toByteArray());
     dos.writeInt(rsaPublicKey.getModulus().toByteArray().length);
     dos.write(rsaPublicKey.getModulus().toByteArray());
-    var publicKeyEncoded = new String(Base64.encodeBase64(byteOs.toByteArray()));
+    var publicKeyEncoded =
+        new String(Base64.encodeBase64(byteOs.toByteArray()), StandardCharsets.UTF_8);
     return DEFAULT_PUBLIC_KEY_BEGIN + " " + publicKeyEncoded + " " + user;
   }
 
