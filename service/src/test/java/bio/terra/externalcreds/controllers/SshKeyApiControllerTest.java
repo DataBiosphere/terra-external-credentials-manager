@@ -1,21 +1,27 @@
 package bio.terra.externalcreds.controllers;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.generated.model.ErrorReport;
+import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
-import bio.terra.externalcreds.generated.model.SshKeyPairType;
+import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.http.HttpStatus;
+import org.broadinstitute.dsde.workbench.client.sam.ApiException;
+import org.broadinstitute.dsde.workbench.client.sam.api.UsersApi;
+import org.broadinstitute.dsde.workbench.client.sam.model.UserStatusInfo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -25,64 +31,128 @@ class SshKeyApiControllerTest extends BaseTest {
   @Autowired private MockMvc mvc;
   @Autowired private ObjectMapper objectMapper;
 
+  @MockBean private SamService samServiceMock;
+
   @Test
-  void getSshKeyPair_throws500() throws Exception {
+  void getNonExistingSshKeyPair() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    mockSamUser(accessToken);
     var sshKeyType = "github";
-    var failedResult =
-        mvc.perform(get("/api/sshkeypair/v1/{type}", sshKeyType))
-            .andExpect(status().is5xxServerError())
-            .andReturn();
-    var requestError =
-        objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
-    assertThat(requestError.getMessage(), containsString("Not implemented"));
+
+    mvc.perform(
+            get("/api/sshkeypair/v1/{type}", sshKeyType)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isNotFound())
+        .andReturn();
   }
 
   @Test
-  void putSshKeyPair_throws500() throws Exception {
-    var sshKeyPairType = SshKeyPairType.GITHUB;
-    var sshPrivateKey =
-        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
-            + "abcde12345/+xXXXYZ//890=\n"
-            + "-----END OPENSSH PRIVATE KEY-----";
-    var sshPublicKey = "ssh-ed25519 AAABBBccc123 yuhuyoyo@google.com";
+  void putGetAndDeleteSshKeyPair() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
+    mockSamUser(accessToken);
+    var sshKeyPairType = "gitlab";
+    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
     var sshKeyPair =
         new SshKeyPair()
-            .privateKey(sshPrivateKey)
-            .publicKey(sshPublicKey)
-            .externalUserEmail("yuhuyoyo@google.com");
+            .privateKey(rsaEncodedKeyPair.getLeft())
+            .publicKey(rsaEncodedKeyPair.getRight())
+            .externalUserEmail(externalUserEmail);
     var requestBody = objectMapper.writeValueAsString(sshKeyPair);
-
-    var failedResult =
+    var putResult =
         mvc.perform(
                 put("/api/sshkeypair/v1/{type}", sshKeyPairType)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(requestBody))
-            .andExpect(status().is5xxServerError())
+                    .content(requestBody)
+                    .header("authorization", "Bearer " + accessToken))
+            .andExpect(status().isOk())
             .andReturn();
+    assertEquals(
+        sshKeyPair,
+        objectMapper.readValue(putResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
 
-    var requestError =
-        objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
-    assertThat(requestError.getMessage(), containsString("Not implemented"));
+    var getResult =
+        mvc.perform(
+                get("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                    .header("authorization", "Bearer " + accessToken))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertEquals(
+        sshKeyPair,
+        objectMapper.readValue(getResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
+
+    mvc.perform(
+            delete("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isOk())
+        .andReturn();
   }
 
   @Test
-  void deleteSshKeyPair_throws500() throws Exception {
-    var sshKeyType = "gitlab";
-    var failedResult =
-        mvc.perform(delete("/api/sshkeypair/v1/{type}", sshKeyType))
-            .andExpect(status().is5xxServerError())
-            .andReturn();
-
-    var requestError =
-        objectMapper.readValue(failedResult.getResponse().getContentAsString(), ErrorReport.class);
-    assertThat(requestError.getMessage(), containsString("Not implemented"));
-  }
-
-  @Test
-  void getSshKeyPair_invalidProvider_throwsBadRequest() throws Exception {
+  void getSshKeyPairWithInvalidKeyType() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    mockSamUser(accessToken);
     var invalidSshKeyType = "azures";
-    mvc.perform(get("/api/sshkeypair/v1/{type}", invalidSshKeyType))
-        .andExpect(status().isBadRequest())
-        .andExpect(content().string(containsString("Invalid SSH key pair type")));
+    mvc.perform(
+            get("/api/sshkeypair/v1/{type}", invalidSshKeyType)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void samThrowsApiException() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
+    var usersApiMock = mock(UsersApi.class);
+    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo()).thenThrow(new ApiException());
+
+    var sshKeyPairType = "gitlab";
+    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
+    var sshKeyPair =
+        new SshKeyPair()
+            .privateKey(rsaEncodedKeyPair.getLeft())
+            .publicKey(rsaEncodedKeyPair.getRight())
+            .externalUserEmail(externalUserEmail);
+    var requestBody = objectMapper.writeValueAsString(sshKeyPair);
+    mvc.perform(
+            put("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().is5xxServerError());
+  }
+
+  @Test
+  void samThrowsNotFoundException() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
+    var usersApiMock = mock(UsersApi.class);
+    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo())
+        .thenThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "user status info not found"));
+
+    var sshKeyPairType = "gitlab";
+    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
+    var sshKeyPair =
+        new SshKeyPair()
+            .privateKey(rsaEncodedKeyPair.getLeft())
+            .publicKey(rsaEncodedKeyPair.getRight())
+            .externalUserEmail(externalUserEmail);
+    var requestBody = objectMapper.writeValueAsString(sshKeyPair);
+    mvc.perform(
+            put("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isForbidden());
+  }
+
+  private void mockSamUser(String accessToken) throws Exception {
+    var usersApiMock = mock(UsersApi.class);
+    var userStatusInfo =
+        new UserStatusInfo().userSubjectId(RandomStringUtils.randomAlphanumeric(5));
+    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
+    when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
   }
 }

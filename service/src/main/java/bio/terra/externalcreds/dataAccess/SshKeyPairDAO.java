@@ -1,7 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
-import bio.terra.externalcreds.models.SshKeyPair;
+import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.dao.support.DataAccessUtils;
@@ -15,9 +15,9 @@ import org.springframework.stereotype.Repository;
 public class SshKeyPairDAO {
   private final NamedParameterJdbcTemplate jdbcTemplate;
 
-  private static final RowMapper<SshKeyPair> SSH_KEY_PAIR_ROW_MAPPER =
+  private static final RowMapper<SshKeyPairInternal> SSH_KEY_PAIR_ROW_MAPPER =
       (rs, rowNum) ->
-          new SshKeyPair.Builder()
+          new SshKeyPairInternal.Builder()
               .id(rs.getInt("id"))
               .userId(rs.getString("user_id"))
               .type(SshKeyPairType.valueOf(rs.getString("type")))
@@ -30,7 +30,7 @@ public class SshKeyPairDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  public Optional<SshKeyPair> getSshKeyPair(String userId, SshKeyPairType type) {
+  public Optional<SshKeyPairInternal> getSshKeyPair(String userId, SshKeyPairType type) {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
     var resourceSelectSql =
@@ -49,7 +49,7 @@ public class SshKeyPairDAO {
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
-  public SshKeyPair upsertSshKeyPair(SshKeyPair sshKeyPair) {
+  public SshKeyPairInternal upsertSshKeyPair(SshKeyPairInternal sshKeyPairInternal) {
     var query =
         "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email)"
             + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail)"
@@ -61,17 +61,18 @@ public class SshKeyPairDAO {
 
     var namedParameters =
         new MapSqlParameterSource()
-            .addValue("userId", sshKeyPair.getUserId())
-            .addValue("type", sshKeyPair.getType().name())
-            .addValue("privateKey", sshKeyPair.getPrivateKey())
-            .addValue("publicKey", sshKeyPair.getPublicKey())
-            .addValue("externalUserEmail", sshKeyPair.getExternalUserEmail());
+            .addValue("userId", sshKeyPairInternal.getUserId())
+            .addValue("type", sshKeyPairInternal.getType().name())
+            .addValue("privateKey", sshKeyPairInternal.getPrivateKey())
+            .addValue("publicKey", sshKeyPairInternal.getPublicKey())
+            .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail());
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
     var generatedKeyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(query, namedParameters, generatedKeyHolder);
 
-    return sshKeyPair.withId(Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
+    return sshKeyPairInternal.withId(
+        Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
   }
 }
