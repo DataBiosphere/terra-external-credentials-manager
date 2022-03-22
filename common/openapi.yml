@@ -327,11 +327,6 @@ components:
         externalUserEmail:
           description: account email.
           type: string
-    ExternalUserEmail:
-      type: object
-      properties:
-        email:
-          type: string
     LinkInfo:
       type: object
       required: [ externalUserId, expirationTimestamp ]
