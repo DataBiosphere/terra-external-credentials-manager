@@ -18,18 +18,6 @@ allprojects {
 	}
 }
 
-tasks.register('resolveAndLockAll') {
-	doFirst {
-		assert gradle.startParameter.writeDependencyLocks : 'This task only works with `--write-locks`'
-	}
-	doLast {
-		configurations.findAll {
-			// Add any custom filtering on the configurations to be resolved
-			it.canBeResolved
-		}.each { it.resolve() }
-	}
-}
-
 subprojects {
 	group = 'bio.terra'
 	version = '0.73.0-SNAPSHOT'
