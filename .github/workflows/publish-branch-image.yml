@@ -29,11 +29,16 @@ jobs:
           restore-keys: v1-${{ runner.os }}-gradle-${{ hashfiles('**/gradle-wrapper.properties') }}
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+      #    - name: "Publish to Artifactory"
+      #      run: ./gradlew :client-resttemplate:artifactoryPublish
+      #      env:
+      #        ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+      #        ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+      #        ARTIFACTORY_REPO_KEY: "libs-snapshot-local"
       - name: Auth to GCR
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/auth@v0
         with:
-          service_account_email: ${{ secrets.GCR_PUBLISH_EMAIL }}
-          service_account_key: ${{ secrets.GCR_PUBLISH_KEY_B64 }}
+          credentials_json: ${{ secrets.GCR_PUBLISH_KEY_B64 }}
       - name: Explicitly auth Docker for GCR
         run: gcloud auth configure-docker --quiet
       - name: Construct docker image name and tag
