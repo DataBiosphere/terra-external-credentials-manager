@@ -1,21 +1,17 @@
 plugins {
-	id 'idea'
 	id 'jacoco'
-	id 'java'
 
 	id 'org.springframework.boot'
 
 	id 'com.diffplug.spotless'
-	id 'com.github.ben-manes.versions' version '0.40.0'
-	id 'com.github.spotbugs' version '5.0.3'
+	id 'com.github.ben-manes.versions' version '0.42.0'
+	id 'com.github.spotbugs' version '5.0.6'
 	id 'com.google.cloud.tools.jib'
-	id 'com.gorylenko.gradle-git-properties' version '2.3.1'
+	id 'com.gorylenko.gradle-git-properties' version '2.4.0'
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
 	id 'org.sonarqube'
 }
-
-compileJava { options.release = 11 }
 
 repositories {
 	mavenCentral()
@@ -31,15 +27,15 @@ apply from: 'analysis.gradle'
 
 dependencies {
 	// google
-	implementation platform('com.google.cloud:libraries-bom:24.1.1')
+	implementation platform('com.google.cloud:libraries-bom:25.0.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 
-	annotationProcessor 'org.immutables:value:2.8.8'
+	annotationProcessor 'org.immutables:value:2.9.0'
 	implementation 'bio.terra:terra-common-lib:0.0.49-SNAPSHOT'
-	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-fa74f75'
+	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-1b67d8b'
 
 	// for testing with mock web server
-	testImplementation 'org.mock-server:mockserver-netty:5.11.2'
+	testImplementation 'org.mock-server:mockserver-netty:5.13.0'
 }
 
 sonarqube {

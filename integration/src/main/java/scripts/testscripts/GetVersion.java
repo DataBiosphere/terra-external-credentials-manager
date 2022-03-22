@@ -6,24 +6,25 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import bio.terra.externalcreds.api.PublicApi;
 import bio.terra.testrunner.runner.TestScript;
 import bio.terra.testrunner.runner.config.TestUserSpecification;
-import com.google.api.client.http.HttpStatusCodes;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import scripts.utils.ClientTestUtils;
 
 @Slf4j
 public class GetVersion extends TestScript {
 
   @Override
-  public void userJourney(TestUserSpecification testUser) throws Exception {
+  public void userJourney(TestUserSpecification testUser) {
     log.info("Checking the version endpoint.");
     var apiClient = ClientTestUtils.getClientWithoutAuth(server);
     var publicApi = new PublicApi(apiClient);
 
-    var versionProperties = publicApi.getVersion();
+    var versionResponse = publicApi.getVersionWithHttpInfo();
+    var versionProperties = versionResponse.getBody();
 
     // check the response code
-    var httpCode = publicApi.getApiClient().getStatusCode();
-    assertEquals(HttpStatusCodes.STATUS_CODE_OK, httpCode);
+    var httpCode = versionResponse.getStatusCode();
+    assertEquals(HttpStatus.OK, httpCode);
     log.info("Service status return code: {}", httpCode);
 
     // check the response body

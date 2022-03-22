@@ -14,10 +14,10 @@ pluginManagement {
 	}
 
 	plugins {
-		id 'io.freefair.lombok' version '6.3.0'
-		id 'org.hidetake.swagger.generator' version '2.19.1'
+		id 'io.freefair.lombok' version '6.4.1'
+		id 'org.hidetake.swagger.generator' version '2.19.2'
 	}
 }
 
 rootProject.name = 'externalcreds'
-include 'service', 'client', 'integration'
+include 'service', 'client-resttemplate', 'integration'

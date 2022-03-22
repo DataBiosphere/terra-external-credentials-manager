@@ -1,21 +1,18 @@
 package bio.terra.externalcreds.controllers;
 
-import bio.terra.common.exception.UnauthorizedException;
-import bio.terra.common.iam.BearerTokenParser;
-import bio.terra.externalcreds.ExternalCredsException;
+import static bio.terra.externalcreds.controllers.UserStatusInfoUtils.getUserIdFromSam;
+
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
-import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.VisibleForTesting;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,8 +21,6 @@ import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
-import org.broadinstitute.dsde.workbench.client.sam.ApiException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -57,30 +52,6 @@ public class OidcApiController implements OidcApi {
     this.auditLogger = auditLogger;
   }
 
-  private String getUserIdFromSam() {
-    try {
-      var header = request.getHeader("authorization");
-      if (header == null) throw new UnauthorizedException("User is not authorized");
-      var accessToken = BearerTokenParser.parse(header);
-
-      return samService.samUsersApi(accessToken).getUserStatusInfo().getUserSubjectId();
-    } catch (ApiException e) {
-      throw new ExternalCredsException(
-          e,
-          e.getCode() == HttpStatus.NOT_FOUND.value()
-              ? HttpStatus.FORBIDDEN
-              : HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  @VisibleForTesting
-  LinkInfo getLinkInfoFromLinkedAccount(LinkedAccount linkedAccount) {
-    return new LinkInfo()
-        .externalUserId(linkedAccount.getExternalUserId())
-        .expirationTimestamp(linkedAccount.getExpires())
-        .authenticated(linkedAccount.isAuthenticated());
-  }
-
   @Override
   public ResponseEntity<List<String>> listProviders() {
     var providerNames = new ArrayList<>(providerService.getProviderList());
@@ -91,15 +62,16 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<LinkInfo> getLink(String providerName) {
-    var userId = getUserIdFromSam();
+    var userId = getUserIdFromSam(request, samService);
     var linkedAccount = linkedAccountService.getLinkedAccount(userId, providerName);
-    return ResponseEntity.of(linkedAccount.map(this::getLinkInfoFromLinkedAccount));
+    return ResponseEntity.of(
+        linkedAccount.map(linkedAccount1 -> OpenApiConverters.Output.convert(linkedAccount1)));
   }
 
   @Override
   public ResponseEntity<String> getAuthUrl(
       String providerName, List<String> scopes, String redirectUri) {
-    var userId = getUserIdFromSam();
+    var userId = getUserIdFromSam(request, samService);
 
     var authorizationUrl =
         providerService.getProviderAuthorizationUrl(
@@ -115,7 +87,7 @@ public class OidcApiController implements OidcApi {
       String redirectUri,
       String state,
       String oauthcode) {
-    var userId = getUserIdFromSam();
+    var userId = getUserIdFromSam(request, samService);
 
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
@@ -138,7 +110,7 @@ public class OidcApiController implements OidcApi {
 
       return ResponseEntity.of(
           linkedAccountWithPassportAndVisas.map(
-              x -> getLinkInfoFromLinkedAccount(x.getLinkedAccount())));
+              x -> OpenApiConverters.Output.convert(x.getLinkedAccount())));
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());
@@ -148,7 +120,7 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<Void> deleteLink(String providerName) {
-    String userId = getUserIdFromSam();
+    String userId = getUserIdFromSam(request, samService);
     providerService.deleteLink(userId, providerName);
 
     auditLogger.logEvent(
@@ -164,7 +136,7 @@ public class OidcApiController implements OidcApi {
 
   @Override
   public ResponseEntity<String> getProviderPassport(String providerName) {
-    var userId = getUserIdFromSam();
+    var userId = getUserIdFromSam(request, samService);
     var maybePassport = passportService.getPassport(userId, providerName);
 
     auditLogger.logEvent(

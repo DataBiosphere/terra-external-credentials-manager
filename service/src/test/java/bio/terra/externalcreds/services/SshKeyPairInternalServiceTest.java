@@ -2,7 +2,6 @@ package bio.terra.externalcreds.services;
 
 import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
@@ -11,11 +10,10 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class SshKeyPairServiceTest extends BaseTest {
+public class SshKeyPairInternalServiceTest extends BaseTest {
 
   @Autowired SshKeyPairService sshKeyPairService;
   @Autowired SshKeyPairDAO sshKeyPairDAO;
@@ -42,30 +40,18 @@ public class SshKeyPairServiceTest extends BaseTest {
   }
 
   @Test
-  void generateSshKey() {
-    var userId = UUID.randomUUID().toString();
-    var externalUser = "foo@gmail.com";
-    var sshKeyPair =
-        sshKeyPairService.generateSshKeyPair(userId, externalUser, SshKeyPairType.GITHUB);
+  void generateSshKeyPair() {
+    var userId = "foo";
+    var userEmail = "foo@gmail.com";
+    var keyPairType = SshKeyPairType.GITHUB;
+    var sshKeyPairInternal = sshKeyPairService.generateSshKeyPair(userId, userEmail, keyPairType);
 
-    var loadedSshKeyPair = sshKeyPairService.getSshKeyPair(userId, SshKeyPairType.GITHUB);
-    verifySshKeyPair(sshKeyPair, loadedSshKeyPair.get());
-  }
+    assertEquals(userEmail, sshKeyPairInternal.getExternalUserEmail());
+    assertEquals(userId, sshKeyPairInternal.getUserId());
+    assertEquals(keyPairType, sshKeyPairInternal.getType());
 
-  @Test
-  void generateAnotherSshKey() {
-    var userId = UUID.randomUUID().toString();
-    var externalUser = "foo@gmail.com";
-    var sshKeyPair =
-        sshKeyPairService.generateSshKeyPair(userId, externalUser, SshKeyPairType.GITHUB);
-
-    var externalUserTwo = "bar@gmail.com";
-    var sshKeyPair2 =
-        sshKeyPairService.generateSshKeyPair(userId, externalUserTwo, SshKeyPairType.GITHUB);
-
-    var loadedSshKeyPair = sshKeyPairService.getSshKeyPair(userId, SshKeyPairType.GITHUB);
-    verifySshKeyPair(sshKeyPair2, loadedSshKeyPair.get());
-    assertNotEquals(sshKeyPair.withId(loadedSshKeyPair.get().getId()), loadedSshKeyPair.get());
+    var loadedSshKey = sshKeyPairService.getSshKeyPair(userId, keyPairType);
+    verifySshKeyPair(sshKeyPairInternal, loadedSshKey.get());
   }
 
   private void verifySshKeyPair(

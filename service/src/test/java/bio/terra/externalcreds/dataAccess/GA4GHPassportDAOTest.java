@@ -66,7 +66,25 @@ class GA4GHPassportDAOTest extends BaseTest {
               TestUtils.createRandomPassport().withLinkedAccountId(savedAccountId));
 
       var duplicatePassport =
-          savedPassport.withExpires(new Timestamp(200)).withJwt("different-jwt");
+          savedPassport
+              .withExpires(new Timestamp(200))
+              .withJwt("different-jwt")
+              .withJwtId("different-jwt-id");
+      assertThrows(
+          DuplicateKeyException.class, () -> passportDAO.insertPassport(duplicatePassport));
+    }
+
+    @Test
+    void testCreatePassportWithDuplicateJwtIdThrows() {
+      var savedAccountId1 =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount()).getId();
+      var savedAccountId2 =
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount()).getId();
+      var savedPassport =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedAccountId1));
+
+      var duplicatePassport = savedPassport.withLinkedAccountId(savedAccountId2);
       assertThrows(
           DuplicateKeyException.class, () -> passportDAO.insertPassport(duplicatePassport));
     }

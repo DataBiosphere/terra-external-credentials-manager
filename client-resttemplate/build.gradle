@@ -7,8 +7,6 @@ plugins {
 	id 'org.hidetake.swagger.generator'
 }
 
-compileJava { options.release = 11 }
-
 repositories { mavenCentral() }
 
 apply from: 'artifactory.gradle'

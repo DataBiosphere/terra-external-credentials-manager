@@ -5,7 +5,7 @@ import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.dataAccess.SshKeyPairDAO;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
-import bio.terra.externalcreds.models.SshKeyPair;
+import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -22,8 +22,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class SshKeyPairService {
 
-  private static final String DEFAULT_PRIVATE_KEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----";
-  private static final String DEFAULT_PRIVATE_KEY_END = "-----END RSA PRIVATE KEY-----";
   private static final String DEFAULT_PUBLIC_KEY_BEGIN = "ssh-rsa";
 
   private final SshKeyPairDAO sshKeyPairDAO;
@@ -33,7 +31,7 @@ public class SshKeyPairService {
   }
 
   @ReadTransaction
-  public Optional<SshKeyPair> getSshKeyPair(String userId, SshKeyPairType type) {
+  public Optional<SshKeyPairInternal> getSshKeyPair(String userId, SshKeyPairType type) {
     return sshKeyPairDAO.getSshKeyPair(userId, type);
   }
 
@@ -43,12 +41,12 @@ public class SshKeyPairService {
   }
 
   @WriteTransaction
-  public SshKeyPair generateSshKeyPair(
+  public SshKeyPairInternal generateSshKeyPair(
       String userId, String externalUserEmail, SshKeyPairType type) {
     try {
       KeyPair rsaKeyPair = generateRSAKeyPair();
       return sshKeyPairDAO.upsertSshKeyPair(
-          new SshKeyPair.Builder()
+          new SshKeyPairInternal.Builder()
               .privateKey(encodeRSAPrivateKey((RSAPrivateKey) rsaKeyPair.getPrivate()))
               .publicKey(
                   encodeRSAPublicKey((RSAPublicKey) rsaKeyPair.getPublic(), externalUserEmail))
@@ -62,11 +60,7 @@ public class SshKeyPairService {
   }
 
   private static String encodeRSAPrivateKey(RSAPrivateKey privateKey) {
-    return DEFAULT_PRIVATE_KEY_BEGIN
-        + "\n"
-        + new String(Base64.encodeBase64(privateKey.getEncoded()))
-        + "\n"
-        + DEFAULT_PRIVATE_KEY_END;
+    return new String(Base64.encodeBase64(privateKey.getEncoded()));
   }
 
   private static String encodeRSAPublicKey(RSAPublicKey rsaPublicKey, String user)

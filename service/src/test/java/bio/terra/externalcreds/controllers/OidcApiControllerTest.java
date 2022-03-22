@@ -137,7 +137,7 @@ class OidcApiControllerTest extends BaseTest {
               content()
                   .json(
                       mapper.writeValueAsString(
-                          oidcApiController.getLinkInfoFromLinkedAccount(inputLinkedAccount))));
+                          OpenApiConverters.Output.convert(inputLinkedAccount))));
     }
 
     @Test
@@ -218,7 +218,7 @@ class OidcApiControllerTest extends BaseTest {
               content()
                   .json(
                       mapper.writeValueAsString(
-                          oidcApiController.getLinkInfoFromLinkedAccount(inputLinkedAccount))));
+                          OpenApiConverters.Output.convert(inputLinkedAccount))));
     }
 
     @Test

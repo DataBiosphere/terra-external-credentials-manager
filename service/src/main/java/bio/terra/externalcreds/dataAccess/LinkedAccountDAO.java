@@ -1,12 +1,13 @@
 package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.models.LinkedAccount;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.RowMapper;
@@ -18,6 +19,18 @@ import org.springframework.stereotype.Repository;
 @Repository
 @Slf4j
 public class LinkedAccountDAO {
+
+  private static RowMapper<LinkedAccount> LINKED_ACCOUNT_ROW_MAPPER =
+      ((rs, rowNum) ->
+          new LinkedAccount.Builder()
+              .id(rs.getInt("id"))
+              .userId(rs.getString("user_id"))
+              .providerName(rs.getString("provider_name"))
+              .refreshToken(rs.getString("refresh_token"))
+              .expires(rs.getTimestamp("expires"))
+              .externalUserId(rs.getString("external_user_id"))
+              .isAuthenticated(rs.getBoolean("is_authenticated"))
+              .build());
 
   final NamedParameterJdbcTemplate jdbcTemplate;
 
@@ -34,7 +47,7 @@ public class LinkedAccountDAO {
         "SELECT * FROM linked_account WHERE user_id = :userId and provider_name = :providerName";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
-            jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper())));
+            jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER)));
   }
 
   public Optional<LinkedAccount> getLinkedAccount(int linkedAccountId) {
@@ -42,7 +55,7 @@ public class LinkedAccountDAO {
     var query = "SELECT * FROM linked_account WHERE id = :linkedAccountId";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
-            jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper())));
+            jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER)));
   }
 
   public List<LinkedAccount> getExpiringLinkedAccounts(Timestamp expirationCutoff) {
@@ -56,7 +69,7 @@ public class LinkedAccountDAO {
             + " WHERE (passport.expires <= :expirationCutoff"
             + " OR visa.expires <= :expirationCutoff)"
             + " AND la.is_authenticated = true";
-    return jdbcTemplate.query(query, namedParameters, new LinkedAccountRowMapper());
+    return jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER);
   }
 
   public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
@@ -103,19 +116,24 @@ public class LinkedAccountDAO {
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
-  private static class LinkedAccountRowMapper implements RowMapper<LinkedAccount> {
-
-    @Override
-    public LinkedAccount mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new LinkedAccount.Builder()
-          .id(rs.getInt("id"))
-          .userId(rs.getString("user_id"))
-          .providerName(rs.getString("provider_name"))
-          .refreshToken(rs.getString("refresh_token"))
-          .expires(rs.getTimestamp("expires"))
-          .externalUserId(rs.getString("external_user_id"))
-          .isAuthenticated(rs.getBoolean("is_authenticated"))
-          .build();
-    }
+  public Map<String, LinkedAccount> getLinkedAccountByPassportJwtIds(Set<String> jwtIds) {
+    var namedParameters = new MapSqlParameterSource("jwtIds", jwtIds);
+    var query =
+        "SELECT p.jwt_id, la.* FROM linked_account la"
+            + " INNER JOIN ga4gh_passport p ON la.id = p.linked_account_id"
+            + " WHERE p.jwt_id in (:jwtIds)";
+    return jdbcTemplate
+        .query(
+            query,
+            namedParameters,
+            (rs, rowNum) ->
+                Map.of(rs.getString("jwt_id"), LINKED_ACCOUNT_ROW_MAPPER.mapRow(rs, rowNum)))
+        .stream()
+        .reduce( // this reduce collapses a List<Map<>> to a single Map<>
+            new HashMap<>(),
+            (rhs, lhs) -> {
+              rhs.putAll(lhs);
+              return rhs;
+            });
   }
 }
