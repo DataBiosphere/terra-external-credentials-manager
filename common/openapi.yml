@@ -188,7 +188,7 @@ paths:
           text/plain:
             schema:
               type: string
-              description: external user email. If not specified, will use the terra user email.
+              description: user email to associate with the key pair
               example: foo@bar.com
       responses:
         '200':
