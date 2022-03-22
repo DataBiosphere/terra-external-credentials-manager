@@ -11,7 +11,6 @@ import bio.terra.externalcreds.services.SshKeyPairService;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
-import org.broadinstitute.dsde.workbench.client.sam.model.UserStatusInfo;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -56,26 +55,13 @@ public class SshKeyApiController implements SshKeyPairApi {
   @Override
   public ResponseEntity<SshKeyPair> generateSshKeyPair(SshKeyPairType type, String email) {
     return new ResponseEntity(
-        sshKeyPairService.generateSshKeyPair(getUserIdFromSam(), email, type),
-        HttpStatus.OK);
+        sshKeyPairService.generateSshKeyPair(getUserIdFromSam(), email, type), HttpStatus.OK);
   }
 
   @Override
   public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type) {
     var sshKeyPair = sshKeyPairService.getSshKeyPair(getUserIdFromSam(), type);
     return ResponseEntity.of(sshKeyPair.map(keyPair -> getSshKeyPair(keyPair)));
-  }
-
-  @Override
-  public ResponseEntity<SshKeyPair> putSshKeyPair(SshKeyPairType type, SshKeyPair body) {
-    var sshKeyPair =
-        sshKeyPairService.putSshKeyPair(
-            getUserIdFromSam(),
-            type,
-            body.getPrivateKey(),
-            body.getPublicKey(),
-            body.getExternalUserEmail());
-    return new ResponseEntity(sshKeyPair, HttpStatus.OK);
   }
 
   private SshKeyPair getSshKeyPair(bio.terra.externalcreds.models.SshKeyPair sshKeyPair) {

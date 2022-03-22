@@ -1,7 +1,6 @@
 package bio.terra.externalcreds.services;
 
 import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
-import static bio.terra.externalcreds.TestUtils.getRSAEncodedKeyPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,59 +42,6 @@ public class SshKeyPairServiceTest extends BaseTest {
   }
 
   @Test
-  void putSshKey() throws NoSuchAlgorithmException, IOException {
-    var userId = UUID.randomUUID().toString();
-    var externalUser = "foo@gmail.com";
-    var pair = getRSAEncodedKeyPair(externalUser);
-    var sshKeyPair =
-        new SshKeyPair.Builder()
-            .userId(userId)
-            .type(SshKeyPairType.GITHUB)
-            .externalUserEmail(externalUser)
-            .privateKey(pair.getLeft())
-            .publicKey(pair.getRight())
-            .build();
-
-    var storedSshKey =
-        sshKeyPairService.putSshKeyPair(
-            sshKeyPair.getUserId(),
-            sshKeyPair.getType(),
-            sshKeyPair.getPrivateKey(),
-            sshKeyPair.getPublicKey(),
-            sshKeyPair.getExternalUserEmail());
-
-    verifySshKeyPair(sshKeyPair, storedSshKey);
-  }
-
-  @Test
-  void updateSshKey() throws NoSuchAlgorithmException, IOException {
-    var sshKey = createRandomGithubSshKey();
-    sshKeyPairDAO.upsertSshKeyPair(sshKey);
-    var externalUser = "foo@gmail.com";
-    var pair = getRSAEncodedKeyPair(externalUser);
-    var userId = sshKey.getUserId();
-    var newSshKeyPair =
-        new SshKeyPair.Builder()
-            .userId(userId)
-            .type(SshKeyPairType.GITHUB)
-            .externalUserEmail(externalUser)
-            .privateKey(pair.getLeft())
-            .publicKey(pair.getRight())
-            .build();
-
-    var storedSshKey =
-        sshKeyPairService.putSshKeyPair(
-            newSshKeyPair.getUserId(),
-            newSshKeyPair.getType(),
-            newSshKeyPair.getPrivateKey(),
-            newSshKeyPair.getPublicKey(),
-            newSshKeyPair.getExternalUserEmail());
-
-    assertNotEquals(sshKey.withId(storedSshKey.getId()), storedSshKey);
-    verifySshKeyPair(newSshKeyPair, storedSshKey);
-  }
-
-  @Test
   void generateSshKey() {
     var userId = UUID.randomUUID().toString();
     var externalUser = "foo@gmail.com";
@@ -104,6 +50,22 @@ public class SshKeyPairServiceTest extends BaseTest {
 
     var loadedSshKeyPair = sshKeyPairService.getSshKeyPair(userId, SshKeyPairType.GITHUB);
     verifySshKeyPair(sshKeyPair, loadedSshKeyPair.get());
+  }
+
+  @Test
+  void generateAnotherSshKey() {
+    var userId = UUID.randomUUID().toString();
+    var externalUser = "foo@gmail.com";
+    var sshKeyPair =
+        sshKeyPairService.generateSshKeyPair(userId, externalUser, SshKeyPairType.GITHUB);
+
+    var externalUserTwo = "bar@gmail.com";
+    var sshKeyPair2 =
+        sshKeyPairService.generateSshKeyPair(userId, externalUserTwo, SshKeyPairType.GITHUB);
+
+    var loadedSshKeyPair = sshKeyPairService.getSshKeyPair(userId, SshKeyPairType.GITHUB);
+    verifySshKeyPair(sshKeyPair2, loadedSshKeyPair.get());
+    assertNotEquals(sshKeyPair.withId(loadedSshKeyPair.get().getId()), loadedSshKeyPair.get());
   }
 
   private void verifySshKeyPair(SshKeyPair expectedSshKey, SshKeyPair actualSshKey) {

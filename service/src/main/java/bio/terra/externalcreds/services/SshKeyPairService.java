@@ -38,23 +38,6 @@ public class SshKeyPairService {
   }
 
   @WriteTransaction
-  public SshKeyPair putSshKeyPair(
-      String userId,
-      SshKeyPairType type,
-      String privateKey,
-      String publicKey,
-      String externalUserEmail) {
-    return sshKeyPairDAO.upsertSshKeyPair(
-        new SshKeyPair.Builder()
-            .privateKey(privateKey)
-            .publicKey(publicKey)
-            .externalUserEmail(externalUserEmail)
-            .userId(userId)
-            .type(type)
-            .build());
-  }
-
-  @WriteTransaction
   public boolean deleteSshKeyPair(String userId, SshKeyPairType type) {
     return sshKeyPairDAO.deleteSshKeyPair(userId, type);
   }
