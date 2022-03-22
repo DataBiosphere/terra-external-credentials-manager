@@ -5,12 +5,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,7 +53,7 @@ class SshKeyApiControllerTest extends BaseTest {
     var sshKeyPairType = "gitlab";
     var putResult =
         mvc.perform(
-                post("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                put("/api/sshkeypair/v1/{type}", sshKeyPairType)
                     .header("authorization", "Bearer " + accessToken)
                     .contentType(MediaType.TEXT_PLAIN)
                     .content(externalUserEmail))
@@ -101,17 +99,10 @@ class SshKeyApiControllerTest extends BaseTest {
     when(usersApiMock.getUserStatusInfo()).thenThrow(new ApiException());
 
     var sshKeyPairType = "gitlab";
-    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
-    var sshKeyPair =
-        new SshKeyPair()
-            .privateKey(rsaEncodedKeyPair.getLeft())
-            .publicKey(rsaEncodedKeyPair.getRight())
-            .externalUserEmail(externalUserEmail);
-    var requestBody = objectMapper.writeValueAsString(sshKeyPair);
     mvc.perform(
             put("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody)
+                .contentType(MediaType.TEXT_PLAIN)
+                .content(externalUserEmail)
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().is5xxServerError());
   }
@@ -126,17 +117,10 @@ class SshKeyApiControllerTest extends BaseTest {
         .thenThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "user status info not found"));
 
     var sshKeyPairType = "gitlab";
-    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
-    var sshKeyPair =
-        new SshKeyPair()
-            .privateKey(rsaEncodedKeyPair.getLeft())
-            .publicKey(rsaEncodedKeyPair.getRight())
-            .externalUserEmail(externalUserEmail);
-    var requestBody = objectMapper.writeValueAsString(sshKeyPair);
     mvc.perform(
             put("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody)
+                .contentType(MediaType.TEXT_PLAIN)
+                .content(externalUserEmail)
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isForbidden());
   }
