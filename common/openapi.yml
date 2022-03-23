@@ -179,7 +179,7 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
     put:
-      summary: generate a pair of ssh keys
+      summary: Generates a pair of ssh keys
       tags: [ ssh key pair ]
       operationId: generateSshKeyPair
       requestBody:

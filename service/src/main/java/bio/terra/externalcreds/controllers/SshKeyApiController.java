@@ -34,17 +34,17 @@ public class SshKeyApiController implements SshKeyPairApi {
   }
 
   @Override
+  public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type) {
+    var sshKeyPair = sshKeyPairService.getSshKeyPair(getUserIdFromSam(request, samService), type);
+    return ResponseEntity.of(sshKeyPair.map(keyPair -> convert(keyPair)));
+  }
+
+  @Override
   public ResponseEntity<SshKeyPair> generateSshKeyPair(SshKeyPairType type, String email) {
     return new ResponseEntity(
         convert(
             sshKeyPairService.generateSshKeyPair(
                 getUserIdFromSam(request, samService), email, type)),
         HttpStatus.OK);
-  }
-
-  @Override
-  public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type) {
-    var sshKeyPair = sshKeyPairService.getSshKeyPair(getUserIdFromSam(request, samService), type);
-    return ResponseEntity.of(sshKeyPair.map(keyPair -> convert(keyPair)));
   }
 }

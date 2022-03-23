@@ -54,9 +54,9 @@ class SshKeyApiControllerTest extends BaseTest {
     var putResult =
         mvc.perform(
                 put("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                    .header("authorization", "Bearer " + accessToken)
                     .contentType(MediaType.TEXT_PLAIN)
-                    .content(externalUserEmail))
+                    .content(externalUserEmail)
+                    .header("authorization", "Bearer " + accessToken))
             .andExpect(status().isOk())
             .andReturn();
     var generatedSshKeyPair =
