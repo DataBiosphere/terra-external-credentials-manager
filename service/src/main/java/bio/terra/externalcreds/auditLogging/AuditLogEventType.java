@@ -6,5 +6,9 @@ public enum AuditLogEventType {
   LinkDeleted,
   LinkExpired,
   GetPassport,
-  LinkRefreshed
+  LinkRefreshed,
+  SshKeyPairCreated,
+  SshKeyPairCreationFailed,
+  GetSshKeyPair,
+  SshKayPairDeleted
 }

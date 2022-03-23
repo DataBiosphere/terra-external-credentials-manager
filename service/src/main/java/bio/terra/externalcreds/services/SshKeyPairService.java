@@ -42,7 +42,7 @@ public class SshKeyPairService {
   }
 
   @WriteTransaction
-  public SshKeyPairInternal generateSshKeyPair(
+  public Optional<SshKeyPairInternal> generateSshKeyPair(
       String userId, String externalUserEmail, SshKeyPairType type) {
     try {
       KeyPair rsaKeyPair = generateRSAKeyPair();

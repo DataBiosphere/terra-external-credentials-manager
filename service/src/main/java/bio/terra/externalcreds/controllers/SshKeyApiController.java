@@ -3,6 +3,9 @@ package bio.terra.externalcreds.controllers;
 import static bio.terra.externalcreds.controllers.OpenApiConverters.Output.convert;
 import static bio.terra.externalcreds.controllers.UserStatusInfoUtils.getUserIdFromSam;
 
+import bio.terra.externalcreds.auditLogging.AuditLogEvent;
+import bio.terra.externalcreds.auditLogging.AuditLogEventType;
+import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.SshKeyPairApi;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
@@ -19,12 +22,15 @@ public class SshKeyApiController implements SshKeyPairApi {
   private final HttpServletRequest request;
   private final SamService samService;
   private final SshKeyPairService sshKeyPairService;
+  private final AuditLogger auditLogger;
 
   public SshKeyApiController(
-      HttpServletRequest request, SamService samService, SshKeyPairService sshKeyPairService) {
+      HttpServletRequest request, SamService samService, SshKeyPairService sshKeyPairService,
+      AuditLogger auditLogger) {
     this.request = request;
     this.samService = samService;
     this.sshKeyPairService = sshKeyPairService;
+    this.auditLogger = auditLogger;
   }
 
   @Override
@@ -41,10 +47,21 @@ public class SshKeyApiController implements SshKeyPairApi {
 
   @Override
   public ResponseEntity<SshKeyPair> generateSshKeyPair(SshKeyPairType type, String email) {
-    return new ResponseEntity(
-        convert(
-            sshKeyPairService.generateSshKeyPair(
-                getUserIdFromSam(request, samService), email, type)),
-        HttpStatus.OK);
+    var userId = getUserIdFromSam(request, samService);
+    var auditLogEventBuilder =
+        new AuditLogEvent.Builder()
+            .userId(userId)
+            .clientIP(request.getRemoteAddr());
+    var generatedKey = sshKeyPairService.generateSshKeyPair(userId, email, type);
+    auditLogger.logEvent(
+        auditLogEventBuilder
+            .auditLogEventType(
+                generatedKey
+                    .map(x -> AuditLogEventType.SshKeyPairCreated)
+                    .orElse(AuditLogEventType.SshKeyPairCreationFailed))
+            .build());
+    return ResponseEntity.of(
+        generatedKey.map(
+            x -> OpenApiConverters.Output.convert(x)));
   }
 }
