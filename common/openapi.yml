@@ -185,11 +185,11 @@ paths:
       requestBody:
         required: true
         content:
-          text/plain:
+          application/json:
             schema:
               type: string
-              description: user email to associate with the key pair
-              example: foo@bar.com
+              example: foo@gmail.com
+              description: User email associated with the ssh key pair
       responses:
         '200':
           $ref: '#/components/responses/SshKeyPairResponse'
