@@ -25,7 +25,9 @@ public class SshKeyApiController implements SshKeyPairApi {
   private final AuditLogger auditLogger;
 
   public SshKeyApiController(
-      HttpServletRequest request, SamService samService, SshKeyPairService sshKeyPairService,
+      HttpServletRequest request,
+      SamService samService,
+      SshKeyPairService sshKeyPairService,
       AuditLogger auditLogger) {
     this.request = request;
     this.samService = samService;
@@ -35,33 +37,64 @@ public class SshKeyApiController implements SshKeyPairApi {
 
   @Override
   public ResponseEntity<Void> deleteSshKeyPair(SshKeyPairType type) {
-    sshKeyPairService.deleteSshKeyPair(getUserIdFromSam(request, samService), type);
-    return ResponseEntity.ok().build();
+    var userId = getUserIdFromSam(request, samService);
+
+    var auditLoggerBuilder =
+        new AuditLogEvent.Builder()
+            .sshKeyPairType(type.name())
+            .userId(userId)
+            .clientIP(request.getRemoteAddr());
+    try {
+      sshKeyPairService.deleteSshKeyPair(userId, type);
+      auditLogger.logEvent(
+          auditLoggerBuilder.auditLogEventType(AuditLogEventType.SshKayPairDeleted).build());
+      return ResponseEntity.ok().build();
+    } catch (Exception e) {
+      auditLogger.logEvent(
+          auditLoggerBuilder.auditLogEventType(AuditLogEventType.SshKeyPairDeletionFailed).build());
+      throw e;
+    }
   }
 
   @Override
   public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type) {
-    var sshKeyPair = sshKeyPairService.getSshKeyPair(getUserIdFromSam(request, samService), type);
-    return ResponseEntity.of(sshKeyPair.map(keyPair -> convert(keyPair)));
+    var userId = getUserIdFromSam(request, samService);
+    var auditLogEventBuilder =
+        new AuditLogEvent.Builder()
+            .sshKeyPairType(type.name())
+            .userId(userId)
+            .clientIP(request.getRemoteAddr());
+    try {
+      var sshKeyPair = sshKeyPairService.getSshKeyPair(userId, type);
+      auditLogger.logEvent(
+          auditLogEventBuilder.auditLogEventType(AuditLogEventType.GetSshKeyPairSucceeded).build());
+      return new ResponseEntity(convert(sshKeyPair), HttpStatus.OK);
+    } catch (Exception e) {
+      auditLogger.logEvent(
+          auditLogEventBuilder.auditLogEventType(AuditLogEventType.GetSshKeyPairFailed).build());
+      throw e;
+    }
   }
 
   @Override
   public ResponseEntity<SshKeyPair> generateSshKeyPair(SshKeyPairType type, String email) {
     var userId = getUserIdFromSam(request, samService);
     var auditLogEventBuilder =
-        new AuditLogEvent.Builder()
-            .userId(userId)
-            .clientIP(request.getRemoteAddr());
-    var generatedKey = sshKeyPairService.generateSshKeyPair(userId, email, type);
-    auditLogger.logEvent(
-        auditLogEventBuilder
-            .auditLogEventType(
-                generatedKey
-                    .map(x -> AuditLogEventType.SshKeyPairCreated)
-                    .orElse(AuditLogEventType.SshKeyPairCreationFailed))
-            .build());
-    return ResponseEntity.of(
-        generatedKey.map(
-            x -> OpenApiConverters.Output.convert(x)));
+        new AuditLogEvent.Builder().userId(userId).clientIP(request.getRemoteAddr());
+    try {
+      var generatedKey = sshKeyPairService.generateSshKeyPair(userId, email, type);
+      auditLogger.logEvent(
+          auditLogEventBuilder
+              .auditLogEventType(AuditLogEventType.SshKeyPairCreated)
+              .sshKeyPairType(generatedKey.getType().name())
+              .build());
+      return new ResponseEntity(convert(generatedKey), HttpStatus.OK);
+    } catch (Exception e) {
+      auditLogger.logEvent(
+          auditLogEventBuilder
+              .auditLogEventType(AuditLogEventType.SshKeyPairCreationFailed)
+              .build());
+      throw e;
+    }
   }
 }

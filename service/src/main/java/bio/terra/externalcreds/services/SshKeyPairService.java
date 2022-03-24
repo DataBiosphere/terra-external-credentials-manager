@@ -2,6 +2,7 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
+import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.dataAccess.SshKeyPairDAO;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
@@ -15,7 +16,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Optional;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,17 +32,22 @@ public class SshKeyPairService {
   }
 
   @ReadTransaction
-  public Optional<SshKeyPairInternal> getSshKeyPair(String userId, SshKeyPairType type) {
-    return sshKeyPairDAO.getSshKeyPair(userId, type);
+  public SshKeyPairInternal getSshKeyPair(String userId, SshKeyPairType type) {
+    return sshKeyPairDAO
+        .getSshKeyPair(userId, type)
+        .orElseThrow(() -> new NotFoundException("Ssh Key is not found"));
   }
 
   @WriteTransaction
-  public boolean deleteSshKeyPair(String userId, SshKeyPairType type) {
-    return sshKeyPairDAO.deleteSshKeyPair(userId, type);
+  public void deleteSshKeyPair(String userId, SshKeyPairType type) {
+    var existed = sshKeyPairDAO.deleteSshKeyPairIfExists(userId, type);
+    if (!existed) {
+      throw new NotFoundException("Delete nothing because Ssh key pair is not found");
+    }
   }
 
   @WriteTransaction
-  public Optional<SshKeyPairInternal> generateSshKeyPair(
+  public SshKeyPairInternal generateSshKeyPair(
       String userId, String externalUserEmail, SshKeyPairType type) {
     try {
       KeyPair rsaKeyPair = generateRSAKeyPair();
