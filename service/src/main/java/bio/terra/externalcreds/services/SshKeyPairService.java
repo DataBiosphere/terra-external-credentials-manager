@@ -4,6 +4,7 @@ import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.dataAccess.SshKeyPairDAO;
+import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.ByteArrayOutputStream;
@@ -39,6 +40,19 @@ public class SshKeyPairService {
   @WriteTransaction
   public boolean deleteSshKeyPair(String userId, SshKeyPairType type) {
     return sshKeyPairDAO.deleteSshKeyPair(userId, type);
+  }
+
+  @WriteTransaction
+  public SshKeyPairInternal putSshKeyPair(
+      String userId, SshKeyPairType type, SshKeyPair sshKeyPair) {
+    return sshKeyPairDAO.upsertSshKeyPair(
+        new SshKeyPairInternal.Builder()
+            .privateKey(sshKeyPair.getPrivateKey())
+            .publicKey(sshKeyPair.getPublicKey())
+            .externalUserEmail(sshKeyPair.getExternalUserEmail())
+            .userId(userId)
+            .type(type)
+            .build());
   }
 
   @WriteTransaction

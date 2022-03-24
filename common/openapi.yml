@@ -178,6 +178,22 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
+    put:
+      summary: Store an ssh key pair to the given provider.
+      tags: [ ssh key pair ]
+      operationId: putSshKeyPair
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SshKeyPair'
+      responses:
+        '200':
+          $ref: '#/components/responses/SshKeyPairResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
     post:
       summary: Generates a pair of ssh keys
       tags: [ ssh key pair ]

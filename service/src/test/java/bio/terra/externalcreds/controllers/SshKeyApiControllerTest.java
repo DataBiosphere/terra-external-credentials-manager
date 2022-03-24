@@ -6,12 +6,15 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.UUID;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
@@ -42,6 +45,48 @@ class SshKeyApiControllerTest extends BaseTest {
             get("/api/sshkeypair/v1/{type}", sshKeyType)
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isNotFound())
+        .andReturn();
+  }
+
+  @Test
+  void putGetAndDeleteSshKeyPair() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
+    mockSamUser(accessToken);
+    var sshKeyPairType = "gitlab";
+    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
+    var sshKeyPair =
+        new SshKeyPair()
+            .privateKey(rsaEncodedKeyPair.getLeft())
+            .publicKey(rsaEncodedKeyPair.getRight())
+            .externalUserEmail(externalUserEmail);
+    var requestBody = objectMapper.writeValueAsString(sshKeyPair);
+    var putResult =
+        mvc.perform(
+                put("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestBody)
+                    .header("authorization", "Bearer " + accessToken))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertEquals(
+        sshKeyPair,
+        objectMapper.readValue(putResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
+
+    var getResult =
+        mvc.perform(
+                get("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                    .header("authorization", "Bearer " + accessToken))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertEquals(
+        sshKeyPair,
+        objectMapper.readValue(getResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
+
+    mvc.perform(
+            delete("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isOk())
         .andReturn();
   }
 
@@ -128,8 +173,7 @@ class SshKeyApiControllerTest extends BaseTest {
 
   private void mockSamUser(String accessToken) throws Exception {
     var usersApiMock = mock(UsersApi.class);
-    var userStatusInfo =
-        new UserStatusInfo().userSubjectId(RandomStringUtils.randomAlphanumeric(5));
+    var userStatusInfo = new UserStatusInfo().userSubjectId(UUID.randomUUID().toString());
     when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
   }

@@ -40,6 +40,13 @@ public class SshKeyApiController implements SshKeyPairApi {
   }
 
   @Override
+  public ResponseEntity<SshKeyPair> putSshKeyPair(SshKeyPairType type, SshKeyPair body) {
+    var sshKeyPair =
+        sshKeyPairService.putSshKeyPair(getUserIdFromSam(request, samService), type, body);
+    return new ResponseEntity(sshKeyPair, HttpStatus.OK);
+  }
+
+  @Override
   public ResponseEntity<SshKeyPair> generateSshKeyPair(SshKeyPairType type, String email) {
     return new ResponseEntity(
         convert(
