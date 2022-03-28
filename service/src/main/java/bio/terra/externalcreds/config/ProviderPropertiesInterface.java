@@ -1,8 +1,10 @@
 package bio.terra.externalcreds.config;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import org.immutables.value.Value;
 
 @Value.Modifiable
@@ -30,4 +32,6 @@ public interface ProviderPropertiesInterface {
   Optional<String> getJwksUri();
 
   Optional<String> getValidationEndpoint();
+
+  Collection<Pattern> getAllowedRedirectUriPatterns();
 }
