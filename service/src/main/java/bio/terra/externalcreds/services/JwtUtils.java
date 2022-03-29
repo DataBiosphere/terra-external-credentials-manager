@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
@@ -68,10 +67,7 @@ public class JwtUtils {
             passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM), Collections.emptyList());
 
     var visas =
-        visaJwtStrings.stream()
-            .map(this::decodeAndValidateJwt)
-            .map(JwtUtils::buildVisa)
-            .collect(Collectors.toList());
+        visaJwtStrings.stream().map(this::decodeAndValidateJwt).map(JwtUtils::buildVisa).toList();
 
     return new PassportWithVisas.Builder()
         .passport(buildPassport(passportJwt))

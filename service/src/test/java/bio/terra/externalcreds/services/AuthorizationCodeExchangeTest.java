@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -263,7 +262,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
                     visa.withLastValidated(Optional.empty())
                         .withId(Optional.empty())
                         .withPassportId(Optional.empty()))
-            .collect(Collectors.toList());
+            .toList();
     assertEquals(expectedVisas, stableVisas);
 
     // state should have been removed from the db

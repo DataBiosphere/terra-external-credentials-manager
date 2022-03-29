@@ -118,9 +118,7 @@ public class PassportService {
   private Collection<PassportWithVisas> decodeAndValidatePassports(
       Collection<String> passportJwtStrings) {
     try {
-      return passportJwtStrings.stream()
-          .map(jwtUtils::decodeAndValidatePassportJwtString)
-          .collect(Collectors.toList());
+      return passportJwtStrings.stream().map(jwtUtils::decodeAndValidatePassportJwtString).toList();
     } catch (InvalidJwtException e) {
       throw new BadRequestException("invalid passport jwt", e);
     }
