@@ -3,7 +3,7 @@
   "description": "ECM Performance Testing Environment",
 
   "samUri": "https://sam.dsde-perf.broadinstitute.org",
-  "policyManagerUri": "https://externalcreds.dsde-perf.broadinstitute.org/",
+  "externalCredentialsManagerUri": "https://externalcreds.dsde-perf.broadinstitute.org/",
 
   "cluster": {
     "clusterName": "terra-perf",

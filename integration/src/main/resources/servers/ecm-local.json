@@ -3,10 +3,29 @@
   "description": "ECM Local env.",
 
   "samUri": "https://sam.dsde-dev.broadinstitute.org",
-  "policyManagerUri": "http://localhost:8080",
+  "externalCredentialsManagerUri": "http://localhost:8080",
 
-  "testRunnerServiceAccountFile": "delegate-user-sa.json",
+  "testRunnerServiceAccountFile": "testrunner-sa.json",
 
   "skipDeployment": true,
-  "skipKubernetes": true
+  "skipKubernetes": true,
+
+  "versionScripts": [
+    {
+      "name": "ReadFromTerraHelmfileRepo",
+      "description": "Version from https://github.com/broadinstitute/terra-helmfile",
+      "parametersMap": {
+        "app-name": "externalcreds",
+        "base-file-path": "terra-helmfile/versions/app/dev.yaml",
+        "override-file-path": "terra-helmfile/environments/live/perf.yaml"
+      }
+    },
+    {
+      "name": "ReadFromGitCommitLog",
+      "description": "Hash of git branch from Git Commit Log",
+      "parametersMap": {
+        "git-dir": "../.git"
+      }
+    }
+  ]
 }
