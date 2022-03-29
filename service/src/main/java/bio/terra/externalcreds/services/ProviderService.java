@@ -144,9 +144,7 @@ public class ProviderService {
 
   private void validateRedirectUri(String redirectUri, ProviderProperties providerInfo) {
     if (providerInfo.getAllowedRedirectUriPatterns().stream()
-        .filter(pattern -> pattern.matcher(redirectUri).matches())
-        .findAny()
-        .isEmpty()) {
+        .noneMatch(pattern -> pattern.matcher(redirectUri).matches())) {
       throw new BadRequestException("redirect uri not allowed");
     }
   }
