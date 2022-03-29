@@ -9,8 +9,13 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +29,10 @@ class SshKeyPairInternalDaoTest extends BaseTest {
   @Nested
   class UpsertKeyPair {
     @Test
-    void testUpsertTwiceWithSameUserId() throws NoSuchAlgorithmException, IOException {
+    void testUpsertTwiceWithSameUserId()
+        throws NoSuchAlgorithmException, IOException, InvalidAlgorithmParameterException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+            InvalidKeyException {
       var externalUserEmail = "bar@monkeyseesmonkeydo.com";
       var sshKeyOne = createRandomGithubSshKey();
       var sshKeyTwo = sshKeyOne.withExternalUserEmail(externalUserEmail);
@@ -38,7 +46,10 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     }
 
     @Test
-    void testUpsertTwiceWithDifferentUserId() throws NoSuchAlgorithmException, IOException {
+    void testUpsertTwiceWithDifferentUserId()
+        throws NoSuchAlgorithmException, IOException, InvalidAlgorithmParameterException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+            InvalidKeyException {
       var userId = UUID.randomUUID().toString();
       var externalUserEmail = "bar@monkeyseesmonkeydo.com";
       var sshKeyOne = createRandomGithubSshKey();
@@ -57,7 +68,10 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     }
 
     @Test
-    void upsertSshKey() throws NoSuchAlgorithmException, IOException {
+    void upsertSshKey()
+        throws NoSuchAlgorithmException, IOException, InvalidAlgorithmParameterException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+            InvalidKeyException {
       var sshKey = createRandomGithubSshKey();
       var storedSshKey = sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
@@ -75,7 +89,10 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     }
 
     @Test
-    void testGetSshKeyPair() throws NoSuchAlgorithmException, IOException {
+    void testGetSshKeyPair()
+        throws NoSuchAlgorithmException, IOException, InvalidAlgorithmParameterException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+            InvalidKeyException {
       var sshKey = createRandomGithubSshKey();
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
@@ -89,7 +106,10 @@ class SshKeyPairInternalDaoTest extends BaseTest {
   @Nested
   class DeleteKeyPair {
     @Test
-    void testDeleteSshKeyPair() throws NoSuchAlgorithmException, IOException {
+    void testDeleteSshKeyPair()
+        throws NoSuchAlgorithmException, IOException, InvalidAlgorithmParameterException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+            InvalidKeyException {
       var sshKey = createRandomGithubSshKey();
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
@@ -105,7 +125,10 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     }
 
     @Test
-    void deleteSshKeyPairWithWrongType() throws NoSuchAlgorithmException, IOException {
+    void deleteSshKeyPairWithWrongType()
+        throws NoSuchAlgorithmException, IOException, InvalidAlgorithmParameterException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+            InvalidKeyException {
       var sshKey = createRandomGithubSshKey();
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 

@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_dek_and_iv"
+      author: yuhuyoyo
+      changes:
+        - addColumn:
+            tableName: ssh_key_pair
+            columns:
+              - column:
+                  name: data_encrypt_key
+                  type: bytea
+              - column:
+                  name: iv
+                  type: bytea

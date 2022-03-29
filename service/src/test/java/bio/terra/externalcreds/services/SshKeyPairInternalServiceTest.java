@@ -12,8 +12,13 @@ import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -23,7 +28,10 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
   @Autowired SshKeyPairDAO sshKeyPairDAO;
 
   @Test
-  void getSshKeyPair() throws NoSuchAlgorithmException, IOException {
+  void getSshKeyPair()
+      throws NoSuchAlgorithmException, IOException, InvalidAlgorithmParameterException,
+          NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+          InvalidKeyException {
     var sshKey = createRandomGithubSshKey();
     sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
@@ -33,7 +41,10 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
   }
 
   @Test
-  void deleteSshKeyPair() throws NoSuchAlgorithmException, IOException {
+  void deleteSshKeyPair()
+      throws NoSuchAlgorithmException, IOException, InvalidAlgorithmParameterException,
+          NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+          InvalidKeyException {
     var sshKey = createRandomGithubSshKey();
     sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
@@ -69,7 +80,10 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
   }
 
   @Test
-  void updateSshKey() throws NoSuchAlgorithmException, IOException {
+  void updateSshKey()
+      throws NoSuchAlgorithmException, IOException, InvalidAlgorithmParameterException,
+          NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+          InvalidKeyException {
     var sshKey = createRandomGithubSshKey();
     var keyType = SshKeyPairType.GITHUB;
     sshKeyPairDAO.upsertSshKeyPair(sshKey);

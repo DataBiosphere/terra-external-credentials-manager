@@ -11,12 +11,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Optional;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -45,14 +50,24 @@ public class SshKeyPairService {
   @WriteTransaction
   public SshKeyPairInternal putSshKeyPair(
       String userId, SshKeyPairType type, SshKeyPair sshKeyPair) {
-    return sshKeyPairDAO.upsertSshKeyPair(
-        new SshKeyPairInternal.Builder()
-            .privateKey(sshKeyPair.getPrivateKey())
-            .publicKey(sshKeyPair.getPublicKey())
-            .externalUserEmail(sshKeyPair.getExternalUserEmail())
-            .userId(userId)
-            .type(type)
-            .build());
+    try {
+      return sshKeyPairDAO.upsertSshKeyPair(
+          new SshKeyPairInternal.Builder()
+              .privateKey(sshKeyPair.getPrivateKey())
+              .publicKey(sshKeyPair.getPublicKey())
+              .externalUserEmail(sshKeyPair.getExternalUserEmail())
+              .userId(userId)
+              .type(type)
+              .build());
+    } catch (NoSuchAlgorithmException
+        | InvalidAlgorithmParameterException
+        | NoSuchPaddingException
+        | IllegalBlockSizeException
+        | BadPaddingException
+        | InvalidKeyException
+        | IOException e) {
+      throw new ExternalCredsException(e, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @WriteTransaction
@@ -69,7 +84,13 @@ public class SshKeyPairService {
               .type(type)
               .userId(userId)
               .build());
-    } catch (NoSuchAlgorithmException | IOException e) {
+    } catch (NoSuchAlgorithmException
+        | IOException
+        | InvalidAlgorithmParameterException
+        | NoSuchPaddingException
+        | IllegalBlockSizeException
+        | BadPaddingException
+        | InvalidKeyException e) {
       throw new ExternalCredsException(e, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

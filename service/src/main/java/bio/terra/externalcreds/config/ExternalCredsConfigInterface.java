@@ -43,4 +43,17 @@ public interface ExternalCredsConfigInterface {
   boolean getAuthorizationChangeEventsEnabled();
 
   Optional<String> getAuthorizationChangeEventTopicName();
+
+  @Value.Default
+  default boolean enableEncryption() {
+    return false;
+  }
+
+  Optional<String> getServiceGoogleProject();
+
+  Optional<String> getKeyRingLocation();
+
+  Optional<String> getKeyRingId();
+
+  Optional<String> getKeyId();
 }
