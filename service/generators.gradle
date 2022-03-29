@@ -1,6 +1,6 @@
 dependencies {
 	implementation 'io.swagger.core.v3:swagger-annotations'
-	runtimeOnly 'org.webjars.npm:swagger-ui-dist:4.6.2'
+	runtimeOnly 'org.webjars.npm:swagger-ui-dist:4.10.0'
 	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli'
 
 	// Versioned by Spring:
