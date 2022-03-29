@@ -653,7 +653,7 @@ public class ProviderServiceTest extends BaseTest {
     void testOAuth2StatePersisted() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
       var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
-      ProviderProperties providerProperties =
+      var providerProperties =
           ProviderProperties.create()
               .setAllowedRedirectUriPatterns(List.of(Pattern.compile(redirectUri)));
 
@@ -828,7 +828,7 @@ public class ProviderServiceTest extends BaseTest {
     private Optional<String> testGetAuthorizationUrl(String uriPattern) {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
       var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
-      ProviderProperties providerProperties =
+      var providerProperties =
           ProviderProperties.create()
               .setAllowedRedirectUriPatterns(List.of(Pattern.compile(uriPattern)));
 
