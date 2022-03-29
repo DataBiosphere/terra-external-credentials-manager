@@ -25,12 +25,12 @@ public class ClientTestUtils {
    * @return the API client object for this user
    */
   public static ApiClient getClientWithoutAuth(ServerSpecification server) {
-    if (Strings.isNullOrEmpty(server.policyManagerUri)) {
+    if (Strings.isNullOrEmpty(server.externalCredentialsManagerUri)) {
       throw new IllegalArgumentException("Service URI cannot be empty");
     }
 
     var apiClient = new ApiClient();
-    apiClient.setBasePath(server.policyManagerUri);
+    apiClient.setBasePath(server.externalCredentialsManagerUri);
     return apiClient;
   }
 
