@@ -36,6 +36,8 @@ dependencies {
 
 	// for testing with mock web server
 	testImplementation 'org.mock-server:mockserver-netty:5.13.0'
+	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
+	implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.70'
 }
 
 sonarqube {
