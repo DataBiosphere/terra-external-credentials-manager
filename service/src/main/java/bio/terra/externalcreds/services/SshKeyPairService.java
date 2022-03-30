@@ -80,7 +80,7 @@ public class SshKeyPairService {
   private static String encodeRSAPrivateKey(RSAPrivateKey privateKey) throws IOException {
     var pemObject = new PemObject("RSA PRIVATE KEY", privateKey.getEncoded());
     var byteStream = new ByteArrayOutputStream();
-    var pemWriter = new PemWriter(new OutputStreamWriter(byteStream));
+    var pemWriter = new PemWriter(new OutputStreamWriter(byteStream, StandardCharsets.UTF_8));
     pemWriter.writeObject(pemObject);
     pemWriter.close();
     return byteStream.toString(StandardCharsets.UTF_8);
