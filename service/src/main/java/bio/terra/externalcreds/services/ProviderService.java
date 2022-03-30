@@ -279,7 +279,7 @@ public class ProviderService {
 
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
-    if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
+    if (linkedAccount.getExpires().toInstant().isBefore(Instant.now())) {
       invalidateLinkedAccount(linkedAccount);
     } else {
       try {
