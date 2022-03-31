@@ -47,14 +47,18 @@ public class SshKeyPairService {
   @WriteTransaction
   public SshKeyPairInternal putSshKeyPair(
       String userId, SshKeyPairType type, SshKeyPair sshKeyPair) {
-    return sshKeyPairDAO.upsertSshKeyPair(
-        new SshKeyPairInternal.Builder()
-            .privateKey(sshKeyPair.getPrivateKey())
-            .publicKey(sshKeyPair.getPublicKey())
-            .externalUserEmail(sshKeyPair.getExternalUserEmail())
-            .userId(userId)
-            .type(type)
-            .build());
+    try {
+      return sshKeyPairDAO.upsertSshKeyPair(
+          new SshKeyPairInternal.Builder()
+              .privateKey(sshKeyPair.getPrivateKey())
+              .publicKey(sshKeyPair.getPublicKey())
+              .externalUserEmail(sshKeyPair.getExternalUserEmail())
+              .userId(userId)
+              .type(type)
+              .build());
+    } catch (IOException e) {
+      throw new ExternalCredsException(e);
+    }
   }
 
   @WriteTransaction

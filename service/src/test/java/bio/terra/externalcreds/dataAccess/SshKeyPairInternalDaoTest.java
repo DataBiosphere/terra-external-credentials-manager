@@ -4,8 +4,11 @@ import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
@@ -13,11 +16,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 class SshKeyPairInternalDaoTest extends BaseTest {
 
   @Autowired SshKeyPairDAO sshKeyPairDAO;
+  @MockBean ExternalCredsConfig externalCredsConfig;
 
   private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
 
@@ -83,6 +90,34 @@ class SshKeyPairInternalDaoTest extends BaseTest {
 
       assertPresent(loadedSshKeyOptional);
       verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
+    }
+
+    @Test
+    void testGetDecryptedKeyPair() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      var cypheredkey = "jfidosruewr1k=";
+      when(externalCredsConfig.getEnableKmsEncryption()).thenReturn(true);
+      try (var utilsMock =
+          Mockito.mockStatic(EncryptDecryptUtils.class)) {
+        utilsMock
+            .when(
+                () ->
+                    EncryptDecryptUtils.encryptSymmetrtic(
+                        any(), any(), any(), any(), sshKey.getPrivateKey()))
+            .thenReturn(cypheredkey);
+        utilsMock
+            .when(
+                () -> EncryptDecryptUtils.decryptSymmetric(any(), any(), any(), any(), cypheredkey))
+            .thenReturn(sshKey.getPrivateKey());
+
+        sshKeyPairDAO.upsertSshKeyPair(sshKey);
+
+        var loadedSshKeyOptional =
+            sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
+
+        assertPresent(loadedSshKeyOptional);
+        verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
+      }
     }
   }
 

@@ -43,4 +43,17 @@ public interface ExternalCredsConfigInterface {
   boolean getAuthorizationChangeEventsEnabled();
 
   Optional<String> getAuthorizationChangeEventTopicName();
+
+  @Value.Default
+  default boolean getEnableKmsEncryption() {
+    return false;
+  }
+
+  String getServiceGoogleProject();
+
+  Optional<String> getKeyRingId();
+
+  Optional<String> getKeyId();
+
+  Optional<String> getKeyRingLocation();
 }
