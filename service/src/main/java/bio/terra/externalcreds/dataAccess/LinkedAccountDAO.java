@@ -20,6 +20,12 @@ import org.springframework.stereotype.Repository;
 @Slf4j
 public class LinkedAccountDAO {
 
+  final NamedParameterJdbcTemplate jdbcTemplate;
+
+  public LinkedAccountDAO(NamedParameterJdbcTemplate jdbcTemplate) {
+    this.jdbcTemplate = jdbcTemplate;
+  }
+
   private static final RowMapper<LinkedAccount> LINKED_ACCOUNT_ROW_MAPPER =
       ((rs, rowNum) ->
           new LinkedAccount.Builder()
@@ -31,12 +37,6 @@ public class LinkedAccountDAO {
               .externalUserId(rs.getString("external_user_id"))
               .isAuthenticated(rs.getBoolean("is_authenticated"))
               .build());
-
-  final NamedParameterJdbcTemplate jdbcTemplate;
-
-  public LinkedAccountDAO(NamedParameterJdbcTemplate jdbcTemplate) {
-    this.jdbcTemplate = jdbcTemplate;
-  }
 
   public Optional<LinkedAccount> getLinkedAccount(String userId, String providerName) {
     var namedParameters =

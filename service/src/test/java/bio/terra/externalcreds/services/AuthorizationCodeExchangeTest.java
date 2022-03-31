@@ -52,7 +52,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   @Autowired JwtUtils jwtUtils;
   @Autowired ObjectMapper objectMapper;
 
-  private static JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
+  private static final JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
 
   private final String authorizationCode = UUID.randomUUID().toString();
   private final String redirectUri = "https://test/redirect/uri";
@@ -70,7 +70,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   @Test
-  void testNoVisas() throws JOSEException, URISyntaxException {
+  void testNoVisas() throws URISyntaxException {
     var expectedPassport =
         jwtSigningTestUtils.createTestPassport(Collections.emptyList(), userEmail);
     var expectedLinkedAccount = createTestLinkedAccount();
@@ -78,7 +78,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   @Test
-  void testAccessTokenVisa() throws JOSEException, URISyntaxException {
+  void testAccessTokenVisa() throws URISyntaxException {
     var visa = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token);
     var expectedPassport = jwtSigningTestUtils.createTestPassport(List.of(visa), userEmail);
     var expectedLinkedAccount = createTestLinkedAccount();
@@ -86,7 +86,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   @Test
-  void testDocumentTokenVisa() throws JOSEException, URISyntaxException {
+  void testDocumentTokenVisa() throws URISyntaxException {
     var visa = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token);
     var expectedPassport = jwtSigningTestUtils.createTestPassport(List.of(visa), userEmail);
     var expectedLinkedAccount = createTestLinkedAccount();
@@ -94,7 +94,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   @Test
-  void testMultipleVisas() throws URISyntaxException, JOSEException {
+  void testMultipleVisas() throws URISyntaxException {
     var visas =
         List.of(
             jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token),
@@ -113,7 +113,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   }
 
   @Test
-  void testInvalidAuthorizationCode() throws URISyntaxException {
+  void testInvalidAuthorizationCode() {
     var linkedAccount = createTestLinkedAccount();
     var providerInfo = TestUtils.createRandomProvider();
     var providerClient =

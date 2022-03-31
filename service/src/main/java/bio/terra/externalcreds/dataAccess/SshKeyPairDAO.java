@@ -15,6 +15,10 @@ import org.springframework.stereotype.Repository;
 public class SshKeyPairDAO {
   private final NamedParameterJdbcTemplate jdbcTemplate;
 
+  public SshKeyPairDAO(NamedParameterJdbcTemplate jdbcTemplate) {
+    this.jdbcTemplate = jdbcTemplate;
+  }
+
   private static final RowMapper<SshKeyPairInternal> SSH_KEY_PAIR_ROW_MAPPER =
       (rs, rowNum) ->
           new SshKeyPairInternal.Builder()
@@ -25,10 +29,6 @@ public class SshKeyPairDAO {
               .privateKey(rs.getString("private_key"))
               .publicKey(rs.getString("public_key"))
               .build();
-
-  public SshKeyPairDAO(NamedParameterJdbcTemplate jdbcTemplate) {
-    this.jdbcTemplate = jdbcTemplate;
-  }
 
   public Optional<SshKeyPairInternal> getSshKeyPair(String userId, SshKeyPairType type) {
     var namedParameters =
