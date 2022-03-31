@@ -12,7 +12,7 @@ Government data.
 
 ### Prerequisites:
 
-- Install Postgres 13.1: https://www.postgresql.org/download/
+- Install Postgres 13: https://www.postgresql.org/download/
   - [The app](https://postgresapp.com/downloads.html) may be easier, just make sure to download the right version. It'll manage things for you and has a useful menulet where the server can be turned on and off. Don't forget to create a server if you go this route.
 - Install Adoptium Java 17 (Temurin). Here's an easy way on Mac, using [jEnv](https://www.jenv.be/) to manage the active version:
 
