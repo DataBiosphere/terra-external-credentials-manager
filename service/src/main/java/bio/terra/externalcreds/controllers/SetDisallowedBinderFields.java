@@ -7,11 +7,11 @@ import org.springframework.web.bind.annotation.InitBinder;
 
 /** https://spring.io/blog/2022/03/31/spring-framework-rce-early-announcement */
 @ControllerAdvice
-@Order(10000)
+@Order
 public class SetDisallowedBinderFields {
   @InitBinder
   public void setAllowedFields(WebDataBinder dataBinder) {
-    String[] abd = new String[] {"class.*", "Class.*", "*.class.*", "*.Class.*"};
-    dataBinder.setDisallowedFields(abd);
+    String[] denylist = new String[] {"class.*", "Class.*", "*.class.*", "*.Class.*"};
+    dataBinder.setDisallowedFields(denylist);
   }
 }
