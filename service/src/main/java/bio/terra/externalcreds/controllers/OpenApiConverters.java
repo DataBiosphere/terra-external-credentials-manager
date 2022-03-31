@@ -29,8 +29,7 @@ public class OpenApiConverters {
       return criteria.stream()
           .map(
               c -> {
-                if (c instanceof RASv1Dot1VisaCriterion) {
-                  var rasCrit = (RASv1Dot1VisaCriterion) c;
+                if (c instanceof RASv1Dot1VisaCriterion rasCrit) {
                   return new RASv1Dot1VisaCriterionInternal.Builder()
                       .issuer(rasCrit.getIssuer())
                       .phsId(rasCrit.getPhsId())
@@ -56,8 +55,7 @@ public class OpenApiConverters {
 
     public static OneOfValidatePassportResultMatchedCriterion convert(
         VisaCriterionInternal visaCriterion) {
-      if (visaCriterion instanceof RASv1Dot1VisaCriterionInternal) {
-        var rasCrit = (RASv1Dot1VisaCriterionInternal) visaCriterion;
+      if (visaCriterion instanceof RASv1Dot1VisaCriterionInternal rasCrit) {
         var converted =
             new RASv1Dot1VisaCriterion()
                 .consentCode(rasCrit.getConsentCode())

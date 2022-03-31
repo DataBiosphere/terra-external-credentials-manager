@@ -20,7 +20,7 @@ import org.springframework.stereotype.Repository;
 @Slf4j
 public class LinkedAccountDAO {
 
-  private static RowMapper<LinkedAccount> LINKED_ACCOUNT_ROW_MAPPER =
+  private static final RowMapper<LinkedAccount> LINKED_ACCOUNT_ROW_MAPPER =
       ((rs, rowNum) ->
           new LinkedAccount.Builder()
               .id(rs.getInt("id"))

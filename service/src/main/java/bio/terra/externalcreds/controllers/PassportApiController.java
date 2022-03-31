@@ -8,12 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 @Controller
-public class PassportApiController implements PassportApi {
-  private final PassportService passportService;
-
-  public PassportApiController(PassportService passportService) {
-    this.passportService = passportService;
-  }
+public record PassportApiController(PassportService passportService) implements PassportApi {
 
   @Override
   public ResponseEntity<ValidatePassportResult> validatePassport(ValidatePassportRequest body) {
