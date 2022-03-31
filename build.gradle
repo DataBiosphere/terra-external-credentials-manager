@@ -2,7 +2,7 @@ plugins {
 	id 'idea'
 
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
-	id 'org.springframework.boot' version '2.6.5' apply false
+	id 'org.springframework.boot' version '2.6.6' apply false
 	id 'com.diffplug.spotless' version '6.3.0' apply false
 	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
 	id 'com.google.cloud.tools.jib' version '3.1.4' apply false
@@ -42,9 +42,6 @@ subprojects {
 			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.33'
 		}
 	}
-
-	// https://spring.io/blog/2022/03/31/spring-framework-rce-early-announcement
-	ext['spring-framework.version'] = '5.3.18'
 }
 
 idea.project.jdkName = '11'
