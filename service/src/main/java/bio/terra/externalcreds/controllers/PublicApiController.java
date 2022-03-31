@@ -12,7 +12,7 @@ import org.springframework.stereotype.Controller;
 
 @Controller
 public record PublicApiController(
-    StatusService statusService, ExternalCredsConfig externalCredsConfig) implements PublicApi {
+    ExternalCredsConfig externalCredsConfig, StatusService statusService) implements PublicApi {
 
   @Override
   public ResponseEntity<SystemStatus> getStatus() {

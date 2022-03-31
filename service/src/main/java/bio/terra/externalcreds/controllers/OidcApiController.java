@@ -26,13 +26,13 @@ import org.springframework.stereotype.Controller;
 
 @Controller
 public record OidcApiController(
+    AuditLogger auditLogger,
     HttpServletRequest request,
     LinkedAccountService linkedAccountService,
     ObjectMapper mapper,
     PassportService passportService,
     ProviderService providerService,
-    SamService samService,
-    AuditLogger auditLogger)
+    SamService samService)
     implements OidcApi {
 
   @Override
