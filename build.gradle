@@ -2,7 +2,7 @@ plugins {
 	id 'idea'
 
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
-	id 'org.springframework.boot' version '2.6.4' apply false
+	id 'org.springframework.boot' version '2.6.5' apply false
 	id 'com.diffplug.spotless' version '6.3.0' apply false
 	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
 	id 'com.google.cloud.tools.jib' version '3.1.4' apply false
@@ -20,7 +20,7 @@ allprojects {
 
 subprojects {
 	group = 'bio.terra'
-	version = '0.75.0-SNAPSHOT'
+	version = '0.77.0-SNAPSHOT'
 
 	apply plugin: 'idea'
 	apply plugin: 'java'
@@ -43,6 +43,8 @@ subprojects {
 		}
 	}
 
+	// https://spring.io/blog/2022/03/31/spring-framework-rce-early-announcement
+	ext['spring-framework.version'] = '5.3.18'
 }
 
 idea.project.jdkName = '11'
