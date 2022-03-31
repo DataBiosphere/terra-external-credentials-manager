@@ -110,7 +110,7 @@ public class SshKeyPairService {
 
   private static KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException {
     var generator = KeyPairGenerator.getInstance("RSA");
-    generator.initialize(2048);
+    generator.initialize(4096);
     return generator.generateKeyPair();
   }
 }
