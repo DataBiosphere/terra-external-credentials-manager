@@ -49,7 +49,7 @@ psql -h 127.0.0.1 -U postgres -f ./common/postgres-init.sql
 
 ### IntelliJ Setup
 
-1. Open the repo normally (File > New > Project From Existing Sources). Select the folder, and then select Gradel as the external model.
+1. Open the repo normally (File > New > Project From Existing Sources). Select the folder, and then select Gradle as the external model.
 2. In project structure (the folder icon with a little tetromino over it in the upper
    right corner), make sure the project SDK is set to Java 17. If not, IntelliJ should
    detect it on your system in the dropdown, otherwise click "Add JDK..." and navigate to
