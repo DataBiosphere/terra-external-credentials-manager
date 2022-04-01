@@ -11,7 +11,7 @@ on:
 
 jobs:
   performance-tests:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v2
