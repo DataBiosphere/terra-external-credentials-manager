@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.controllers;
 
-import static bio.terra.externalcreds.controllers.OpenApiConverters.Output.convert;
 import static bio.terra.externalcreds.controllers.UserStatusInfoUtils.getUserIdFromSam;
 
 import bio.terra.externalcreds.generated.api.SshKeyPairApi;
@@ -9,23 +8,13 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.services.SamService;
 import bio.terra.externalcreds.services.SshKeyPairService;
 import javax.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 @Controller
-public class SshKeyApiController implements SshKeyPairApi {
-
-  private final HttpServletRequest request;
-  private final SamService samService;
-  private final SshKeyPairService sshKeyPairService;
-
-  public SshKeyApiController(
-      HttpServletRequest request, SamService samService, SshKeyPairService sshKeyPairService) {
-    this.request = request;
-    this.samService = samService;
-    this.sshKeyPairService = sshKeyPairService;
-  }
+public record SshKeyApiController(
+    HttpServletRequest request, SamService samService, SshKeyPairService sshKeyPairService)
+    implements SshKeyPairApi {
 
   @Override
   public ResponseEntity<Void> deleteSshKeyPair(SshKeyPairType type) {
@@ -36,14 +25,14 @@ public class SshKeyApiController implements SshKeyPairApi {
   @Override
   public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type) {
     var sshKeyPair = sshKeyPairService.getSshKeyPair(getUserIdFromSam(request, samService), type);
-    return ResponseEntity.of(sshKeyPair.map(keyPair -> convert(keyPair)));
+    return ResponseEntity.of(sshKeyPair.map(OpenApiConverters.Output::convert));
   }
 
   @Override
   public ResponseEntity<SshKeyPair> putSshKeyPair(SshKeyPairType type, SshKeyPair body) {
     var sshKeyPair =
         sshKeyPairService.putSshKeyPair(getUserIdFromSam(request, samService), type, body);
-    return new ResponseEntity(sshKeyPair, HttpStatus.OK);
+    return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
   }
 
   @Override

@@ -23,7 +23,8 @@ public class PublicApiControllerTest extends BaseTest {
   @Test
   void testGetStatus() throws Exception {
     mvc.perform(get("/status"))
-        .andExpect(content().json("{\"ok\": true,\"systems\": { \"postgres\": true}}"));
+        .andExpect(content().json("""
+            {"ok": true,"systems": { "postgres": true }}"""));
   }
 
   @Test
@@ -40,7 +41,7 @@ public class PublicApiControllerTest extends BaseTest {
         .andExpect(
             content()
                 .json(
-                    "{\"gitTag\": \"gitTag\", \"gitHash\": \"gitHash\", "
-                        + "\"github\": \"github\", \"build\": \"build\"}"));
+                    """
+                        {"gitTag": "gitTag", "gitHash": "gitHash", "github": "github", "build": "build"}"""));
   }
 }

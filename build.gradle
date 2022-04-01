@@ -2,12 +2,14 @@ plugins {
 	id 'idea'
 
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
-	id 'org.springframework.boot' version '2.6.5' apply false
+	id 'org.springframework.boot' version '2.6.6' apply false
 	id 'com.diffplug.spotless' version '6.3.0' apply false
 	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
 	id 'com.google.cloud.tools.jib' version '3.1.4' apply false
 	// ^^ see https://github.com/GoogleContainerTools/jib/blob/master/docs/faq.md#i-am-seeing-method-not-found-or-class-not-found-errors-when-building
   	id 'org.sonarqube' version '3.3' apply false
+	id 'io.freefair.lombok' version '6.4.1' apply false
+	id 'org.hidetake.swagger.generator' version '2.19.2' apply false
 }
 
 repositories { mavenCentral() }
@@ -20,11 +22,10 @@ allprojects {
 
 subprojects {
 	group = 'bio.terra'
-	version = '0.77.0-SNAPSHOT'
+	version = '0.79.0-SNAPSHOT'
 
 	apply plugin: 'idea'
 	apply plugin: 'java'
-	compileJava { options.release = 11 }
 
 	ext {
 		artifactGroup = "${group}.${rootProject.name}"
@@ -43,8 +44,10 @@ subprojects {
 		}
 	}
 
-	// https://spring.io/blog/2022/03/31/spring-framework-rce-early-announcement
-	ext['spring-framework.version'] = '5.3.18'
+	tasks.withType(org.hidetake.gradle.swagger.generator.GenerateSwaggerCode).all {
+		jvmArgs = ['--add-opens=java.base/java.util=ALL-UNNAMED'] // for jvm 16+
+	}
+
 }
 
-idea.project.jdkName = '11'
+idea.project.jdkName = '17'

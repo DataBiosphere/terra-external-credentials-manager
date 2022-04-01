@@ -16,7 +16,6 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -130,7 +129,7 @@ public class LinkedAccountService {
       var savedVisas =
           linkedAccountWithPassportAndVisas.getVisas().stream()
               .map(v -> ga4ghVisaDAO.insertVisa(v.withPassportId(savedPassport.getId())))
-              .collect(Collectors.toList());
+              .toList();
 
       return linkedAccountWithPassportAndVisas.withPassport(savedPassport).withVisas(savedVisas);
     } else {
