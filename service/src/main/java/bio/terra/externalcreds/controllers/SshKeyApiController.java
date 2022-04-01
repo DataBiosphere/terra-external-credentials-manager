@@ -34,4 +34,11 @@ public record SshKeyApiController(
         sshKeyPairService.putSshKeyPair(getUserIdFromSam(request, samService), type, body);
     return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
   }
+
+  @Override
+  public ResponseEntity<SshKeyPair> generateSshKeyPair(SshKeyPairType type, String email) {
+    var sshKeyPair =
+        sshKeyPairService.generateSshKeyPair(getUserIdFromSam(request, samService), email, type);
+    return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
+  }
 }
