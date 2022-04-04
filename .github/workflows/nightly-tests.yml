@@ -31,6 +31,8 @@ jobs:
           restore-keys: v1-${{ runner.os }}-gradle-${{ github.ref }}
 
       # Github workflows shouldn't have access to vault, so we read from GitHub secrets instead.
+      - name: Curl For Debugging
+        run: curl https://externalcreds.dsde-perf.broadinstitute.org/
       - name: Render GitHub Secrets
         env:
           DEV_FIRECLOUD_ACCOUNT_B64: ${{ secrets.DEV_FIRECLOUD_ACCOUNT_B64 }}
