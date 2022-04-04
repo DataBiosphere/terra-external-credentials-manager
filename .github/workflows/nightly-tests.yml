@@ -10,6 +10,21 @@ on:
     branches: [ '**' ]
 
 jobs:
+#   regenerate-perf-test-data:
+#     runs-on: [self-hosted]
+
+#     steps: 
+#       - name: Checkout DSP Scripts
+#         uses: actions/checkout@v3
+#         with:
+#           repository: broadinstitute/dsp-scripts
+#           token: ${{ secrets.BROADBOT_TOKEN }}
+          
+#       - name: Update Perf Database
+#         run: |
+#           cd dosomething here
+        
+
   performance-tests:
     runs-on: [self-hosted]
 
@@ -34,26 +49,26 @@ jobs:
       - name: Render GitHub Secrets
         env:
           DEV_FIRECLOUD_ACCOUNT_B64: ${{ secrets.DEV_FIRECLOUD_ACCOUNT_B64 }}
-          TESTRUNNER_PERF_SA: ${{ secrets.TESTRUNNER_PERF_SA }}
+          TESTRUNNER_PERF_SA: ${{ secrets.PERF_TESTRUNNER_ACCOUNT_B64 }}
         run: |
           echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
           echo "$TESTRUNNER_PERF_SA" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
       - name: Run the perf test suite
         run: ./gradlew --build-cache :integration:runTest --args="suites/FullPerf.json /tmp/foo"
 
-  notify-slack:
-    needs: [ performance-tests ]
-    runs-on: ubuntu-latest
+  # notify-slack:
+  #   needs: [ performance-tests ]
+  #   runs-on: ubuntu-latest
 
-    if: failure()
+  #   if: failure()
 
-    steps:
-      - name: Notify slack on failure
-        uses: 8398a7/action-slack@v3
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
-        with:
-          status: failure
-          author_name: Test Runner
-          fields: workflow,message
-          text: 'Nightly perf tests failed :sadpanda: (<https://github.com/DataBiosphere/terra-external-credentials-manager/actions/runs/$GITHUB_RUN_ID|link>)'
+  #   steps:
+  #     - name: Notify slack on failure
+  #       uses: 8398a7/action-slack@v3
+  #       env:
+  #         SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
+  #       with:
+  #         status: failure
+  #         author_name: Test Runner
+  #         fields: workflow,message
+  #         text: 'Nightly perf tests failed :sadpanda: (<https://github.com/DataBiosphere/terra-external-credentials-manager/actions/runs/$GITHUB_RUN_ID|link>)'
