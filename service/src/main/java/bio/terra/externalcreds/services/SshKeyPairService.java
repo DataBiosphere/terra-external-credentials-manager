@@ -48,13 +48,13 @@ public class SshKeyPairService {
   public SshKeyPairInternal putSshKeyPair(
       String userId, SshKeyPairType type, SshKeyPair sshKeyPair) {
     return sshKeyPairDAO.upsertSshKeyPair(
-          new SshKeyPairInternal.Builder()
-              .privateKey(sshKeyPair.getPrivateKey())
-              .publicKey(sshKeyPair.getPublicKey())
-              .externalUserEmail(sshKeyPair.getExternalUserEmail())
-              .userId(userId)
-              .type(type)
-              .build());
+        new SshKeyPairInternal.Builder()
+            .privateKey(sshKeyPair.getPrivateKey())
+            .publicKey(sshKeyPair.getPublicKey())
+            .externalUserEmail(sshKeyPair.getExternalUserEmail())
+            .userId(userId)
+            .type(type)
+            .build());
   }
 
   @WriteTransaction
