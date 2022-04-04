@@ -4,7 +4,7 @@ import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
@@ -13,10 +13,10 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -97,17 +97,32 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var sshKey = createRandomGithubSshKey();
       var cypheredkey = "jfidosruewr1k=";
       when(externalCredsConfig.getEnableKmsEncryption()).thenReturn(true);
-      try (var utilsMock =
-          Mockito.mockStatic(EncryptDecryptUtils.class)) {
+      String location = "us-central1";
+      when(externalCredsConfig.getKeyRingLocation()).thenReturn(Optional.of(location));
+      String keyRing = "key_ring";
+      when(externalCredsConfig.getKeyRingId()).thenReturn(Optional.of(keyRing));
+      String encryptionKey = "encryption_key";
+      when(externalCredsConfig.getKeyId()).thenReturn(Optional.of(encryptionKey));
+      try (var utilsMock = Mockito.mockStatic(EncryptDecryptUtils.class)) {
         utilsMock
             .when(
                 () ->
                     EncryptDecryptUtils.encryptSymmetrtic(
-                        any(), any(), any(), any(), sshKey.getPrivateKey()))
+                        eq(externalCredsConfig.getServiceGoogleProject()),
+                        eq(location),
+                        eq(keyRing),
+                        eq(encryptionKey),
+                        eq(sshKey.getPrivateKey())))
             .thenReturn(cypheredkey);
         utilsMock
             .when(
-                () -> EncryptDecryptUtils.decryptSymmetric(any(), any(), any(), any(), cypheredkey))
+                () ->
+                    EncryptDecryptUtils.decryptSymmetric(
+                        eq(externalCredsConfig.getServiceGoogleProject()),
+                        eq(location),
+                        eq(keyRing),
+                        eq(encryptionKey),
+                        eq(cypheredkey)))
             .thenReturn(sshKey.getPrivateKey());
 
         sshKeyPairDAO.upsertSshKeyPair(sshKey);

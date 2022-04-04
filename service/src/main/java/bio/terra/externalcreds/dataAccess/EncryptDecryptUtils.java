@@ -9,6 +9,8 @@ import java.io.IOException;
 
 public class EncryptDecryptUtils {
 
+  private EncryptDecryptUtils() {}
+
   public static String encryptSymmetrtic(
       String projectId, String locationId, String keyRingId, String keyId, String plainText)
       throws IOException {
@@ -26,6 +28,7 @@ public class EncryptDecryptUtils {
     try (var client = KeyManagementServiceClient.create()) {
       var keyName = CryptoKeyName.of(projectId, locationId, keyRingId, keyId);
       DecryptResponse response = client.decrypt(keyName, ByteString.copyFromUtf8(cypheredText));
+      client.close();
       return response.getPlaintext().toStringUtf8();
     }
   }
