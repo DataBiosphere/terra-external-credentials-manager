@@ -78,7 +78,7 @@ public class SshKeyPairService {
               .userId(userId)
               .build());
     } catch (NoSuchAlgorithmException | IOException e) {
-      throw new ExternalCredsException(e, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new ExternalCredsException(e);
     }
   }
 
