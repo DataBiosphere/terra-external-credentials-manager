@@ -61,6 +61,21 @@ class SshKeyApiControllerTest extends BaseTest {
   }
 
   @Test
+  void deleteNonexistingSshKeyPair() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    mockSamUser(accessToken);
+    var sshKeyPairType = "gitlab";
+
+    mvc.perform(
+            delete("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isNotFound())
+        .andReturn();
+
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKeyPairDeletionFailed);
+  }
+
+  @Test
   void putGetAndDeleteSshKeyPair() throws Exception {
     String accessToken = RandomStringUtils.randomAlphanumeric(10);
     String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));

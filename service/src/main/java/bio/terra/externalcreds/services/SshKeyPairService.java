@@ -21,7 +21,6 @@ import java.security.interfaces.RSAPublicKey;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
