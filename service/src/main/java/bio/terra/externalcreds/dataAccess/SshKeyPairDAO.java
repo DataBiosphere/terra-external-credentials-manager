@@ -51,8 +51,7 @@ public class SshKeyPairDAO {
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
-  public SshKeyPairInternal upsertSshKeyPair(SshKeyPairInternal sshKeyPairInternal)
-      throws IOException {
+  public SshKeyPairInternal upsertSshKeyPair(SshKeyPairInternal sshKeyPairInternal) {
     var query =
         "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email)"
             + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail)"

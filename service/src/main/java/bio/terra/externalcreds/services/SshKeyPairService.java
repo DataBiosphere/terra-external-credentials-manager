@@ -47,8 +47,7 @@ public class SshKeyPairService {
   @WriteTransaction
   public SshKeyPairInternal putSshKeyPair(
       String userId, SshKeyPairType type, SshKeyPair sshKeyPair) {
-    try {
-      return sshKeyPairDAO.upsertSshKeyPair(
+    return sshKeyPairDAO.upsertSshKeyPair(
           new SshKeyPairInternal.Builder()
               .privateKey(sshKeyPair.getPrivateKey())
               .publicKey(sshKeyPair.getPublicKey())
@@ -56,9 +55,6 @@ public class SshKeyPairService {
               .userId(userId)
               .type(type)
               .build());
-    } catch (IOException e) {
-      throw new ExternalCredsException(e);
-    }
   }
 
   @WriteTransaction
