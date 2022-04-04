@@ -7,11 +7,17 @@ import com.google.cloud.kms.v1.KeyManagementServiceClient;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 
+/**
+ * Utils for KMS symmetric encryption and decryption.
+ */
 public class EncryptDecryptUtils {
 
   private EncryptDecryptUtils() {}
 
-  public static String encryptSymmetrtic(
+  /**
+   * Encrypt with KMS symmetric key.
+   */
+  public static String encryptSymmetric(
       String projectId, String locationId, String keyRingId, String keyId, String plainText)
       throws IOException {
     try (var client = KeyManagementServiceClient.create()) {
@@ -22,6 +28,9 @@ public class EncryptDecryptUtils {
     }
   }
 
+  /**
+   * Decrypt with KMS symmetric key.
+   */
   public static String decryptSymmetric(
       String projectId, String locationId, String keyRingId, String keyId, String cypheredText)
       throws IOException {

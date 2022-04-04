@@ -3,11 +3,14 @@ package bio.terra.externalcreds.dataAccess;
 import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
@@ -30,6 +33,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
 
   @Nested
   class UpsertKeyPair {
+
     @Test
     void testUpsertTwiceWithSameUserId() throws NoSuchAlgorithmException, IOException {
       var externalUserEmail = "bar@monkeyseesmonkeydo.com";
@@ -70,6 +74,32 @@ class SshKeyPairInternalDaoTest extends BaseTest {
 
       verifySshKeyPair(sshKey, storedSshKey);
     }
+
+    @Test
+    void encryptKeyFails() {
+      when(externalCredsConfig.getEnableKmsEncryption()).thenReturn(true);
+      String location = "us-central1";
+      when(externalCredsConfig.getKeyRingLocation()).thenReturn(Optional.of(location));
+      String keyRing = "key_ring";
+      when(externalCredsConfig.getKeyRingId()).thenReturn(Optional.of(keyRing));
+      String encryptionKey = "encryption_key";
+      when(externalCredsConfig.getKeyId()).thenReturn(Optional.of(encryptionKey));
+      try (var utilsMock = Mockito.mockStatic(EncryptDecryptUtils.class)) {
+        utilsMock
+            .when(
+                () ->
+                    EncryptDecryptUtils.encryptSymmetric(
+                        eq(externalCredsConfig.getServiceGoogleProject()),
+                        eq(location),
+                        eq(keyRing),
+                        eq(encryptionKey),
+                        any()))
+            .thenThrow(new IOException("something went wrong, failed to encrypt"));
+        assertThrows(
+            ExternalCredsException.class,
+            () -> sshKeyPairDAO.upsertSshKeyPair(createRandomGithubSshKey()));
+      }
+    }
   }
 
   @Nested
@@ -107,7 +137,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
         utilsMock
             .when(
                 () ->
-                    EncryptDecryptUtils.encryptSymmetrtic(
+                    EncryptDecryptUtils.encryptSymmetric(
                         eq(externalCredsConfig.getServiceGoogleProject()),
                         eq(location),
                         eq(keyRing),
@@ -132,6 +162,45 @@ class SshKeyPairInternalDaoTest extends BaseTest {
 
         assertPresent(loadedSshKeyOptional);
         verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
+      }
+    }
+
+    @Test
+    void decryptKeyFails() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      when(externalCredsConfig.getEnableKmsEncryption()).thenReturn(true);
+      var cypheredkey = "jfidosruewr1k=";
+      String location = "us-central1";
+      when(externalCredsConfig.getKeyRingLocation()).thenReturn(Optional.of(location));
+      String keyRing = "key_ring";
+      when(externalCredsConfig.getKeyRingId()).thenReturn(Optional.of(keyRing));
+      String encryptionKey = "encryption_key";
+      when(externalCredsConfig.getKeyId()).thenReturn(Optional.of(encryptionKey));
+      try (var utilsMock = Mockito.mockStatic(EncryptDecryptUtils.class)) {
+        utilsMock
+            .when(
+                () ->
+                    EncryptDecryptUtils.encryptSymmetric(
+                        eq(externalCredsConfig.getServiceGoogleProject()),
+                        eq(location),
+                        eq(keyRing),
+                        eq(encryptionKey),
+                        eq(sshKey.getPrivateKey())))
+            .thenReturn(cypheredkey);
+        utilsMock
+            .when(
+                () ->
+                    EncryptDecryptUtils.decryptSymmetric(
+                        eq(externalCredsConfig.getServiceGoogleProject()),
+                        eq(location),
+                        eq(keyRing),
+                        eq(encryptionKey),
+                        eq(cypheredkey)))
+            .thenThrow(new IOException("Something went wrong, decryption fails"));
+        sshKeyPairDAO.upsertSshKeyPair(sshKey);
+        assertThrows(
+            ExternalCredsException.class,
+            () -> sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType()));
       }
     }
   }

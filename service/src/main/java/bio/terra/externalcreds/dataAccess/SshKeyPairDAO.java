@@ -1,7 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
 import static bio.terra.externalcreds.dataAccess.EncryptDecryptUtils.decryptSymmetric;
-import static bio.terra.externalcreds.dataAccess.EncryptDecryptUtils.encryptSymmetrtic;
+import static bio.terra.externalcreds.dataAccess.EncryptDecryptUtils.encryptSymmetric;
 
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
@@ -64,13 +64,17 @@ public class SshKeyPairDAO {
 
     var sshPrivateKey = sshKeyPairInternal.getPrivateKey();
     if (externalCredsConfig.getEnableKmsEncryption()) {
-      sshPrivateKey =
-          encryptSymmetrtic(
-              externalCredsConfig.getServiceGoogleProject(),
-              externalCredsConfig.getKeyRingLocation().get(),
-              externalCredsConfig.getKeyRingId().get(),
-              externalCredsConfig.getKeyId().get(),
-              sshPrivateKey);
+      try {
+        sshPrivateKey =
+            encryptSymmetric(
+                externalCredsConfig.getServiceGoogleProject(),
+                externalCredsConfig.getKeyRingLocation().get(),
+                externalCredsConfig.getKeyRingId().get(),
+                externalCredsConfig.getKeyId().get(),
+                sshPrivateKey);
+      } catch (IOException e) {
+        throw new ExternalCredsException(e);
+      }
     }
     var namedParameters =
         new MapSqlParameterSource()
