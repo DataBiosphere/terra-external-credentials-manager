@@ -65,8 +65,15 @@ public record SshKeyApiController(
 
   @Override
   public ResponseEntity<SshKeyPair> putSshKeyPair(SshKeyPairType type, SshKeyPair body) {
-    var sshKeyPair =
-        sshKeyPairService.putSshKeyPair(getUserIdFromSam(request, samService), type, body);
+    var userId = getUserIdFromSam(request, samService);
+    var sshKeyPair = sshKeyPairService.putSshKeyPair(userId, type, body);
+    auditLogger.logEvent(
+        new AuditLogEvent.Builder()
+            .sshKeyPairType(type.name())
+            .userId(userId)
+            .clientIP(request.getRemoteAddr())
+            .auditLogEventType(AuditLogEventType.PutSshKeyPair)
+            .build());
     return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
   }
 

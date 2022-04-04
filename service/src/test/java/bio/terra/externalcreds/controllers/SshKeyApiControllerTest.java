@@ -81,6 +81,7 @@ class SshKeyApiControllerTest extends BaseTest {
                     .header("authorization", "Bearer " + accessToken))
             .andExpect(status().isOk())
             .andReturn();
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.PutSshKeyPair);
     assertEquals(
         sshKeyPair,
         objectMapper.readValue(putResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
@@ -94,12 +95,14 @@ class SshKeyApiControllerTest extends BaseTest {
     assertEquals(
         sshKeyPair,
         objectMapper.readValue(getResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.GetSshKeyPairSucceeded);
 
     mvc.perform(
             delete("/api/sshkeypair/v1/{type}", sshKeyPairType)
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isOk())
         .andReturn();
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKayPairDeleted);
   }
 
   @Test

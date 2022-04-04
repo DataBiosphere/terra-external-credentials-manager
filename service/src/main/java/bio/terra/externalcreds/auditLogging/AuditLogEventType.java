@@ -13,4 +13,5 @@ public enum AuditLogEventType {
   GetSshKeyPairFailed,
   SshKayPairDeleted,
   SshKeyPairDeletionFailed,
+  PutSshKeyPair,
 }
