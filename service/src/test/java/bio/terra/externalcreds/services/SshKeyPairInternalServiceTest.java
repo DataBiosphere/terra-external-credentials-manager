@@ -3,8 +3,8 @@ package bio.terra.externalcreds.services;
 import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
 import static bio.terra.externalcreds.TestUtils.getRSAEncodedKeyPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
@@ -14,8 +14,8 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import org.apache.commons.lang3.RandomStringUtils;
 import java.util.UUID;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

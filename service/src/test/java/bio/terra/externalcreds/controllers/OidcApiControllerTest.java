@@ -46,7 +46,6 @@ class OidcApiControllerTest extends BaseTest {
   @Autowired private ObjectMapper mapper;
 
   @Autowired private MockMvc mvc;
-  @Autowired private OidcApiController oidcApiController;
 
   @MockBean private LinkedAccountService linkedAccountServiceMock;
   @MockBean private ProviderService providerServiceMock;
@@ -60,7 +59,8 @@ class OidcApiControllerTest extends BaseTest {
         .thenReturn(Set.of("fake-provider2", "fake-provider1"));
 
     mvc.perform(get("/api/oidc/v1/providers"))
-        .andExpect(content().json("[\"fake-provider1\",\"fake-provider2\"]"));
+        .andExpect(content().json("""
+            ["fake-provider1","fake-provider2"]"""));
   }
 
   @Nested
@@ -234,7 +234,7 @@ class OidcApiControllerTest extends BaseTest {
       mvc.perform(
               post("/api/oidc/v1/{provider}/oauthcode", "testProviderName")
                   .header("authorization", "Bearer " + accessToken)
-                  .param("scopes", new String[] {"foo"})
+                  .param("scopes", "foo")
                   .param("redirectUri", "redirectUri")
                   .param("state", "state")
                   .param("oauthcode", "oauthcode"))

@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -172,7 +173,8 @@ public class ProviderServiceTest extends BaseTest {
     @Test
     void testExpiredLinkedAccountIsMarkedInvalid() {
       // save an expired linked account
-      var expiredTimestamp = Timestamp.from(Instant.now().minus(Duration.ofMinutes(5)));
+      var expiredTimestamp =
+          new Timestamp(Instant.now().minus(Duration.ofMinutes(5)).toEpochMilli());
       var expiredLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(
               TestUtils.createRandomLinkedAccount().withExpires(expiredTimestamp));
@@ -195,7 +197,8 @@ public class ProviderServiceTest extends BaseTest {
     @Test
     void testInvalidVisaIssuer() {
       // save a non-expired linked account and nearly-expired passport
-      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
+      var nonExpiredTimestamp =
+          new Timestamp(Instant.now().plus(Duration.ofMinutes(5)).toEpochMilli());
       var savedLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(
               TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
@@ -227,7 +230,8 @@ public class ProviderServiceTest extends BaseTest {
     void testUnrecoverableOAuth2Exception() {
 
       // save a non-expired linked account and nearly-expired passport and visa
-      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
+      var nonExpiredTimestamp =
+          new Timestamp(Instant.now().plus(Duration.ofMinutes(5)).toEpochMilli());
       var savedLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(
               TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
@@ -268,7 +272,8 @@ public class ProviderServiceTest extends BaseTest {
     void testOtherOauthException() {
 
       // save a non-expired linked account and nearly-expired passport and visa
-      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
+      var nonExpiredTimestamp =
+          new Timestamp(Instant.now().plus(Duration.ofMinutes(5)).toEpochMilli());
       var savedLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(
               TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
@@ -302,7 +307,8 @@ public class ProviderServiceTest extends BaseTest {
       var updatedRefreshToken = "newRefreshToken";
 
       // save a non-expired linked account and nearly-expired passport and visa
-      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
+      var nonExpiredTimestamp =
+          new Timestamp(Instant.now().plus(Duration.ofMinutes(5)).toEpochMilli());
       var savedLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(
               TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
@@ -652,7 +658,9 @@ public class ProviderServiceTest extends BaseTest {
     void testOAuth2StatePersisted() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
       var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
-      ProviderProperties providerProperties = ProviderProperties.create();
+      var providerProperties =
+          ProviderProperties.create()
+              .setAllowedRedirectUriPatterns(List.of(Pattern.compile(redirectUri)));
 
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderName(), providerProperties));
@@ -797,6 +805,53 @@ public class ProviderServiceTest extends BaseTest {
 
       assertInstanceOf(CannotDecodeOAuth2State.class, e.getCause());
       assertInstanceOf(ValueInstantiationException.class, e.getCause().getCause());
+    }
+  }
+
+  @Nested
+  @TestComponent
+  class RedirectUriValidation {
+    @MockBean OAuth2Service oAuth2ServiceMock;
+    @MockBean ProviderClientCache providerClientCacheMock;
+    @MockBean ExternalCredsConfig externalCredsConfigMock;
+
+    @Autowired ProviderService providerService;
+
+    private final String redirectUri = "https://foo.bar.com";
+    private final Set<String> scopes = Set.of("email", "profile");
+
+    @Test
+    void testValidRedirectUri() {
+      assertPresent(testGetAuthorizationUrl(".+"));
+    }
+
+    @Test
+    void testInvalidRedirectUri() {
+      assertThrows(BadRequestException.class, () -> testGetAuthorizationUrl("can't match this"));
+    }
+
+    private Optional<String> testGetAuthorizationUrl(String uriPattern) {
+      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
+      var providerProperties =
+          ProviderProperties.create()
+              .setAllowedRedirectUriPatterns(List.of(Pattern.compile(uriPattern)));
+
+      when(externalCredsConfigMock.getProviders())
+          .thenReturn(Map.of(linkedAccount.getProviderName(), providerProperties));
+      when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+          .thenReturn(Optional.of(clientRegistration));
+
+      when(oAuth2ServiceMock.getAuthorizationRequestUri(
+              eq(clientRegistration),
+              eq(redirectUri),
+              eq(scopes),
+              anyString(),
+              eq(providerProperties.getAdditionalAuthorizationParameters())))
+          .thenReturn("");
+
+      return providerService.getProviderAuthorizationUrl(
+          linkedAccount.getUserId(), linkedAccount.getProviderName(), redirectUri, scopes);
     }
   }
 

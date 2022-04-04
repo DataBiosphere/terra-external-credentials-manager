@@ -25,32 +25,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 @Controller
-public class OidcApiController implements OidcApi {
-
-  private final HttpServletRequest request;
-  private final LinkedAccountService linkedAccountService;
-  private final ObjectMapper mapper;
-  private final ProviderService providerService;
-  private final SamService samService;
-  private final PassportService passportService;
-  private final AuditLogger auditLogger;
-
-  public OidcApiController(
-      HttpServletRequest request,
-      LinkedAccountService linkedAccountService,
-      ObjectMapper mapper,
-      PassportService passportService,
-      ProviderService providerService,
-      SamService samService,
-      AuditLogger auditLogger) {
-    this.request = request;
-    this.linkedAccountService = linkedAccountService;
-    this.mapper = mapper;
-    this.passportService = passportService;
-    this.providerService = providerService;
-    this.samService = samService;
-    this.auditLogger = auditLogger;
-  }
+public record OidcApiController(
+    AuditLogger auditLogger,
+    HttpServletRequest request,
+    LinkedAccountService linkedAccountService,
+    ObjectMapper mapper,
+    PassportService passportService,
+    ProviderService providerService,
+    SamService samService)
+    implements OidcApi {
 
   @Override
   public ResponseEntity<List<String>> listProviders() {
@@ -64,8 +47,7 @@ public class OidcApiController implements OidcApi {
   public ResponseEntity<LinkInfo> getLink(String providerName) {
     var userId = getUserIdFromSam(request, samService);
     var linkedAccount = linkedAccountService.getLinkedAccount(userId, providerName);
-    return ResponseEntity.of(
-        linkedAccount.map(linkedAccount1 -> OpenApiConverters.Output.convert(linkedAccount1)));
+    return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
   }
 
   @Override

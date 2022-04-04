@@ -121,6 +121,8 @@ public class ProviderService {
             providerClient -> {
               var providerInfo = externalCredsConfig.getProviders().get(providerName);
 
+              validateRedirectUri(redirectUri, providerInfo);
+
               // oAuth2State is used to prevent CRSF attacks
               // see https://auth0.com/docs/secure/attack-protection/state-parameters
               // a random value is generated and stored here then validated in createLink below
@@ -138,6 +140,13 @@ public class ProviderService {
                   oAuth2State.encode(objectMapper),
                   providerInfo.getAdditionalAuthorizationParameters());
             });
+  }
+
+  private void validateRedirectUri(String redirectUri, ProviderProperties providerInfo) {
+    if (providerInfo.getAllowedRedirectUriPatterns().stream()
+        .noneMatch(pattern -> pattern.matcher(redirectUri).matches())) {
+      throw new BadRequestException("redirect uri not allowed");
+    }
   }
 
   public Optional<LinkedAccountWithPassportAndVisas> createLink(
@@ -270,7 +279,7 @@ public class ProviderService {
 
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
-    if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
+    if (linkedAccount.getExpires().toInstant().isBefore(Instant.now())) {
       invalidateLinkedAccount(linkedAccount);
     } else {
       try {
@@ -323,8 +332,8 @@ public class ProviderService {
     visitedThrowables.add(oauthEx);
 
     while (currentThrowable != null && !visitedThrowables.contains(currentThrowable)) {
-      if (currentThrowable instanceof OAuth2AuthorizationException) {
-        errorCode = ((OAuth2AuthorizationException) currentThrowable).getError().getErrorCode();
+      if (currentThrowable instanceof OAuth2AuthorizationException nestedOauthEx) {
+        errorCode = nestedOauthEx.getError().getErrorCode();
       }
       visitedThrowables.add(currentThrowable);
       currentThrowable = currentThrowable.getCause();

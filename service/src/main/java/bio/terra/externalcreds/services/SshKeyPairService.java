@@ -11,6 +11,7 @@ import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -18,6 +19,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -79,28 +82,41 @@ public class SshKeyPairService {
     }
   }
 
-  private static String encodeRSAPrivateKey(RSAPrivateKey privateKey) {
-    return new String(Base64.encodeBase64(privateKey.getEncoded()), StandardCharsets.UTF_8);
+  /** Encode RSA private key to PEM format. */
+  private static String encodeRSAPrivateKey(RSAPrivateKey privateKey) throws IOException {
+    var pemObject = new PemObject("RSA PRIVATE KEY", privateKey.getEncoded());
+    var byteStream = new ByteArrayOutputStream();
+    var pemWriter = new PemWriter(new OutputStreamWriter(byteStream, StandardCharsets.UTF_8));
+    pemWriter.writeObject(pemObject);
+    pemWriter.close();
+    return byteStream.toString(StandardCharsets.UTF_8);
   }
 
+  /**
+   * Write public key in the OpenSSL format.
+   *
+   * <p>GitHub has restriction on public key format so we append ssh-rsa in front and construct the
+   * ssh key to conform to the OpenSSL format.
+   */
   private static String encodeRSAPublicKey(RSAPublicKey rsaPublicKey, String user)
       throws IOException {
-    ByteArrayOutputStream byteOs = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream(byteOs);
-    dos.writeInt("ssh-rsa".getBytes(StandardCharsets.UTF_8).length);
-    dos.write("ssh-rsa".getBytes(StandardCharsets.UTF_8));
+    var byteOs = new ByteArrayOutputStream();
+    var dos = new DataOutputStream(byteOs);
+    dos.writeInt(DEFAULT_PUBLIC_KEY_BEGIN.getBytes(StandardCharsets.UTF_8).length);
+    dos.write(DEFAULT_PUBLIC_KEY_BEGIN.getBytes(StandardCharsets.UTF_8));
     dos.writeInt(rsaPublicKey.getPublicExponent().toByteArray().length);
     dos.write(rsaPublicKey.getPublicExponent().toByteArray());
     dos.writeInt(rsaPublicKey.getModulus().toByteArray().length);
     dos.write(rsaPublicKey.getModulus().toByteArray());
     var publicKeyEncoded =
         new String(Base64.encodeBase64(byteOs.toByteArray()), StandardCharsets.UTF_8);
+    dos.close();
     return DEFAULT_PUBLIC_KEY_BEGIN + " " + publicKeyEncoded + " " + user;
   }
 
   private static KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException {
     var generator = KeyPairGenerator.getInstance("RSA");
-    generator.initialize(2048);
+    generator.initialize(4096);
     return generator.generateKeyPair();
   }
 }
