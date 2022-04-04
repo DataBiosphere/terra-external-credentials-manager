@@ -173,7 +173,8 @@ public class ProviderServiceTest extends BaseTest {
     @Test
     void testExpiredLinkedAccountIsMarkedInvalid() {
       // save an expired linked account
-      var expiredTimestamp = Timestamp.from(Instant.now().minus(Duration.ofMinutes(5)));
+      var expiredTimestamp =
+          new Timestamp(Instant.now().minus(Duration.ofMinutes(5)).toEpochMilli());
       var expiredLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(
               TestUtils.createRandomLinkedAccount().withExpires(expiredTimestamp));
@@ -196,7 +197,8 @@ public class ProviderServiceTest extends BaseTest {
     @Test
     void testInvalidVisaIssuer() {
       // save a non-expired linked account and nearly-expired passport
-      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
+      var nonExpiredTimestamp =
+          new Timestamp(Instant.now().plus(Duration.ofMinutes(5)).toEpochMilli());
       var savedLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(
               TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
@@ -228,7 +230,8 @@ public class ProviderServiceTest extends BaseTest {
     void testUnrecoverableOAuth2Exception() {
 
       // save a non-expired linked account and nearly-expired passport and visa
-      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
+      var nonExpiredTimestamp =
+          new Timestamp(Instant.now().plus(Duration.ofMinutes(5)).toEpochMilli());
       var savedLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(
               TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
@@ -269,7 +272,8 @@ public class ProviderServiceTest extends BaseTest {
     void testOtherOauthException() {
 
       // save a non-expired linked account and nearly-expired passport and visa
-      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
+      var nonExpiredTimestamp =
+          new Timestamp(Instant.now().plus(Duration.ofMinutes(5)).toEpochMilli());
       var savedLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(
               TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
@@ -303,7 +307,8 @@ public class ProviderServiceTest extends BaseTest {
       var updatedRefreshToken = "newRefreshToken";
 
       // save a non-expired linked account and nearly-expired passport and visa
-      var nonExpiredTimestamp = Timestamp.from(Instant.now().plus(Duration.ofMinutes(5)));
+      var nonExpiredTimestamp =
+          new Timestamp(Instant.now().plus(Duration.ofMinutes(5)).toEpochMilli());
       var savedLinkedAccount =
           linkedAccountDAO.upsertLinkedAccount(
               TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));

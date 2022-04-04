@@ -279,7 +279,7 @@ public class ProviderService {
 
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
-    if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
+    if (linkedAccount.getExpires().toInstant().isBefore(Instant.now())) {
       invalidateLinkedAccount(linkedAccount);
     } else {
       try {
@@ -332,8 +332,8 @@ public class ProviderService {
     visitedThrowables.add(oauthEx);
 
     while (currentThrowable != null && !visitedThrowables.contains(currentThrowable)) {
-      if (currentThrowable instanceof OAuth2AuthorizationException) {
-        errorCode = ((OAuth2AuthorizationException) currentThrowable).getError().getErrorCode();
+      if (currentThrowable instanceof OAuth2AuthorizationException nestedOauthEx) {
+        errorCode = nestedOauthEx.getError().getErrorCode();
       }
       visitedThrowables.add(currentThrowable);
       currentThrowable = currentThrowable.getCause();

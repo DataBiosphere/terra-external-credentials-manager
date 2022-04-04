@@ -24,7 +24,6 @@ import bio.terra.externalcreds.visaComparators.VisaComparator;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
@@ -445,7 +444,7 @@ public class LinkedAccountServiceTest extends BaseTest {
           visas,
           savedVisas.stream()
               .map(v -> v.withId(Optional.empty()).withPassportId(Optional.empty()))
-              .collect(Collectors.toList()));
+              .toList());
     }
 
     return saved.getLinkedAccount();

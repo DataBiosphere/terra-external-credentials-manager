@@ -20,7 +20,6 @@ import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator.DbGapPermission;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import java.net.URI;
@@ -44,7 +43,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 class PassportServiceTest extends BaseTest {
-  private static JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
+  private static final JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
 
   @BeforeAll
   static void setUpJwtVerification() throws JOSEException {
@@ -109,7 +108,7 @@ class PassportServiceTest extends BaseTest {
     @MockBean ProviderClientCache providerClientCacheMock;
 
     @Test
-    void testValidPassportMatchingCriteria() throws URISyntaxException, JsonProcessingException {
+    void testValidPassportMatchingCriteria() throws URISyntaxException {
       runValidPassportTest(new ValidPassportTestParams());
     }
 
@@ -138,14 +137,14 @@ class PassportServiceTest extends BaseTest {
     }
 
     @Test
-    void testValidPassportWithoutUserThrows() throws URISyntaxException {
+    void testValidPassportWithoutUserThrows() {
       var params = new ValidPassportTestParams();
       params.persistLinkedAccount = false;
       assertThrows(BadRequestException.class, () -> runValidPassportTest(params));
     }
 
     @Test
-    void testInvalidPassportThrows() throws URISyntaxException {
+    void testInvalidPassportThrows() {
       var criterion =
           new RASv1Dot1VisaCriterionInternal.Builder().phsId("").consentCode("").issuer("").build();
 
@@ -290,7 +289,7 @@ class PassportServiceTest extends BaseTest {
                   linkedAccount ->
                       Map.of(linkedAccount.getProviderName(), TestUtils.createRandomProvider()))
               .reduce(
-                  new HashMap(),
+                  new HashMap<>(),
                   (a, b) -> {
                     a.putAll(b);
                     return a;

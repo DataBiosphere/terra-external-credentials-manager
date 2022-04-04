@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
@@ -125,16 +124,10 @@ public class JwtSigningTestUtils {
 
     var visaClaimSet = visaClaimSetBuilder.build();
 
-    switch (visa.getTokenType()) {
-      case access_token:
-        return createSignedJwt(visaClaimSet);
-
-      case document_token:
-        return createSignedDocumentTokenJwt(visaClaimSet, visa.getIssuer());
-
-      default:
-        throw new RuntimeException("unexpected token type " + visa.getTokenType());
-    }
+    return switch (visa.getTokenType()) {
+      case access_token -> createSignedJwt(visaClaimSet);
+      case document_token -> createSignedDocumentTokenJwt(visaClaimSet, visa.getIssuer());
+    };
   }
 
   public GA4GHVisa createTestVisaWithJwt(TokenTypeEnum tokenType) {
@@ -156,7 +149,7 @@ public class JwtSigningTestUtils {
   }
 
   public GA4GHPassport createTestPassport(List<GA4GHVisa> visas, String userEmail) {
-    var visaJwts = visas.stream().map(GA4GHVisa::getJwt).collect(Collectors.toList());
+    var visaJwts = visas.stream().map(GA4GHVisa::getJwt).toList();
     var jwtId = UUID.randomUUID().toString();
     var jwtString = createPassportJwtString(passportExpires, visaJwts, jwtId, userEmail);
     return new GA4GHPassport.Builder()

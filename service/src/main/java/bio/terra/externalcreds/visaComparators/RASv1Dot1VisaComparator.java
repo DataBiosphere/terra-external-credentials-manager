@@ -4,7 +4,6 @@ import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -40,7 +39,7 @@ public class RASv1Dot1VisaComparator implements VisaComparator {
       var visa2Permissions = getVisaPermissions(visa2);
 
       return visa1Permissions.equals(visa2Permissions);
-    } catch (ParseException | JsonProcessingException e) {
+    } catch (ParseException e) {
       throw new ExternalCredsException("error parsing RAS v1.1 visa", e);
     }
   }
@@ -57,13 +56,12 @@ public class RASv1Dot1VisaComparator implements VisaComparator {
               p ->
                   p.getPhsId().equals(rasCriterion.getPhsId())
                       && p.getConsentGroup().equals(rasCriterion.getConsentCode()));
-    } catch (ParseException | JsonProcessingException e) {
+    } catch (ParseException e) {
       throw new BadRequestException("Error parsing visa.", e);
     }
   }
 
-  private Set<DbGapPermission> getVisaPermissions(GA4GHVisa visa)
-      throws ParseException, JsonProcessingException {
+  private Set<DbGapPermission> getVisaPermissions(GA4GHVisa visa) throws ParseException {
     var visaClaim = JWTParser.parse(visa.getJwt()).getJWTClaimsSet().getClaim(DBGAP_CLAIM);
     return objectMapper.convertValue(visaClaim, new TypeReference<>() {});
   }

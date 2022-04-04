@@ -11,15 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 @Controller
-public class PublicApiController implements PublicApi {
-
-  private final StatusService statusService;
-  private final ExternalCredsConfig externalCredsConfig;
-
-  public PublicApiController(StatusService statusService, ExternalCredsConfig externalCredsConfig) {
-    this.statusService = statusService;
-    this.externalCredsConfig = externalCredsConfig;
-  }
+public record PublicApiController(
+    ExternalCredsConfig externalCredsConfig, StatusService statusService) implements PublicApi {
 
   @Override
   public ResponseEntity<SystemStatus> getStatus() {

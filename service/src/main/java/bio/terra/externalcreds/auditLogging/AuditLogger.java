@@ -10,12 +10,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class AuditLogger {
-  private final ObjectMapper mapper;
-
-  public AuditLogger(ObjectMapper mapper) {
-    this.mapper = mapper;
-  }
+public record AuditLogger(ObjectMapper mapper) {
 
   public void logEvent(AuditLogEvent event) {
     // mapper.valueToTree(event) converts event to a JsonNode which is handled specially by
