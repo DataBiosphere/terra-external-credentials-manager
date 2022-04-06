@@ -128,6 +128,20 @@ class SshKeyApiControllerTest extends BaseTest {
   }
 
   @Test
+  void generateWithInvalidInput() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    mockSamUser(accessToken);
+    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
+    var sshKeyPairType = "gitlab";
+    mvc.perform(
+            post("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                .header("authorization", "Bearer " + accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(externalUserEmail))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
   void getSshKeyPairWithInvalidKeyType() throws Exception {
     String accessToken = RandomStringUtils.randomAlphanumeric(10);
     mockSamUser(accessToken);
