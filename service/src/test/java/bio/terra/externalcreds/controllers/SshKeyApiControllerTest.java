@@ -51,7 +51,8 @@ class SshKeyApiControllerTest extends BaseTest {
   @Test
   void putGetAndDeleteSshKeyPair() throws Exception {
     String accessToken = RandomStringUtils.randomAlphanumeric(10);
-    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
+    String externalUserEmail =
+        String.format("\"%s@gmail.com\"", RandomStringUtils.randomAlphabetic(5));
     mockSamUser(accessToken);
     var sshKeyPairType = "gitlab";
     var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
@@ -94,7 +95,8 @@ class SshKeyApiControllerTest extends BaseTest {
   void generateGetAndDeleteSshKeyPair() throws Exception {
     String accessToken = RandomStringUtils.randomAlphanumeric(10);
     mockSamUser(accessToken);
-    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
+    String externalUserEmail =
+        String.format("\"%s@gmail.com\"", RandomStringUtils.randomAlphabetic(5));
     var sshKeyPairType = "gitlab";
     var postResult =
         mvc.perform(
@@ -139,7 +141,8 @@ class SshKeyApiControllerTest extends BaseTest {
   @Test
   void samThrowsApiException() throws Exception {
     String accessToken = RandomStringUtils.randomAlphanumeric(10);
-    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
+    String externalUserEmail =
+        String.format("\"%s@gmail.com\"", RandomStringUtils.randomAlphabetic(5));
     var usersApiMock = mock(UsersApi.class);
     when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo()).thenThrow(new ApiException());
@@ -156,7 +159,8 @@ class SshKeyApiControllerTest extends BaseTest {
   @Test
   void samThrowsNotFoundException() throws Exception {
     String accessToken = RandomStringUtils.randomAlphanumeric(10);
-    String externalUserEmail = String.format("%s@gmail.com", RandomStringUtils.randomAlphabetic(5));
+    String externalUserEmail =
+        String.format("\"%s@gmail.com\"", RandomStringUtils.randomAlphabetic(5));
     var usersApiMock = mock(UsersApi.class);
     when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo())

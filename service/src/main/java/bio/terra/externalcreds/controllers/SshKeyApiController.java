@@ -2,16 +2,21 @@ package bio.terra.externalcreds.controllers;
 
 import static bio.terra.externalcreds.controllers.UserStatusInfoUtils.getUserIdFromSam;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.generated.api.SshKeyPairApi;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.services.SamService;
 import bio.terra.externalcreds.services.SshKeyPairService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 @Controller
+@Slf4j
 public record SshKeyApiController(
     HttpServletRequest request, SamService samService, SshKeyPairService sshKeyPairService)
     implements SshKeyPairApi {
@@ -37,8 +42,15 @@ public record SshKeyApiController(
 
   @Override
   public ResponseEntity<SshKeyPair> generateSshKeyPair(SshKeyPairType type, String email) {
-    var sshKeyPair =
-        sshKeyPairService.generateSshKeyPair(getUserIdFromSam(request, samService), email, type);
-    return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
+    try {
+      String userEmail = new ObjectMapper().readValue(email, String.class);
+      var sshKeyPair =
+          sshKeyPairService.generateSshKeyPair(
+              getUserIdFromSam(request, samService), userEmail, type);
+      return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
+    } catch (JsonProcessingException e) {
+      log.error("Failed to parse the email input");
+      throw new BadRequestException("Cannot parse the email input", e);
+    }
   }
 }
