@@ -96,6 +96,21 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
     verifySshKeyPair(newSshKeyPairExpected, storedSshKey);
   }
 
+  @Test
+  void generateSshKeyPair() {
+    var userId = "foo";
+    var userEmail = "foo@gmail.com";
+    var keyPairType = SshKeyPairType.GITHUB;
+    var sshKeyPairInternal = sshKeyPairService.generateSshKeyPair(userId, userEmail, keyPairType);
+
+    assertEquals(userEmail, sshKeyPairInternal.getExternalUserEmail());
+    assertEquals(userId, sshKeyPairInternal.getUserId());
+    assertEquals(keyPairType, sshKeyPairInternal.getType());
+
+    var loadedSshKey = sshKeyPairService.getSshKeyPair(userId, keyPairType);
+    verifySshKeyPair(sshKeyPairInternal, loadedSshKey.get());
+  }
+
   private void verifySshKeyPair(
       SshKeyPairInternal expectedSshKey, SshKeyPairInternal actualSshKey) {
     assertEquals(expectedSshKey.withId(actualSshKey.getId()), actualSshKey);

@@ -194,6 +194,25 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/ServerError'
+    post:
+      summary: Generates a pair of ssh keys
+      tags: [ ssh key pair ]
+      operationId: generateSshKeyPair
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              example: foo@gmail.com
+              description: User email associated with the ssh key pair
+      responses:
+        '200':
+          $ref: '#/components/responses/SshKeyPairResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
     delete:
       summary: delete the ssh key pair of the given provider
       tags: [ ssh key pair ]
@@ -324,7 +343,6 @@ components:
         externalUserEmail:
           description: account email.
           type: string
-
     LinkInfo:
       type: object
       required: [ externalUserId, expirationTimestamp ]
