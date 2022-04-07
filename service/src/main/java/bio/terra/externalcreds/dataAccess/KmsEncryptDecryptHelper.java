@@ -38,7 +38,13 @@ public record KmsEncryptDecryptHelper(ExternalCredsConfig config) {
   }
 
   private CryptoKeyName getCryptoKeyName() {
-    KmsConfiguration kmsConfiguration = config.getKmsConfiguration().get();
+    KmsConfiguration kmsConfiguration =
+        config
+            .getKmsConfiguration()
+            .orElseThrow(
+                () ->
+                    new UnsupportedOperationException(
+                        "Does not support kms encryption/decryption"));
     return CryptoKeyName.of(
         kmsConfiguration.getServiceGoogleProject(),
         kmsConfiguration.getKeyRingLocation(),
