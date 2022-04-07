@@ -3,11 +3,9 @@ package bio.terra.externalcreds.dataAccess;
 import static bio.terra.externalcreds.dataAccess.EncryptDecryptUtils.decryptSymmetric;
 import static bio.terra.externalcreds.dataAccess.EncryptDecryptUtils.encryptSymmetric;
 
-import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -62,18 +60,15 @@ public class SshKeyPairDAO {
             + " RETURNING id";
 
     var sshPrivateKey = sshKeyPairInternal.getPrivateKey();
-    if (externalCredsConfig.getEnableKmsEncryption()) {
-      try {
-        sshPrivateKey =
-            encryptSymmetric(
-                externalCredsConfig.getServiceGoogleProject(),
-                externalCredsConfig.getKeyRingLocation().get(),
-                externalCredsConfig.getKeyRingId().get(),
-                externalCredsConfig.getKeyId().get(),
-                sshPrivateKey);
-      } catch (IOException e) {
-        throw new ExternalCredsException(e);
-      }
+    if (externalCredsConfig.getKmsConfiguration().isPresent()) {
+      var kmsConfig = externalCredsConfig.getKmsConfiguration().get();
+      sshPrivateKey =
+          encryptSymmetric(
+              kmsConfig.getServiceGoogleProject(),
+              kmsConfig.getKeyRingLocation(),
+              kmsConfig.getKeyRingId(),
+              kmsConfig.getKeyId(),
+              sshPrivateKey);
     }
     var namedParameters =
         new MapSqlParameterSource()
@@ -103,18 +98,15 @@ public class SshKeyPairDAO {
     @Override
     public SshKeyPairInternal mapRow(ResultSet rs, int rowNum) throws SQLException {
       String privateKey = rs.getString("private_key");
-      if (externalCredsConfig.getEnableKmsEncryption()) {
-        try {
-          privateKey =
-              decryptSymmetric(
-                  externalCredsConfig.getServiceGoogleProject(),
-                  externalCredsConfig.getKeyRingLocation().get(),
-                  externalCredsConfig.getKeyRingId().get(),
-                  externalCredsConfig.getKeyId().get(),
-                  privateKey);
-        } catch (IOException e) {
-          throw new ExternalCredsException(e);
-        }
+      if (externalCredsConfig.getKmsConfiguration().isPresent()) {
+        var kmsConfig = externalCredsConfig.getKmsConfiguration().get();
+        privateKey =
+            decryptSymmetric(
+                kmsConfig.getServiceGoogleProject(),
+                kmsConfig.getKeyRingLocation(),
+                kmsConfig.getKeyRingId(),
+                kmsConfig.getKeyId(),
+                privateKey);
       }
       return new SshKeyPairInternal.Builder()
           .id(rs.getInt("id"))

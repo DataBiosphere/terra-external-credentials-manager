@@ -3,15 +3,13 @@ package bio.terra.externalcreds.dataAccess;
 import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.config.ExternalCredsConfigInterface.KmsConfiguration;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
@@ -23,10 +21,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.dao.support.DataAccessUtils;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 class SshKeyPairInternalDaoTest extends BaseTest {
 
   @Autowired SshKeyPairDAO sshKeyPairDAO;
+  @Autowired NamedParameterJdbcTemplate jdbcTemplate;
   @MockBean ExternalCredsConfig externalCredsConfig;
 
   private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
@@ -74,32 +77,6 @@ class SshKeyPairInternalDaoTest extends BaseTest {
 
       verifySshKeyPair(sshKey, storedSshKey);
     }
-
-    @Test
-    void encryptKeyFails() {
-      when(externalCredsConfig.getEnableKmsEncryption()).thenReturn(true);
-      String location = "us-central1";
-      when(externalCredsConfig.getKeyRingLocation()).thenReturn(Optional.of(location));
-      String keyRing = "key_ring";
-      when(externalCredsConfig.getKeyRingId()).thenReturn(Optional.of(keyRing));
-      String encryptionKey = "encryption_key";
-      when(externalCredsConfig.getKeyId()).thenReturn(Optional.of(encryptionKey));
-      try (var utilsMock = Mockito.mockStatic(EncryptDecryptUtils.class)) {
-        utilsMock
-            .when(
-                () ->
-                    EncryptDecryptUtils.encryptSymmetric(
-                        eq(externalCredsConfig.getServiceGoogleProject()),
-                        eq(location),
-                        eq(keyRing),
-                        eq(encryptionKey),
-                        any()))
-            .thenThrow(new IOException("something went wrong, failed to encrypt"));
-        assertThrows(
-            ExternalCredsException.class,
-            () -> sshKeyPairDAO.upsertSshKeyPair(createRandomGithubSshKey()));
-      }
-    }
   }
 
   @Nested
@@ -126,19 +103,41 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     void testGetDecryptedKeyPair() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
       var cypheredkey = "jfidosruewr1k=";
-      when(externalCredsConfig.getEnableKmsEncryption()).thenReturn(true);
-      String location = "us-central1";
-      when(externalCredsConfig.getKeyRingLocation()).thenReturn(Optional.of(location));
-      String keyRing = "key_ring";
-      when(externalCredsConfig.getKeyRingId()).thenReturn(Optional.of(keyRing));
-      String encryptionKey = "encryption_key";
-      when(externalCredsConfig.getKeyId()).thenReturn(Optional.of(encryptionKey));
+      var projectId = "google_project";
+      var location = "us-central1";
+      var keyRing = "key_ring";
+      var encryptionKey = "encryption_key";
+      when(externalCredsConfig.getKmsConfiguration())
+          .thenReturn(
+              Optional.of(
+                  new KmsConfiguration() {
+                    @Override
+                    public String getServiceGoogleProject() {
+                      return projectId;
+                    }
+
+                    @Override
+                    public String getKeyRingId() {
+                      return keyRing;
+                    }
+
+                    @Override
+                    public String getKeyId() {
+                      return encryptionKey;
+                    }
+
+                    @Override
+                    public String getKeyRingLocation() {
+                      return location;
+                    }
+                  }));
+
       try (var utilsMock = Mockito.mockStatic(EncryptDecryptUtils.class)) {
         utilsMock
             .when(
                 () ->
                     EncryptDecryptUtils.encryptSymmetric(
-                        eq(externalCredsConfig.getServiceGoogleProject()),
+                        eq(projectId),
                         eq(location),
                         eq(keyRing),
                         eq(encryptionKey),
@@ -148,7 +147,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
             .when(
                 () ->
                     EncryptDecryptUtils.decryptSymmetric(
-                        eq(externalCredsConfig.getServiceGoogleProject()),
+                        eq(projectId),
                         eq(location),
                         eq(keyRing),
                         eq(encryptionKey),
@@ -160,47 +159,21 @@ class SshKeyPairInternalDaoTest extends BaseTest {
         var loadedSshKeyOptional =
             sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
 
+        var namedParameters =
+            new MapSqlParameterSource()
+                .addValue("userId", sshKey.getUserId())
+                .addValue("type", sshKey.getType().name());
+        var resourceSelectSql =
+            "SELECT private_key" + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
+        var privateKey =
+            DataAccessUtils.singleResult(
+                jdbcTemplate.query(
+                    resourceSelectSql,
+                    namedParameters,
+                    (rs, rowNum) -> rs.getString("private_key")));
+        assertEquals(cypheredkey, privateKey);
         assertPresent(loadedSshKeyOptional);
         verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
-      }
-    }
-
-    @Test
-    void decryptKeyFails() throws NoSuchAlgorithmException, IOException {
-      var sshKey = createRandomGithubSshKey();
-      when(externalCredsConfig.getEnableKmsEncryption()).thenReturn(true);
-      var cypheredkey = "jfidosruewr1k=";
-      String location = "us-central1";
-      when(externalCredsConfig.getKeyRingLocation()).thenReturn(Optional.of(location));
-      String keyRing = "key_ring";
-      when(externalCredsConfig.getKeyRingId()).thenReturn(Optional.of(keyRing));
-      String encryptionKey = "encryption_key";
-      when(externalCredsConfig.getKeyId()).thenReturn(Optional.of(encryptionKey));
-      try (var utilsMock = Mockito.mockStatic(EncryptDecryptUtils.class)) {
-        utilsMock
-            .when(
-                () ->
-                    EncryptDecryptUtils.encryptSymmetric(
-                        eq(externalCredsConfig.getServiceGoogleProject()),
-                        eq(location),
-                        eq(keyRing),
-                        eq(encryptionKey),
-                        eq(sshKey.getPrivateKey())))
-            .thenReturn(cypheredkey);
-        utilsMock
-            .when(
-                () ->
-                    EncryptDecryptUtils.decryptSymmetric(
-                        eq(externalCredsConfig.getServiceGoogleProject()),
-                        eq(location),
-                        eq(keyRing),
-                        eq(encryptionKey),
-                        eq(cypheredkey)))
-            .thenThrow(new IOException("Something went wrong, decryption fails"));
-        sshKeyPairDAO.upsertSshKeyPair(sshKey);
-        assertThrows(
-            ExternalCredsException.class,
-            () -> sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType()));
       }
     }
   }

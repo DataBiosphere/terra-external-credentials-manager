@@ -44,16 +44,16 @@ public interface ExternalCredsConfigInterface {
 
   Optional<String> getAuthorizationChangeEventTopicName();
 
-  @Value.Default
-  default boolean getEnableKmsEncryption() {
-    return false;
+  Optional<KmsConfiguration> getKmsConfiguration();
+
+  @PropertiesInterfaceStyle
+  interface KmsConfiguration {
+    String getServiceGoogleProject();
+
+    String getKeyRingId();
+
+    String getKeyId();
+
+    String getKeyRingLocation();
   }
-
-  String getServiceGoogleProject();
-
-  Optional<String> getKeyRingId();
-
-  Optional<String> getKeyId();
-
-  Optional<String> getKeyRingLocation();
 }
