@@ -117,7 +117,7 @@ class SshKeyApiControllerTest extends BaseTest {
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isOk())
         .andReturn();
-    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKayPairDeleted);
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKeyPairDeleted);
   }
 
   @Test
@@ -155,7 +155,7 @@ class SshKeyApiControllerTest extends BaseTest {
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isOk())
         .andReturn();
-    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKayPairDeleted);
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKeyPairDeleted);
   }
 
   @Test

@@ -34,7 +34,7 @@ public record SshKeyApiController(
     try {
       sshKeyPairService.deleteSshKeyPair(userId, type);
       auditLogger.logEvent(
-          auditLoggerBuilder.auditLogEventType(AuditLogEventType.SshKayPairDeleted).build());
+          auditLoggerBuilder.auditLogEventType(AuditLogEventType.SshKeyPairDeleted).build());
       return ResponseEntity.ok().build();
     } catch (Exception e) {
       auditLogger.logEvent(
