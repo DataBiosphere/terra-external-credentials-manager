@@ -42,7 +42,7 @@ public class SshKeyPairDAO {
             jdbcTemplate.query(resourceSelectSql, namedParameters, SSH_KEY_PAIR_ROW_MAPPER)));
   }
 
-  public boolean deleteSshKeyPair(String userId, SshKeyPairType type) {
+  public boolean deleteSshKeyPairIfExists(String userId, SshKeyPairType type) {
     var query = "DELETE FROM ssh_key_pair WHERE user_id = :userId and type = :type";
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());

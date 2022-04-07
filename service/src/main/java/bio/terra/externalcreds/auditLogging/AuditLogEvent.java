@@ -14,7 +14,11 @@ public interface AuditLogEvent extends WithAuditLogEvent {
   @JsonInclude(Include.NON_EMPTY)
   Optional<String> getClientIP();
 
-  String getProviderName();
+  @JsonInclude(Include.NON_EMPTY)
+  Optional<String> getProviderName();
+
+  @JsonInclude(Include.NON_EMPTY)
+  Optional<String> getSshKeyPairType();
 
   AuditLogEventType getAuditLogEventType();
 
