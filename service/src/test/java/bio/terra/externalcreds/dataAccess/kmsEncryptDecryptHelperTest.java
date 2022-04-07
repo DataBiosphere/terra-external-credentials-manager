@@ -29,16 +29,22 @@ public class kmsEncryptDecryptHelperTest extends BaseTest {
 
   @Test
   void tryToEncryptWithoutKmsConfig() {
-    assertThrows(
-        UnsupportedOperationException.class,
-        () -> kmsEncryptDecryptHelper.encryptSymmetric("secret"));
+    try (var mockClient = Mockito.mockStatic(KeyManagementServiceClient.class)) {
+      mockClient.when(KeyManagementServiceClient::create).thenReturn(keyManagementServiceClient);
+      assertThrows(
+          UnsupportedOperationException.class,
+          () -> kmsEncryptDecryptHelper.encryptSymmetric("secret"));
+    }
   }
 
   @Test
   void tryToDecryptWithoutKmsConfig() {
-    assertThrows(
-        UnsupportedOperationException.class,
-        () -> kmsEncryptDecryptHelper.decryptSymmetric("aserq2ji3"));
+    try (var mockClient = Mockito.mockStatic(KeyManagementServiceClient.class)) {
+      mockClient.when(KeyManagementServiceClient::create).thenReturn(keyManagementServiceClient);
+      assertThrows(
+          UnsupportedOperationException.class,
+          () -> kmsEncryptDecryptHelper.decryptSymmetric("aserq2ji3"));
+    }
   }
 
   @Test
