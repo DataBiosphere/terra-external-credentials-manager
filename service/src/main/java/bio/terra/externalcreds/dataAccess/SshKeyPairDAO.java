@@ -1,8 +1,5 @@
 package bio.terra.externalcreds.dataAccess;
 
-import static bio.terra.externalcreds.dataAccess.EncryptDecryptUtils.decryptSymmetric;
-import static bio.terra.externalcreds.dataAccess.EncryptDecryptUtils.encryptSymmetric;
-
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
@@ -22,12 +19,16 @@ public class SshKeyPairDAO {
   private final NamedParameterJdbcTemplate jdbcTemplate;
   private final ExternalCredsConfig externalCredsConfig;
   private final SshKeyPairRowMapper sshKeyPairRowMapper;
+  private final KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
 
   public SshKeyPairDAO(
-      NamedParameterJdbcTemplate jdbcTemplate, ExternalCredsConfig externalCredsConfig) {
+      NamedParameterJdbcTemplate jdbcTemplate,
+      ExternalCredsConfig externalCredsConfig,
+      KmsEncryptDecryptHelper kmsEncryptDecryptHelper) {
     this.jdbcTemplate = jdbcTemplate;
     this.externalCredsConfig = externalCredsConfig;
     sshKeyPairRowMapper = new SshKeyPairRowMapper(externalCredsConfig);
+    this.kmsEncryptDecryptHelper = kmsEncryptDecryptHelper;
   }
 
   public Optional<SshKeyPairInternal> getSshKeyPair(String userId, SshKeyPairType type) {
@@ -61,14 +62,7 @@ public class SshKeyPairDAO {
 
     var sshPrivateKey = sshKeyPairInternal.getPrivateKey();
     if (externalCredsConfig.getKmsConfiguration().isPresent()) {
-      var kmsConfig = externalCredsConfig.getKmsConfiguration().get();
-      sshPrivateKey =
-          encryptSymmetric(
-              kmsConfig.getServiceGoogleProject(),
-              kmsConfig.getKeyRingLocation(),
-              kmsConfig.getKeyRingId(),
-              kmsConfig.getKeyId(),
-              sshPrivateKey);
+      sshPrivateKey = kmsEncryptDecryptHelper.encryptSymmetric(sshPrivateKey);
     }
     var namedParameters =
         new MapSqlParameterSource()
@@ -99,14 +93,7 @@ public class SshKeyPairDAO {
     public SshKeyPairInternal mapRow(ResultSet rs, int rowNum) throws SQLException {
       String privateKey = rs.getString("private_key");
       if (externalCredsConfig.getKmsConfiguration().isPresent()) {
-        var kmsConfig = externalCredsConfig.getKmsConfiguration().get();
-        privateKey =
-            decryptSymmetric(
-                kmsConfig.getServiceGoogleProject(),
-                kmsConfig.getKeyRingLocation(),
-                kmsConfig.getKeyRingId(),
-                kmsConfig.getKeyId(),
-                privateKey);
+        privateKey = kmsEncryptDecryptHelper.decryptSymmetric(privateKey);
       }
       return new SshKeyPairInternal.Builder()
           .id(rs.getInt("id"))

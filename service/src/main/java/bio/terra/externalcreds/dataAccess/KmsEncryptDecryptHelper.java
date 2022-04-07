@@ -1,23 +1,24 @@
 package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.config.ExternalCredsConfigInterface.KmsConfiguration;
 import com.google.cloud.kms.v1.CryptoKeyName;
 import com.google.cloud.kms.v1.DecryptResponse;
 import com.google.cloud.kms.v1.EncryptResponse;
 import com.google.cloud.kms.v1.KeyManagementServiceClient;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import org.springframework.stereotype.Component;
 
 /** Utils for KMS symmetric encryption and decryption. */
-public class EncryptDecryptUtils {
-
-  private EncryptDecryptUtils() {}
+@Component
+public record KmsEncryptDecryptHelper(ExternalCredsConfig config) {
 
   /** Encrypt with KMS symmetric key. */
-  public static String encryptSymmetric(
-      String projectId, String locationId, String keyRingId, String keyId, String plainText) {
+  public String encryptSymmetric(String plainText) {
     try (var client = KeyManagementServiceClient.create()) {
-      var keyVersionName = CryptoKeyName.of(projectId, locationId, keyRingId, keyId);
+      var keyVersionName = getCryptoKeyName();
       EncryptResponse response = client.encrypt(keyVersionName, ByteString.copyFromUtf8(plainText));
       return response.getCiphertext().toStringUtf8();
     } catch (IOException e) {
@@ -26,14 +27,22 @@ public class EncryptDecryptUtils {
   }
 
   /** Decrypt with KMS symmetric key. */
-  public static String decryptSymmetric(
-      String projectId, String locationId, String keyRingId, String keyId, String cypheredText) {
+  public String decryptSymmetric(String cypheredText) {
     try (var client = KeyManagementServiceClient.create()) {
-      var keyName = CryptoKeyName.of(projectId, locationId, keyRingId, keyId);
+      var keyName = getCryptoKeyName();
       DecryptResponse response = client.decrypt(keyName, ByteString.copyFromUtf8(cypheredText));
       return response.getPlaintext().toStringUtf8();
     } catch (IOException e) {
       throw new ExternalCredsException("Fail to get KMS client for decryption.");
     }
+  }
+
+  private CryptoKeyName getCryptoKeyName() {
+    KmsConfiguration kmsConfiguration = config.getKmsConfiguration().get();
+    return CryptoKeyName.of(
+        kmsConfiguration.getServiceGoogleProject(),
+        kmsConfiguration.getKeyRingLocation(),
+        kmsConfiguration.getKeyRingId(),
+        kmsConfiguration.getKeyId());
   }
 }

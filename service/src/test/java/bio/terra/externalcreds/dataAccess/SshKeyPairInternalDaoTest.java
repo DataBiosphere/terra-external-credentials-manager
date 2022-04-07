@@ -18,11 +18,9 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.support.DataAccessUtils;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -31,6 +29,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
   @Autowired SshKeyPairDAO sshKeyPairDAO;
   @Autowired NamedParameterJdbcTemplate jdbcTemplate;
   @MockBean ExternalCredsConfig externalCredsConfig;
+  @MockBean KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
 
   private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
 
@@ -103,78 +102,52 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     void testGetDecryptedKeyPair() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
       var cypheredkey = "jfidosruewr1k=";
-      var projectId = "google_project";
-      var location = "us-central1";
-      var keyRing = "key_ring";
-      var encryptionKey = "encryption_key";
       when(externalCredsConfig.getKmsConfiguration())
           .thenReturn(
               Optional.of(
                   new KmsConfiguration() {
                     @Override
                     public String getServiceGoogleProject() {
-                      return projectId;
+                      return "projectId";
                     }
 
                     @Override
                     public String getKeyRingId() {
-                      return keyRing;
+                      return "key_ring";
                     }
 
                     @Override
                     public String getKeyId() {
-                      return encryptionKey;
+                      return "key_id";
                     }
 
                     @Override
                     public String getKeyRingLocation() {
-                      return location;
+                      return "us-central1";
                     }
                   }));
+      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))
+          .thenReturn(cypheredkey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredkey)))
+          .thenReturn(sshKey.getPrivateKey());
 
-      try (var utilsMock = Mockito.mockStatic(EncryptDecryptUtils.class)) {
-        utilsMock
-            .when(
-                () ->
-                    EncryptDecryptUtils.encryptSymmetric(
-                        eq(projectId),
-                        eq(location),
-                        eq(keyRing),
-                        eq(encryptionKey),
-                        eq(sshKey.getPrivateKey())))
-            .thenReturn(cypheredkey);
-        utilsMock
-            .when(
-                () ->
-                    EncryptDecryptUtils.decryptSymmetric(
-                        eq(projectId),
-                        eq(location),
-                        eq(keyRing),
-                        eq(encryptionKey),
-                        eq(cypheredkey)))
-            .thenReturn(sshKey.getPrivateKey());
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
-        sshKeyPairDAO.upsertSshKeyPair(sshKey);
+      var loadedSshKeyOptional = sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
 
-        var loadedSshKeyOptional =
-            sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
-
-        var namedParameters =
-            new MapSqlParameterSource()
-                .addValue("userId", sshKey.getUserId())
-                .addValue("type", sshKey.getType().name());
-        var resourceSelectSql =
-            "SELECT private_key" + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
-        var privateKey =
-            DataAccessUtils.singleResult(
-                jdbcTemplate.query(
-                    resourceSelectSql,
-                    namedParameters,
-                    (rs, rowNum) -> rs.getString("private_key")));
-        assertEquals(cypheredkey, privateKey);
-        assertPresent(loadedSshKeyOptional);
-        verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
-      }
+      var namedParameters =
+          new MapSqlParameterSource()
+              .addValue("userId", sshKey.getUserId())
+              .addValue("type", sshKey.getType().name());
+      var resourceSelectSql =
+          "SELECT private_key" + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
+      var privateKey =
+          DataAccessUtils.singleResult(
+              jdbcTemplate.query(
+                  resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getString("private_key")));
+      assertEquals(cypheredkey, privateKey);
+      assertPresent(loadedSshKeyOptional);
+      verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
     }
   }
 
