@@ -18,7 +18,8 @@ import org.springframework.stereotype.Controller;
 @Controller
 @Slf4j
 public record SshKeyApiController(
-    HttpServletRequest request, SamService samService, SshKeyPairService sshKeyPairService)
+    HttpServletRequest request, SamService samService, SshKeyPairService sshKeyPairService,
+    ObjectMapper objectMapper)
     implements SshKeyPairApi {
 
   @Override
@@ -43,13 +44,12 @@ public record SshKeyApiController(
   @Override
   public ResponseEntity<SshKeyPair> generateSshKeyPair(SshKeyPairType type, String email) {
     try {
-      String userEmail = new ObjectMapper().readValue(email, String.class);
+      String userEmail = objectMapper.readValue(email, String.class);
       var sshKeyPair =
           sshKeyPairService.generateSshKeyPair(
               getUserIdFromSam(request, samService), userEmail, type);
       return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
     } catch (JsonProcessingException e) {
-      log.error("Failed to parse the email input");
       throw new BadRequestException("Cannot parse the email input", e);
     }
   }
