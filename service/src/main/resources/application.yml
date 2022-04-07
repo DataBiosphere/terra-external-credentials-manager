@@ -7,7 +7,6 @@ externalcreds:
   authorization-change-events-enabled: ${AUTHORIZATION_CHANGE_EVENTS_ENABLED:false}
   # name from: https://github.com/broadinstitute/terraform-ap-modules/blob/master/externalcreds/pubsub.tf
   authorization-change-event-topic-name: projects/${SERVICE_GOOGLE_PROJECT:broad-dsde-dev}/topics/ecm-events
-  service-google-project: ${SERVICE_GOOGLE_PROJECT}
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
