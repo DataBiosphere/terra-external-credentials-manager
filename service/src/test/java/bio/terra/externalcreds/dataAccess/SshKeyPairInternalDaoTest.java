@@ -185,15 +185,15 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var sshKey = createRandomGithubSshKey();
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
-      assertTrue(sshKeyPairDAO.deleteSshKeyPair(sshKey.getUserId(), sshKey.getType()));
+      assertTrue(sshKeyPairDAO.deleteSshKeyPairIfExists(sshKey.getUserId(), sshKey.getType()));
 
       assertEmpty(sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType()));
-      assertFalse(sshKeyPairDAO.deleteSshKeyPair(sshKey.getUserId(), sshKey.getType()));
+      assertFalse(sshKeyPairDAO.deleteSshKeyPairIfExists(sshKey.getUserId(), sshKey.getType()));
     }
 
     @Test
     void testDeleteNonExistingSshKeyPair() {
-      assertFalse(sshKeyPairDAO.deleteSshKeyPair("", DEFAULT_KEY_TYPE));
+      assertFalse(sshKeyPairDAO.deleteSshKeyPairIfExists("", DEFAULT_KEY_TYPE));
     }
 
     @Test
@@ -201,9 +201,9 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var sshKey = createRandomGithubSshKey();
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
-      assertFalse(sshKeyPairDAO.deleteSshKeyPair(sshKey.getUserId(), SshKeyPairType.AZURE));
+      assertFalse(sshKeyPairDAO.deleteSshKeyPairIfExists(sshKey.getUserId(), SshKeyPairType.AZURE));
 
-      assertTrue(sshKeyPairDAO.deleteSshKeyPair(sshKey.getUserId(), sshKey.getType()));
+      assertTrue(sshKeyPairDAO.deleteSshKeyPairIfExists(sshKey.getUserId(), sshKey.getType()));
     }
   }
 
