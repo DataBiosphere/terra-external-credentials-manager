@@ -2,6 +2,7 @@ package bio.terra.externalcreds.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -11,6 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.auditLogging.AuditLogEvent;
+import bio.terra.externalcreds.auditLogging.AuditLogEventType;
+import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,6 +25,9 @@ import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.broadinstitute.dsde.workbench.client.sam.api.UsersApi;
 import org.broadinstitute.dsde.workbench.client.sam.model.UserStatusInfo;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -34,6 +41,9 @@ class SshKeyApiControllerTest extends BaseTest {
   @Autowired private ObjectMapper objectMapper;
 
   @MockBean private SamService samServiceMock;
+  @MockBean private AuditLogger auditLoggerMock;
+
+  @Captor ArgumentCaptor<AuditLogEvent> auditLogEventArgumentCaptor;
 
   @Test
   void getNonExistingSshKeyPair() throws Exception {
@@ -46,6 +56,23 @@ class SshKeyApiControllerTest extends BaseTest {
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isNotFound())
         .andReturn();
+
+    verifyAuditLogEvent(sshKeyType, AuditLogEventType.GetSshKeyPairFailed);
+  }
+
+  @Test
+  void deleteNonexistingSshKeyPair() throws Exception {
+    String accessToken = RandomStringUtils.randomAlphanumeric(10);
+    mockSamUser(accessToken);
+    var sshKeyPairType = "gitlab";
+
+    mvc.perform(
+            delete("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                .header("authorization", "Bearer " + accessToken))
+        .andExpect(status().isNotFound())
+        .andReturn();
+
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKeyPairDeletionFailed);
   }
 
   @Test
@@ -69,6 +96,7 @@ class SshKeyApiControllerTest extends BaseTest {
                     .header("authorization", "Bearer " + accessToken))
             .andExpect(status().isOk())
             .andReturn();
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.PutSshKeyPair);
     assertEquals(
         sshKeyPair,
         objectMapper.readValue(putResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
@@ -82,12 +110,14 @@ class SshKeyApiControllerTest extends BaseTest {
     assertEquals(
         sshKeyPair,
         objectMapper.readValue(getResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.GetSshKeyPairSucceeded);
 
     mvc.perform(
             delete("/api/sshkeypair/v1/{type}", sshKeyPairType)
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isOk())
         .andReturn();
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKeyPairDeleted);
   }
 
   @Test
@@ -107,6 +137,7 @@ class SshKeyApiControllerTest extends BaseTest {
 
     var generatedSshKeyPair =
         objectMapper.readValue(postResult.getResponse().getContentAsByteArray(), SshKeyPair.class);
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKeyPairCreated);
 
     var getResult =
         mvc.perform(
@@ -117,12 +148,14 @@ class SshKeyApiControllerTest extends BaseTest {
     assertEquals(
         generatedSshKeyPair,
         objectMapper.readValue(getResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.GetSshKeyPairSucceeded);
 
     mvc.perform(
             delete("/api/sshkeypair/v1/{type}", sshKeyPairType)
                 .header("authorization", "Bearer " + accessToken))
         .andExpect(status().isOk())
         .andReturn();
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKeyPairDeleted);
   }
 
   @Test
@@ -176,5 +209,14 @@ class SshKeyApiControllerTest extends BaseTest {
     var userStatusInfo = new UserStatusInfo().userSubjectId(UUID.randomUUID().toString());
     when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
     when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
+  }
+
+  private void verifyAuditLogEvent(String sshKeyPairType, AuditLogEventType auditLogEventType) {
+    verify(auditLoggerMock).logEvent(auditLogEventArgumentCaptor.capture());
+    var auditLogEvent = auditLogEventArgumentCaptor.getValue();
+    assertEquals(sshKeyPairType, auditLogEvent.getSshKeyPairType().get().toLowerCase());
+    assertEquals(auditLogEventType, auditLogEvent.getAuditLogEventType());
+
+    Mockito.clearInvocations(auditLoggerMock);
   }
 }
