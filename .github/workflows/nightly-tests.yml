@@ -51,8 +51,8 @@ jobs:
       - name: Run the perf test suite
         run: ./gradlew --build-cache :integration:runTest --args="suites/FullPerf.json /tmp/foo"
 
-#      - name: Upload results to Google Bucket
-#        run: ./gradlew :integration:uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/foo"
+      - name: Upload results to Google Bucket
+        run: ./gradlew :integration:uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/foo"
 
   # notify-slack:
   #   needs: [ performance-tests ]
