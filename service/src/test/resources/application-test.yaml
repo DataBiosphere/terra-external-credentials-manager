@@ -29,7 +29,7 @@ spring:
   datasource:
     hikari:
       connection-timeout: 5000
-      maximum-pool-size: 8 # cpu count * 2 https://kwahome.medium.com/database-connections-less-is-more-86c406b6fad
+      maximum-pool-size: 6 # cpu count * 2 https://kwahome.medium.com/database-connections-less-is-more-86c406b6fad
     password: ${DATABASE_USER_PASSWORD:ecmpwd}
     url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/${DATABASE_NAME:ecm}
     username: ${DATABASE_USER:ecmuser}

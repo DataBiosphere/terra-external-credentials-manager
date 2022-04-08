@@ -53,7 +53,7 @@ public class KmsEncryptDecryptHelperTest extends BaseTest {
     var plainText = "secret";
     var cypheredText = "jeij1lm3";
     when(keyManagementServiceClient.encrypt(
-        any(CryptoKeyName.class), eq(ByteString.copyFromUtf8(plainText))))
+            any(CryptoKeyName.class), eq(ByteString.copyFromUtf8(plainText))))
         .thenReturn(
             EncryptResponse.newBuilder()
                 .setCiphertext(ByteString.copyFromUtf8(cypheredText))
@@ -71,7 +71,7 @@ public class KmsEncryptDecryptHelperTest extends BaseTest {
     var plainText = "secret";
     var cypheredText = "jeij1lm3";
     when(keyManagementServiceClient.decrypt(
-        any(CryptoKeyName.class), eq(ByteString.copyFromUtf8(cypheredText))))
+            any(CryptoKeyName.class), eq(ByteString.copyFromUtf8(cypheredText))))
         .thenReturn(
             DecryptResponse.newBuilder().setPlaintext(ByteString.copyFromUtf8(plainText)).build());
     try (var mockClient = Mockito.mockStatic(KeyManagementServiceClient.class)) {
