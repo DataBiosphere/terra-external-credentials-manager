@@ -14,6 +14,7 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -124,6 +125,11 @@ class SshKeyPairInternalDaoTest extends BaseTest {
                     @Override
                     public String getKeyRingLocation() {
                       return "us-central1";
+                    }
+
+                    @Override
+                    public Duration getKeyRotationIntervalDays() {
+                      return Duration.ofDays(90);
                     }
                   }));
       when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))

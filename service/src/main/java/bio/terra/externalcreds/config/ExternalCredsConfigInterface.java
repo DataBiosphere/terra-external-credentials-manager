@@ -55,5 +55,14 @@ public interface ExternalCredsConfigInterface {
     String getKeyId();
 
     String getKeyRingLocation();
+
+    Duration getKeyRotationIntervalDays();
+
+    int getInitialDelayDays();
+
+    /**
+     * How often we run the cron-job to update the keys that contains a stale key versions.
+     */
+    int getReEncryptionDays();
   }
 }

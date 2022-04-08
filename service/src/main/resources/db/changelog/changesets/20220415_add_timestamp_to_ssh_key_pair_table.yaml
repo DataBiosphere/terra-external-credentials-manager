@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: add timestamp to ssh ke pair table
+      author: yuhuyoyo
+      changes:
+        - addColumn:
+            tableName: ssh_key_pair
+            columns:
+              - column:
+                  name: key_pair_last_encrypted
+                  type: timestamp
+                  constraints:
+                    nullable: true
+                  remarks: |
+                    Timestamp when the key pair was last encrypted
