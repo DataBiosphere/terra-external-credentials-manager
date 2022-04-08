@@ -60,9 +60,7 @@ public interface ExternalCredsConfigInterface {
 
     int getInitialDelayDays();
 
-    /**
-     * How often we run the cron-job to update the keys that contains a stale key versions.
-     */
+    /** How often we run the cron-job to update the keys that contains a stale key versions. */
     int getReEncryptionDays();
   }
 }

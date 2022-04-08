@@ -1,7 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.sql.ResultSet;
@@ -9,19 +8,16 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import javax.xml.crypto.Data;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
-import scala.Predef.StringFormat;
 
 @Repository
 public class SshKeyPairDAO {
@@ -46,9 +42,10 @@ public class SshKeyPairDAO {
     var resourceSelectSql =
         "SELECT id, user_id, type, external_user_email, private_key, public_key"
             + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
-    var sshKeyPair = Optional.ofNullable(
-        DataAccessUtils.singleResult(
-            jdbcTemplate.query(resourceSelectSql, namedParameters, sshKeyPairRowMapper)));
+    var sshKeyPair =
+        Optional.ofNullable(
+            DataAccessUtils.singleResult(
+                jdbcTemplate.query(resourceSelectSql, namedParameters, sshKeyPairRowMapper)));
     // Maybe re-encrypt the private key if the encryption timestamp is old (i.e. the key is using
     // an older version key) or the key is not encrypted.
     if (externalCredsConfig.getKmsConfiguration().isPresent()) {
@@ -57,11 +54,15 @@ public class SshKeyPairDAO {
       var timestampOptional =
           Optional.ofNullable(
               DataAccessUtils.singleResult(
-                  jdbcTemplate.query(timestampSql, namedParameters,
+                  jdbcTemplate.query(
+                      timestampSql,
+                      namedParameters,
                       (rs, r) -> rs.getTimestamp("key_pair_last_encrypted"))));
-      if (timestampOptional.isEmpty() ||
-          Duration.between(timestampOptional.get().toInstant(), Instant.now()).compareTo(
-          externalCredsConfig.getKmsConfiguration().get().getKeyRotationIntervalDays()) >= 0) {
+      if (timestampOptional.isEmpty()
+          || Duration.between(timestampOptional.get().toInstant(), Instant.now())
+                  .compareTo(
+                      externalCredsConfig.getKmsConfiguration().get().getKeyRotationIntervalDays())
+              >= 0) {
         // re-encrypt the ssh private key with a newer key version.
         sshKeyPair.ifPresent(this::upsertSshKeyPair);
       }
@@ -96,11 +97,11 @@ public class SshKeyPairDAO {
       sshPrivateKey = kmsEncryptDecryptHelper.encryptSymmetric(sshPrivateKey);
     }
     namedParameters
-            .addValue("userId", sshKeyPairInternal.getUserId())
-            .addValue("type", sshKeyPairInternal.getType().name())
-            .addValue("privateKey", sshPrivateKey)
-            .addValue("publicKey", sshKeyPairInternal.getPublicKey())
-            .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail());
+        .addValue("userId", sshKeyPairInternal.getUserId())
+        .addValue("type", sshKeyPairInternal.getType().name())
+        .addValue("privateKey", sshPrivateKey)
+        .addValue("publicKey", sshKeyPairInternal.getPublicKey())
+        .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail());
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
@@ -120,9 +121,16 @@ public class SshKeyPairDAO {
             + " FROM ssh_key_pair"
             + " WHERE key_pair_last_encrypted <= CURRENT_DATE - INTERVAL ':keyRotationDays DAYS'"
             + " or key_pair_last_encrypted IS NULL";
-    var namedParameters = new MapSqlParameterSource()
-        .addValue("keyRotationDays",
-            (int) externalCredsConfig.getKmsConfiguration().get().getKeyRotationIntervalDays().toDays());
+    var namedParameters =
+        new MapSqlParameterSource()
+            .addValue(
+                "keyRotationDays",
+                (int)
+                    externalCredsConfig
+                        .getKmsConfiguration()
+                        .get()
+                        .getKeyRotationIntervalDays()
+                        .toDays());
     return jdbcTemplate.query(query, namedParameters, sshKeyPairRowMapper);
   }
 

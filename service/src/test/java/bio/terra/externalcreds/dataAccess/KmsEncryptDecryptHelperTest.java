@@ -16,6 +16,7 @@ import com.google.cloud.kms.v1.EncryptResponse;
 import com.google.cloud.kms.v1.KeyManagementServiceClient;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +54,7 @@ public class KmsEncryptDecryptHelperTest extends BaseTest {
     var plainText = "secret";
     var cypheredText = "jeij1lm3";
     when(keyManagementServiceClient.encrypt(
-        any(CryptoKeyName.class), eq(ByteString.copyFromUtf8(plainText))))
+            any(CryptoKeyName.class), eq(ByteString.copyFromUtf8(plainText))))
         .thenReturn(
             EncryptResponse.newBuilder()
                 .setCiphertext(ByteString.copyFromUtf8(cypheredText))
@@ -71,7 +72,7 @@ public class KmsEncryptDecryptHelperTest extends BaseTest {
     var plainText = "secret";
     var cypheredText = "jeij1lm3";
     when(keyManagementServiceClient.decrypt(
-        any(CryptoKeyName.class), eq(ByteString.copyFromUtf8(cypheredText))))
+            any(CryptoKeyName.class), eq(ByteString.copyFromUtf8(cypheredText))))
         .thenReturn(
             DecryptResponse.newBuilder().setPlaintext(ByteString.copyFromUtf8(plainText)).build());
     try (var mockClient = Mockito.mockStatic(KeyManagementServiceClient.class)) {
@@ -118,6 +119,21 @@ public class KmsEncryptDecryptHelperTest extends BaseTest {
                   @Override
                   public String getKeyRingLocation() {
                     return "us-central1";
+                  }
+
+                  @Override
+                  public Duration getKeyRotationIntervalDays() {
+                    return Duration.ZERO;
+                  }
+
+                  @Override
+                  public int getInitialDelayDays() {
+                    return 0;
+                  }
+
+                  @Override
+                  public int getReEncryptionDays() {
+                    return 0;
                   }
                 }));
   }

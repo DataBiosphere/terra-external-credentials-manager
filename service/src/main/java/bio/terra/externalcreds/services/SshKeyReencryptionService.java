@@ -22,10 +22,7 @@ public class SshKeyReencryptionService {
   private final ScheduledExecutorService scheduler;
 
   @Autowired
-  public SshKeyReencryptionService(
-      ExternalCredsConfig config,
-      SshKeyPairDAO sshKeyPairDAO
-  ) {
+  public SshKeyReencryptionService(ExternalCredsConfig config, SshKeyPairDAO sshKeyPairDAO) {
     this.config = config;
     this.sshKeyPairDAO = sshKeyPairDAO;
     this.scheduler = Executors.newScheduledThreadPool(1);
@@ -38,11 +35,9 @@ public class SshKeyReencryptionService {
           this::reEncryptSshKeyPairSuppressingException,
           config.getKmsConfiguration().get().getInitialDelayDays(),
           config.getKmsConfiguration().get().getReEncryptionDays(),
-          TimeUnit.DAYS
-      );
+          TimeUnit.DAYS);
     }
   }
-
 
   private void reEncryptSshKeyPairSuppressingException() {
     try {
@@ -59,8 +54,9 @@ public class SshKeyReencryptionService {
       return;
     }
     log.info("Beginning ssh key re-encryption cronjob");
-    List<SshKeyPairInternal> sshKeyPairs = sshKeyPairDAO.getSshKeyPairWithExpiredOrNullEncryptionTimeStamp();
-    for (var sshKeyPair: sshKeyPairs) {
+    List<SshKeyPairInternal> sshKeyPairs =
+        sshKeyPairDAO.getSshKeyPairWithExpiredOrNullEncryptionTimeStamp();
+    for (var sshKeyPair : sshKeyPairs) {
       sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
     }
     log.info("Completed re-encrypt ssh key pair using the newest key version");
