@@ -66,6 +66,7 @@ public class JwtUtilsTest extends BaseTest {
 
     @Test
     void testJwtIssuerAllowed() throws URISyntaxException {
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       when(externalCredsConfigMock.getAllowedJwtIssuers())
           .thenReturn(List.of(new URI(jwtSigningTestUtils.getIssuer())));
       var jwt =
@@ -89,6 +90,7 @@ public class JwtUtilsTest extends BaseTest {
     @Test
     void testJwtIssuerNotReal() throws URISyntaxException {
       String testIssuer = "http://does.not.exist";
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(testIssuer)));
       var jwtNotRealIssuer =
           jwtSigningTestUtils.createVisaJwtString(
@@ -138,6 +140,7 @@ public class JwtUtilsTest extends BaseTest {
     @Test
     void testJwtJkuNotResponsive() throws URISyntaxException {
       String testIssuer = "http://localhost:10";
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(testIssuer)));
       when(externalCredsConfigMock.getAllowedJwksUris())
           .thenReturn(List.of(new URI(testIssuer + JwtSigningTestUtils.JKU_PATH)));
@@ -157,6 +160,7 @@ public class JwtUtilsTest extends BaseTest {
     @Test
     void testJwtJkuMalformed() throws URISyntaxException {
       String testIssuer = "foobar";
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(testIssuer)));
       when(externalCredsConfigMock.getAllowedJwksUris())
           .thenReturn(List.of(new URI(testIssuer + JwtSigningTestUtils.JKU_PATH)));
