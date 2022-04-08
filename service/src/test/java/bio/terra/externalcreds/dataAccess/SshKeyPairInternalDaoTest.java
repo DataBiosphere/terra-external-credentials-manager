@@ -97,6 +97,58 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       assertPresent(loadedSshKeyOptional);
       verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
     }
+
+    @Test
+    void testGetDecryptedKeyPair() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      var cypheredkey = "jfidosruewr1k=";
+      when(externalCredsConfig.getKmsConfiguration())
+          .thenReturn(
+              Optional.of(
+                  new KmsConfiguration() {
+                    @Override
+                    public String getServiceGoogleProject() {
+                      return "projectId";
+                    }
+
+                    @Override
+                    public String getKeyRingId() {
+                      return "key_ring";
+                    }
+
+                    @Override
+                    public String getKeyId() {
+                      return "key_id";
+                    }
+
+                    @Override
+                    public String getKeyRingLocation() {
+                      return "us-central1";
+                    }
+                  }));
+      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))
+          .thenReturn(cypheredkey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredkey)))
+          .thenReturn(sshKey.getPrivateKey());
+
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
+
+      var loadedSshKeyOptional = sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
+
+      var namedParameters =
+          new MapSqlParameterSource()
+              .addValue("userId", sshKey.getUserId())
+              .addValue("type", sshKey.getType().name());
+      var resourceSelectSql =
+          "SELECT private_key" + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
+      var privateKey =
+          DataAccessUtils.singleResult(
+              jdbcTemplate.query(
+                  resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getString("private_key")));
+      assertEquals(cypheredkey, privateKey);
+      assertPresent(loadedSshKeyOptional);
+      verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
+    }
   }
 
   @Nested
