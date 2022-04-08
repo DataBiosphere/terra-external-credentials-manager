@@ -54,19 +54,19 @@ jobs:
       - name: Upload results to Google Bucket
         run: ./gradlew :integration:uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/foo"
 
-  # notify-slack:
-  #   needs: [ performance-tests ]
-  #   runs-on: ubuntu-latest
+  notify-slack:
+   needs: [ performance-tests ]
+   runs-on: ubuntu-latest
 
-  #   if: failure()
+   if: failure()
 
-  #   steps:
-  #     - name: Notify slack on failure
-  #       uses: 8398a7/action-slack@v3
-  #       env:
-  #         SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
-  #       with:
-  #         status: failure
-  #         author_name: Test Runner
-  #         fields: workflow,message
-  #         text: 'Nightly perf tests failed :sadpanda: (<https://github.com/DataBiosphere/terra-external-credentials-manager/actions/runs/$GITHUB_RUN_ID|link>)'
+   steps:
+     - name: Notify slack on failure
+       uses: 8398a7/action-slack@v3
+       env:
+         SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
+       with:
+         status: failure
+         author_name: Test Runner
+         fields: workflow,message
+         text: 'Nightly perf tests failed :sadpanda: (<https://github.com/DataBiosphere/terra-external-credentials-manager/actions/runs/$GITHUB_RUN_ID|link>)'
