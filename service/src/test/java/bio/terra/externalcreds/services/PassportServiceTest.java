@@ -109,12 +109,14 @@ class PassportServiceTest extends BaseTest {
 
     @Test
     void testValidPassportMatchingCriteria() throws URISyntaxException {
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       runValidPassportTest(new ValidPassportTestParams());
     }
 
     @Test
     void testValidPassportNotMatchingIssuer() throws URISyntaxException {
       var params = new ValidPassportTestParams();
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       params.valid = false;
       params.issuer = "https://some.other.issuer";
       runValidPassportTest(params);
@@ -123,6 +125,7 @@ class PassportServiceTest extends BaseTest {
     @Test
     void testValidPassportNotMatchingVisaType() throws URISyntaxException {
       var params = new ValidPassportTestParams();
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       params.valid = false;
       params.visaType = "wrong visa type";
       runValidPassportTest(params);
@@ -131,6 +134,7 @@ class PassportServiceTest extends BaseTest {
     @Test
     void testValidPassportNotMatchingCriteria() throws URISyntaxException {
       var params = new ValidPassportTestParams();
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       params.valid = false;
       params.criterionPhsId = "phsDIFFERENT";
       runValidPassportTest(params);
