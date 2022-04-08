@@ -71,6 +71,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
   @Test
   void testNoVisas() throws URISyntaxException {
+    when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
     var expectedPassport =
         jwtSigningTestUtils.createTestPassport(Collections.emptyList(), userEmail);
     var expectedLinkedAccount = createTestLinkedAccount();
@@ -79,6 +80,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
   @Test
   void testAccessTokenVisa() throws URISyntaxException {
+    when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
     var visa = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token);
     var expectedPassport = jwtSigningTestUtils.createTestPassport(List.of(visa), userEmail);
     var expectedLinkedAccount = createTestLinkedAccount();
@@ -87,6 +89,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
   @Test
   void testDocumentTokenVisa() throws URISyntaxException {
+    when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
     var visa = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token);
     var expectedPassport = jwtSigningTestUtils.createTestPassport(List.of(visa), userEmail);
     var expectedLinkedAccount = createTestLinkedAccount();
@@ -95,6 +98,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
   @Test
   void testMultipleVisas() throws URISyntaxException {
+    when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
     var visas =
         List.of(
             jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token),
