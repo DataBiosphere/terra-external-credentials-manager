@@ -15,6 +15,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: Check out terra-helmfile version directories
+        uses: ./.github/actions/checkout-helm-versions
+        with:
+          repository: broadinstitute/terra-helmfile
+          ref: master
+          token: ${{ secrets.BROADBOT_TOKEN }}
+          path: integration/terra-helmfile
+
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
@@ -41,6 +50,9 @@ jobs:
 
       - name: Run the perf test suite
         run: ./gradlew --build-cache :integration:runTest --args="suites/FullPerf.json /tmp/foo"
+
+#      - name: Upload results to Google Bucket
+#        run: ./gradlew :integration:uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/foo"
 
   # notify-slack:
   #   needs: [ performance-tests ]
