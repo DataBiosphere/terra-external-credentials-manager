@@ -132,6 +132,19 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig) {
             String.format("URI [%s] specified by iss claim not on allowed list", issuer));
       }
 
+      // validate the algorithm field
+      var allowedAlgorithms = externalCredsConfig.getAllowedJwtAlgorithms();
+      var algorithm = ((JWSHeader) jwt.getHeader()).getAlgorithm();
+
+      if (algorithm == null) {
+        throw new InvalidJwtException("jwt missing algorithm (alg) header");
+      }
+
+      if (!allowedAlgorithms.contains(algorithm.toString())) {
+        throw new InvalidJwtException(
+            String.format("Algorithm [%s] is not on allowed list", algorithm));
+      }
+
       var jkuOption = Optional.ofNullable(((JWSHeader) jwt.getHeader()).getJWKURL());
       if (jkuOption.isPresent()) {
         // presence of the jku header means the url it specifies contains the key set that must be

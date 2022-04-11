@@ -100,7 +100,6 @@ public class ProviderServiceTest extends BaseTest {
     @Test
     void testDeleteLinkLinkNotFound() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
-
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderName(), TestUtils.createRandomProvider()));
 

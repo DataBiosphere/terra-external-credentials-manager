@@ -197,6 +197,8 @@ class PassportServiceTest extends BaseTest {
     }
 
     private void runValidPassportTest(ValidPassportTestParams params) throws URISyntaxException {
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
+
       var linkedAccount = TestUtils.createRandomLinkedAccount();
       var otherLinkedAccount =
           TestUtils.createRandomLinkedAccount().withUserId(linkedAccount.getUserId());
