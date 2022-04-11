@@ -1,30 +1,4 @@
-externalcreds:
-  sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
-  background-job-interval-mins: 5
-  token-validation-duration: 50m # with 5m job interval, 50m allows 2 attempts to validate before 60m expires
-  visa-and-passport-refresh-duration: 30m
-  # only enable google pubsub topic in live envs
-  authorization-change-events-enabled: ${AUTHORIZATION_CHANGE_EVENTS_ENABLED:false}
-  # name from: https://github.com/broadinstitute/terraform-ap-modules/blob/master/externalcreds/pubsub.tf
-  authorization-change-event-topic-name: projects/${SERVICE_GOOGLE_PROJECT:broad-dsde-dev}/topics/ecm-events
-
-logging:
-  level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
-  pattern.level: '%X{requestId} %5p'
-
-server:
-  compression:
-    enabled: true
-    mime-types: text/css,application/javascript
-  port: 8080
-
 spring:
-  # application name and version are used to populate the logging serviceContext
-  # https://github.com/DataBiosphere/terra-common-lib/blob/480ab3daae282ddff0fef8dc329494a4422e32f1/src/main/java/bio/terra/common/logging/GoogleJsonLayout.java#L118
-  application.name: externalcreds
-  application.version: ${externalcreds.version.gitHash:unknown}
-
-  config.import: optional:classpath:rendered/providers.yaml;classpath:rendered/version.properties;optional:classpath:rendered/allowed_jwks.yaml;optional:classpath:rendered/allowed_jwt_issuers.yaml
 
   datasource:
     hikari:
@@ -33,22 +7,3 @@ spring:
     password: ${DATABASE_USER_PASSWORD:ecmpwd}
     url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/${DATABASE_NAME:ecm}
     username: ${DATABASE_USER:ecmuser}
-
-  jackson:
-    serialization.indent_output: true
-    default-property-inclusion: non_null # this prevents a problem serializing VisaCriterion in openapi where `type` is included a second time with null value
-
-  main.banner-mode: off
-
-  web:
-    resources:
-      cache:
-        cachecontrol:
-          max-age: 0
-          must-revalidate: true
-        use-last-modified: false
-
-terra.common:
-  tracing:
-    stackdriverExportEnabled: ${CLOUD_TRACE_ENABLED:false}
-    samplingRate: ${SAMPLING_PROBABILITY:0}

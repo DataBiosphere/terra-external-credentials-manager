@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest(
     properties = {"DATABASE_NAME=ecm_test"},
     classes = ExternalCredsWebApplication.class)
-@ActiveProfiles("human-readable-logging")
+@ActiveProfiles({"test", "human-readable-logging"})
 @Transactional
 @Rollback
 public abstract class BaseTest {
