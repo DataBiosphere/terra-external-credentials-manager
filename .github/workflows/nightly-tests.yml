@@ -19,8 +19,6 @@ jobs:
       - name: Check out terra-helmfile version directories
         uses: ./.github/actions/checkout-helm-versions
         with:
-          repository: broadinstitute/terra-helmfile
-          ref: master
           token: ${{ secrets.BROADBOT_TOKEN }}
           path: integration/terra-helmfile
 
@@ -49,10 +47,10 @@ jobs:
           echo "$PERF_TESTRUNNER_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
 
       - name: Run the perf test suite
-        run: ./gradlew --build-cache :integration:runTest --args="suites/FullPerf.json /tmp/foo"
+        run: ./gradlew --build-cache :integration:runTest --args="suites/FullPerf.json /tmp/test-results"
 
       - name: Upload results to Google Bucket
-        run: ./gradlew :integration:uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/foo"
+        run: ./gradlew :integration:uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/test-results"
 
   notify-slack:
    needs: [ performance-tests ]
