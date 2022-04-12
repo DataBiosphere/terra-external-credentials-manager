@@ -64,8 +64,14 @@ public class SshKeyPairDAO {
             + " expires = excluded.expires"
             + " RETURNING id";
 
-    var sshPrivateKey = sshKeyPairInternal.getPrivateKey();
-    var namedParameters = new MapSqlParameterSource();
+    var namedParameters =
+        new MapSqlParameterSource()
+            .addValue("userId", sshKeyPairInternal.getUserId())
+            .addValue("type", sshKeyPairInternal.getType().name())
+            .addValue("privateKey", kmsEncryptDecryptHelper.encryptSymmetric(sshKeyPairInternal.getPrivateKey()))
+            .addValue("publicKey", sshKeyPairInternal.getPublicKey())
+            .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail());
+
     var kmsConfiguration = externalCredsConfig.getKmsConfiguration();
     if (externalCredsConfig.getKmsConfiguration().isPresent()) {
       // Record the timestamp when the key is encrypted.
@@ -73,15 +79,7 @@ public class SshKeyPairDAO {
           "expires",
           Timestamp.from(
               Instant.now().plus(kmsConfiguration.get().getSshKeyPairRefreshDuration())));
-      sshPrivateKey = kmsEncryptDecryptHelper.encryptSymmetric(sshPrivateKey);
     }
-    namedParameters =
-        new MapSqlParameterSource()
-            .addValue("userId", sshKeyPairInternal.getUserId())
-            .addValue("type", sshKeyPairInternal.getType().name())
-            .addValue("privateKey", sshPrivateKey)
-            .addValue("publicKey", sshKeyPairInternal.getPublicKey())
-            .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail());
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
