@@ -10,15 +10,18 @@ import com.google.cloud.kms.v1.KeyManagementServiceClient;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /** Utils for KMS symmetric encryption and decryption. */
 @Component
+@Slf4j
 public record KmsEncryptDecryptHelper(ExternalCredsConfig config) {
 
   /** Encrypt with KMS symmetric key. */
   public String encryptSymmetric(String plainText) {
     if (config.getKmsConfiguration().isEmpty()) {
+      log.info("KMS encryption for ssh private keys is disabled");
       return plainText;
     }
     try (var client = KeyManagementServiceClient.create()) {
@@ -33,6 +36,7 @@ public record KmsEncryptDecryptHelper(ExternalCredsConfig config) {
   /** Decrypt with KMS symmetric key. */
   public String decryptSymmetric(String cypheredText) {
     if (config.getKmsConfiguration().isEmpty()) {
+      log.info("KMS encryption for ssh private keys is disabled");
       return cypheredText;
     }
     try (var client = KeyManagementServiceClient.create()) {
