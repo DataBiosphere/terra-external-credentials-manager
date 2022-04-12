@@ -96,7 +96,13 @@ public class SshKeyPairDAO {
         Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
   }
 
-  public List<SshKeyPairInternal> getExpiredSshKeyPair(Timestamp expirationCutoff) {
+  /**
+   * Gets expired or un-encrypted ssh key pair.
+   *
+   * @param expirationCutoff timestamp by which the key encryption is expired and should be
+   *     re-encrypted.
+   */
+  public List<SshKeyPairInternal> getExpiredOrUnEncryptedSshKeyPair(Timestamp expirationCutoff) {
     var namedParameters = new MapSqlParameterSource("expirationCutoff", expirationCutoff);
     var query =
         "SELECT DISTINCT id, user_id, type, external_user_email, private_key, public_key, expires"

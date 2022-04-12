@@ -62,7 +62,6 @@ public class ExternalCredsCronApplication {
   public void checkForExpiringSshKeyPair() {
     log.info("Beginning checkForExpiringSshKeyPair");
     sshKeyPairService.reEncryptExpiringSshKeyPairs();
-
     log.info("Completed checkForExpiringSshKeyPair");
   }
 }

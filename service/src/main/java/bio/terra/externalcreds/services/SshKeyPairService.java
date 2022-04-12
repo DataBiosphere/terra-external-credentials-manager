@@ -93,7 +93,8 @@ public class SshKeyPairService {
     if (config.getKmsConfiguration().isEmpty()) {
       return;
     }
-    var sshKeyPairs = sshKeyPairDAO.getExpiredSshKeyPair(Timestamp.from(Instant.now()));
+    var sshKeyPairs =
+        sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(Timestamp.from(Instant.now()));
     for (var sshKeyPair : sshKeyPairs) {
       try {
         sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);

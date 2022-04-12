@@ -1,7 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
-import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
-import static bio.terra.externalcreds.TestUtils.getFakeKmsConfiguration;
+import static bio.terra.externalcreds.SshKeyPairTestUtils.createRandomGithubSshKey;
+import static bio.terra.externalcreds.SshKeyPairTestUtils.getFakeKmsConfiguration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.SshKeyPairTestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
@@ -166,8 +167,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     @Test
     void testGetExpiringSshKeyPair() throws NoSuchAlgorithmException, IOException {
       // Delete all the row in the ssh_key_pair data table.
-      var deleteAll = "DELETE FROM ssh_key_pair";
-      jdbcTemplate.update(deleteAll, new MapSqlParameterSource());
+      SshKeyPairTestUtils.cleanUp(jdbcTemplate);
 
       var sshKey = createRandomGithubSshKey();
       var cypheredkey = "jfidosruewr1k=";
@@ -181,17 +181,16 @@ class SshKeyPairInternalDaoTest extends BaseTest {
 
       // Go to the future 30 seconds from now.
       var expiredSshKeys =
-          sshKeyPairDAO.getExpiredSshKeyPair(
+          sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(
               Timestamp.from(Instant.now().plus(Duration.ofSeconds(30))));
       assertEquals(1, expiredSshKeys.size());
       verifySshKeyPair(sshKey, expiredSshKeys.get(0));
     }
 
     @Test
-    void testReEncryptKeys() throws NoSuchAlgorithmException, IOException {
+    void testReEncryptKey() throws NoSuchAlgorithmException, IOException {
       // Delete all the row in the ssh_key_pair data table.
-      var deleteAll = "DELETE FROM ssh_key_pair";
-      jdbcTemplate.update(deleteAll, new MapSqlParameterSource());
+      SshKeyPairTestUtils.cleanUp(jdbcTemplate);
 
       var cypheredkey = "jfidosruewr1k=";
       when(externalCredsConfig.getKmsConfiguration())
@@ -207,11 +206,16 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKeyPair.getPrivateKey())))
           .thenReturn(cypheredKey2);
       var expiredSshKeyPair =
-          sshKeyPairDAO.getExpiredSshKeyPair(
+          sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(
               Timestamp.from(Instant.now().plus(Duration.ofSeconds(30))));
       verifySshKeyPair(sshKeyPair, expiredSshKeyPair.get(0));
+
+      // Re-encrypt the ssh key.
       sshKeyPairDAO.upsertSshKeyPair(expiredSshKeyPair.get(0));
-      var emptyList = sshKeyPairDAO.getExpiredSshKeyPair(Timestamp.from(Instant.now()));
+      // This time there should be no expired key.
+      var emptyList =
+          sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(Timestamp.from(Instant.now()));
+      assertEquals(0, emptyList.size());
 
       var namedParameters =
           new MapSqlParameterSource()
@@ -223,8 +227,8 @@ class SshKeyPairInternalDaoTest extends BaseTest {
           DataAccessUtils.singleResult(
               jdbcTemplate.query(
                   resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getString("private_key")));
+      // Verify that the key is re-encrypted.
       assertEquals(cypheredKey2, privateKey);
-      assertEquals(0, emptyList.size());
     }
   }
 
