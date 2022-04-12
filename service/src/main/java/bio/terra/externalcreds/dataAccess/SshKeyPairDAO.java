@@ -5,6 +5,8 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.dao.support.DataAccessUtils;
@@ -35,7 +37,7 @@ public class SshKeyPairDAO {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
     var resourceSelectSql =
-        "SELECT id, user_id, type, external_user_email, private_key, public_key"
+        "SELECT id, user_id, type, external_user_email, private_key, public_key, expires"
             + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
@@ -52,19 +54,28 @@ public class SshKeyPairDAO {
 
   public SshKeyPairInternal upsertSshKeyPair(SshKeyPairInternal sshKeyPairInternal) {
     var query =
-        "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email)"
-            + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail)"
+        "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email, expires)"
+            + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail,"
+            + (externalCredsConfig.getKmsConfiguration().isPresent() ? " :expires)" : " NULL)")
             + " ON CONFLICT (type, user_id) DO UPDATE SET"
             + " private_key = excluded.private_key,"
             + " public_key = excluded.public_key,"
-            + " external_user_email = excluded.external_user_email"
+            + " external_user_email = excluded.external_user_email,"
+            + " expires = excluded.expires"
             + " RETURNING id";
 
     var sshPrivateKey = sshKeyPairInternal.getPrivateKey();
+    var namedParameters = new MapSqlParameterSource();
+    var kmsConfiguration = externalCredsConfig.getKmsConfiguration();
     if (externalCredsConfig.getKmsConfiguration().isPresent()) {
+      // Record the timestamp when the key is encrypted.
+      namedParameters.addValue(
+          "expires",
+          Timestamp.from(
+              Instant.now().plus(kmsConfiguration.get().getSshKeyPairRefreshDuration())));
       sshPrivateKey = kmsEncryptDecryptHelper.encryptSymmetric(sshPrivateKey);
     }
-    var namedParameters =
+    namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", sshKeyPairInternal.getUserId())
             .addValue("type", sshKeyPairInternal.getType().name())
@@ -92,7 +103,8 @@ public class SshKeyPairDAO {
     @Override
     public SshKeyPairInternal mapRow(ResultSet rs, int rowNum) throws SQLException {
       String privateKey = rs.getString("private_key");
-      if (externalCredsConfig.getKmsConfiguration().isPresent()) {
+      if (externalCredsConfig.getKmsConfiguration().isPresent()
+          && rs.getTimestamp("expires") != null) {
         privateKey = kmsEncryptDecryptHelper.decryptSymmetric(privateKey);
       }
       return new SshKeyPairInternal.Builder()

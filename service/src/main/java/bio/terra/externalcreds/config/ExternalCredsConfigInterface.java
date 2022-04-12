@@ -55,5 +55,7 @@ public interface ExternalCredsConfigInterface {
     String getKeyId();
 
     String getKeyRingLocation();
+
+    Duration getSshKeyPairRefreshDuration();
   }
 }

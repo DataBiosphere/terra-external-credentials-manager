@@ -16,6 +16,7 @@ import com.google.cloud.kms.v1.EncryptResponse;
 import com.google.cloud.kms.v1.KeyManagementServiceClient;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -118,6 +119,11 @@ public class KmsEncryptDecryptHelperTest extends BaseTest {
                   @Override
                   public String getKeyRingLocation() {
                     return "us-central1";
+                  }
+
+                  @Override
+                  public Duration getSshKeyPairRefreshDuration() {
+                    return Duration.ZERO;
                   }
                 }));
   }

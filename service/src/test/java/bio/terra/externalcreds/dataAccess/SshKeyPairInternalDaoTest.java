@@ -14,6 +14,7 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -32,6 +33,33 @@ class SshKeyPairInternalDaoTest extends BaseTest {
   @MockBean KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
 
   private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
+  private static final KmsConfiguration KMS_CONFIGURATION =
+      new KmsConfiguration() {
+        @Override
+        public String getServiceGoogleProject() {
+          return "projectId";
+        }
+
+        @Override
+        public String getKeyRingId() {
+          return "key_ring";
+        }
+
+        @Override
+        public String getKeyId() {
+          return "key_id";
+        }
+
+        @Override
+        public String getKeyRingLocation() {
+          return "us-central1";
+        }
+
+        @Override
+        public Duration getSshKeyPairRefreshDuration() {
+          return Duration.ZERO;
+        }
+      };
 
   @Nested
   class UpsertKeyPair {
@@ -101,34 +129,11 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     @Test
     void testGetDecryptedKeyPair() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
-      var cypheredkey = "jfidosruewr1k=";
-      when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(
-              Optional.of(
-                  new KmsConfiguration() {
-                    @Override
-                    public String getServiceGoogleProject() {
-                      return "projectId";
-                    }
-
-                    @Override
-                    public String getKeyRingId() {
-                      return "key_ring";
-                    }
-
-                    @Override
-                    public String getKeyId() {
-                      return "key_id";
-                    }
-
-                    @Override
-                    public String getKeyRingLocation() {
-                      return "us-central1";
-                    }
-                  }));
+      var cypheredKey = "jfidosruewr1k=";
+      when(externalCredsConfig.getKmsConfiguration()).thenReturn(Optional.of(KMS_CONFIGURATION));
       when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))
-          .thenReturn(cypheredkey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredkey)))
+          .thenReturn(cypheredKey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredKey)))
           .thenReturn(sshKey.getPrivateKey());
 
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
@@ -145,7 +150,19 @@ class SshKeyPairInternalDaoTest extends BaseTest {
           DataAccessUtils.singleResult(
               jdbcTemplate.query(
                   resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getString("private_key")));
-      assertEquals(cypheredkey, privateKey);
+      assertEquals(cypheredKey, privateKey);
+      assertPresent(loadedSshKeyOptional);
+      verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
+    }
+
+    @Test
+    void testGetPreviouslyUnencryptedKeyPair() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
+      when(externalCredsConfig.getKmsConfiguration()).thenReturn(Optional.of(KMS_CONFIGURATION));
+
+      var loadedSshKeyOptional = sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
       assertPresent(loadedSshKeyOptional);
       verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
     }
