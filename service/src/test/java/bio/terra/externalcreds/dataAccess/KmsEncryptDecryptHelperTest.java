@@ -3,6 +3,7 @@ package bio.terra.externalcreds.dataAccess;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
@@ -51,7 +52,7 @@ class KmsEncryptDecryptHelperTest extends BaseTest {
     var plainText = "secret";
     var cypheredText = "jeij1lm3";
     when(keyManagementServiceClient.encrypt(
-            any(CryptoKeyName.class), ByteString.copyFromUtf8(plainText)))
+            any(CryptoKeyName.class), eq(ByteString.copyFromUtf8(plainText))))
         .thenReturn(
             EncryptResponse.newBuilder()
                 .setCiphertext(ByteString.copyFromUtf8(cypheredText))
@@ -69,7 +70,7 @@ class KmsEncryptDecryptHelperTest extends BaseTest {
     var plainText = "secret";
     var cypheredText = "jeij1lm3";
     when(keyManagementServiceClient.decrypt(
-            any(CryptoKeyName.class), ByteString.copyFromUtf8(cypheredText)))
+            any(CryptoKeyName.class), eq(ByteString.copyFromUtf8(cypheredText))))
         .thenReturn(
             DecryptResponse.newBuilder().setPlaintext(ByteString.copyFromUtf8(plainText)).build());
     try (var mockClient = Mockito.mockStatic(KeyManagementServiceClient.class)) {
