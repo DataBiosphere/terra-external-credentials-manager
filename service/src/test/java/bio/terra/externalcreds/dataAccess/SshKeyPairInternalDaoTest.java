@@ -63,11 +63,6 @@ class SshKeyPairInternalDaoTest extends BaseTest {
         }
       };
 
-  private void setUpDefaultKmsEncryptDecryptHelperMock(String privatekey) {
-    when(kmsEncryptDecryptHelper.encryptSymmetric(privatekey)).thenReturn(privatekey);
-    when(kmsEncryptDecryptHelper.decryptSymmetric(privatekey)).thenReturn(privatekey);
-  }
-
   @Nested
   class UpsertKeyPair {
 
@@ -222,5 +217,10 @@ class SshKeyPairInternalDaoTest extends BaseTest {
   private void verifySshKeyPair(
       SshKeyPairInternal expectedSshKey, SshKeyPairInternal actualSshKey) {
     assertEquals(expectedSshKey.withId(actualSshKey.getId()), actualSshKey);
+  }
+
+  private void setUpDefaultKmsEncryptDecryptHelperMock(String privateKey) {
+    when(kmsEncryptDecryptHelper.encryptSymmetric(privateKey)).thenReturn(privateKey);
+    when(kmsEncryptDecryptHelper.decryptSymmetric(privateKey)).thenReturn(privateKey);
   }
 }
