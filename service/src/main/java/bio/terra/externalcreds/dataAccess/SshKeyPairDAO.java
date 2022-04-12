@@ -29,7 +29,7 @@ public class SshKeyPairDAO {
       KmsEncryptDecryptHelper kmsEncryptDecryptHelper) {
     this.jdbcTemplate = jdbcTemplate;
     this.externalCredsConfig = externalCredsConfig;
-    sshKeyPairRowMapper = new SshKeyPairRowMapper(externalCredsConfig);
+    sshKeyPairRowMapper = new SshKeyPairRowMapper();
     this.kmsEncryptDecryptHelper = kmsEncryptDecryptHelper;
   }
 
@@ -93,12 +93,6 @@ public class SshKeyPairDAO {
   }
 
   private class SshKeyPairRowMapper implements RowMapper<SshKeyPairInternal> {
-
-    private final ExternalCredsConfig externalCredsConfig;
-
-    SshKeyPairRowMapper(ExternalCredsConfig externalCredsConfig) {
-      this.externalCredsConfig = externalCredsConfig;
-    }
 
     @Override
     public SshKeyPairInternal mapRow(ResultSet rs, int rowNum) throws SQLException {
