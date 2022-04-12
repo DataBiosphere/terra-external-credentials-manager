@@ -103,7 +103,6 @@ public class SshKeyPairService {
             "Failed to re-encrypt the ssh private key , will try again at the next interval.", e);
       }
     }
-    return;
   }
 
   /** Encode RSA private key to PEM format. */

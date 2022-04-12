@@ -67,17 +67,13 @@ public class SshKeyPairDAO {
 
     var sshPrivateKey = sshKeyPairInternal.getPrivateKey();
     var namedParameters = new MapSqlParameterSource();
-    if (externalCredsConfig.getKmsConfiguration().isPresent()) {
+    var kmsConfiguration = externalCredsConfig.getKmsConfiguration();
+    if (kmsConfiguration.isPresent()) {
       // Record the timestamp when the key is encrypted.
       namedParameters.addValue(
           "expires",
           Timestamp.from(
-              Instant.now()
-                  .plus(
-                      externalCredsConfig
-                          .getKmsConfiguration()
-                          .get()
-                          .getSshKeyPairRefreshDuration())));
+              Instant.now().plus(kmsConfiguration.get().getSshKeyPairRefreshDuration())));
       sshPrivateKey = kmsEncryptDecryptHelper.encryptSymmetric(sshPrivateKey);
     }
     namedParameters

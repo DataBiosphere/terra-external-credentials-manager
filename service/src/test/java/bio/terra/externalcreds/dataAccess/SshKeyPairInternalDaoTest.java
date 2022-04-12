@@ -5,7 +5,6 @@ import static bio.terra.externalcreds.SshKeyPairTestUtils.getFakeKmsConfiguratio
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
@@ -108,9 +107,9 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var cypheredkey = "jfidosruewr1k=";
       when(externalCredsConfig.getKmsConfiguration())
           .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofDays(60))));
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))
+      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
           .thenReturn(cypheredkey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredkey)))
+      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredkey))
           .thenReturn(sshKey.getPrivateKey());
 
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
@@ -173,9 +172,9 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var cypheredkey = "jfidosruewr1k=";
       when(externalCredsConfig.getKmsConfiguration())
           .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofSeconds(15))));
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))
+      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
           .thenReturn(cypheredkey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredkey)))
+      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredkey))
           .thenReturn(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
@@ -196,14 +195,14 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       when(externalCredsConfig.getKmsConfiguration())
           .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofSeconds(10))));
       var sshKeyPair = createRandomGithubSshKey();
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKeyPair.getPrivateKey())))
+      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKeyPair.getPrivateKey()))
           .thenReturn(cypheredkey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredkey)))
+      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredkey))
           .thenReturn(sshKeyPair.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
 
       var cypheredKey2 = "3mi2k31-&3";
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKeyPair.getPrivateKey())))
+      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKeyPair.getPrivateKey()))
           .thenReturn(cypheredKey2);
       var expiredSshKeyPair =
           sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(

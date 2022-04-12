@@ -6,7 +6,6 @@ import static bio.terra.externalcreds.SshKeyPairTestUtils.getRSAEncodedKeyPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -149,7 +148,7 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
               .privateKey(pair.getLeft())
               .publicKey(pair.getRight())
               .externalUserEmail(externalUser);
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(pair.getLeft())))
+      when(kmsEncryptDecryptHelper.encryptSymmetric(pair.getLeft()))
           .thenReturn(RandomStringUtils.random(10));
       var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, newSshKeyPair);
 
@@ -163,7 +162,7 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
               .build();
       assertNotEquals(sshKey.withId(storedSshKey.getId()), storedSshKey);
       verifySshKeyPair(newSshKeyPairExpected, storedSshKey);
-      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(eq(pair.getLeft()));
+      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(pair.getLeft());
     }
   }
 
@@ -212,15 +211,15 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
               .publicKey(pair.getRight())
               .externalUserEmail(externalUser);
       var cypheredKey = "ji32o10!2";
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(pair.getLeft()))).thenReturn(cypheredKey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredKey))).thenReturn(pair.getLeft());
+      when(kmsEncryptDecryptHelper.encryptSymmetric(pair.getLeft())).thenReturn(cypheredKey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredKey)).thenReturn(pair.getLeft());
       var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, sshKeyPair);
 
       sshKeyPairService.reEncryptExpiringSshKeyPairs();
       var loadedSshkeyPair = sshKeyPairService.getSshKeyPair(userId, keyType);
       verifySshKeyPair(storedSshKey, loadedSshkeyPair);
       // encrypt should be called twice as the key needs to be re-encrypted.
-      verify(kmsEncryptDecryptHelper, times(2)).encryptSymmetric(eq(pair.getLeft()));
+      verify(kmsEncryptDecryptHelper, times(2)).encryptSymmetric(pair.getLeft());
     }
 
     @Test
@@ -243,16 +242,16 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
               .privateKey(pair.getLeft())
               .publicKey(pair.getRight())
               .externalUserEmail(externalUser);
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(pair.getLeft()))).thenReturn(cypheredKey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredKey))).thenReturn(pair.getLeft());
+      when(kmsEncryptDecryptHelper.encryptSymmetric(pair.getLeft())).thenReturn(cypheredKey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredKey)).thenReturn(pair.getLeft());
       var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, sshKeyPair);
-      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(eq(pair.getLeft()));
+      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(pair.getLeft());
 
       sshKeyPairService.reEncryptExpiringSshKeyPairs();
       var loadedSshkeyPair = sshKeyPairService.getSshKeyPair(userId, keyType);
       verifySshKeyPair(storedSshKey, loadedSshkeyPair);
       // encrypt should not be called again as the refresh duration is 60 days.
-      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(eq(pair.getLeft()));
+      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(pair.getLeft());
     }
 
     @Test
@@ -283,10 +282,10 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
       verifySshKeyPair(storedSshKey, loadedSshKey);
 
       var cypheredKey = "ji32o10!2";
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(pair.getLeft()))).thenReturn(cypheredKey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredKey))).thenReturn(pair.getLeft());
+      when(kmsEncryptDecryptHelper.encryptSymmetric(pair.getLeft())).thenReturn(cypheredKey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredKey)).thenReturn(pair.getLeft());
       sshKeyPairService.reEncryptExpiringSshKeyPairs();
-      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(eq(pair.getLeft()));
+      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(pair.getLeft());
 
       loadedSshKey = sshKeyPairService.getSshKeyPair(userId, keyType);
       verifySshKeyPair(storedSshKey, loadedSshKey);
