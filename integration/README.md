@@ -48,7 +48,7 @@ git clone https://github.com/broadinstitute/terra-helmfile integration/terra-hel
 
 ## Other Notes
 
-* To reset the data in the perf database, download the [psql-connect script](https://github.com/broadinstitute/dsp-scripts/blob/master/firecloud/psql-connect.sh) from the DSP Scripts repo. Use it to run the `regenerate_perf_data.sql` script on the perf database:  
+* To reset the data in the perf database, download the [psql-connect script](https://github.com/broadinstitute/dsp-scripts/blob/master/firecloud/psql-connect.sh) from the DSP Scripts repo. Use it to connect to the perf database and run the `regenerate_perf_data.sql` script: 
   ```
   ./psql-connect.sh perf externalcreds some/relative/path/to/resources/datageneration/regenerate_perf_data.sql
   ```
