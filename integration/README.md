@@ -2,7 +2,7 @@
 
 ECM uses the [Terra Test Runner](https://github.com/DataBiosphere/terra-test-runner) to automate integration and performance tests. At the moment:
 * Integration tests are run on PRs only (but may eventually be run nightly).
-* Performance tests are run nightly in the perf environment.
+* Performance tests are run nightly in the perf environment and results are uploaded to the [QA Dashboard](https://trdash.dsp-eng-tools.broadinstitute.org/).
 
 ## Test Runner Overview
 
@@ -48,4 +48,9 @@ git clone https://github.com/broadinstitute/terra-helmfile integration/terra-hel
 
 ## Other Notes
 
-Dependency locking is turned on, to update the lockfiles run `./gradlew dependencies --write-locks`
+* To reset the data in the perf database, download the [psql-connect script](https://github.com/broadinstitute/dsp-scripts/blob/master/firecloud/psql-connect.sh) from the DSP Scripts repo. Use it to run the `regenerate_perf_data.sql` script on the perf database:  
+  ```
+  ./psql-connect.sh perf externalcreds some/relative/path/to/resources/datageneration/regenerate_perf_data.sql
+  ```
+
+* Dependency locking is turned on, to update the lockfiles run `./gradlew dependencies --write-locks`
