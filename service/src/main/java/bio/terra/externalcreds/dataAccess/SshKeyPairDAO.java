@@ -75,7 +75,7 @@ public class SshKeyPairDAO {
             .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail());
 
     var kmsConfiguration = externalCredsConfig.getKmsConfiguration();
-    if (externalCredsConfig.getKmsConfiguration().isPresent()) {
+    if (kmsConfiguration.isPresent()) {
       // Record the timestamp when the key is encrypted.
       namedParameters.addValue(
           "expires",

@@ -4,7 +4,6 @@ import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
@@ -131,9 +130,9 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var sshKey = createRandomGithubSshKey();
       var cypheredKey = "jfidosruewr1k=";
       when(externalCredsConfig.getKmsConfiguration()).thenReturn(Optional.of(KMS_CONFIGURATION));
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))
+      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
           .thenReturn(cypheredKey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredKey)))
+      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredKey))
           .thenReturn(sshKey.getPrivateKey());
 
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
@@ -145,7 +144,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
               .addValue("userId", sshKey.getUserId())
               .addValue("type", sshKey.getType().name());
       var resourceSelectSql =
-          "SELECT private_key" + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
+          "SELECT private_key FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
       var privateKey =
           DataAccessUtils.singleResult(
               jdbcTemplate.query(
