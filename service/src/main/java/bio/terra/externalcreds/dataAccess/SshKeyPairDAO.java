@@ -103,8 +103,7 @@ public class SshKeyPairDAO {
     @Override
     public SshKeyPairInternal mapRow(ResultSet rs, int rowNum) throws SQLException {
       String privateKey = rs.getString("private_key");
-      if (externalCredsConfig.getKmsConfiguration().isPresent()
-          && rs.getTimestamp("expires") != null) {
+      if (rs.getTimestamp("expires") != null) {
         privateKey = kmsEncryptDecryptHelper.decryptSymmetric(privateKey);
       }
       return new SshKeyPairInternal.Builder()
