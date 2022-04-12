@@ -122,18 +122,8 @@ public class KmsEncryptDecryptHelperTest extends BaseTest {
                   }
 
                   @Override
-                  public Duration getKeyRotationIntervalDays() {
-                    return Duration.ZERO;
-                  }
-
-                  @Override
-                  public int getInitialDelayDays() {
-                    return 0;
-                  }
-
-                  @Override
-                  public int getReEncryptionDays() {
-                    return 0;
+                  public Duration getSshKeyPairRefreshDuration() {
+                    return Duration.ofDays(1);
                   }
                 }));
   }

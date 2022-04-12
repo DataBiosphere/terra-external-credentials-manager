@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
 import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
+import static bio.terra.externalcreds.TestUtils.getFakeKmsConfiguration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,12 +10,13 @@ import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.config.ExternalCredsConfigInterface.KmsConfiguration;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -104,44 +106,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var sshKey = createRandomGithubSshKey();
       var cypheredkey = "jfidosruewr1k=";
       when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(
-              Optional.of(
-                  new KmsConfiguration() {
-                    @Override
-                    public String getServiceGoogleProject() {
-                      return "projectId";
-                    }
-
-                    @Override
-                    public String getKeyRingId() {
-                      return "key_ring";
-                    }
-
-                    @Override
-                    public String getKeyId() {
-                      return "key_id";
-                    }
-
-                    @Override
-                    public String getKeyRingLocation() {
-                      return "us-central1";
-                    }
-
-                    @Override
-                    public Duration getKeyRotationIntervalDays() {
-                      return Duration.ofDays(90);
-                    }
-
-                    @Override
-                    public int getInitialDelayDays() {
-                      return 0;
-                    }
-
-                    @Override
-                    public int getReEncryptionDays() {
-                      return 0;
-                    }
-                  }));
+          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofDays(60))));
       when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))
           .thenReturn(cypheredkey);
       when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredkey)))
@@ -156,82 +121,12 @@ class SshKeyPairInternalDaoTest extends BaseTest {
               .addValue("userId", sshKey.getUserId())
               .addValue("type", sshKey.getType().name());
       var resourceSelectSql =
-          "SELECT private_key" + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
+          "SELECT private_key FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
       var privateKey =
           DataAccessUtils.singleResult(
               jdbcTemplate.query(
                   resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getString("private_key")));
       assertEquals(cypheredkey, privateKey);
-      assertPresent(loadedSshKeyOptional);
-      verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
-    }
-
-    @Test
-    void testReEncryptStaleKey() throws NoSuchAlgorithmException, IOException {
-      var sshKey = createRandomGithubSshKey();
-      var cypheredkey = "jfidosruewr1k=";
-      when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(
-              Optional.of(
-                  new KmsConfiguration() {
-                    @Override
-                    public String getServiceGoogleProject() {
-                      return "projectId";
-                    }
-
-                    @Override
-                    public String getKeyRingId() {
-                      return "key_ring";
-                    }
-
-                    @Override
-                    public String getKeyId() {
-                      return "key_id";
-                    }
-
-                    @Override
-                    public String getKeyRingLocation() {
-                      return "us-central1";
-                    }
-
-                    @Override
-                    public Duration getKeyRotationIntervalDays() {
-                      return Duration.ZERO;
-                    }
-
-                    @Override
-                    public int getInitialDelayDays() {
-                      return 0;
-                    }
-
-                    @Override
-                    public int getReEncryptionDays() {
-                      return 0;
-                    }
-                  }));
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))
-          .thenReturn(cypheredkey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredkey)))
-          .thenReturn(sshKey.getPrivateKey());
-
-      sshKeyPairDAO.upsertSshKeyPair(sshKey);
-
-      var newCypheredKey = "242mi12h2";
-      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))
-          .thenReturn(newCypheredKey);
-      var loadedSshKeyOptional = sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
-
-      var namedParameters =
-          new MapSqlParameterSource()
-              .addValue("userId", sshKey.getUserId())
-              .addValue("type", sshKey.getType().name());
-      var resourceSelectSql =
-          "SELECT private_key" + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
-      var privateKey =
-          DataAccessUtils.singleResult(
-              jdbcTemplate.query(
-                  resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getString("private_key")));
-      assertEquals(newCypheredKey, privateKey);
       assertPresent(loadedSshKeyOptional);
       verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
     }
@@ -263,6 +158,73 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       assertFalse(sshKeyPairDAO.deleteSshKeyPairIfExists(sshKey.getUserId(), SshKeyPairType.AZURE));
 
       assertTrue(sshKeyPairDAO.deleteSshKeyPairIfExists(sshKey.getUserId(), sshKey.getType()));
+    }
+  }
+
+  @Nested
+  class ReEncryptKeys {
+    @Test
+    void testGetExpiringSshKeyPair() throws NoSuchAlgorithmException, IOException {
+      // Delete all the row in the ssh_key_pair data table.
+      var deleteAll = "DELETE FROM ssh_key_pair";
+      jdbcTemplate.update(deleteAll, new MapSqlParameterSource());
+
+      var sshKey = createRandomGithubSshKey();
+      var cypheredkey = "jfidosruewr1k=";
+      when(externalCredsConfig.getKmsConfiguration())
+          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofSeconds(15))));
+      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKey.getPrivateKey())))
+          .thenReturn(cypheredkey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredkey)))
+          .thenReturn(sshKey.getPrivateKey());
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
+
+      // Go to the future 30 seconds from now.
+      var expiredSshKeys =
+          sshKeyPairDAO.getExpiredSshKeyPair(
+              Timestamp.from(Instant.now().plus(Duration.ofSeconds(30))));
+      assertEquals(1, expiredSshKeys.size());
+      verifySshKeyPair(sshKey, expiredSshKeys.get(0));
+    }
+
+    @Test
+    void testReEncryptKeys() throws NoSuchAlgorithmException, IOException {
+      // Delete all the row in the ssh_key_pair data table.
+      var deleteAll = "DELETE FROM ssh_key_pair";
+      jdbcTemplate.update(deleteAll, new MapSqlParameterSource());
+
+      var cypheredkey = "jfidosruewr1k=";
+      when(externalCredsConfig.getKmsConfiguration())
+          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofSeconds(10))));
+      var sshKeyPair = createRandomGithubSshKey();
+      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKeyPair.getPrivateKey())))
+          .thenReturn(cypheredkey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredkey)))
+          .thenReturn(sshKeyPair.getPrivateKey());
+      sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
+
+      var cypheredKey2 = "3mi2k31-&3";
+      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(sshKeyPair.getPrivateKey())))
+          .thenReturn(cypheredKey2);
+      var expiredSshKeyPair =
+          sshKeyPairDAO.getExpiredSshKeyPair(
+              Timestamp.from(Instant.now().plus(Duration.ofSeconds(30))));
+      verifySshKeyPair(sshKeyPair, expiredSshKeyPair.get(0));
+      sshKeyPairDAO.upsertSshKeyPair(expiredSshKeyPair.get(0));
+      var emptyList = sshKeyPairDAO.getExpiredSshKeyPair(Timestamp.from(Instant.now()));
+
+      var namedParameters =
+          new MapSqlParameterSource()
+              .addValue("userId", sshKeyPair.getUserId())
+              .addValue("type", sshKeyPair.getType().name());
+      var resourceSelectSql =
+          "SELECT private_key FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
+      var privateKey =
+          DataAccessUtils.singleResult(
+              jdbcTemplate.query(
+                  resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getString("private_key")));
+      assertEquals(cypheredKey2, privateKey);
+      assertEquals(0, emptyList.size());
     }
   }
 

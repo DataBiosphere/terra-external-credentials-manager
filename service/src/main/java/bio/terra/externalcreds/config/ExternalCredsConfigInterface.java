@@ -56,11 +56,10 @@ public interface ExternalCredsConfigInterface {
 
     String getKeyRingLocation();
 
-    Duration getKeyRotationIntervalDays();
-
-    int getInitialDelayDays();
-
-    /** How often we run the cron-job to update the keys that contains a stale key versions. */
-    int getReEncryptionDays();
+    /** How often the ssh private key needs to be re-encrypted with a new version of the KMS key. */
+    @Value.Default
+    default Duration getSshKeyPairRefreshDuration() {
+      return Duration.ofDays(90);
+    }
   }
 }

@@ -6,9 +6,7 @@ import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -40,34 +38,11 @@ public class SshKeyPairDAO {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
     var resourceSelectSql =
-        "SELECT id, user_id, type, external_user_email, private_key, public_key"
+        "SELECT id, user_id, type, external_user_email, private_key, public_key, expires"
             + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
-    var sshKeyPair =
-        Optional.ofNullable(
-            DataAccessUtils.singleResult(
-                jdbcTemplate.query(resourceSelectSql, namedParameters, sshKeyPairRowMapper)));
-    // Maybe re-encrypt the private key if the encryption timestamp is old (i.e. the key is using
-    // an older version key) or the key is not encrypted.
-    if (externalCredsConfig.getKmsConfiguration().isPresent()) {
-      var timestampSql =
-          "SELECT key_pair_last_modified FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
-      var timestampOptional =
-          Optional.ofNullable(
-              DataAccessUtils.singleResult(
-                  jdbcTemplate.query(
-                      timestampSql,
-                      namedParameters,
-                      (rs, r) -> rs.getTimestamp("key_pair_last_encrypted"))));
-      if (timestampOptional.isEmpty()
-          || Duration.between(timestampOptional.get().toInstant(), Instant.now())
-                  .compareTo(
-                      externalCredsConfig.getKmsConfiguration().get().getKeyRotationIntervalDays())
-              >= 0) {
-        // re-encrypt the ssh private key with a newer key version.
-        sshKeyPair.ifPresent(this::upsertSshKeyPair);
-      }
-    }
-    return sshKeyPair;
+    return Optional.ofNullable(
+        DataAccessUtils.singleResult(
+            jdbcTemplate.query(resourceSelectSql, namedParameters, sshKeyPairRowMapper)));
   }
 
   public boolean deleteSshKeyPairIfExists(String userId, SshKeyPairType type) {
@@ -80,20 +55,29 @@ public class SshKeyPairDAO {
 
   public SshKeyPairInternal upsertSshKeyPair(SshKeyPairInternal sshKeyPairInternal) {
     var query =
-        "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email, key_pair_last_encrypted)"
-            + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail, :currentTimestamp )"
+        "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email, expires)"
+            + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail,"
+            + (externalCredsConfig.getKmsConfiguration().isPresent() ? " :expires)" : " NULL)")
             + " ON CONFLICT (type, user_id) DO UPDATE SET"
             + " private_key = excluded.private_key,"
             + " public_key = excluded.public_key,"
-            + " external_user_email = excluded.external_user_email"
-            + " key_pair_last_encrypted = excluded.key_pair_last_encrypted"
+            + " external_user_email = excluded.external_user_email,"
+            + " expires = excluded.expires"
             + " RETURNING id";
 
     var sshPrivateKey = sshKeyPairInternal.getPrivateKey();
     var namedParameters = new MapSqlParameterSource();
     if (externalCredsConfig.getKmsConfiguration().isPresent()) {
       // Record the timestamp when the key is encrypted.
-      namedParameters.addValue("currentTimestamp", Timestamp.from(Instant.now()));
+      namedParameters.addValue(
+          "expires",
+          Timestamp.from(
+              Instant.now()
+                  .plus(
+                      externalCredsConfig
+                          .getKmsConfiguration()
+                          .get()
+                          .getSshKeyPairRefreshDuration())));
       sshPrivateKey = kmsEncryptDecryptHelper.encryptSymmetric(sshPrivateKey);
     }
     namedParameters
@@ -112,25 +96,13 @@ public class SshKeyPairDAO {
         Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
   }
 
-  public List<SshKeyPairInternal> getSshKeyPairWithExpiredOrNullEncryptionTimeStamp() {
-    if (externalCredsConfig.getKmsConfiguration().isEmpty()) {
-      return Collections.EMPTY_LIST;
-    }
+  public List<SshKeyPairInternal> getExpiredSshKeyPair(Timestamp expirationCutoff) {
+    var namedParameters = new MapSqlParameterSource("expirationCutoff", expirationCutoff);
     var query =
-        "SELECT id, user_id, type, external_user_email, private_key, public_key"
+        "SELECT DISTINCT id, user_id, type, external_user_email, private_key, public_key, expires"
             + " FROM ssh_key_pair"
-            + " WHERE key_pair_last_encrypted <= CURRENT_DATE - INTERVAL ':keyRotationDays DAYS'"
-            + " or key_pair_last_encrypted IS NULL";
-    var namedParameters =
-        new MapSqlParameterSource()
-            .addValue(
-                "keyRotationDays",
-                (int)
-                    externalCredsConfig
-                        .getKmsConfiguration()
-                        .get()
-                        .getKeyRotationIntervalDays()
-                        .toDays());
+            + " WHERE expires <= :expirationCutoff or expires IS NULL";
+
     return jdbcTemplate.query(query, namedParameters, sshKeyPairRowMapper);
   }
 
@@ -145,7 +117,8 @@ public class SshKeyPairDAO {
     @Override
     public SshKeyPairInternal mapRow(ResultSet rs, int rowNum) throws SQLException {
       String privateKey = rs.getString("private_key");
-      if (externalCredsConfig.getKmsConfiguration().isPresent()) {
+      if (externalCredsConfig.getKmsConfiguration().isPresent()
+          && rs.getTimestamp("expires") != null) {
         privateKey = kmsEncryptDecryptHelper.decryptSymmetric(privateKey);
       }
       return new SshKeyPairInternal.Builder()

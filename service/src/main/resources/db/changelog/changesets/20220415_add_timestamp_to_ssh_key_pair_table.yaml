@@ -1,15 +1,17 @@
 databaseChangeLog:
   - changeSet:
-      id: add timestamp to ssh ke pair table
+      id: "add_timestamp_to_ssh_key_pair_table"
       author: yuhuyoyo
       changes:
         - addColumn:
             tableName: ssh_key_pair
             columns:
               - column:
-                  name: key_pair_last_encrypted
+                  name: expires
                   type: timestamp
                   constraints:
                     nullable: true
                   remarks: |
-                    Timestamp when the key pair was last encrypted
+                    Timestamp when the ssh key pair encryption key is expired and the private key is
+                    due for another encryption. This column is null if the key is not encrypted.
+

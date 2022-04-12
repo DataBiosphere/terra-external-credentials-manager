@@ -1,5 +1,6 @@
 package bio.terra.externalcreds;
 
+import bio.terra.externalcreds.config.ExternalCredsConfigInterface.KmsConfiguration;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.GA4GHPassport;
@@ -146,5 +147,43 @@ public class TestUtils {
       rootCause = rootCause.getCause();
     }
     return rootCause;
+  }
+
+  public static FakeKmsConfiguration getFakeKmsConfiguration(Duration sshKeyPairRefreshDuration) {
+    return new FakeKmsConfiguration(sshKeyPairRefreshDuration);
+  }
+
+  private static class FakeKmsConfiguration implements KmsConfiguration {
+
+    private final Duration sshKeypairRefreshDuration;
+
+    FakeKmsConfiguration(Duration sshKeyPairRefreshDuration) {
+      this.sshKeypairRefreshDuration = sshKeyPairRefreshDuration;
+    }
+
+    @Override
+    public String getServiceGoogleProject() {
+      return "projectId";
+    }
+
+    @Override
+    public String getKeyRingId() {
+      return "key-ring-id";
+    }
+
+    @Override
+    public String getKeyId() {
+      return "ssh-encryption-key";
+    }
+
+    @Override
+    public String getKeyRingLocation() {
+      return "us-central1";
+    }
+
+    @Override
+    public Duration getSshKeyPairRefreshDuration() {
+      return sshKeypairRefreshDuration;
+    }
   }
 }

@@ -1,23 +1,37 @@
 package bio.terra.externalcreds.services;
 
 import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
+import static bio.terra.externalcreds.TestUtils.getFakeKmsConfiguration;
 import static bio.terra.externalcreds.TestUtils.getRSAEncodedKeyPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.dataAccess.KmsEncryptDecryptHelper;
 import bio.terra.externalcreds.dataAccess.SshKeyPairDAO;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestComponent;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 public class SshKeyPairInternalServiceTest extends BaseTest {
 
@@ -45,8 +59,6 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
   void deleteSshKeyPair() throws NoSuchAlgorithmException, IOException {
     var sshKey = createRandomGithubSshKey();
     sshKeyPairDAO.upsertSshKeyPair(sshKey);
-
-    sshKeyPairService.deleteSshKeyPair(sshKey.getUserId(), SshKeyPairType.GITHUB);
   }
 
   @Test
@@ -123,6 +135,86 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
 
     var loadedSshKey = sshKeyPairService.getSshKeyPair(userId, keyPairType);
     verifySshKeyPair(sshKeyPairInternal, loadedSshKey);
+  }
+
+  @Nested
+  @TestComponent
+  class ReEncryptSshKey {
+    @Autowired SshKeyPairService sshKeyPairService;
+    @Autowired SshKeyPairDAO sshKeyPairDAO;
+    @Autowired NamedParameterJdbcTemplate jdbcTemplate;
+
+    @MockBean ExternalCredsConfig config;
+    @MockBean KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
+
+    @Test
+    void reEncryptSshKey() throws NoSuchAlgorithmException, IOException {
+      // Delete all the row in the ssh_key_pair data table. This is so that if there are other
+      // un-encrypted or expired key in the database left over from other tests, they create noise
+      // to the test as we will attempt to encrypt them as well.
+      var deleteAll = "DELETE FROM ssh_key_pair";
+      jdbcTemplate.update(deleteAll, new MapSqlParameterSource());
+
+      when(config.getKmsConfiguration())
+          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ZERO)));
+      var userId = UUID.randomUUID().toString();
+      var keyType = SshKeyPairType.GITHUB;
+      var externalUser = "renecrypt@gmail.com";
+      var cypheredKey = "ji32o10!2";
+      var pair = getRSAEncodedKeyPair(externalUser);
+
+      var sshKeyPair =
+          new SshKeyPair()
+              .privateKey(pair.getLeft())
+              .publicKey(pair.getRight())
+              .externalUserEmail(externalUser);
+      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(pair.getLeft()))).thenReturn(cypheredKey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredKey))).thenReturn(pair.getLeft());
+      var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, sshKeyPair);
+
+      sshKeyPairService.reEncryptExpiringSshKeyPairs();
+      var loadedSshkeyPair = sshKeyPairService.getSshKeyPair(userId, keyType);
+      verifySshKeyPair(storedSshKey, loadedSshkeyPair);
+      // encrypt should be called twice as the key needs to be re-encrypted.
+      verify(kmsEncryptDecryptHelper, times(2)).encryptSymmetric(eq(pair.getLeft()));
+
+      sshKeyPairService.deleteSshKeyPair(userId, keyType);
+    }
+
+    @Test
+    void notReEncryptSshKey() throws NoSuchAlgorithmException, IOException {
+      // Delete all the row in the ssh_key_pair data table. This is so that if there are other
+      // un-encrypted or expired key in the database left over from other tests, they create noise
+      // to the test as we will attempt to encrypt them as well.
+      var deleteAll = "DELETE FROM ssh_key_pair";
+      jdbcTemplate.update(deleteAll, new MapSqlParameterSource());
+
+      when(config.getKmsConfiguration())
+          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofDays(60))));
+      var userId = UUID.randomUUID().toString();
+      var keyType = SshKeyPairType.GITHUB;
+      var externalUser = "renecrypt@gmail.com";
+      var cypheredKey = "ji32o10!2";
+      var pair = getRSAEncodedKeyPair(externalUser);
+
+      var sshKeyPair =
+          new SshKeyPair()
+              .privateKey(pair.getLeft())
+              .publicKey(pair.getRight())
+              .externalUserEmail(externalUser);
+      when(kmsEncryptDecryptHelper.encryptSymmetric(eq(pair.getLeft()))).thenReturn(cypheredKey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(eq(cypheredKey))).thenReturn(pair.getLeft());
+      var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, sshKeyPair);
+      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(eq(pair.getLeft()));
+
+      sshKeyPairService.reEncryptExpiringSshKeyPairs();
+      var loadedSshkeyPair = sshKeyPairService.getSshKeyPair(userId, keyType);
+      verifySshKeyPair(storedSshKey, loadedSshkeyPair);
+      // encrypt should not be called again as the refresh duration is 60 days.
+      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(eq(pair.getLeft()));
+
+      sshKeyPairService.deleteSshKeyPair(userId, keyType);
+    }
   }
 
   private void verifySshKeyPair(

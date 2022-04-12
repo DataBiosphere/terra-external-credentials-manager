@@ -4,6 +4,7 @@ import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.SshKeyPairDAO;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
@@ -18,20 +19,26 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.sql.Timestamp;
+import java.time.Instant;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class SshKeyPairService {
 
   private static final String DEFAULT_PUBLIC_KEY_BEGIN = "ssh-rsa";
 
   private final SshKeyPairDAO sshKeyPairDAO;
+  private final ExternalCredsConfig config;
 
-  public SshKeyPairService(SshKeyPairDAO sshKeyPairDAO) {
+  public SshKeyPairService(SshKeyPairDAO sshKeyPairDAO, ExternalCredsConfig config) {
     this.sshKeyPairDAO = sshKeyPairDAO;
+    this.config = config;
   }
 
   @ReadTransaction
@@ -79,6 +86,23 @@ public class SshKeyPairService {
     } catch (NoSuchAlgorithmException | IOException e) {
       throw new ExternalCredsException(e);
     }
+  }
+
+  @WriteTransaction
+  public void reEncryptExpiringSshKeyPairs() {
+    if (config.getKmsConfiguration().isEmpty()) {
+      return;
+    }
+    var sshKeyPairs = sshKeyPairDAO.getExpiredSshKeyPair(Timestamp.from(Instant.now()));
+    for (var sshKeyPair : sshKeyPairs) {
+      try {
+        sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
+      } catch (Exception e) {
+        log.info(
+            "Failed to re-encrypt the ssh private key , will try again at the next interval.", e);
+      }
+    }
+    return;
   }
 
   /** Encode RSA private key to PEM format. */
