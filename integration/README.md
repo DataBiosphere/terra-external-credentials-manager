@@ -40,11 +40,11 @@ To run performance tests against the [perf environment](https://externalcreds.ds
 
 1. Connect to the Non-split VPN.
 2. Run the following:
-```
-./render_config.sh perf
-git clone https://github.com/broadinstitute/terra-helmfile integration/terra-helmfile/
-./gradlew :integration:runTest --args="suites/FullPerf.json /tmp/test-results"
-```
+  ```
+  ./render_config.sh perf
+  git clone https://github.com/broadinstitute/terra-helmfile integration/terra-helmfile/
+  ./gradlew :integration:runTest --args="suites/FullPerf.json /tmp/test-results"
+  ```
 
 ## Other Notes
 
