@@ -68,7 +68,9 @@ public class SshKeyPairDAO {
         new MapSqlParameterSource()
             .addValue("userId", sshKeyPairInternal.getUserId())
             .addValue("type", sshKeyPairInternal.getType().name())
-            .addValue("privateKey", kmsEncryptDecryptHelper.encryptSymmetric(sshKeyPairInternal.getPrivateKey()))
+            .addValue(
+                "privateKey",
+                kmsEncryptDecryptHelper.encryptSymmetric(sshKeyPairInternal.getPrivateKey()))
             .addValue("publicKey", sshKeyPairInternal.getPublicKey())
             .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail());
 
