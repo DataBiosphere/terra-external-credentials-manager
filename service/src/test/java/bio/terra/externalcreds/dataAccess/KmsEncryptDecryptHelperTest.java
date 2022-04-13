@@ -3,13 +3,13 @@ package bio.terra.externalcreds.dataAccess;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.SshKeyPairTestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.config.ExternalCredsConfigInterface.KmsConfiguration;
 import com.google.cloud.kms.v1.CryptoKeyName;
 import com.google.cloud.kms.v1.DecryptResponse;
 import com.google.cloud.kms.v1.EncryptResponse;
@@ -22,7 +22,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-public class KmsEncryptDecryptHelperTest extends BaseTest {
+class KmsEncryptDecryptHelperTest extends BaseTest {
 
   @Autowired KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
   @MockBean ExternalCredsConfig config;
@@ -32,9 +32,8 @@ public class KmsEncryptDecryptHelperTest extends BaseTest {
   void tryToEncryptWithoutKmsConfig() {
     try (var mockClient = Mockito.mockStatic(KeyManagementServiceClient.class)) {
       mockClient.when(KeyManagementServiceClient::create).thenReturn(keyManagementServiceClient);
-      assertThrows(
-          UnsupportedOperationException.class,
-          () -> kmsEncryptDecryptHelper.encryptSymmetric("secret"));
+      var secret = "secret";
+      assertEquals(secret, kmsEncryptDecryptHelper.encryptSymmetric(secret));
     }
   }
 
@@ -42,9 +41,8 @@ public class KmsEncryptDecryptHelperTest extends BaseTest {
   void tryToDecryptWithoutKmsConfig() {
     try (var mockClient = Mockito.mockStatic(KeyManagementServiceClient.class)) {
       mockClient.when(KeyManagementServiceClient::create).thenReturn(keyManagementServiceClient);
-      assertThrows(
-          UnsupportedOperationException.class,
-          () -> kmsEncryptDecryptHelper.decryptSymmetric("aserq2ji3"));
+      var cypheredText = "secret";
+      assertEquals(cypheredText, kmsEncryptDecryptHelper.decryptSymmetric(cypheredText));
     }
   }
 
@@ -99,32 +97,6 @@ public class KmsEncryptDecryptHelperTest extends BaseTest {
   private void setUpKmsConfigMock() {
     when(config.getKmsConfiguration())
         .thenReturn(
-            java.util.Optional.of(
-                new KmsConfiguration() {
-                  @Override
-                  public String getServiceGoogleProject() {
-                    return "project";
-                  }
-
-                  @Override
-                  public String getKeyRingId() {
-                    return "key-ring";
-                  }
-
-                  @Override
-                  public String getKeyId() {
-                    return "key-id";
-                  }
-
-                  @Override
-                  public String getKeyRingLocation() {
-                    return "us-central1";
-                  }
-
-                  @Override
-                  public Duration getSshKeyPairRefreshDuration() {
-                    return Duration.ofDays(1);
-                  }
-                }));
+            java.util.Optional.of(SshKeyPairTestUtils.getFakeKmsConfiguration(Duration.ZERO)));
   }
 }

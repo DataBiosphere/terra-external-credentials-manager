@@ -27,5 +27,5 @@ databaseChangeLog:
       file: changesets/20220304_passport_jti.yaml
       relativeToChangelogFile: true
   - include:
-      file: changesets/20220415_add_timestamp_to_ssh_key_pair_table.yaml
+      file: changesets/20220412_add_expires_to_ssh_key_pair_table.yaml
       relativeToChangelogFile: true

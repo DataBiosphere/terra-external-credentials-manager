@@ -14,4 +14,3 @@ databaseChangeLog:
                   remarks: |
                     Timestamp when the ssh key pair encryption key is expired and the private key is
                     due for another encryption. This column is null if the key is not encrypted.
-

@@ -5,6 +5,7 @@ import static bio.terra.externalcreds.SshKeyPairTestUtils.getFakeKmsConfiguratio
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
@@ -21,7 +22,9 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -44,6 +47,8 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var externalUserEmail = "bar@monkeyseesmonkeydo.com";
       var sshKeyOne = createRandomGithubSshKey();
       var sshKeyTwo = sshKeyOne.withExternalUserEmail(externalUserEmail);
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKeyOne.getPrivateKey());
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKeyTwo.getPrivateKey());
 
       sshKeyPairDAO.upsertSshKeyPair(sshKeyOne);
       sshKeyPairDAO.upsertSshKeyPair(sshKeyTwo);
@@ -60,6 +65,8 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var sshKeyOne = createRandomGithubSshKey();
       var sshKeyTwo =
           createRandomGithubSshKey().withUserId(userId).withExternalUserEmail(externalUserEmail);
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKeyOne.getPrivateKey());
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKeyTwo.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKeyOne);
       sshKeyPairDAO.upsertSshKeyPair(sshKeyTwo);
 
@@ -75,6 +82,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     @Test
     void upsertSshKey() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKey.getPrivateKey());
       var storedSshKey = sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
       verifySshKeyPair(sshKey, storedSshKey);
@@ -93,6 +101,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     @Test
     void testGetSshKeyPair() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
       var loadedSshKeyOptional = sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
@@ -100,6 +109,26 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       assertPresent(loadedSshKeyOptional);
       verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
     }
+
+    @Test
+    void testGetPreviouslyUnencryptedKeyPair() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKey.getPrivateKey());
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
+      when(externalCredsConfig.getKmsConfiguration())
+          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ZERO)));
+      Mockito.clearInvocations(kmsEncryptDecryptHelper);
+
+      var loadedSshKeyOptional = sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
+      assertPresent(loadedSshKeyOptional);
+      verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
+      verifyNoInteractions(kmsEncryptDecryptHelper);
+    }
+  }
+
+  @Nested
+  @TestComponent
+  class EncryptAndDecryptSshKeyPair {
 
     @Test
     void testGetDecryptedKeyPair() throws NoSuchAlgorithmException, IOException {
@@ -137,6 +166,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     @Test
     void testDeleteSshKeyPair() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
       assertTrue(sshKeyPairDAO.deleteSshKeyPairIfExists(sshKey.getUserId(), sshKey.getType()));
@@ -153,6 +183,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     @Test
     void deleteSshKeyPairWithWrongType() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
       assertFalse(sshKeyPairDAO.deleteSshKeyPairIfExists(sshKey.getUserId(), SshKeyPairType.AZURE));
@@ -169,7 +200,9 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       SshKeyPairTestUtils.cleanUp(jdbcTemplate);
 
       var sshKey = createRandomGithubSshKey();
+      var sshKey2 = createRandomGithubSshKey();
       var cypheredkey = "jfidosruewr1k=";
+      var cypheredkey2 = "jfidosruewr1k=2";
       when(externalCredsConfig.getKmsConfiguration())
           .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofSeconds(15))));
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
@@ -178,12 +211,26 @@ class SshKeyPairInternalDaoTest extends BaseTest {
           .thenReturn(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
+      when(externalCredsConfig.getKmsConfiguration())
+          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofDays(15))));
+      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey2.getPrivateKey()))
+          .thenReturn(cypheredkey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredkey2))
+          .thenReturn(sshKey2.getPrivateKey());
+      sshKeyPairDAO.upsertSshKeyPair(sshKey2);
+
       // Go to the future 30 seconds from now.
       var expiredSshKeys =
           sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(
               Timestamp.from(Instant.now().plus(Duration.ofSeconds(30))));
       assertEquals(1, expiredSshKeys.size());
       verifySshKeyPair(sshKey, expiredSshKeys.get(0));
+
+      // 16 days from now, both keys are expired.
+      var expiredSshKeys2 =
+          sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(
+              Timestamp.from(Instant.now().plus(Duration.ofDays(16))));
+      assertEquals(2, expiredSshKeys2.size());
     }
 
     @Test
@@ -234,5 +281,10 @@ class SshKeyPairInternalDaoTest extends BaseTest {
   private void verifySshKeyPair(
       SshKeyPairInternal expectedSshKey, SshKeyPairInternal actualSshKey) {
     assertEquals(expectedSshKey.withId(actualSshKey.getId()), actualSshKey);
+  }
+
+  private void setUpDefaultKmsEncryptDecryptHelperMock(String privateKey) {
+    when(kmsEncryptDecryptHelper.encryptSymmetric(privateKey)).thenReturn(privateKey);
+    when(kmsEncryptDecryptHelper.decryptSymmetric(privateKey)).thenReturn(privateKey);
   }
 }

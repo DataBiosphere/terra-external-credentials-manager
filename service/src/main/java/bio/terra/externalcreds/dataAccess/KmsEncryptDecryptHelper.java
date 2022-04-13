@@ -7,16 +7,23 @@ import com.google.cloud.kms.v1.CryptoKeyName;
 import com.google.cloud.kms.v1.DecryptResponse;
 import com.google.cloud.kms.v1.EncryptResponse;
 import com.google.cloud.kms.v1.KeyManagementServiceClient;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /** Utils for KMS symmetric encryption and decryption. */
 @Component
+@Slf4j
 public record KmsEncryptDecryptHelper(ExternalCredsConfig config) {
 
   /** Encrypt with KMS symmetric key. */
   public String encryptSymmetric(String plainText) {
+    if (config.getKmsConfiguration().isEmpty()) {
+      log.info("KMS encryption for ssh private keys is disabled");
+      return plainText;
+    }
     try (var client = KeyManagementServiceClient.create()) {
       var keyVersionName = getCryptoKeyName();
       EncryptResponse response = client.encrypt(keyVersionName, ByteString.copyFromUtf8(plainText));
@@ -28,6 +35,10 @@ public record KmsEncryptDecryptHelper(ExternalCredsConfig config) {
 
   /** Decrypt with KMS symmetric key. */
   public String decryptSymmetric(String cypheredText) {
+    if (config.getKmsConfiguration().isEmpty()) {
+      log.info("KMS encryption for ssh private keys is disabled");
+      return cypheredText;
+    }
     try (var client = KeyManagementServiceClient.create()) {
       var keyName = getCryptoKeyName();
       DecryptResponse response = client.decrypt(keyName, ByteString.copyFromUtf8(cypheredText));
@@ -38,13 +49,8 @@ public record KmsEncryptDecryptHelper(ExternalCredsConfig config) {
   }
 
   private CryptoKeyName getCryptoKeyName() {
-    KmsConfiguration kmsConfiguration =
-        config
-            .getKmsConfiguration()
-            .orElseThrow(
-                () ->
-                    new UnsupportedOperationException(
-                        "Does not support kms encryption/decryption"));
+    Preconditions.checkState(config.getKmsConfiguration().isPresent());
+    KmsConfiguration kmsConfiguration = config.getKmsConfiguration().get();
     return CryptoKeyName.of(
         kmsConfiguration.getServiceGoogleProject(),
         kmsConfiguration.getKeyRingLocation(),
