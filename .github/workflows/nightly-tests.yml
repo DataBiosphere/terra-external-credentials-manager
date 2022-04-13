@@ -54,10 +54,10 @@ jobs:
           echo "$PERF_TESTRUNNER_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
 
       - name: Run the perf test suite
-        run: ./gradlew --build-cache :integration:runTest --args="suites/FullPerf.json /tmp/test-results"
+        run: ./gradlew --build-cache runTest --args="suites/FullPerf.json /tmp/test-results"
 
       - name: Upload results to Google Bucket
-        run: ./gradlew :integration:uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/test-results"
+        run: ./gradlew uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/test-results"
 
   notify-slack:
    needs: [ performance-tests ]
@@ -74,4 +74,4 @@ jobs:
          status: failure
          author_name: Test Runner
          fields: workflow,message
-         text: 'Nightly perf tests failed :sadpanda: (<https://github.com/DataBiosphere/terra-external-credentials-manager/actions/runs/$GITHUB_RUN_ID|link>)'
+         text: 'Nightly perf tests failed :sadpanda:'
