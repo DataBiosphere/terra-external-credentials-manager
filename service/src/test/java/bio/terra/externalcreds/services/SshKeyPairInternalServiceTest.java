@@ -6,6 +6,7 @@ import static bio.terra.externalcreds.SshKeyPairTestUtils.getRSAEncodedKeyPair;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -86,6 +87,7 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
       var externalUser = "foo@gmail.com";
       var pair = getRSAEncodedKeyPair(externalUser);
 
+      when(kmsEncryptDecryptHelper.encryptSymmetric(pair.getLeft())).thenReturn(pair.getLeft());
       var sshKeyPair =
           new SshKeyPair()
               .privateKey(pair.getLeft())
@@ -108,6 +110,8 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
     void updateSshKey() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
       var keyType = SshKeyPairType.GITHUB;
+      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
+          .thenReturn(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
       var externalUser = "foo@gmail.com";
       var pair = getRSAEncodedKeyPair(externalUser);
@@ -118,6 +122,7 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
               .privateKey(pair.getLeft())
               .publicKey(pair.getRight())
               .externalUserEmail(externalUser);
+      when(kmsEncryptDecryptHelper.encryptSymmetric(pair.getLeft())).thenReturn(pair.getLeft());
       var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, newSshKeyPair);
 
       var newSshKeyPairExpected =
@@ -136,6 +141,8 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
     void updateSshKeyWithEncryption() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
       var keyType = SshKeyPairType.GITHUB;
+      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
+          .thenReturn(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
       when(config.getKmsConfiguration())
           .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ZERO)));
@@ -265,13 +272,14 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
       var keyType = SshKeyPairType.GITHUB;
       var externalUser = "foo@gmail.com";
       var pair = getRSAEncodedKeyPair(externalUser);
-
+      when(kmsEncryptDecryptHelper.encryptSymmetric(pair.getLeft())).thenReturn(pair.getLeft());
       var sshKeyPair =
           new SshKeyPair()
               .privateKey(pair.getLeft())
               .publicKey(pair.getRight())
               .externalUserEmail(externalUser);
       var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, sshKeyPair);
+      clearInvocations(kmsEncryptDecryptHelper);
 
       when(config.getKmsConfiguration())
           .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofDays(60))));
