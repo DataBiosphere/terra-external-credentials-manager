@@ -6,6 +6,8 @@ on:
   workflow_dispatch: {}
   schedule:
     - cron: '0 7 * * *' # run at 7 AM UTC, 2 AM ET.
+  pull_request:
+    branches: [ '**' ]
 
 jobs:
   performance-tests:
@@ -14,11 +16,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Check out terra-helmfile version directories
-        uses: ./.github/actions/checkout-helm-versions
-        with:
-          token: ${{ secrets.BROADBOT_TOKEN }}
-          path: integration/terra-helmfile
+      - name: Get version files from terra-helmfile
+        env: 
+          BROADBOT_TOKEN: ${{ secrets.BROADBOT_TOKEN }}
+        run: |
+          curl -H 'Authorization: token $BROADBOT_TOKEN' \
+            -H 'Accept: application/vnd.github.v3.raw' \
+            -L https://api.github.com/repos/broadinstitute/terra-helmfile/contents/versions/app/dev.yaml \
+            --create-dirs -o "integration/terra-helmfile/versions/app/dev.yaml"
+          curl -H 'Authorization: token $BROADBOT_TOKEN' \
+            -H 'Accept: application/vnd.github.v3.raw' \
+            -L https://api.github.com/repos/broadinstitute/terra-helmfile/contents/environments/live/perf.yaml \
+            --create-dirs -o "integration/terra-helmfile/environments/live/perf.yaml"
 
       - name: Set up JDK 11
         uses: actions/setup-java@v2
