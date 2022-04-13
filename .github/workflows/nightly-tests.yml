@@ -20,11 +20,11 @@ jobs:
         env: 
           BROADBOT_TOKEN: ${{ secrets.BROADBOT_TOKEN }}
         run: |
-          curl -H 'Authorization: token $BROADBOT_TOKEN' \
+          curl -H "Authorization: token ${BROADBOT_TOKEN}" \
             -H 'Accept: application/vnd.github.v3.raw' \
             -L https://api.github.com/repos/broadinstitute/terra-helmfile/contents/versions/app/dev.yaml \
             --create-dirs -o "integration/terra-helmfile/versions/app/dev.yaml"
-          curl -H 'Authorization: token $BROADBOT_TOKEN' \
+          curl -H "Authorization: token ${BROADBOT_TOKEN}" \
             -H 'Accept: application/vnd.github.v3.raw' \
             -L https://api.github.com/repos/broadinstitute/terra-helmfile/contents/environments/live/perf.yaml \
             --create-dirs -o "integration/terra-helmfile/environments/live/perf.yaml"
