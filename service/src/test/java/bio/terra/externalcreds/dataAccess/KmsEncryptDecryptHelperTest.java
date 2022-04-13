@@ -83,14 +83,16 @@ class KmsEncryptDecryptHelperTest extends BaseTest {
   @Test
   void failToGetKmsClient() {
     setUpKmsConfigMock();
+    var newKmsEncryptDecryptHelper = new KmsEncryptDecryptHelper(config);
     try (var mockClient = Mockito.mockStatic(KeyManagementServiceClient.class)) {
       mockClient.when(KeyManagementServiceClient::create).thenThrow(new IOException());
 
       assertThrows(
           ExternalCredsException.class,
-          () -> kmsEncryptDecryptHelper.encryptSymmetric("plain text"));
+          () -> newKmsEncryptDecryptHelper.encryptSymmetric("plain text"));
       assertThrows(
-          ExternalCredsException.class, () -> kmsEncryptDecryptHelper.decryptSymmetric("ji3m1o32"));
+          ExternalCredsException.class,
+          () -> newKmsEncryptDecryptHelper.decryptSymmetric("ji3m1o32"));
     }
   }
 
