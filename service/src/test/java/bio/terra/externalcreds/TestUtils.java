@@ -71,7 +71,8 @@ public class TestUtils {
           .setClientSecret(UUID.randomUUID().toString())
           .setIssuer("http://does/not/exist")
           .setLinkLifespan(Duration.ofDays(SecureRandom.getInstanceStrong().nextInt(10)))
-          .setRevokeEndpoint("http://does/not/exist");
+          .setRevokeEndpoint("http://does/not/exist")
+          .setExternalIdClaim("preferred_username");
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }

@@ -4,7 +4,6 @@ import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.services.JwtUtils;
-import bio.terra.externalcreds.services.ProviderService;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -148,10 +147,10 @@ public class JwtSigningTestUtils {
     return visa;
   }
 
-  public GA4GHPassport createTestPassport(List<GA4GHVisa> visas, String userEmail) {
+  public GA4GHPassport createTestPassport(List<GA4GHVisa> visas) {
     var visaJwts = visas.stream().map(GA4GHVisa::getJwt).toList();
     var jwtId = UUID.randomUUID().toString();
-    var jwtString = createPassportJwtString(passportExpires, visaJwts, jwtId, userEmail);
+    var jwtString = createPassportJwtString(passportExpires, visaJwts, jwtId);
     return new GA4GHPassport.Builder()
         .jwt(jwtString)
         .expires(passportExpiresTime)
@@ -159,13 +158,11 @@ public class JwtSigningTestUtils {
         .build();
   }
 
-  private String createPassportJwtString(
-      Date expires, List<String> visaJwts, String jwtId, String userEmail) {
+  private String createPassportJwtString(Date expires, List<String> visaJwts, String jwtId) {
 
     var passportClaimSetBuilder =
         new JWTClaimsSet.Builder()
             .subject(UUID.randomUUID().toString())
-            .claim(ProviderService.EXTERNAL_USERID_ATTR, userEmail)
             .issuer(getIssuer())
             .jwtID(jwtId)
             .expirationTime(expires);
