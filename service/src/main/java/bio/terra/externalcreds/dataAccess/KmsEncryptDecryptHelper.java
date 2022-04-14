@@ -11,12 +11,19 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.springframework.stereotype.Component;
 
 /** Utils for KMS symmetric encryption and decryption. */
 @Component
 @Slf4j
-public record KmsEncryptDecryptHelper(ExternalCredsConfig config) {
+public class KmsEncryptDecryptHelper {
+  private final ExternalCredsConfig config;
+  private @MonotonicNonNull KeyManagementServiceClient client;
+
+  KmsEncryptDecryptHelper(ExternalCredsConfig config) {
+    this.config = config;
+  }
 
   /** Encrypt with KMS symmetric key. */
   public String encryptSymmetric(String plainText) {
@@ -24,13 +31,10 @@ public record KmsEncryptDecryptHelper(ExternalCredsConfig config) {
       log.info("KMS encryption for ssh private keys is disabled");
       return plainText;
     }
-    try (var client = KeyManagementServiceClient.create()) {
-      var keyVersionName = getCryptoKeyName();
-      EncryptResponse response = client.encrypt(keyVersionName, ByteString.copyFromUtf8(plainText));
-      return response.getCiphertext().toStringUtf8();
-    } catch (IOException e) {
-      throw new ExternalCredsException("Fail to get KMS client for encryption.");
-    }
+    maybeInstantiateKeyManagementServiceClient();
+    var keyVersionName = getCryptoKeyName();
+    EncryptResponse response = client.encrypt(keyVersionName, ByteString.copyFromUtf8(plainText));
+    return response.getCiphertext().toStringUtf8();
   }
 
   /** Decrypt with KMS symmetric key. */
@@ -39,12 +43,19 @@ public record KmsEncryptDecryptHelper(ExternalCredsConfig config) {
       log.info("KMS encryption for ssh private keys is disabled");
       return cypheredText;
     }
-    try (var client = KeyManagementServiceClient.create()) {
-      var keyName = getCryptoKeyName();
-      DecryptResponse response = client.decrypt(keyName, ByteString.copyFromUtf8(cypheredText));
-      return response.getPlaintext().toStringUtf8();
-    } catch (IOException e) {
-      throw new ExternalCredsException("Fail to get KMS client for decryption.");
+    maybeInstantiateKeyManagementServiceClient();
+    var keyName = getCryptoKeyName();
+    DecryptResponse response = client.decrypt(keyName, ByteString.copyFromUtf8(cypheredText));
+    return response.getPlaintext().toStringUtf8();
+  }
+
+  private void maybeInstantiateKeyManagementServiceClient() {
+    if (client == null) {
+      try {
+        client = KeyManagementServiceClient.create();
+      } catch (IOException e) {
+        throw new ExternalCredsException("Fail to get KMS client for encryption.");
+      }
     }
   }
 

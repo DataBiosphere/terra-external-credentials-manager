@@ -38,7 +38,7 @@ public class SshKeyPairDAO {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
     var resourceSelectSql =
-        "SELECT id, user_id, type, external_user_email, private_key, public_key, expires"
+        "SELECT id, user_id, type, external_user_email, private_key, public_key, last_encrypted_timestamp"
             + " FROM ssh_key_pair WHERE user_id = :userId AND type = :type";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
@@ -55,14 +55,16 @@ public class SshKeyPairDAO {
 
   public SshKeyPairInternal upsertSshKeyPair(SshKeyPairInternal sshKeyPairInternal) {
     var query =
-        "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email, expires)"
+        "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email, last_encrypted_timestamp)"
             + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail,"
-            + (externalCredsConfig.getKmsConfiguration().isPresent() ? " :expires)" : " NULL)")
+            + (externalCredsConfig.getKmsConfiguration().isPresent()
+                ? " :lastEncryptedTimestamp)"
+                : " NULL)")
             + " ON CONFLICT (type, user_id) DO UPDATE SET"
             + " private_key = excluded.private_key,"
             + " public_key = excluded.public_key,"
             + " external_user_email = excluded.external_user_email,"
-            + " expires = excluded.expires"
+            + " last_encrypted_timestamp = excluded.last_encrypted_timestamp"
             + " RETURNING id";
 
     var namedParameters =
@@ -78,10 +80,7 @@ public class SshKeyPairDAO {
     var kmsConfiguration = externalCredsConfig.getKmsConfiguration();
     if (kmsConfiguration.isPresent()) {
       // Record the timestamp when the key is encrypted.
-      namedParameters.addValue(
-          "expires",
-          Timestamp.from(
-              Instant.now().plus(kmsConfiguration.get().getSshKeyPairRefreshDuration())));
+      namedParameters.addValue("lastEncryptedTimestamp", Timestamp.from(Instant.now()));
     }
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
@@ -114,7 +113,7 @@ public class SshKeyPairDAO {
     @Override
     public SshKeyPairInternal mapRow(ResultSet rs, int rowNum) throws SQLException {
       String privateKey = rs.getString("private_key");
-      if (rs.getTimestamp("expires") != null) {
+      if (rs.getTimestamp("last_encrypted_timestamp") != null) {
         privateKey = kmsEncryptDecryptHelper.decryptSymmetric(privateKey);
       }
       return new SshKeyPairInternal.Builder()
