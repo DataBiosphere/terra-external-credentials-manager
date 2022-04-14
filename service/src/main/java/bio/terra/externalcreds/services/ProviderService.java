@@ -236,7 +236,7 @@ public class ProviderService {
         jwtUtils.enrichAccountWithPassportAndVisas(linkedAccount, userInfo));
   }
 
-  public void deleteLink(String userId, String providerName) {
+  public LinkedAccount deleteLink(String userId, String providerName) {
     var providerInfo = externalCredsConfig.getProviders().get(providerName);
 
     if (providerInfo == null) {
@@ -251,6 +251,8 @@ public class ProviderService {
     revokeAccessToken(providerInfo, linkedAccount);
 
     linkedAccountService.deleteLinkedAccount(userId, providerName);
+
+    return linkedAccount;
   }
 
   public int validateAccessTokenVisas() {
@@ -295,6 +297,7 @@ public class ProviderService {
                 .auditLogEventType(AuditLogEventType.LinkRefreshed)
                 .providerName(linkedAccount.getProviderName())
                 .userId(linkedAccount.getUserId())
+                .externalUserId(linkedAccount.getExternalUserId())
                 .build());
 
       } catch (IllegalArgumentException iae) {
@@ -425,6 +428,7 @@ public class ProviderService {
             .auditLogEventType(AuditLogEventType.LinkExpired)
             .providerName(linkedAccount.getProviderName())
             .userId(linkedAccount.getUserId())
+            .externalUserId(linkedAccount.getExternalUserId())
             .build());
 
     linkedAccountService.upsertLinkedAccountWithPassportAndVisas(

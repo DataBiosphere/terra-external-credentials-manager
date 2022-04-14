@@ -7,6 +7,8 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
+import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
@@ -75,6 +77,8 @@ public record OidcApiController(
 
       auditLogger.logEvent(
           auditLogEventBuilder
+              .externalUserId(linkedAccountWithPassportAndVisas.map( l ->
+                  l.getLinkedAccount().getExternalUserId()))
               .auditLogEventType(
                   linkedAccountWithPassportAndVisas
                       .map(x -> AuditLogEventType.LinkCreated)
@@ -93,8 +97,8 @@ public record OidcApiController(
 
   @Override
   public ResponseEntity<Void> deleteLink(String providerName) {
-    String userId = getUserIdFromSam(request, samService);
-    providerService.deleteLink(userId, providerName);
+    var userId = getUserIdFromSam(request, samService);
+    var deletedLink = providerService.deleteLink(userId, providerName);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
@@ -102,6 +106,7 @@ public record OidcApiController(
             .providerName(providerName)
             .userId(userId)
             .clientIP(request.getRemoteAddr())
+            .externalUserId(deletedLink.getExternalUserId())
             .build());
 
     return ResponseEntity.ok().build();
@@ -110,6 +115,7 @@ public record OidcApiController(
   @Override
   public ResponseEntity<String> getProviderPassport(String providerName) {
     var userId = getUserIdFromSam(request, samService);
+    var maybeLinkedAccount = linkedAccountService.getLinkedAccount(userId, providerName);
     var maybePassport = passportService.getPassport(userId, providerName);
 
     auditLogger.logEvent(
@@ -118,6 +124,7 @@ public record OidcApiController(
             .providerName(providerName)
             .userId(userId)
             .clientIP(request.getRemoteAddr())
+            .externalUserId(maybeLinkedAccount.map(LinkedAccount::getExternalUserId))
             .build());
 
     var response =
