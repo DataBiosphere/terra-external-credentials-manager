@@ -10,6 +10,8 @@ import com.google.cloud.kms.v1.KeyManagementServiceClient;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.springframework.stereotype.Component;
@@ -31,7 +33,6 @@ public class KmsEncryptDecryptHelper {
       log.info("KMS encryption for ssh private keys is disabled");
       return plainText;
     }
-    maybeInstantiateKeyManagementServiceClient();
     var keyVersionName = getCryptoKeyName();
     EncryptResponse response = client.encrypt(keyVersionName, ByteString.copyFromUtf8(plainText));
     return response.getCiphertext().toStringUtf8();
@@ -43,20 +44,28 @@ public class KmsEncryptDecryptHelper {
       log.info("KMS encryption for ssh private keys is disabled");
       return cypheredText;
     }
-    maybeInstantiateKeyManagementServiceClient();
     var keyName = getCryptoKeyName();
     DecryptResponse response = client.decrypt(keyName, ByteString.copyFromUtf8(cypheredText));
     return response.getPlaintext().toStringUtf8();
   }
 
-  private void maybeInstantiateKeyManagementServiceClient() {
-    if (client == null) {
-      try {
-        client = KeyManagementServiceClient.create();
-      } catch (IOException e) {
-        throw new ExternalCredsException("Fail to get KMS client for encryption.");
-      }
-    }
+  @PostConstruct
+  private void instantiateKeyManagementServiceClient() {
+    config
+        .getKmsConfiguration()
+        .ifPresent(
+            x -> {
+              try {
+                client = KeyManagementServiceClient.create();
+              } catch (IOException e) {
+                throw new ExternalCredsException("Fail to get KMS client for encryption.", e);
+              }
+            });
+  }
+
+  @PreDestroy
+  private void closeKeyManagementServiceClient() {
+    if (client != null) client.close();
   }
 
   private CryptoKeyName getCryptoKeyName() {
