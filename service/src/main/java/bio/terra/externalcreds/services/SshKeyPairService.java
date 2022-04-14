@@ -19,8 +19,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.sql.Timestamp;
-import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -93,8 +91,7 @@ public class SshKeyPairService {
     if (config.getKmsConfiguration().isEmpty()) {
       return;
     }
-    var sshKeyPairs =
-        sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(Timestamp.from(Instant.now()));
+    var sshKeyPairs = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
     for (var sshKeyPair : sshKeyPairs) {
       try {
         sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);

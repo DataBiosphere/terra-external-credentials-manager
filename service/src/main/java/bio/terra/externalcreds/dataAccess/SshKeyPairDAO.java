@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -92,18 +93,20 @@ public class SshKeyPairDAO {
         Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
   }
 
-  /**
-   * Gets expired or un-encrypted ssh key pair.
-   *
-   * @param expirationCutoff timestamp by which the key encryption is expired and should be
-   *     re-encrypted.
-   */
-  public List<SshKeyPairInternal> getExpiredOrUnEncryptedSshKeyPair(Timestamp expirationCutoff) {
-    var namedParameters = new MapSqlParameterSource("expirationCutoff", expirationCutoff);
+  /** Gets expired or un-encrypted ssh key pair. */
+  public List<SshKeyPairInternal> getExpiredOrUnEncryptedSshKeyPair() {
+    var kmsConfig = externalCredsConfig.getKmsConfiguration();
+    if (kmsConfig.isEmpty()) {
+      return Collections.emptyList();
+    }
+    var namedParameters =
+        new MapSqlParameterSource(
+            "refreshIntervalDays", (int) kmsConfig.get().getSshKeyPairRefreshDuration().toDays());
     var query =
-        "SELECT DISTINCT id, user_id, type, external_user_email, private_key, public_key, expires"
+        "SELECT DISTINCT id, user_id, type, external_user_email, private_key, public_key, last_encrypted_timestamp"
             + " FROM ssh_key_pair"
-            + " WHERE expires <= :expirationCutoff or expires IS NULL";
+            + " WHERE last_encrypted_timestamp <= CURRENT_TIMESTAMP - INTERVAL '1 day' * :refreshIntervalDays"
+            + " or last_encrypted_timestamp IS NULL";
 
     return jdbcTemplate.query(query, namedParameters, sshKeyPairRowMapper);
   }

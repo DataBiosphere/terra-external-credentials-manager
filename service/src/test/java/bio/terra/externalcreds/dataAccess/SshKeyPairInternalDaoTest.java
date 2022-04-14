@@ -15,9 +15,7 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Timestamp;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -203,34 +201,27 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var sshKey2 = createRandomGithubSshKey();
       var cypheredkey = "jfidosruewr1k=";
       var cypheredkey2 = "jfidosruewr1k=2";
-      when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofSeconds(15))));
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
           .thenReturn(cypheredkey);
       when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredkey))
           .thenReturn(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
-      when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofDays(15))));
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey2.getPrivateKey()))
           .thenReturn(cypheredkey);
       when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredkey2))
           .thenReturn(sshKey2.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey2);
 
-      // Go to the future 30 seconds from now.
-      var expiredSshKeys =
-          sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(
-              Timestamp.from(Instant.now().plus(Duration.ofSeconds(30))));
-      assertEquals(1, expiredSshKeys.size());
-      verifySshKeyPair(sshKey, expiredSshKeys.get(0));
+      when(externalCredsConfig.getKmsConfiguration())
+          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ZERO)));
+      var expiredSshKeys = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
+      assertEquals(2, expiredSshKeys.size());
 
-      // 16 days from now, both keys are expired.
-      var expiredSshKeys2 =
-          sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(
-              Timestamp.from(Instant.now().plus(Duration.ofDays(16))));
-      assertEquals(2, expiredSshKeys2.size());
+      when(externalCredsConfig.getKmsConfiguration())
+          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofDays(15))));
+      var expiredSshKeys2 = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
+      assertTrue(expiredSshKeys2.isEmpty());
     }
 
     @Test
@@ -240,7 +231,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
 
       var cypheredkey = "jfidosruewr1k=";
       when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ofSeconds(10))));
+          .thenReturn(Optional.of(getFakeKmsConfiguration(Duration.ZERO)));
       var sshKeyPair = createRandomGithubSshKey();
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKeyPair.getPrivateKey()))
           .thenReturn(cypheredkey);
@@ -251,17 +242,11 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var cypheredKey2 = "3mi2k31-&3";
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKeyPair.getPrivateKey()))
           .thenReturn(cypheredKey2);
-      var expiredSshKeyPair =
-          sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(
-              Timestamp.from(Instant.now().plus(Duration.ofSeconds(30))));
+      var expiredSshKeyPair = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
       verifySshKeyPair(sshKeyPair, expiredSshKeyPair.get(0));
 
       // Re-encrypt the ssh key.
       sshKeyPairDAO.upsertSshKeyPair(expiredSshKeyPair.get(0));
-      // This time there should be no expired key.
-      var emptyList =
-          sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(Timestamp.from(Instant.now()));
-      assertEquals(0, emptyList.size());
 
       var namedParameters =
           new MapSqlParameterSource()
