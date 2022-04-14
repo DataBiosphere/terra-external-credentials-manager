@@ -159,10 +159,8 @@ class PassportServiceTest extends BaseTest {
       var linkedAccount2 = linkedAccount1.withExternalUserId(UUID.randomUUID().toString());
       mockProviderConfig(linkedAccount1);
 
-      var passport1 =
-          jwtSigningTestUtils.createTestPassport(List.of(), linkedAccount1.getExternalUserId());
-      var passport2 =
-          jwtSigningTestUtils.createTestPassport(List.of(), linkedAccount2.getExternalUserId());
+      var passport1 = jwtSigningTestUtils.createTestPassport(List.of());
+      var passport2 = jwtSigningTestUtils.createTestPassport(List.of());
 
       linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
           new LinkedAccountWithPassportAndVisas.Builder()
@@ -217,13 +215,10 @@ class PassportServiceTest extends BaseTest {
           createDbGapVisa(Set.of(notMatchingPermission), params.visaType);
 
       var visas = List.of(visaWithMatchingPermission);
-      var passport =
-          jwtSigningTestUtils.createTestPassport(visas, linkedAccount.getExternalUserId());
+      var passport = jwtSigningTestUtils.createTestPassport(visas);
 
       var otherVisas = List.of(visaWithoutMatchingPermission);
-      var otherPassport =
-          jwtSigningTestUtils.createTestPassport(
-              otherVisas, otherLinkedAccount.getExternalUserId());
+      var otherPassport = jwtSigningTestUtils.createTestPassport(otherVisas);
 
       if (params.persistLinkedAccount) {
         linkedAccountService.upsertLinkedAccountWithPassportAndVisas(

@@ -72,8 +72,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   @Test
   void testNoVisas() throws URISyntaxException {
     when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
-    var expectedPassport =
-        jwtSigningTestUtils.createTestPassport(Collections.emptyList(), userEmail);
+    var expectedPassport = jwtSigningTestUtils.createTestPassport(Collections.emptyList());
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, expectedPassport, Collections.emptyList());
   }
@@ -82,7 +81,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   void testAccessTokenVisa() throws URISyntaxException {
     when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
     var visa = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token);
-    var expectedPassport = jwtSigningTestUtils.createTestPassport(List.of(visa), userEmail);
+    var expectedPassport = jwtSigningTestUtils.createTestPassport(List.of(visa));
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, expectedPassport, List.of(visa));
   }
@@ -91,7 +90,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   void testDocumentTokenVisa() throws URISyntaxException {
     when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
     var visa = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token);
-    var expectedPassport = jwtSigningTestUtils.createTestPassport(List.of(visa), userEmail);
+    var expectedPassport = jwtSigningTestUtils.createTestPassport(List.of(visa));
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, expectedPassport, List.of(visa));
   }
@@ -105,7 +104,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token),
             jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token),
             jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token));
-    var expectedPassport = jwtSigningTestUtils.createTestPassport(visas, userEmail);
+    var expectedPassport = jwtSigningTestUtils.createTestPassport(visas);
     var expectedLinkedAccount = createTestLinkedAccount();
     runTest(expectedLinkedAccount, expectedPassport, visas);
   }
@@ -119,7 +118,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   @Test
   void testInvalidAuthorizationCode() {
     var linkedAccount = createTestLinkedAccount();
-    var providerInfo = TestUtils.createRandomProvider();
+    var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
     var providerClient =
         ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
@@ -129,6 +128,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
         new OAuth2State.Builder()
             .provider(linkedAccount.getProviderName())
             .random(OAuth2State.generateRandomState(new SecureRandom()))
+            .redirectUri(redirectUri)
             .build();
     linkedAccountService.upsertOAuth2State(linkedAccount.getUserId(), state);
 
@@ -155,8 +155,6 @@ class AuthorizationCodeExchangeTest extends BaseTest {
                     linkedAccount.getProviderName(),
                     linkedAccount.getUserId(),
                     authorizationCode,
-                    redirectUri,
-                    scopes,
                     encodedState));
 
     // make sure the BadRequestException is for the right reason
@@ -171,7 +169,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
       Set<String> scopes,
       String state)
       throws URISyntaxException {
-    var providerInfo = TestUtils.createRandomProvider();
+    var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
     var providerClient =
         ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
@@ -182,12 +180,12 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             .tokenType(TokenType.BEARER)
             .build();
     var userAttributes = new HashMap<String, Object>();
-    userAttributes.put(ProviderService.EXTERNAL_USERID_ATTR, linkedAccount.getExternalUserId());
+    userAttributes.put(providerInfo.getExternalIdClaim(), linkedAccount.getExternalUserId());
     if (passport != null) {
       userAttributes.put(JwtUtils.PASSPORT_JWT_V11_CLAIM, passport.getJwt());
     }
     OAuth2User user =
-        new DefaultOAuth2User(null, userAttributes, ProviderService.EXTERNAL_USERID_ATTR);
+        new DefaultOAuth2User(null, userAttributes, providerInfo.getExternalIdClaim());
 
     when(externalCredsConfigMock.getProviders())
         .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
@@ -220,6 +218,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
         new OAuth2State.Builder()
             .provider(expectedLinkedAccount.getProviderName())
             .random(OAuth2State.generateRandomState(new SecureRandom()))
+            .redirectUri(redirectUri)
             .build();
 
     String encodedState = state.encode(objectMapper);
@@ -238,8 +237,6 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             expectedLinkedAccount.getProviderName(),
             expectedLinkedAccount.getUserId(),
             authorizationCode,
-            redirectUri,
-            scopes,
             encodedState);
 
     assertPresent(linkedAccountWithPassportAndVisas);

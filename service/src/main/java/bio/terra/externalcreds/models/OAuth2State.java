@@ -16,6 +16,8 @@ public interface OAuth2State extends WithOAuth2State {
 
   String getRandom();
 
+  String getRedirectUri();
+
   class Builder extends ImmutableOAuth2State.Builder {}
 
   default String encode(ObjectMapper objectMapper) {

@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
 import org.springframework.http.ResponseEntity;
@@ -51,24 +50,17 @@ public record OidcApiController(
   }
 
   @Override
-  public ResponseEntity<String> getAuthUrl(
-      String providerName, List<String> scopes, String redirectUri) {
+  public ResponseEntity<String> getAuthUrl(String providerName, String redirectUri) {
     var userId = getUserIdFromSam(request, samService);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(
-            userId, providerName, redirectUri, Set.copyOf(scopes));
+        providerService.getProviderAuthorizationUrl(userId, providerName, redirectUri);
 
     return ResponseEntity.of(authorizationUrl.map(this::jsonString));
   }
 
   @Override
-  public ResponseEntity<LinkInfo> createLink(
-      String providerName,
-      List<String> scopes,
-      String redirectUri,
-      String state,
-      String oauthcode) {
+  public ResponseEntity<LinkInfo> createLink(String providerName, String state, String oauthcode) {
     var userId = getUserIdFromSam(request, samService);
 
     var auditLogEventBuilder =
@@ -79,8 +71,7 @@ public record OidcApiController(
 
     try {
       var linkedAccountWithPassportAndVisas =
-          providerService.createLink(
-              providerName, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
+          providerService.createLink(providerName, userId, oauthcode, state);
 
       auditLogger.logEvent(
           auditLogEventBuilder

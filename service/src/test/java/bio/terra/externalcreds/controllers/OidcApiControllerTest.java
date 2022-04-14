@@ -24,7 +24,6 @@ import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -73,17 +72,14 @@ class OidcApiControllerTest extends BaseTest {
       var result = "https://test/authorization/uri";
       var providerName = "fake";
       var redirectUri = "fakeuri";
-      var scopes = Set.of("openid", "email");
 
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(
-              userId, providerName, redirectUri, scopes))
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, providerName, redirectUri))
           .thenReturn(Optional.of(result));
 
       var queryParams = new LinkedMultiValueMap<String, String>();
       queryParams.add("redirectUri", redirectUri);
-      queryParams.addAll("scopes", List.copyOf(scopes));
       mvc.perform(
               get("/api/oidc/v1/{provider}/authorization-url", providerName)
                   .header("authorization", "Bearer " + accessToken)
@@ -97,17 +93,14 @@ class OidcApiControllerTest extends BaseTest {
       var accessToken = "fakeAccessToken";
       var providerName = "fake";
       var redirectUri = "fakeuri";
-      var scopes = Set.of("openid", "email");
 
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(
-              userId, providerName, redirectUri, scopes))
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, providerName, redirectUri))
           .thenReturn(Optional.empty());
 
       var queryParams = new LinkedMultiValueMap<String, String>();
       queryParams.add("redirectUri", redirectUri);
-      queryParams.addAll("scopes", List.copyOf(scopes));
       mvc.perform(
               get("/api/oidc/v1/{provider}/authorization-url", providerName)
                   .header("authorization", "Bearer " + accessToken)
@@ -186,8 +179,6 @@ class OidcApiControllerTest extends BaseTest {
       var accessToken = "testToken";
       var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
 
-      var scopes = new String[] {"email", "foo"};
-      var redirectUri = "http://redirect";
       var state = UUID.randomUUID().toString();
       var oauthcode = UUID.randomUUID().toString();
 
@@ -197,8 +188,6 @@ class OidcApiControllerTest extends BaseTest {
               inputLinkedAccount.getProviderName(),
               inputLinkedAccount.getUserId(),
               oauthcode,
-              redirectUri,
-              Set.of(scopes),
               state))
           .thenReturn(
               Optional.of(
@@ -209,8 +198,6 @@ class OidcApiControllerTest extends BaseTest {
       mvc.perform(
               post("/api/oidc/v1/{provider}/oauthcode", inputLinkedAccount.getProviderName())
                   .header("authorization", "Bearer " + accessToken)
-                  .param("scopes", scopes)
-                  .param("redirectUri", redirectUri)
                   .param("state", state)
                   .param("oauthcode", oauthcode))
           .andExpect(status().isOk())
@@ -227,7 +214,7 @@ class OidcApiControllerTest extends BaseTest {
 
       mockSamUser("userId", accessToken);
 
-      when(providerServiceMock.createLink(any(), any(), any(), any(), any(), any()))
+      when(providerServiceMock.createLink(any(), any(), any(), any()))
           .thenThrow(new ExternalCredsException("This is a drill!"));
 
       // check that an internal server error code is returned

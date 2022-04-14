@@ -23,6 +23,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -41,9 +42,6 @@ import reactor.core.publisher.Mono;
 @Service
 @Slf4j
 public class ProviderService {
-
-  public static final String EXTERNAL_USERID_ATTR = "email";
-
   private final ExternalCredsConfig externalCredsConfig;
   private final ProviderClientCache providerClientCache;
   private final OAuth2Service oAuth2Service;
@@ -114,7 +112,7 @@ public class ProviderService {
   }
 
   public Optional<String> getProviderAuthorizationUrl(
-      String userId, String providerName, String redirectUri, Set<String> scopes) {
+      String userId, String providerName, String redirectUri) {
     return providerClientCache
         .getProviderClient(providerName)
         .map(
@@ -130,13 +128,14 @@ public class ProviderService {
                   new OAuth2State.Builder()
                       .provider(providerName)
                       .random(OAuth2State.generateRandomState(secureRandom))
+                      .redirectUri(redirectUri)
                       .build();
               linkedAccountService.upsertOAuth2State(userId, oAuth2State);
 
               return oAuth2Service.getAuthorizationRequestUri(
                   providerClient,
                   redirectUri,
-                  scopes,
+                  new HashSet<>(providerInfo.getScopes()),
                   oAuth2State.encode(objectMapper),
                   providerInfo.getAdditionalAuthorizationParameters());
             });
@@ -150,26 +149,22 @@ public class ProviderService {
   }
 
   public Optional<LinkedAccountWithPassportAndVisas> createLink(
-      String providerName,
-      String userId,
-      String authorizationCode,
-      String redirectUri,
-      Set<String> scopes,
-      String encodedState) {
+      String providerName, String userId, String authorizationCode, String encodedState) {
 
-    validateOAuth2State(providerName, userId, encodedState);
+    var oAuth2State = validateOAuth2State(providerName, userId, encodedState);
 
     return providerClientCache
         .getProviderClient(providerName)
         .map(
             providerClient -> {
+              var providerInfo = externalCredsConfig.getProviders().get(providerName);
               try {
                 return createLinkInternal(
                     providerName,
                     userId,
                     authorizationCode,
-                    redirectUri,
-                    scopes,
+                    oAuth2State.getRedirectUri(),
+                    new HashSet<>(providerInfo.getScopes()),
                     encodedState,
                     providerClient);
               } catch (OAuth2AuthorizationException oauthEx) {
@@ -178,13 +173,14 @@ public class ProviderService {
             });
   }
 
-  private void validateOAuth2State(String providerName, String userId, String encodedState) {
+  private OAuth2State validateOAuth2State(String providerName, String userId, String encodedState) {
     try {
       OAuth2State oAuth2State = OAuth2State.decode(objectMapper, encodedState);
       if (!providerName.equals(oAuth2State.getProvider())) {
         throw new InvalidOAuth2State();
       }
       linkedAccountService.validateAndDeleteOAuth2State(userId, oAuth2State);
+      return oAuth2State;
     } catch (CannotDecodeOAuth2State e) {
       throw new InvalidOAuth2State(e);
     }
@@ -219,12 +215,19 @@ public class ProviderService {
 
     var userInfo = oAuth2Service.getUserInfo(providerClient, tokenResponse.getAccessToken());
 
+    String externalUserId = userInfo.getAttribute(providerInfo.getExternalIdClaim());
+    if (externalUserId == null) {
+      throw new ExternalCredsException(
+          String.format(
+              "user info from provider %s did not contain external id claim %s",
+              providerName, providerInfo.getExternalIdClaim()));
+    }
     var linkedAccount =
         new LinkedAccount.Builder()
             .providerName(providerName)
             .userId(userId)
             .expires(expires)
-            .externalUserId(userInfo.getAttribute(EXTERNAL_USERID_ATTR))
+            .externalUserId(externalUserId)
             .refreshToken(refreshToken.getTokenValue())
             .isAuthenticated(true)
             .build();
