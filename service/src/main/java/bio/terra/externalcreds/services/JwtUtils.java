@@ -70,12 +70,10 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig) {
         .build();
   }
 
-  public static Optional<String> getJwtTransactionId(String jwt) {
+  public static Optional<String> getJwtTransactionId(String jwtString) {
     try {
-      // TODO: look for more foolproof ways of parsing this (decode entire JWT?, call decode and validate?)
-      var parsedJwt = JWTParser.parse(jwt);
-      var txnClaim = parsedJwt.getJWTClaimsSet().getClaim(JWT_TRANSACTION_CLAIM);
-      return Optional.ofNullable(txnClaim.toString());
+      var txnClaim = JWTParser.parse(jwtString).getJWTClaimsSet().getClaim(JWT_TRANSACTION_CLAIM);
+      return Optional.ofNullable(txnClaim).map(Objects::toString);
     } catch (ParseException e) {
       throw new InvalidJwtException(e);
     }

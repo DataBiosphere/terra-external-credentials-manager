@@ -23,6 +23,9 @@ public interface AuditLogEvent extends WithAuditLogEvent {
   @JsonInclude(Include.NON_EMPTY)
   Optional<String> getSshKeyPairType();
 
+  @JsonInclude(Include.NON_EMPTY)
+  Optional<String> getTransactionClaim();
+
   AuditLogEventType getAuditLogEventType();
 
   class Builder extends ImmutableAuditLogEvent.Builder {}
