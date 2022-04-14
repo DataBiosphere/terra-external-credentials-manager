@@ -36,6 +36,7 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig) {
   public static final String VISA_TYPE_CLAIM = "type";
   public static final String JKU_HEADER = "jku";
   public static final String JWT_ID_CLAIM = "jti";
+  public static final String JWT_TRANSACTION_CLAIM = "txn";
 
   public LinkedAccountWithPassportAndVisas enrichAccountWithPassportAndVisas(
       LinkedAccount linkedAccount, OAuth2User userInfo) {
@@ -67,6 +68,17 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig) {
         .passport(buildPassport(passportJwt))
         .visas(visas)
         .build();
+  }
+
+  public static Optional<String> getJwtTransactionId(String jwt) {
+    try {
+      // TODO: look for more foolproof ways of parsing this (decode entire JWT?, call decode and validate?)
+      var parsedJwt = JWTParser.parse(jwt);
+      var txnClaim = parsedJwt.getJWTClaimsSet().getClaim(JWT_TRANSACTION_CLAIM);
+      return Optional.ofNullable(txnClaim.toString());
+    } catch (ParseException e) {
+      throw new InvalidJwtException(e);
+    }
   }
 
   private static GA4GHPassport buildPassport(Jwt passportJwt) {
