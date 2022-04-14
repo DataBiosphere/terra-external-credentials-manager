@@ -8,7 +8,6 @@ import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.models.LinkedAccount;
-import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
@@ -77,8 +76,9 @@ public record OidcApiController(
 
       auditLogger.logEvent(
           auditLogEventBuilder
-              .externalUserId(linkedAccountWithPassportAndVisas.map( l ->
-                  l.getLinkedAccount().getExternalUserId()))
+              .externalUserId(
+                  linkedAccountWithPassportAndVisas.map(
+                      l -> l.getLinkedAccount().getExternalUserId()))
               .auditLogEventType(
                   linkedAccountWithPassportAndVisas
                       .map(x -> AuditLogEventType.LinkCreated)
