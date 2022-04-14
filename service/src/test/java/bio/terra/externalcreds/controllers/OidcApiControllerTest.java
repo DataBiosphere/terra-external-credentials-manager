@@ -338,6 +338,7 @@ class OidcApiControllerTest extends BaseTest {
                       .externalUserId(externalUserId)
                       .refreshToken("")
                       .expires(new Timestamp(0))
+                      .isAuthenticated(true)
                       .build()));
       when(passportServiceMock.getPassport(userId, providerName)).thenReturn(Optional.of(passport));
 
