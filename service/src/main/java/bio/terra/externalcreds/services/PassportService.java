@@ -82,7 +82,7 @@ public class PassportService {
     var linkedAccountsByJwtId = getLinkedAccountsForAllPassports(passports);
 
     for (var passportWithVisas : passports) {
-      var transactionClaim = JwtUtils.getJwtTransactionId(passportWithVisas.getPassport().getJwt());
+      var transactionClaim = jwtUtils.getJwtTransactionId(passportWithVisas.getPassport().getJwt());
       for (var criterion : criteria) {
         for (var visa : passportWithVisas.getVisas()) {
           VisaComparator visaComparator = getVisaComparator(criterion);
@@ -98,7 +98,7 @@ public class PassportService {
                 linkedAccount.getExternalUserId(),
                 "internal_user_id",
                 linkedAccount.getUserId());
-            transactionClaim.map(t -> auditInfoMap.put("transaction_claim", t));
+            transactionClaim.map(t -> auditInfoMap.put("txn", t));
             return new ValidatePassportResultInternal.Builder()
                 .valid(true)
                 .matchedCriterion(criterion)

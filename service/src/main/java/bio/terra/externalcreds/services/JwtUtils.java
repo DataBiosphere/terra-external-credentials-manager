@@ -70,13 +70,9 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig) {
         .build();
   }
 
-  public static Optional<String> getJwtTransactionId(String jwtString) {
-    try {
-      var txnClaim = JWTParser.parse(jwtString).getJWTClaimsSet().getClaim(JWT_TRANSACTION_CLAIM);
-      return Optional.ofNullable(txnClaim).map(Objects::toString);
-    } catch (ParseException e) {
-      throw new InvalidJwtException(e);
-    }
+  public Optional<String> getJwtTransactionId(String jwtString) {
+    var txnClaim = decodeAndValidateJwt(jwtString).getClaims().get(JWT_TRANSACTION_CLAIM);
+    return Optional.ofNullable(txnClaim).map(Objects::toString);
   }
 
   private static GA4GHPassport buildPassport(Jwt passportJwt) {
