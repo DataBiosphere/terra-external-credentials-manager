@@ -91,13 +91,14 @@ public class PassportService {
               && visaComparator.matchesCriterion(visa, criterion)) {
             var linkedAccount =
                 linkedAccountsByJwtId.get(passportWithVisas.getPassport().getJwtId());
-            var auditInfoMap = Map.of(
-                "passport_jti",
-                passportWithVisas.getPassport().getJwtId(),
-                "external_user_id",
-                linkedAccount.getExternalUserId(),
-                "internal_user_id",
-                linkedAccount.getUserId());
+            var auditInfoMap =
+                Map.of(
+                    "passport_jti",
+                    passportWithVisas.getPassport().getJwtId(),
+                    "external_user_id",
+                    linkedAccount.getExternalUserId(),
+                    "internal_user_id",
+                    linkedAccount.getUserId());
             transactionClaim.map(t -> auditInfoMap.put("txn", t));
             return new ValidatePassportResultInternal.Builder()
                 .valid(true)
