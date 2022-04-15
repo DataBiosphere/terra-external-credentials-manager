@@ -9,12 +9,11 @@ import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.config.ExternalCredsConfigInterface.KmsConfiguration;
+import bio.terra.externalcreds.config.KmsConfiguration;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -36,32 +35,11 @@ class SshKeyPairInternalDaoTest extends BaseTest {
 
   private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
   private static final KmsConfiguration KMS_CONFIGURATION =
-      new KmsConfiguration() {
-        @Override
-        public String getServiceGoogleProject() {
-          return "projectId";
-        }
-
-        @Override
-        public String getKeyRingId() {
-          return "key_ring";
-        }
-
-        @Override
-        public String getKeyId() {
-          return "key_id";
-        }
-
-        @Override
-        public String getKeyRingLocation() {
-          return "us-central1";
-        }
-
-        @Override
-        public Duration getSshKeyPairRefreshDuration() {
-          return Duration.ZERO;
-        }
-      };
+      KmsConfiguration.create()
+          .setKeyId("key-id")
+          .setKeyRingId("key-ring")
+          .setServiceGoogleProject("google-project")
+          .setKeyRingLocation("us-central1");
 
   @Nested
   class UpsertKeyPair {

@@ -45,17 +45,4 @@ public interface ExternalCredsConfigInterface {
   Optional<String> getAuthorizationChangeEventTopicName();
 
   Optional<KmsConfiguration> getKmsConfiguration();
-
-  @PropertiesInterfaceStyle
-  interface KmsConfiguration {
-    String getServiceGoogleProject();
-
-    String getKeyRingId();
-
-    String getKeyId();
-
-    String getKeyRingLocation();
-
-    Duration getSshKeyPairRefreshDuration();
-  }
 }
