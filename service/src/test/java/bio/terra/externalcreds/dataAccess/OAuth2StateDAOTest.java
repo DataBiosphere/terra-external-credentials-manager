@@ -16,15 +16,18 @@ public class OAuth2StateDAOTest extends BaseTest {
   void testCreateAndDelete() {
     var provider = "provider name";
     var userId = "user";
+    var redirectUri = "https://foo";
     var firstState =
         new OAuth2State.Builder()
             .provider(provider)
             .random(OAuth2State.generateRandomState(new SecureRandom()))
+            .redirectUri(redirectUri)
             .build();
     var secondState =
         new OAuth2State.Builder()
             .provider(provider)
             .random(OAuth2State.generateRandomState(new SecureRandom()))
+            .redirectUri(redirectUri)
             .build();
 
     oAuth2StateDAO.upsertOidcState(userId, firstState);

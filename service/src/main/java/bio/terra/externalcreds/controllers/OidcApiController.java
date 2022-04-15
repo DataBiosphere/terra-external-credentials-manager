@@ -7,6 +7,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
+import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
@@ -18,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
 import org.springframework.http.ResponseEntity;
@@ -51,24 +51,17 @@ public record OidcApiController(
   }
 
   @Override
-  public ResponseEntity<String> getAuthUrl(
-      String providerName, List<String> scopes, String redirectUri) {
+  public ResponseEntity<String> getAuthUrl(String providerName, String redirectUri) {
     var userId = getUserIdFromSam(request, samService);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(
-            userId, providerName, redirectUri, Set.copyOf(scopes));
+        providerService.getProviderAuthorizationUrl(userId, providerName, redirectUri);
 
     return ResponseEntity.of(authorizationUrl.map(this::jsonString));
   }
 
   @Override
-  public ResponseEntity<LinkInfo> createLink(
-      String providerName,
-      List<String> scopes,
-      String redirectUri,
-      String state,
-      String oauthcode) {
+  public ResponseEntity<LinkInfo> createLink(String providerName, String state, String oauthcode) {
     var userId = getUserIdFromSam(request, samService);
 
     var auditLogEventBuilder =
@@ -79,11 +72,13 @@ public record OidcApiController(
 
     try {
       var linkedAccountWithPassportAndVisas =
-          providerService.createLink(
-              providerName, userId, oauthcode, redirectUri, Set.copyOf(scopes), state);
+          providerService.createLink(providerName, userId, oauthcode, state);
 
       auditLogger.logEvent(
           auditLogEventBuilder
+              .externalUserId(
+                  linkedAccountWithPassportAndVisas.map(
+                      l -> l.getLinkedAccount().getExternalUserId()))
               .auditLogEventType(
                   linkedAccountWithPassportAndVisas
                       .map(x -> AuditLogEventType.LinkCreated)
@@ -102,8 +97,8 @@ public record OidcApiController(
 
   @Override
   public ResponseEntity<Void> deleteLink(String providerName) {
-    String userId = getUserIdFromSam(request, samService);
-    providerService.deleteLink(userId, providerName);
+    var userId = getUserIdFromSam(request, samService);
+    var deletedLink = providerService.deleteLink(userId, providerName);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
@@ -111,6 +106,7 @@ public record OidcApiController(
             .providerName(providerName)
             .userId(userId)
             .clientIP(request.getRemoteAddr())
+            .externalUserId(deletedLink.getExternalUserId())
             .build());
 
     return ResponseEntity.ok().build();
@@ -119,6 +115,7 @@ public record OidcApiController(
   @Override
   public ResponseEntity<String> getProviderPassport(String providerName) {
     var userId = getUserIdFromSam(request, samService);
+    var maybeLinkedAccount = linkedAccountService.getLinkedAccount(userId, providerName);
     var maybePassport = passportService.getPassport(userId, providerName);
 
     auditLogger.logEvent(
@@ -127,6 +124,7 @@ public record OidcApiController(
             .providerName(providerName)
             .userId(userId)
             .clientIP(request.getRemoteAddr())
+            .externalUserId(maybeLinkedAccount.map(LinkedAccount::getExternalUserId))
             .build());
 
     var response =

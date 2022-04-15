@@ -28,6 +28,12 @@ public interface ExternalCredsConfigInterface {
 
   Duration getVisaAndPassportRefreshDuration();
 
+  /** List of algorithms that are allowable in JWT headers */
+  @Value.Default
+  default Collection<String> getAllowedJwtAlgorithms() {
+    return List.of();
+  }
+
   /** List of URIs that are allowable in jku headers of JWTs */
   @Value.Default
   default Collection<URI> getAllowedJwksUris() {

@@ -12,10 +12,13 @@ import bio.terra.externalcreds.JwtSigningTestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jwt.JWTClaimsSet;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
@@ -46,14 +49,14 @@ public class JwtUtilsTest extends BaseTest {
     @MockBean ExternalCredsConfig externalCredsConfigMock;
 
     @Test
-    void testInvalidJwtSignature() throws URISyntaxException, JOSEException {
+    void testInvalidJwtSignature() {
       var visa = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token);
       var invalidJwt = visa.getJwt() + "foo";
       assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(invalidJwt));
     }
 
     @Test
-    void testJwtMissingIssuer() throws URISyntaxException, JOSEException {
+    void testJwtMissingIssuer() {
       var visa =
           jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.access_token).withIssuer("null");
       var jwtMissingIssuer = jwtSigningTestUtils.createVisaJwtString(visa);
@@ -62,7 +65,8 @@ public class JwtUtilsTest extends BaseTest {
     }
 
     @Test
-    void testJwtIssuerAllowed() throws URISyntaxException, JOSEException {
+    void testJwtIssuerAllowed() throws URISyntaxException {
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       when(externalCredsConfigMock.getAllowedJwtIssuers())
           .thenReturn(List.of(new URI(jwtSigningTestUtils.getIssuer())));
       var jwt =
@@ -74,7 +78,7 @@ public class JwtUtilsTest extends BaseTest {
     }
 
     @Test
-    void testJwtIssuerNotAllowed() throws URISyntaxException, JOSEException {
+    void testJwtIssuerNotAllowed() {
       var jwt =
           jwtSigningTestUtils.createVisaJwtString(
               jwtSigningTestUtils
@@ -84,8 +88,9 @@ public class JwtUtilsTest extends BaseTest {
     }
 
     @Test
-    void testJwtIssuerNotReal() throws URISyntaxException, JOSEException {
+    void testJwtIssuerNotReal() throws URISyntaxException {
       String testIssuer = "http://does.not.exist";
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(testIssuer)));
       var jwtNotRealIssuer =
           jwtSigningTestUtils.createVisaJwtString(
@@ -100,7 +105,7 @@ public class JwtUtilsTest extends BaseTest {
     }
 
     @Test
-    void testJwtJkuNotOnAllowList() throws URISyntaxException, JOSEException {
+    void testJwtJkuNotOnAllowList() {
       var badJwt = jwtSigningTestUtils.createTestVisaWithJwt(TokenTypeEnum.document_token).getJwt();
       var exception =
           assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(badJwt));
@@ -109,8 +114,33 @@ public class JwtUtilsTest extends BaseTest {
     }
 
     @Test
-    void testJwtJkuNotResponsive() throws URISyntaxException, JOSEException {
+    void testJwtAlgNotOnAllowList() throws URISyntaxException {
+      var issuer = "https://stsstg.nih.gov";
+      when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(issuer)));
+
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms())
+          .thenReturn(List.of("testAlg", "testAlg2"));
+
+      var visaClaimSet =
+          new JWTClaimsSet.Builder()
+              .expirationTime(new Date(System.currentTimeMillis()))
+              .issuer(issuer)
+              .claim(
+                  JwtUtils.GA4GH_VISA_V1_CLAIM,
+                  Map.of(JwtUtils.VISA_TYPE_CLAIM, TokenTypeEnum.document_token))
+              .build();
+
+      var jwt = jwtSigningTestUtils.createSignedJwt(visaClaimSet);
+      var exception =
+          assertThrows(InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(jwt));
+
+      assertTrue(exception.getMessage().contains("Algorithm"));
+    }
+
+    @Test
+    void testJwtJkuNotResponsive() throws URISyntaxException {
       String testIssuer = "http://localhost:10";
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(testIssuer)));
       when(externalCredsConfigMock.getAllowedJwksUris())
           .thenReturn(List.of(new URI(testIssuer + JwtSigningTestUtils.JKU_PATH)));
@@ -128,8 +158,9 @@ public class JwtUtilsTest extends BaseTest {
     }
 
     @Test
-    void testJwtJkuMalformed() throws URISyntaxException, JOSEException {
+    void testJwtJkuMalformed() throws URISyntaxException {
       String testIssuer = "foobar";
+      when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
       when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(testIssuer)));
       when(externalCredsConfigMock.getAllowedJwksUris())
           .thenReturn(List.of(new URI(testIssuer + JwtSigningTestUtils.JKU_PATH)));
