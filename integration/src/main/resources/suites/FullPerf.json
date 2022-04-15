@@ -7,6 +7,6 @@
     "perf/GetVersion.json",
     "perf/ListProviders.json",
     "perf/GetProviderPassport.json",
-    "integration/EncryptDecryptSshKeyPair.json"
+    "perf/EncryptDecryptSshKeyPair.json"
   ]
 }
