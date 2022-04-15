@@ -100,7 +100,6 @@ public class ProviderServiceTest extends BaseTest {
     @Test
     void testDeleteLinkLinkNotFound() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
-
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderName(), TestUtils.createRandomProvider()));
 
@@ -660,7 +659,8 @@ public class ProviderServiceTest extends BaseTest {
       var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
       var providerProperties =
           ProviderProperties.create()
-              .setAllowedRedirectUriPatterns(List.of(Pattern.compile(redirectUri)));
+              .setAllowedRedirectUriPatterns(List.of(Pattern.compile(redirectUri)))
+              .setScopes(scopes);
 
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderName(), providerProperties));
@@ -680,7 +680,7 @@ public class ProviderServiceTest extends BaseTest {
 
       var result =
           providerService.getProviderAuthorizationUrl(
-              linkedAccount.getUserId(), linkedAccount.getProviderName(), redirectUri, scopes);
+              linkedAccount.getUserId(), linkedAccount.getProviderName(), redirectUri);
       assertPresent(result);
       // the result here should be only the state because of the mock above
       var savedState =
@@ -701,6 +701,7 @@ public class ProviderServiceTest extends BaseTest {
               .random(
                   bio.terra.externalcreds.models.OAuth2State.generateRandomState(
                       new SecureRandom()))
+              .redirectUri(redirectUri)
               .build();
 
       oAuth2StateDAO.upsertOidcState(expectedLinkedAccount.getUserId(), state);
@@ -712,8 +713,6 @@ public class ProviderServiceTest extends BaseTest {
                   expectedLinkedAccount.getProviderName(),
                   expectedLinkedAccount.getUserId(),
                   UUID.randomUUID().toString(),
-                  redirectUri,
-                  scopes,
                   state.withRandom("wrong").encode(objectMapper)));
     }
 
@@ -726,6 +725,7 @@ public class ProviderServiceTest extends BaseTest {
               .random(
                   bio.terra.externalcreds.models.OAuth2State.generateRandomState(
                       new SecureRandom()))
+              .redirectUri(redirectUri)
               .build();
 
       oAuth2StateDAO.upsertOidcState(expectedLinkedAccount.getUserId(), state);
@@ -737,8 +737,6 @@ public class ProviderServiceTest extends BaseTest {
                   expectedLinkedAccount.getProviderName(),
                   expectedLinkedAccount.getUserId(),
                   UUID.randomUUID().toString(),
-                  redirectUri,
-                  scopes,
                   state.withProvider("wrong").encode(objectMapper)));
     }
 
@@ -754,8 +752,6 @@ public class ProviderServiceTest extends BaseTest {
                       expectedLinkedAccount.getProviderName(),
                       expectedLinkedAccount.getUserId(),
                       UUID.randomUUID().toString(),
-                      redirectUri,
-                      scopes,
                       "not base64 encoded"));
 
       assertInstanceOf(CannotDecodeOAuth2State.class, e.getCause());
@@ -774,8 +770,6 @@ public class ProviderServiceTest extends BaseTest {
                       expectedLinkedAccount.getProviderName(),
                       expectedLinkedAccount.getUserId(),
                       UUID.randomUUID().toString(),
-                      redirectUri,
-                      scopes,
                       new String(Base64.getEncoder().encode("not json".getBytes()))));
 
       assertInstanceOf(CannotDecodeOAuth2State.class, e.getCause());
@@ -794,8 +788,6 @@ public class ProviderServiceTest extends BaseTest {
                       expectedLinkedAccount.getProviderName(),
                       expectedLinkedAccount.getUserId(),
                       UUID.randomUUID().toString(),
-                      redirectUri,
-                      scopes,
                       new String(
                           Base64.getEncoder()
                               .encode(
@@ -835,7 +827,8 @@ public class ProviderServiceTest extends BaseTest {
       var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
       var providerProperties =
           ProviderProperties.create()
-              .setAllowedRedirectUriPatterns(List.of(Pattern.compile(uriPattern)));
+              .setAllowedRedirectUriPatterns(List.of(Pattern.compile(uriPattern)))
+              .setScopes(scopes);
 
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderName(), providerProperties));
@@ -851,7 +844,7 @@ public class ProviderServiceTest extends BaseTest {
           .thenReturn("");
 
       return providerService.getProviderAuthorizationUrl(
-          linkedAccount.getUserId(), linkedAccount.getProviderName(), redirectUri, scopes);
+          linkedAccount.getUserId(), linkedAccount.getProviderName(), redirectUri);
     }
   }
 

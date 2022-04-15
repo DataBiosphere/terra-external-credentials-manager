@@ -22,6 +22,12 @@ public interface ProviderPropertiesInterface {
 
   Map<String, Object> getAdditionalAuthorizationParameters();
 
+  Collection<Pattern> getAllowedRedirectUriPatterns();
+
+  Collection<String> getScopes();
+
+  String getExternalIdClaim();
+
   // optional overrides for values in provider's /.well-known/openid-configuration
   Optional<String> getUserInfoEndpoint();
 
@@ -32,6 +38,4 @@ public interface ProviderPropertiesInterface {
   Optional<String> getJwksUri();
 
   Optional<String> getValidationEndpoint();
-
-  Collection<Pattern> getAllowedRedirectUriPatterns();
 }
