@@ -56,7 +56,7 @@ public class SshKeyPairDAO {
     var query =
         "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email, last_encrypted_timestamp)"
             + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail,"
-            + (externalCredsConfig.getKmsConfiguration().isPresent()
+            + (externalCredsConfig.getKmsConfiguration() != null
                 ? " :lastEncryptedTimestamp)"
                 : " NULL)")
             + " ON CONFLICT (type, user_id) DO UPDATE SET"
@@ -77,7 +77,7 @@ public class SshKeyPairDAO {
             .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail());
 
     var kmsConfiguration = externalCredsConfig.getKmsConfiguration();
-    if (kmsConfiguration.isPresent()) {
+    if (kmsConfiguration != null) {
       // Record the timestamp when the key is encrypted.
       namedParameters.addValue("lastEncryptedTimestamp", Timestamp.from(Instant.now()));
     }

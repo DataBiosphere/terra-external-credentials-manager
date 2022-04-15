@@ -14,7 +14,6 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -117,7 +116,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var sshKey = createRandomGithubSshKey();
       setUpDefaultKmsEncryptDecryptHelperMock(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
-      when(externalCredsConfig.getKmsConfiguration()).thenReturn(Optional.of(KMS_CONFIGURATION));
+      when(externalCredsConfig.getKmsConfiguration()).thenReturn(KMS_CONFIGURATION);
       Mockito.clearInvocations(kmsEncryptDecryptHelper);
 
       var loadedSshKeyOptional = sshKeyPairDAO.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
@@ -135,7 +134,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     void testGetDecryptedKeyPair() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
       var cypheredKey = "jfidosruewr1k=";
-      when(externalCredsConfig.getKmsConfiguration()).thenReturn(Optional.of(KMS_CONFIGURATION));
+      when(externalCredsConfig.getKmsConfiguration()).thenReturn(KMS_CONFIGURATION);
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
           .thenReturn(cypheredKey);
       when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredKey))

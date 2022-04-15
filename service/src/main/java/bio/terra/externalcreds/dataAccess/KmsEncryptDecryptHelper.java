@@ -10,6 +10,7 @@ import com.google.cloud.kms.v1.KeyManagementServiceClient;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -29,8 +30,7 @@ public class KmsEncryptDecryptHelper {
 
   @PostConstruct
   private void instantiateKeyManagementServiceClient() {
-    config
-        .getKmsConfiguration()
+    Optional.ofNullable(config.getKmsConfiguration())
         .ifPresent(
             x -> {
               try {
@@ -50,7 +50,7 @@ public class KmsEncryptDecryptHelper {
 
   /** Encrypt with KMS symmetric key. */
   public String encryptSymmetric(String plainText) {
-    if (client == null || config.getKmsConfiguration().isEmpty()) {
+    if (client == null || config.getKmsConfiguration() == null) {
       log.info("KMS encryption for ssh private keys is disabled");
       return plainText;
     }
@@ -61,7 +61,7 @@ public class KmsEncryptDecryptHelper {
 
   /** Decrypt with KMS symmetric key. */
   public String decryptSymmetric(String cypheredText) {
-    if (client == null || config.getKmsConfiguration().isEmpty()) {
+    if (client == null || config.getKmsConfiguration() == null) {
       log.info("KMS encryption for ssh private keys is disabled");
       return cypheredText;
     }
@@ -71,8 +71,7 @@ public class KmsEncryptDecryptHelper {
   }
 
   private CryptoKeyName getCryptoKeyName() {
-    Preconditions.checkState(config.getKmsConfiguration().isPresent());
-    KmsConfiguration kmsConfiguration = config.getKmsConfiguration().get();
+    KmsConfiguration kmsConfiguration = Preconditions.checkNotNull(config.getKmsConfiguration());
     return CryptoKeyName.of(
         kmsConfiguration.getServiceGoogleProject(),
         kmsConfiguration.getKeyRingLocation(),

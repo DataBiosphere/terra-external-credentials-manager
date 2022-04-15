@@ -34,7 +34,7 @@ public class ExternalCredsSpringConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  @ConfigurationProperties(value = "externalcreds")
+  @ConfigurationProperties(value = "externalcreds", ignoreUnknownFields = false)
   public ExternalCredsConfig getExternalCredsSpringConfig() {
     return ExternalCredsConfig.create();
   }
