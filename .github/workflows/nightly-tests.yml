@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Get version files from terra-helmfile
-        env: 
+        env:
           BROADBOT_TOKEN: ${{ secrets.BROADBOT_TOKEN }}
         run: |
           curl -H "Authorization: token ${BROADBOT_TOKEN}" \
@@ -50,6 +50,17 @@ jobs:
         run: |
           echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
           echo "$PERF_TESTRUNNER_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
+
+      - name: Authenticate to Google Cloud
+        uses: 'google-github-actions/auth@v0'
+        with:
+          # Centralized in dsp-tools-k8s; ask in #dsp-devops-champions for help troubleshooting
+          workload_identity_provider: 'projects/1038484894585/locations/global/workloadIdentityPools/github-wi-pool/providers/github-wi-provider'
+          service_account: 'dsp-tools-iap-access@dsp-tools-k8s.iam.gserviceaccount.com'
+          # Create `steps.auth.outputs.id_token` that can access Identity Aware Proxy
+          token_format: 'id_token'
+          id_token_audience: '${{ secrets.IAP_ID_TOKEN_AUDIENCE }}'
+          id_token_include_email: true
 
       - name: Run the perf test suite
         run: ./gradlew --build-cache runTest --args="suites/FullPerf.json /tmp/test-results"
