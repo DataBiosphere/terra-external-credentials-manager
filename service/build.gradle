@@ -53,5 +53,9 @@ sonarqube {
 	}
 }
 
+def googleCredentialsFile = "${rootDir}/config/ecm-sa.json"
+bootRun {
+	environment.put("GOOGLE_APPLICATION_CREDENTIALS", "${googleCredentialsFile}")
+}
 
 test { maxParallelForks = 1 }

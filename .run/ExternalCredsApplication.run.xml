@@ -6,6 +6,9 @@
     <option name="ACTIVE_PROFILES" value="human-readable-logging" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <option name="SHORTEN_COMMAND_LINE" value="NONE" />
+    <envs>
+      <env name="GOOGLE_APPLICATION_CREDENTIALS" value="../config/ecm-sa.json" />
+    </envs>
     <additionalParameters>
       <param>
         <option name="enabled" value="true" />

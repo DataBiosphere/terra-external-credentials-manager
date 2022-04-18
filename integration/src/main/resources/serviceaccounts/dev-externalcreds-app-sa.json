@@ -1,0 +1,5 @@
+{
+  "name": "externalcreds-dev@broad-dsde-dev.iam.gserviceaccount.com",
+  "jsonKeyFilename": "ecm-sa.json",
+  "jsonKeyDirectoryPath": "../config"
+}

@@ -10,9 +10,9 @@ externalcreds:
   # allowed JWT encryption algorithms
   allowed-jwt-algorithms: [ RS256, ES256 ]
   kms-configuration:
-    service-google-project: ${SERVICE_GOOGLE_PROJECT}
-    key-ring-id: ${KMS_KEYRING_ID}
-    key-id: ${KMS_KEY_ID}
+    service-google-project: ${SERVICE_GOOGLE_PROJECT:broad-dsde-dev}
+    key-ring-id: ${KMS_KEYRING_ID:ecm-dev-kms-symmetric-key-ring}
+    key-id: ${KMS_KEY_ID:ecm-dev-kms-symmetric-key-for-ssh-key-encrypt-decrypt}
     key-ring-location: ${kMS_KEY_LOCATION:us-central1}
 
 logging:
