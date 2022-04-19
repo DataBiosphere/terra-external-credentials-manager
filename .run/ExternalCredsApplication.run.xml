@@ -5,6 +5,7 @@
     <option name="HIDE_BANNER" value="true" />
     <option name="ACTIVE_PROFILES" value="human-readable-logging" />
     <option name="ALTERNATIVE_JRE_PATH" />
+    <option name="SHORTEN_COMMAND_LINE" value="NONE" />
     <additionalParameters>
       <param>
         <option name="enabled" value="true" />
