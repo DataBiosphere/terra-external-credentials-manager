@@ -17,6 +17,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import java.net.URI;
 import java.sql.Timestamp;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -147,10 +148,10 @@ public class JwtSigningTestUtils {
     return visa;
   }
 
-  public GA4GHPassport createTestPassport(List<GA4GHVisa> visas) {
+  public GA4GHPassport createTestPassport(List<GA4GHVisa> visas, Map<String, String> customClaims) {
     var visaJwts = visas.stream().map(GA4GHVisa::getJwt).toList();
     var jwtId = UUID.randomUUID().toString();
-    var jwtString = createPassportJwtString(passportExpires, visaJwts, jwtId);
+    var jwtString = createPassportJwtString(passportExpires, visaJwts, jwtId, customClaims);
     return new GA4GHPassport.Builder()
         .jwt(jwtString)
         .expires(passportExpiresTime)
@@ -158,7 +159,12 @@ public class JwtSigningTestUtils {
         .build();
   }
 
-  private String createPassportJwtString(Date expires, List<String> visaJwts, String jwtId) {
+  public GA4GHPassport createTestPassport(List<GA4GHVisa> visas) {
+    return createTestPassport(visas, Collections.emptyMap());
+  }
+
+  private String createPassportJwtString(
+      Date expires, List<String> visaJwts, String jwtId, Map<String, String> customClaims) {
 
     var passportClaimSetBuilder =
         new JWTClaimsSet.Builder()
@@ -170,6 +176,8 @@ public class JwtSigningTestUtils {
     if (!visaJwts.isEmpty()) {
       passportClaimSetBuilder.claim(JwtUtils.GA4GH_PASSPORT_V1_CLAIM, visaJwts);
     }
+
+    customClaims.forEach(passportClaimSetBuilder::claim);
 
     var claimsSet = passportClaimSetBuilder.build();
     return createSignedJwt(claimsSet);
