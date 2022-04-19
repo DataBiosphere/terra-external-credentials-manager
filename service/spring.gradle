@@ -24,6 +24,11 @@ dependencies {
 
 test { useJUnitPlatform() }
 
+def googleCredentialsFile = "${rootDir}/service/src/main/resources/rendered/ecm-sa.json"
+bootRun {
+	environment.put("GOOGLE_APPLICATION_CREDENTIALS", "${googleCredentialsFile}")
+}
+
 task bootRunDev {
 	bootRun.configure { systemProperty 'spring.profiles.active', 'human-readable-logging' }
 	finalizedBy(bootRun)
