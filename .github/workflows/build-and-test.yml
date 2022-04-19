@@ -187,7 +187,7 @@ jobs:
           fi
 
       - name: Run the integration test suite
-        run: ./gradlew --build-cache :integration:runTest --args="suites/FullIntegration.json /tmp/foo"
+        run: ./gradlew --build-cache :integration:runTest --args="suites/FullIntegration.json /tmp/foo" --scan
 
       - name: Archive logs
         id: archive_logs
