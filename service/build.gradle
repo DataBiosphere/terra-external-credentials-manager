@@ -58,4 +58,4 @@ tasks.withType(Test) {
 	environment.put("GOOGLE_APPLICATION_CREDENTIALS", "${googleCredentialsFile}")
 }
 
-test {maxParallelForks = 1}
+test { maxParallelForks = 1 }

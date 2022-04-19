@@ -18,7 +18,7 @@ public class EncryptDecryptSshKeyPair extends TestScript {
     var sshKeyPairApi = new SshKeyPairApi(apiClient);
 
     SshKeyPair sshKeyPair =
-        sshKeyPairApi.generateSshKeyPair(testUser.userEmail, SshKeyPairType.GITHUB);
+        sshKeyPairApi.generateSshKeyPair('"'+testUser.userEmail+'"', SshKeyPairType.GITHUB);
     SshKeyPair loadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITHUB);
 
     assertEquals(sshKeyPair, loadedSshKeyPair);
