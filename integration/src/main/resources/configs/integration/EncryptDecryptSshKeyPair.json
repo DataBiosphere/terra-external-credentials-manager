@@ -9,7 +9,7 @@
       "name": "EncryptDecryptSshKeyPair",
       "numberOfUserJourneyThreadsToRun": 5,
       "userJourneyThreadPoolSize": 1,
-      "expectedTimeForEach": 5,
+      "expectedTimeForEach": 30,
       "expectedTimeForEachUnit": "SECONDS"
     }
   ],
