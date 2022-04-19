@@ -7,9 +7,9 @@
   "testScripts": [
     {
       "name": "EncryptDecryptSshKeyPair",
-      "numberOfUserJourneyThreadsToRun": 5,
-      "userJourneyThreadPoolSize": 1,
-      "expectedTimeForEach": 30,
+      "numberOfUserJourneyThreadsToRun": 1,
+      "userJourneyThreadPoolSize": 2,
+      "expectedTimeForEach": 5,
       "expectedTimeForEachUnit": "SECONDS"
     }
   ],

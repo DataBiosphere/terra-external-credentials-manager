@@ -33,20 +33,20 @@ public class EncryptDecryptSshKeyPair extends TestScript {
             () -> sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITHUB));
     assertEquals(HttpStatus.NOT_FOUND, notFoundException.getStatusCode());
 
-    var gitlabSshKeyPair =
-        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.GITLAB);
-    var gitlabLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITLAB);
-
-    assertEquals(gitlabSshKeyPair, gitlabLoadedSshKeyPair);
-
-    sshKeyPairApi.deleteSshKeyPair(SshKeyPairType.GITLAB);
-
-    var azureSshKeyPair =
-        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.AZURE);
-    var azureLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.AZURE);
-
-    assertEquals(azureSshKeyPair, azureLoadedSshKeyPair);
-
-    sshKeyPairApi.deleteSshKeyPair(SshKeyPairType.AZURE);
+//    var gitlabSshKeyPair =
+//        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.GITLAB);
+//    var gitlabLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITLAB);
+//
+//    assertEquals(gitlabSshKeyPair, gitlabLoadedSshKeyPair);
+//
+//    sshKeyPairApi.deleteSshKeyPair(SshKeyPairType.GITLAB);
+//
+//    var azureSshKeyPair =
+//        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.AZURE);
+//    var azureLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.AZURE);
+//
+//    assertEquals(azureSshKeyPair, azureLoadedSshKeyPair);
+//
+//    sshKeyPairApi.deleteSshKeyPair(SshKeyPairType.AZURE);
   }
 }
