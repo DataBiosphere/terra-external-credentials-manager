@@ -35,6 +35,11 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
+      - name: Get dev app service account from GitHub Secret
+        env:
+          DEV_APP_SERVICE_ACCOUNT_B64: ${{ secrets.DEV_APP_SERVICE_ACCOUNT_B64 }}
+        run: echo "$DEV_APP_SERVICE_ACCOUNT_B64" | base64 -d >"./service/src/main/resources/rendered/ecm-sa.json"
+
       - name: Gradle build service
         run: ./gradlew --build-cache :service:build -x test
 
@@ -68,11 +73,6 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
           key: v1-${{ runner.os }}-gradle-${{ github.ref }}-${{ github.sha }}
-
-      - name: Get dev app service account from GitHub Secret
-        env:
-          DEV_APP_SERVICE_ACCOUNT_B64: ${{ secrets.DEV_APP_SERVICE_ACCOUNT_B64 }}
-        run: echo "$DEV_APP_SERVICE_ACCOUNT_B64" | base64 -d >"./service/src/main/resources/rendered/ecm-sa.json"
 
       - name: Add Google Cloud Profiler to Docker Image
         run: docker build ./service -t externalcreds:local
