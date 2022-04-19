@@ -13,6 +13,7 @@ import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -76,7 +77,7 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
             .userId(userId)
             .type(keyType)
             .externalUserEmail(externalUser)
-            .privateKey(pair.getLeft())
+            .privateKey(pair.getLeft().getBytes(StandardCharsets.UTF_8))
             .publicKey(pair.getRight())
             .build();
     verifySshKeyPair(sshKeyPairExpected, storedSshKey);
@@ -103,7 +104,7 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
             .userId(userId)
             .type(SshKeyPairType.GITHUB)
             .externalUserEmail(externalUser)
-            .privateKey(pair.getLeft())
+            .privateKey(pair.getLeft().getBytes(StandardCharsets.UTF_8))
             .publicKey(pair.getRight())
             .build();
     assertNotEquals(sshKey.withId(storedSshKey.getId()), storedSshKey);

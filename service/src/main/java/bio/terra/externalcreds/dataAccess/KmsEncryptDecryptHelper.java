@@ -49,25 +49,25 @@ public class KmsEncryptDecryptHelper {
   }
 
   /** Encrypt with KMS symmetric key. */
-  public String encryptSymmetric(String plainText) {
+  public byte[] encryptSymmetric(byte[] plainText) {
     if (client == null || config.getKmsConfiguration() == null) {
       log.info("KMS encryption for ssh private keys is disabled");
       return plainText;
     }
     var keyVersionName = getCryptoKeyName();
-    EncryptResponse response = client.encrypt(keyVersionName, ByteString.copyFromUtf8(plainText));
-    return response.getCiphertext().toStringUtf8();
+    EncryptResponse response = client.encrypt(keyVersionName, ByteString.copyFrom(plainText));
+    return response.getCiphertext().toByteArray();
   }
 
   /** Decrypt with KMS symmetric key. */
-  public String decryptSymmetric(String cypheredText) {
+  public byte[] decryptSymmetric(byte[] cypheredText) {
     if (client == null || config.getKmsConfiguration() == null) {
       log.info("KMS encryption for ssh private keys is disabled");
       return cypheredText;
     }
     var keyName = getCryptoKeyName();
-    DecryptResponse response = client.decrypt(keyName, ByteString.copyFromUtf8(cypheredText));
-    return response.getPlaintext().toStringUtf8();
+    DecryptResponse response = client.decrypt(keyName, ByteString.copyFrom(cypheredText));
+    return response.getPlaintext().toByteArray();
   }
 
   private CryptoKeyName getCryptoKeyName() {

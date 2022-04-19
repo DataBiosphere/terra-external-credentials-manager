@@ -95,7 +95,7 @@ public class SshKeyPairDAO {
 
     @Override
     public SshKeyPairInternal mapRow(ResultSet rs, int rowNum) throws SQLException {
-      String privateKey = rs.getString("private_key");
+      var privateKey = rs.getBytes("private_key");
       if (rs.getTimestamp("last_encrypted_timestamp") != null) {
         privateKey = kmsEncryptDecryptHelper.decryptSymmetric(privateKey);
       }

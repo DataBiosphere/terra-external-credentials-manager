@@ -13,6 +13,7 @@ import bio.terra.externalcreds.models.SshKeyPairInternal;
 import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
 import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -78,7 +79,7 @@ public class OpenApiConverters {
       return new SshKeyPair()
           .externalUserEmail(sshKeyPairInternal.getExternalUserEmail())
           .publicKey(sshKeyPairInternal.getPublicKey())
-          .privateKey(sshKeyPairInternal.getPrivateKey());
+          .privateKey(new String(sshKeyPairInternal.getPrivateKey(), StandardCharsets.UTF_8));
     }
   }
 }

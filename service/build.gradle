@@ -53,9 +53,9 @@ sonarqube {
 	}
 }
 
-def googleCredentialsFile = "${rootDir}/config/ecm-sa.json"
-bootRun {
+def googleCredentialsFile = "${rootDir}/service/src/main/resources/rendered/ecm-sa.json"
+tasks.withType(Test) {
 	environment.put("GOOGLE_APPLICATION_CREDENTIALS", "${googleCredentialsFile}")
 }
 
-test { maxParallelForks = 1 }
+test {maxParallelForks = 1}

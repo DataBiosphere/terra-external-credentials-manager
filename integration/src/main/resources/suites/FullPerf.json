@@ -6,7 +6,6 @@
     "perf/GetStatus.json",
     "perf/GetVersion.json",
     "perf/ListProviders.json",
-    "perf/GetProviderPassport.json",
-    "perf/EncryptDecryptSshKeyPair.json"
+    "perf/GetProviderPassport.json"
   ]
 }

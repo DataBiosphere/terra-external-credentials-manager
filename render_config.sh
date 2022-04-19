@@ -21,5 +21,6 @@ $VAULT_COMMAND -field=data -format=json "secret/dsde/firecloud/$ENV/common/firec
 
 if [ $ENV == perf ]; then
   $VAULT_COMMAND -field=key "$COMMON_VAULT_PATH/testrunner/testrunner-sa" | base64 -d > "$INTEGRATION_OUTPUT_LOCATION/testrunner-sa.json"
+  else
+    $VAULT_COMMAND -field=key "$ECM_VAULT_PATH/app-sa" | base64 -d > "$SERVICE_OUTPUT_LOCATION/ecm-sa.json"
 fi
-$VAULT_COMMAND -field=data -format=json "$ECM_VAULT_PATH/externalcreds/app-sa" >"$INTEGRATION_OUTPUT_LOCATION/ecm-sa.json"

@@ -47,9 +47,11 @@ jobs:
         env:
           DEV_FIRECLOUD_ACCOUNT_B64: ${{ secrets.DEV_FIRECLOUD_ACCOUNT_B64 }}
           PERF_TESTRUNNER_ACCOUNT_B64: ${{ secrets.PERF_TESTRUNNER_ACCOUNT_B64 }}
+          DEV_APP_SERVICE_ACCOUNT_B64: ${{ secrets.DEV_APP_SERVICE_ACCOUNT_B64 }}
         run: |
           echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
           echo "$PERF_TESTRUNNER_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
+          echo "$DEV_APP_SERVICE_ACCOUNT_B64" | base64 -d >"./service/src/main/resources/rendered/ecm-sa.json"
 
       - name: Run the perf test suite
         run: ./gradlew --build-cache runTest --args="suites/FullPerf.json /tmp/test-results"

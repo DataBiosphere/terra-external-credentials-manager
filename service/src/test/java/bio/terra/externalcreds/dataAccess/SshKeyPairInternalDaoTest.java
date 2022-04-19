@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
 import static bio.terra.externalcreds.TestUtils.createRandomGithubSshKey;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +14,7 @@ import bio.terra.externalcreds.config.KmsConfiguration;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -133,7 +135,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     @Test
     void testGetDecryptedKeyPair() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
-      var cypheredKey = "jfidosruewr1k=";
+      var cypheredKey = "jfidosruewr1k=".getBytes(StandardCharsets.UTF_8);
       when(externalCredsConfig.getKmsConfiguration()).thenReturn(KMS_CONFIGURATION);
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
           .thenReturn(cypheredKey);
@@ -153,8 +155,8 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var privateKey =
           DataAccessUtils.singleResult(
               jdbcTemplate.query(
-                  resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getString("private_key")));
-      assertEquals(cypheredKey, privateKey);
+                  resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getBytes("private_key")));
+      assertArrayEquals(cypheredKey, privateKey);
       assertPresent(loadedSshKeyOptional);
       verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
     }
@@ -196,7 +198,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     assertEquals(expectedSshKey.withId(actualSshKey.getId()), actualSshKey);
   }
 
-  private void setUpDefaultKmsEncryptDecryptHelperMock(String privateKey) {
+  private void setUpDefaultKmsEncryptDecryptHelperMock(byte[] privateKey) {
     when(kmsEncryptDecryptHelper.encryptSymmetric(privateKey)).thenReturn(privateKey);
     when(kmsEncryptDecryptHelper.decryptSymmetric(privateKey)).thenReturn(privateKey);
   }
