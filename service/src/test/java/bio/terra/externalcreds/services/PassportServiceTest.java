@@ -292,12 +292,10 @@ class PassportServiceTest extends BaseTest {
                   "internal_user_id",
                   linkedAccount.getUserId()));
       expectedAuditInfo.putAll(customInfoExpected);
-      var testVar = 1 + 1;
       return expectedAuditInfo;
     }
 
     private Map<String, String> expectedAuditInfo(LinkedAccount linkedAccount) {
-      // TODO: decide if readability is better if I put additionalInfoExpected here as well
       return Map.of("internal_user_id", linkedAccount.getUserId());
     }
 
