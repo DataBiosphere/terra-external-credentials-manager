@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import bio.terra.common.exception.NotFoundException;
@@ -306,6 +307,19 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
 
       loadedSshKey = sshKeyPairService.getSshKeyPair(userId, keyType);
       verifySshKeyPair(storedSshKey, loadedSshKey);
+    }
+
+    @Test
+    void kmsDisabledNotReencrypt() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
+          .thenReturn(sshKey.getPrivateKey());
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
+      clearInvocations(kmsEncryptDecryptHelper);
+
+      sshKeyPairService.reEncryptExpiringSshKeyPairs();
+
+      verifyNoInteractions(kmsEncryptDecryptHelper);
     }
   }
 
