@@ -38,6 +38,12 @@ class SshKeyPairInternalDaoTest extends BaseTest {
   @MockBean KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
 
   private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
+  private static final KmsConfiguration KMS_CONFIGURATION =
+      KmsConfiguration.create()
+          .setKeyId("key-id")
+          .setKeyRingId("key-ring")
+          .setServiceGoogleProject("google-project")
+          .setKeyRingLocation("us-central1");
 
   @Nested
   class UpsertKeyPair {
@@ -134,6 +140,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     @Test
     void testGetDecryptedKeyPair() throws NoSuchAlgorithmException, IOException {
       var sshKey = createRandomGithubSshKey();
+
       var cypheredkey = "jfidosruewr1k=".getBytes(StandardCharsets.UTF_8);
       var cypheredKey = "jfidosruewr1k=".getBytes(StandardCharsets.UTF_8);
       when(externalCredsConfig.getKmsConfiguration()).thenReturn(getDefaultFakeKmsConfiguration());
