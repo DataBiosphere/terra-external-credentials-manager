@@ -83,7 +83,8 @@ public class PassportService {
     var linkedAccountsByJwtId = getLinkedAccountsForAllPassports(passports);
 
     for (var passportWithVisas : passports) {
-      var transactionClaim = jwtUtils.getJwtTransactionId(passportWithVisas.getPassport().getJwt());
+      var transactionClaim =
+          jwtUtils.getJwtTransactionClaim(passportWithVisas.getPassport().getJwt());
       for (var criterion : criteria) {
         for (var visa : passportWithVisas.getVisas()) {
           VisaComparator visaComparator = getVisaComparator(criterion);

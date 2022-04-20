@@ -70,7 +70,7 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig) {
         .build();
   }
 
-  public Optional<String> getJwtTransactionId(String jwtString) {
+  public Optional<String> getJwtTransactionClaim(String jwtString) {
     var txnClaim = decodeAndValidateJwt(jwtString).getClaims().get(JWT_TRANSACTION_CLAIM);
     return Optional.ofNullable(txnClaim).map(Objects::toString);
   }

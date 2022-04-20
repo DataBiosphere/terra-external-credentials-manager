@@ -8,6 +8,8 @@ import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.services.JwtUtils;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
@@ -28,6 +30,7 @@ import org.springframework.stereotype.Controller;
 public record OidcApiController(
     AuditLogger auditLogger,
     HttpServletRequest request,
+    JwtUtils jwtUtils,
     LinkedAccountService linkedAccountService,
     ObjectMapper mapper,
     PassportService passportService,
@@ -74,6 +77,9 @@ public record OidcApiController(
       var linkedAccountWithPassportAndVisas =
           providerService.createLink(providerName, userId, oauthcode, state);
 
+      var passport =
+          linkedAccountWithPassportAndVisas.flatMap(LinkedAccountWithPassportAndVisas::getPassport);
+      var transactionClaim = passport.flatMap(p -> jwtUtils.getJwtTransactionClaim(p.getJwt()));
       auditLogger.logEvent(
           auditLogEventBuilder
               .externalUserId(
@@ -83,6 +89,7 @@ public record OidcApiController(
                   linkedAccountWithPassportAndVisas
                       .map(x -> AuditLogEventType.LinkCreated)
                       .orElse(AuditLogEventType.LinkCreationFailed))
+              .transactionClaim(transactionClaim)
               .build());
 
       return ResponseEntity.of(
