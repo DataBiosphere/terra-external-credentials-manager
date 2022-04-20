@@ -59,7 +59,7 @@ public class SshKeyPairService {
       String userId, SshKeyPairType type, SshKeyPair sshKeyPair) {
     return sshKeyPairDAO.upsertSshKeyPair(
         new SshKeyPairInternal.Builder()
-            .privateKey(sshKeyPair.getPrivateKey())
+            .privateKey(sshKeyPair.getPrivateKey().getBytes(StandardCharsets.UTF_8))
             .publicKey(sshKeyPair.getPublicKey())
             .externalUserEmail(sshKeyPair.getExternalUserEmail())
             .userId(userId)
@@ -74,7 +74,9 @@ public class SshKeyPairService {
       KeyPair rsaKeyPair = generateRSAKeyPair();
       return sshKeyPairDAO.upsertSshKeyPair(
           new SshKeyPairInternal.Builder()
-              .privateKey(encodeRSAPrivateKey((RSAPrivateKey) rsaKeyPair.getPrivate()))
+              .privateKey(
+                  encodeRSAPrivateKey((RSAPrivateKey) rsaKeyPair.getPrivate())
+                      .getBytes(StandardCharsets.UTF_8))
               .publicKey(
                   encodeRSAPublicKey((RSAPublicKey) rsaKeyPair.getPublic(), externalUserEmail))
               .externalUserEmail(externalUserEmail)
@@ -88,7 +90,7 @@ public class SshKeyPairService {
 
   @WriteTransaction
   public void reEncryptExpiringSshKeyPairs() {
-    if (config.getKmsConfiguration().isEmpty()) {
+    if (config.getKmsConfiguration() == null) {
       return;
     }
     var sshKeyPairs = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();

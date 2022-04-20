@@ -7,6 +7,13 @@ externalcreds:
   authorization-change-events-enabled: ${AUTHORIZATION_CHANGE_EVENTS_ENABLED:false}
   # name from: https://github.com/broadinstitute/terraform-ap-modules/blob/master/externalcreds/pubsub.tf
   authorization-change-event-topic-name: projects/${SERVICE_GOOGLE_PROJECT:broad-dsde-dev}/topics/ecm-events
+  # allowed JWT encryption algorithms
+  allowed-jwt-algorithms: [ RS256, ES256 ]
+  kms-configuration:
+    service-google-project: ${SERVICE_GOOGLE_PROJECT:broad-dsde-dev}
+    key-ring-id: ${KMS_KEYRING_ID:ecm-dev-kms-symmetric-key-ring}
+    key-id: ${KMS_KEY_ID:ecm-dev-kms-symmetric-key-for-ssh-key-encrypt-decrypt}
+    key-ring-location: ${kMS_KEY_LOCATION:us-central1}
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}

@@ -1,9 +1,10 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.config.ProviderProperties;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Scanner;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -31,13 +32,14 @@ public class OAuth2ServiceTest {
    * to the identity provider.
    */
   void test() {
-    var providerClient = providerClientCache.getProviderClient("ras").orElseThrow();
+    String providerName = "ras-old";
+    var providerClient = providerClientCache.getProviderClient(providerName).orElseThrow();
 
     var redirectUri = "http://localhost:9000/fence-callback";
-    var scopes = Set.of("openid", "email", "ga4gh_passport_v1");
     String state = null;
-    var authorizationParameters =
-        externalCredsConfig.getProviders().get("ras").getAdditionalAuthorizationParameters();
+    ProviderProperties providerProperties = externalCredsConfig.getProviders().get(providerName);
+    var scopes = new HashSet<>(providerProperties.getScopes());
+    var authorizationParameters = providerProperties.getAdditionalAuthorizationParameters();
 
     // 1) test getAuthorizationRequestUri
     var authorizationRequestUri =

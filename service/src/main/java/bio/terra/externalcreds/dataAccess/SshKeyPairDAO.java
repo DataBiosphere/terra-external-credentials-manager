@@ -58,7 +58,7 @@ public class SshKeyPairDAO {
     var query =
         "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email, last_encrypted_timestamp)"
             + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail,"
-            + (externalCredsConfig.getKmsConfiguration().isPresent()
+            + (externalCredsConfig.getKmsConfiguration() != null
                 ? " :lastEncryptedTimestamp)"
                 : " NULL)")
             + " ON CONFLICT (type, user_id) DO UPDATE SET"
@@ -79,7 +79,7 @@ public class SshKeyPairDAO {
             .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail());
 
     var kmsConfiguration = externalCredsConfig.getKmsConfiguration();
-    if (kmsConfiguration.isPresent()) {
+    if (kmsConfiguration != null) {
       // Record the timestamp when the key is encrypted.
       namedParameters.addValue("lastEncryptedTimestamp", Timestamp.from(Instant.now()));
     }
@@ -96,12 +96,12 @@ public class SshKeyPairDAO {
   /** Gets expired or un-encrypted ssh key pair. */
   public List<SshKeyPairInternal> getExpiredOrUnEncryptedSshKeyPair() {
     var kmsConfig = externalCredsConfig.getKmsConfiguration();
-    if (kmsConfig.isEmpty()) {
+    if (kmsConfig == null) {
       return Collections.emptyList();
     }
     var namedParameters =
         new MapSqlParameterSource(
-            "refreshIntervalDays", (int) kmsConfig.get().getSshKeyPairRefreshDuration().toDays());
+            "refreshIntervalDays", (int) kmsConfig.getSshKeyPairRefreshDuration().toDays());
     var query =
         "SELECT DISTINCT id, user_id, type, external_user_email, private_key, public_key, last_encrypted_timestamp"
             + " FROM ssh_key_pair"
@@ -115,7 +115,7 @@ public class SshKeyPairDAO {
 
     @Override
     public SshKeyPairInternal mapRow(ResultSet rs, int rowNum) throws SQLException {
-      String privateKey = rs.getString("private_key");
+      var privateKey = rs.getBytes("private_key");
       if (rs.getTimestamp("last_encrypted_timestamp") != null) {
         privateKey = kmsEncryptDecryptHelper.decryptSymmetric(privateKey);
       }

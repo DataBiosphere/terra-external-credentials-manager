@@ -12,7 +12,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.shaded.json.JSONObject;
 import com.nimbusds.jwt.JWTParser;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.sql.Timestamp;
 import java.text.ParseException;
@@ -23,12 +22,11 @@ import java.util.Objects;
 import java.util.Optional;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Service;
 
 @Service
-public record JwtUtils(ExternalCredsConfig externalCredsConfig) {
+public record JwtUtils(ExternalCredsConfig externalCredsConfig, JwtDecoderCache jwtDecoderCache) {
 
   public static final String PASSPORT_JWT_V11_CLAIM = "passport_jwt_v11";
   public static final String GA4GH_PASSPORT_V1_CLAIM = "ga4gh_passport_v1";
@@ -132,26 +130,35 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig) {
             String.format("URI [%s] specified by iss claim not on allowed list", issuer));
       }
 
+      // validate the algorithm field
+      var allowedAlgorithms = externalCredsConfig.getAllowedJwtAlgorithms();
+      var algorithm = ((JWSHeader) jwt.getHeader()).getAlgorithm();
+
+      if (algorithm == null) {
+        throw new InvalidJwtException("jwt missing algorithm (alg) header");
+      }
+
+      if (!allowedAlgorithms.contains(algorithm.toString())) {
+        throw new InvalidJwtException(
+            String.format("Algorithm [%s] is not on allowed list", algorithm));
+      }
+
       var jkuOption = Optional.ofNullable(((JWSHeader) jwt.getHeader()).getJWKURL());
       if (jkuOption.isPresent()) {
         // presence of the jku header means the url it specifies contains the key set that must be
         // used validate the signature
         URI jku = jkuOption.get();
         if (externalCredsConfig.getAllowedJwksUris().contains(jku)) {
-          return ExternalCredsJwtDecoders.fromJku(jku).decode(jwtString);
+          return jwtDecoderCache.fromJku(jku).decode(jwtString);
         } else {
           throw new InvalidJwtException(
               String.format("URI [%s] specified by jku header not on allowed list", jku));
         }
       } else {
         // no jku means use the issuer to lookup configuration and location of key set
-        return JwtDecoders.fromIssuerLocation(issuer).decode(jwtString);
+        return jwtDecoderCache.fromIssuer(issuer).decode(jwtString);
       }
-    } catch (ParseException
-        | JwtException
-        | MalformedURLException
-        | IllegalArgumentException
-        | IllegalStateException e) {
+    } catch (ParseException | JwtException | IllegalArgumentException | IllegalStateException e) {
       throw new InvalidJwtException(e);
     }
   }

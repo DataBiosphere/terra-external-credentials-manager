@@ -1,5 +1,5 @@
 {
-  "name": "testrunner-perf@terra-kernel-k8s.iam.gserviceaccount.com",
+  "name": "testrunner-perf@broad-dsde-perf.iam.gserviceaccount.com",
   "jsonKeyFilename": "testrunner-sa.json",
   "jsonKeyDirectoryPath": "./src/main/resources/rendered"
 }

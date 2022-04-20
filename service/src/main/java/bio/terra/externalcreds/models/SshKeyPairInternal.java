@@ -14,7 +14,7 @@ public interface SshKeyPairInternal extends WithSshKeyPairInternal {
 
   String getExternalUserEmail();
 
-  String getPrivateKey();
+  byte[] getPrivateKey();
 
   String getPublicKey();
 

@@ -51,7 +51,6 @@ paths:
   /api/oidc/v1/{provider}/authorization-url:
     parameters:
       - $ref: '#/components/parameters/providerParam'
-      - $ref: '#/components/parameters/scopesParam'
       - $ref: '#/components/parameters/redirectUriParam'
     get:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
@@ -71,8 +70,6 @@ paths:
   /api/oidc/v1/{provider}/oauthcode:
     parameters:
       - $ref: '#/components/parameters/providerParam'
-      - $ref: '#/components/parameters/scopesParam'
-      - $ref: '#/components/parameters/redirectUriParam'
       - $ref: '#/components/parameters/stateParam'
       - name: oauthcode
         description: oauth code returned by identity provider
@@ -240,16 +237,6 @@ components:
         type: string
         default: ras
       required: true
-    scopesParam:
-      name: scopes
-      description: list of scopes to authorize
-      in: query
-      required: true
-      example: [ "openid", "email", "ga4gh_passport_v1" ]
-      schema:
-        type: array
-        items:
-          type: string
     redirectUriParam:
       name: redirectUri
       description: oidc redirect uri

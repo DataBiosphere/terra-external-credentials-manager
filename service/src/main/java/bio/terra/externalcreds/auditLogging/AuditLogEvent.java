@@ -18,6 +18,9 @@ public interface AuditLogEvent extends WithAuditLogEvent {
   Optional<String> getProviderName();
 
   @JsonInclude(Include.NON_EMPTY)
+  Optional<String> getExternalUserId();
+
+  @JsonInclude(Include.NON_EMPTY)
   Optional<String> getSshKeyPairType();
 
   AuditLogEventType getAuditLogEventType();

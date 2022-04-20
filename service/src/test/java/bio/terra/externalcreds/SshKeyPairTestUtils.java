@@ -1,11 +1,12 @@
 package bio.terra.externalcreds;
 
-import bio.terra.externalcreds.config.ExternalCredsConfigInterface.KmsConfiguration;
+import bio.terra.externalcreds.config.KmsConfiguration;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -31,7 +32,9 @@ public class SshKeyPairTestUtils {
     KeyPair keyPair = generateRSAKeyPair();
     return new SshKeyPairInternal.Builder()
         .type(SshKeyPairType.GITHUB)
-        .privateKey(encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate()))
+        .privateKey(
+            encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate())
+                .getBytes(StandardCharsets.UTF_8))
         .publicKey(encodeRSAPublicKey((RSAPublicKey) keyPair.getPublic(), randomExternalUserEmail))
         .userId(UUID.randomUUID().toString())
         .externalUserEmail(
@@ -76,47 +79,13 @@ public class SshKeyPairTestUtils {
     return generator.generateKeyPair();
   }
 
-  public static FakeKmsConfiguration getFakeKmsConfiguration(Duration sshKeyPairRefreshDuration) {
-    return new FakeKmsConfiguration(sshKeyPairRefreshDuration);
+  public static KmsConfiguration getFakeKmsConfiguration(KmsConfiguration kmsConfiguration, Duration sshKeyPairRefreshDuration) {
+    return kmsConfiguration.setSshKeyPairRefreshDuration(sshKeyPairRefreshDuration);
   }
 
   public static void cleanUp(NamedParameterJdbcTemplate jdbcTemplate) {
     // Delete all the row in the ssh_key_pair data table.
     var deleteAll = "DELETE FROM ssh_key_pair";
     jdbcTemplate.update(deleteAll, new MapSqlParameterSource());
-  }
-
-  private static class FakeKmsConfiguration implements KmsConfiguration {
-
-    private final Duration sshKeypairRefreshDuration;
-
-    FakeKmsConfiguration(Duration sshKeyPairRefreshDuration) {
-      this.sshKeypairRefreshDuration = sshKeyPairRefreshDuration;
-    }
-
-    @Override
-    public String getServiceGoogleProject() {
-      return "projectId";
-    }
-
-    @Override
-    public String getKeyRingId() {
-      return "key-ring-id";
-    }
-
-    @Override
-    public String getKeyId() {
-      return "ssh-encryption-key";
-    }
-
-    @Override
-    public String getKeyRingLocation() {
-      return "us-central1";
-    }
-
-    @Override
-    public Duration getSshKeyPairRefreshDuration() {
-      return sshKeypairRefreshDuration;
-    }
   }
 }

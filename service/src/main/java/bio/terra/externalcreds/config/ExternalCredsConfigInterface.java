@@ -28,6 +28,12 @@ public interface ExternalCredsConfigInterface {
 
   Duration getVisaAndPassportRefreshDuration();
 
+  /** List of algorithms that are allowable in JWT headers */
+  @Value.Default
+  default Collection<String> getAllowedJwtAlgorithms() {
+    return List.of();
+  }
+
   /** List of URIs that are allowable in jku headers of JWTs */
   @Value.Default
   default Collection<URI> getAllowedJwksUris() {
@@ -44,22 +50,6 @@ public interface ExternalCredsConfigInterface {
 
   Optional<String> getAuthorizationChangeEventTopicName();
 
-  Optional<KmsConfiguration> getKmsConfiguration();
-
-  @PropertiesInterfaceStyle
-  interface KmsConfiguration {
-    String getServiceGoogleProject();
-
-    String getKeyRingId();
-
-    String getKeyId();
-
-    String getKeyRingLocation();
-
-    /** How often the ssh private key needs to be re-encrypted with a new version of the KMS key. */
-    @Value.Default
-    default Duration getSshKeyPairRefreshDuration() {
-      return Duration.ofDays(90);
-    }
-  }
+  @Nullable
+  KmsConfiguration getKmsConfiguration();
 }
