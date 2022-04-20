@@ -13,6 +13,9 @@
         <option name="value" value="file:service/src/main/resources/static" />
       </param>
     </additionalParameters>
+    <envs>
+      <env name="GOOGLE_APPLICATION_CREDENTIALS" value="../service/src/main/resources/rendered/ecm-sa.json" />
+    </envs>
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

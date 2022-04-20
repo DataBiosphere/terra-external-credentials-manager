@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  * issuer]/.well-known/openid-configuration. That information almost never changes and we don't want
  * to hammer that api. Therefore this cache.
  *
- * The cache is reset every 6 hours to detect infrequent changes.
+ * <p>The cache is reset every 6 hours to detect infrequent changes.
  */
 @Component
 @Slf4j

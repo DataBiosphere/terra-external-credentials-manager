@@ -11,6 +11,7 @@ import bio.terra.externalcreds.models.VisaVerificationDetails;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -94,7 +95,9 @@ public class TestUtils {
     KeyPair keyPair = generateRSAKeyPair();
     return new SshKeyPairInternal.Builder()
         .type(SshKeyPairType.GITHUB)
-        .privateKey(encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate()))
+        .privateKey(
+            encodeRSAPrivateKey((RSAPrivateKey) keyPair.getPrivate())
+                .getBytes(StandardCharsets.UTF_8))
         .publicKey(encodeRSAPublicKey((RSAPublicKey) keyPair.getPublic(), randomExternalUserEmail))
         .userId(UUID.randomUUID().toString())
         .externalUserEmail(

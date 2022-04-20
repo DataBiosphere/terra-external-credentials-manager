@@ -35,7 +35,6 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-
       - name: Gradle build service
         run: ./gradlew --build-cache :service:build -x test
 
@@ -114,6 +113,12 @@ jobs:
           pg_isready -h localhost -t 10
           psql -h localhost -U postgres -f ./common/postgres-init.sql
 
+      # Github workflows shouldn't have access to vault, so we read from GitHub secrets instead.
+      - name: Render GitHub Secrets
+        env:
+          DEV_APP_SERVICE_ACCOUNT_B64: ${{ secrets.DEV_APP_SERVICE_ACCOUNT_B64 }}
+        run: echo "$DEV_APP_SERVICE_ACCOUNT_B64" | base64 -d >"./service/src/main/resources/rendered/ecm-sa.json"
+
       - name: Test with coverage
         run: ./gradlew --build-cache jacocoTestReport --scan
 
@@ -159,7 +164,10 @@ jobs:
       - name: Render GitHub Secrets
         env:
           DEV_FIRECLOUD_ACCOUNT_B64: ${{ secrets.DEV_FIRECLOUD_ACCOUNT_B64 }}
-        run: echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
+          DEV_APP_SERVICE_ACCOUNT_B64: ${{ secrets.DEV_APP_SERVICE_ACCOUNT_B64 }}
+        run: |
+          echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
+          echo "$DEV_APP_SERVICE_ACCOUNT_B64" | base64 -d >"./service/src/main/resources/rendered/ecm-sa.json"
 
       - name: Launch the background process for integration tests
         run: ./gradlew --build-cache :service:bootRunDev | tee application.log &
@@ -179,7 +187,7 @@ jobs:
           fi
 
       - name: Run the integration test suite
-        run: ./gradlew --build-cache :integration:runTest --args="suites/FullIntegration.json /tmp/foo"
+        run: ./gradlew --build-cache :integration:runTest --args="suites/FullIntegration.json /tmp/foo" --scan
 
       - name: Archive logs
         id: archive_logs

@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_last_encrypt_timestamp_to_ssh_key_pair_table"
+      author: yuhuyoyo
+      changes:
+        - addColumn:
+            tableName: ssh_key_pair
+            columns:
+              - column:
+                  name: last_encrypted_timestamp
+                  type: timestamp
+                  constraints:
+                    nullable: true
+                  remarks: |
+                    Timestamp when the ssh key pair encryption key is last encrypted. This column is
+                    null if the key is not encrypted.
+        - sql:
+            sql: >
+              ALTER TABLE ssh_key_pair ALTER COLUMN private_key TYPE bytea USING private_key::bytea

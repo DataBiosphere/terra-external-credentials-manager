@@ -70,6 +70,7 @@ Unit tests will run on build.  Integration tests can be run by following the ins
 Run in IntelliJ (recommended) or use the command line:
 
 ```sh
+./render_config.sh # only when building ECM for the first time
 cd service
 ../gradlew bootRun
 ```

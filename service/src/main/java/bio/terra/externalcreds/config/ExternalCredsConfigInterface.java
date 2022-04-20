@@ -49,4 +49,7 @@ public interface ExternalCredsConfigInterface {
   boolean getAuthorizationChangeEventsEnabled();
 
   Optional<String> getAuthorizationChangeEventTopicName();
+
+  @Nullable
+  KmsConfiguration getKmsConfiguration();
 }
