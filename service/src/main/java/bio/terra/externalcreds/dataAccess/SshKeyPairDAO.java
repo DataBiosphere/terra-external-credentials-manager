@@ -101,11 +101,12 @@ public class SshKeyPairDAO {
     }
     var namedParameters =
         new MapSqlParameterSource(
-            "refreshIntervalDays", (int) kmsConfig.getSshKeyPairRefreshDuration().toDays());
+            "refreshCutoffTimestamp",
+            Timestamp.from(Instant.now().minus(kmsConfig.getSshKeyPairRefreshDuration())));
     var query =
         "SELECT DISTINCT id, user_id, type, external_user_email, private_key, public_key, last_encrypted_timestamp"
             + " FROM ssh_key_pair"
-            + " WHERE last_encrypted_timestamp <= CURRENT_TIMESTAMP - INTERVAL '1 day' * :refreshIntervalDays"
+            + " WHERE last_encrypted_timestamp <= :refreshCutoffTimestamp"
             + " or last_encrypted_timestamp IS NULL";
 
     return jdbcTemplate.query(query, namedParameters, sshKeyPairRowMapper);

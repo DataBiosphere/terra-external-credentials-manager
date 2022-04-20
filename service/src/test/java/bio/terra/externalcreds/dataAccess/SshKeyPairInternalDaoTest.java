@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
 import static bio.terra.externalcreds.SshKeyPairTestUtils.createRandomGithubSshKey;
+import static bio.terra.externalcreds.SshKeyPairTestUtils.getDefaultFakeKmsConfiguration;
 import static bio.terra.externalcreds.SshKeyPairTestUtils.getFakeKmsConfiguration;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,17 +13,16 @@ import static org.mockito.Mockito.when;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.SshKeyPairTestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.config.KmsConfiguration;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import java.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -38,14 +38,6 @@ class SshKeyPairInternalDaoTest extends BaseTest {
   @MockBean KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
 
   private static final SshKeyPairType DEFAULT_KEY_TYPE = SshKeyPairType.GITHUB;
-
-  private static final KmsConfiguration KMS_CONFIGURATION =
-      KmsConfiguration.create()
-          .setKeyId("key-id")
-          .setKeyRingId("key-ring")
-          .setServiceGoogleProject("google-project")
-          .setKeyRingLocation("us-central1")
-          .setSshKeyPairRefreshDuration(Duration.ZERO);
 
   @Nested
   class UpsertKeyPair {
@@ -124,8 +116,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       setUpDefaultKmsEncryptDecryptHelperMock(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
-      when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(KMS_CONFIGURATION);
+      when(externalCredsConfig.getKmsConfiguration()).thenReturn(getDefaultFakeKmsConfiguration());
 
       Mockito.clearInvocations(kmsEncryptDecryptHelper);
 
@@ -145,7 +136,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var sshKey = createRandomGithubSshKey();
       var cypheredkey = "jfidosruewr1k=".getBytes(StandardCharsets.UTF_8);
       var cypheredKey = "jfidosruewr1k=".getBytes(StandardCharsets.UTF_8);
-      when(externalCredsConfig.getKmsConfiguration()).thenReturn(KMS_CONFIGURATION);
+      when(externalCredsConfig.getKmsConfiguration()).thenReturn(getDefaultFakeKmsConfiguration());
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
           .thenReturn(cypheredkey);
       when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredkey))
@@ -164,7 +155,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var privateKey =
           DataAccessUtils.singleResult(
               jdbcTemplate.query(
-      resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getBytes("private_key")));
+                  resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getBytes("private_key")));
       assertArrayEquals(cypheredKey, privateKey);
       assertPresent(loadedSshKeyOptional);
       verifySshKeyPair(sshKey, loadedSshKeyOptional.get());
@@ -212,28 +203,28 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var sshKey = createRandomGithubSshKey();
       var sshKey2 = createRandomGithubSshKey();
       var cypheredkey = "jfidosruewr1k=".getBytes(StandardCharsets.UTF_8);
-      var cypheredkey2 = "jfidosruewr1k=2".getBytes(StandardCharsets.UTF_8);
-      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
-          .thenReturn(cypheredkey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredkey))
-          .thenReturn(sshKey.getPrivateKey());
+      // kms disabled, sshkey is not encrypted
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
+      // kms enabled, sshkey2 is encrypted
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey2.getPrivateKey()))
           .thenReturn(cypheredkey);
-      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredkey2))
+      when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredkey))
           .thenReturn(sshKey2.getPrivateKey());
+      when(externalCredsConfig.getKmsConfiguration()).thenReturn(getDefaultFakeKmsConfiguration());
       sshKeyPairDAO.upsertSshKeyPair(sshKey2);
 
-      when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(KMS_CONFIGURATION);
+      // refresh duration is set to 0, both keys are qualified for re-encryption.
       var expiredSshKeys = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
       assertEquals(2, expiredSshKeys.size());
 
+      // refresh duration is set to 15 days, only the sshkey which is not encrypted is qualified
+      // for re-encryption.
       when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(getFakeKmsConfiguration(KMS_CONFIGURATION, Duration.ofDays(15)));
+          .thenReturn(getFakeKmsConfiguration(Duration.ofDays(15)));
       var expiredSshKeys2 = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
-      assertTrue(expiredSshKeys2.isEmpty());
+      verifySshKeyPair(sshKey, expiredSshKeys2.get(0));
     }
 
     @Test
@@ -242,8 +233,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       SshKeyPairTestUtils.cleanUp(jdbcTemplate);
 
       var cypheredkey = "jfidosruewr1k=".getBytes(StandardCharsets.UTF_8);
-      when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(KMS_CONFIGURATION);
+      when(externalCredsConfig.getKmsConfiguration()).thenReturn(getDefaultFakeKmsConfiguration());
       var sshKeyPair = createRandomGithubSshKey();
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKeyPair.getPrivateKey()))
           .thenReturn(cypheredkey);
@@ -269,9 +259,9 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var privateKey =
           DataAccessUtils.singleResult(
               jdbcTemplate.query(
-                  resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getString("private_key")));
+                  resourceSelectSql, namedParameters, (rs, rowNum) -> rs.getBytes("private_key")));
       // Verify that the key is re-encrypted.
-      assertEquals(cypheredKey2, privateKey);
+      assertArrayEquals(cypheredKey2, privateKey);
     }
   }
 

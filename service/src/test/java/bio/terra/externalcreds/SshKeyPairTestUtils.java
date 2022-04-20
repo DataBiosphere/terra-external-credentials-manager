@@ -79,10 +79,24 @@ public class SshKeyPairTestUtils {
     return generator.generateKeyPair();
   }
 
-  public static KmsConfiguration getFakeKmsConfiguration(KmsConfiguration kmsConfiguration, Duration sshKeyPairRefreshDuration) {
-    return kmsConfiguration.setSshKeyPairRefreshDuration(sshKeyPairRefreshDuration);
+  public static KmsConfiguration getDefaultFakeKmsConfiguration() {
+    return KmsConfiguration.create()
+        .setKeyId("key-id")
+        .setKeyRingId("key-ring")
+        .setServiceGoogleProject("google-project")
+        .setKeyRingLocation("us-central1")
+        .setSshKeyPairRefreshDuration(Duration.ZERO);
   }
 
+  public static KmsConfiguration getFakeKmsConfiguration(Duration sshKeyPairRefreshDuration) {
+    return getDefaultFakeKmsConfiguration().setSshKeyPairRefreshDuration(sshKeyPairRefreshDuration);
+  }
+
+  /**
+   *  Delete all the row in the ssh_key_pair data table. This is so that if there are other
+   *  un-encrypted or expired key in the database left over from other tests, they create noise
+   *  to the test as we will attempt to encrypt them as well.
+   */
   public static void cleanUp(NamedParameterJdbcTemplate jdbcTemplate) {
     // Delete all the row in the ssh_key_pair data table.
     var deleteAll = "DELETE FROM ssh_key_pair";
