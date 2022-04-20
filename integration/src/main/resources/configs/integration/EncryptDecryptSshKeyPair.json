@@ -8,9 +8,9 @@
     {
       "name": "EncryptDecryptSshKeyPair",
       "numberOfUserJourneyThreadsToRun": 1,
-      "userJourneyThreadPoolSize": 2,
-      "expectedTimeForEach": 5,
-      "expectedTimeForEachUnit": "SECONDS"
+      "userJourneyThreadPoolSize": 1,
+      "expectedTimeForEach": 10,
+      "expectedTimeForEachUnit": "MINUTES"
     }
   ],
   "testUserFiles": ["scarlett.json"]
