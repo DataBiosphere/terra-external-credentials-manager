@@ -93,9 +93,9 @@ public class SshKeyPairTestUtils {
   }
 
   /**
-   *  Delete all the row in the ssh_key_pair data table. This is so that if there are other
-   *  un-encrypted or expired key in the database left over from other tests, they create noise
-   *  to the test as we will attempt to encrypt them as well.
+   * Delete all the row in the ssh_key_pair data table. This is so that if there are other
+   * un-encrypted or expired key in the database left over from other tests, they create noise to
+   * the test as we will attempt to encrypt them as well.
    */
   public static void cleanUp(NamedParameterJdbcTemplate jdbcTemplate) {
     // Delete all the row in the ssh_key_pair data table.
