@@ -19,34 +19,32 @@ public class EncryptDecryptSshKeyPair extends TestScript {
     ApiClient apiClient = ClientTestUtils.getClientWithTestUserAuth(testUser, server);
     var sshKeyPairApi = new SshKeyPairApi(apiClient);
 
+    // generate a key for each ssh key pair type
     var githubSshKeyPair =
         sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.GITHUB);
+    var gitlabSshKeyPair =
+        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.GITLAB);
+    var azureSshKeyPair =
+        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.AZURE);
+
+    // get the key for each ssh key pair type
     var githubLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITHUB);
+    var gitlabLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITLAB);
+    var azureLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.AZURE);
 
     assertEquals(githubSshKeyPair, githubLoadedSshKeyPair);
+    assertEquals(gitlabSshKeyPair, gitlabLoadedSshKeyPair);
+    assertEquals(azureSshKeyPair, azureLoadedSshKeyPair);
 
     sshKeyPairApi.deleteSshKeyPair(SshKeyPairType.GITHUB);
-
     var notFoundException =
         assertThrows(
             HttpStatusCodeException.class,
             () -> sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITHUB));
     assertEquals(HttpStatus.NOT_FOUND, notFoundException.getStatusCode());
 
-    var gitlabSshKeyPair =
-        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.GITLAB);
-    var gitlabLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITLAB);
-
-    assertEquals(gitlabSshKeyPair, gitlabLoadedSshKeyPair);
-
+    // clean up
     sshKeyPairApi.deleteSshKeyPair(SshKeyPairType.GITLAB);
-
-    var azureSshKeyPair =
-        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.AZURE);
-    var azureLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.AZURE);
-
-    assertEquals(azureSshKeyPair, azureLoadedSshKeyPair);
-
     sshKeyPairApi.deleteSshKeyPair(SshKeyPairType.AZURE);
   }
 }
