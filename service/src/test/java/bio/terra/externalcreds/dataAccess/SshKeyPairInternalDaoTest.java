@@ -229,6 +229,18 @@ class SshKeyPairInternalDaoTest extends BaseTest {
     }
 
     @Test
+    void testKmsDisabledGetExpiringSshKey() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      // kms disabled, sshkey is not encrypted
+      setUpDefaultKmsEncryptDecryptHelperMock(sshKey.getPrivateKey());
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
+
+      var expiringSshkeys = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
+
+      assertTrue(expiringSshkeys.isEmpty());
+    }
+
+    @Test
     void testReEncryptKey() throws NoSuchAlgorithmException, IOException {
       // Delete all the row in the ssh_key_pair data table.
       SshKeyPairTestUtils.cleanUp(jdbcTemplate);

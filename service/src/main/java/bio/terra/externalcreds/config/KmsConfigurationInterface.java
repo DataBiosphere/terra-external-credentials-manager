@@ -14,8 +14,5 @@ public interface KmsConfigurationInterface {
 
   String getKeyRingLocation();
 
-  @Value.Default
-  default Duration getSshKeyPairRefreshDuration() {
-    return Duration.ofDays(90);
-  }
+  Duration getSshKeyPairRefreshDuration();
 }

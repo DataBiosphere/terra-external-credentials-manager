@@ -19,14 +19,12 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.springframework.stereotype.Service;
 
 @Service
-@Slf4j
 public class SshKeyPairService {
 
   private static final String DEFAULT_PUBLIC_KEY_BEGIN = "ssh-rsa";
@@ -95,12 +93,7 @@ public class SshKeyPairService {
     }
     var sshKeyPairs = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
     for (var sshKeyPair : sshKeyPairs) {
-      try {
-        sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
-      } catch (Exception e) {
-        log.info(
-            "Failed to re-encrypt the ssh private key , will try again at the next interval.", e);
-      }
+      sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
     }
   }
 
