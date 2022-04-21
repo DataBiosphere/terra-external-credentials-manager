@@ -1,6 +1,7 @@
 package bio.terra.externalcreds;
 
 import bio.terra.common.logging.LoggingInitializer;
+import bio.terra.common.logging.LoggingUtils;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SshKeyPairService;
 import java.util.Map;
@@ -59,7 +60,13 @@ public class ExternalCredsCronApplication {
   @Scheduled(fixedRateString = "#{${externalcreds.background-job-interval-mins} * 60 * 1000}")
   public void checkForExpiringSshKeyPair() {
     log.info("Beginning checkForExpiringSshKeyPair");
-    sshKeyPairService.reEncryptExpiringSshKeyPairs();
+    try {
+      sshKeyPairService.reEncryptExpiringSshKeyPairs();
+    } catch (Exception e) {
+      LoggingUtils.logAlert(
+          log, "Unexpected error during checkForExpiringSshKeyPair execution, see stacktrace below");
+      log.error("checkForExpiringSshKeyPair failed, stacktrace: ", e);
+    }
     log.info("Completed checkForExpiringSshKeyPair");
   }
 }

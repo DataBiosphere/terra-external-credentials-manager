@@ -55,6 +55,7 @@ spring:
           max-age: 0
           must-revalidate: true
         use-last-modified: false
+  task.scheduling.pool.size: 2
 
 terra.common:
   tracing:
