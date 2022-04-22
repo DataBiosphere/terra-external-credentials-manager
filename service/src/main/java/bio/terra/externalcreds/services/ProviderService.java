@@ -291,13 +291,17 @@ public class ProviderService {
         var linkedAccountWithRefreshedPassport = getRefreshedPassportsAndVisas(linkedAccount);
         linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
             linkedAccountWithRefreshedPassport);
-
+        var transactionClaim =
+            linkedAccountWithRefreshedPassport
+                .getPassport()
+                .flatMap(p -> jwtUtils.getJwtTransactionClaim(p.getJwt()));
         auditLogger.logEvent(
             new AuditLogEvent.Builder()
                 .auditLogEventType(AuditLogEventType.LinkRefreshed)
                 .providerName(linkedAccount.getProviderName())
                 .userId(linkedAccount.getUserId())
                 .externalUserId(linkedAccount.getExternalUserId())
+                .transactionClaim(transactionClaim)
                 .build());
 
       } catch (IllegalArgumentException iae) {

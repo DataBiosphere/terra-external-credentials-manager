@@ -34,6 +34,7 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig, JwtDecoderCache 
   public static final String VISA_TYPE_CLAIM = "type";
   public static final String JKU_HEADER = "jku";
   public static final String JWT_ID_CLAIM = "jti";
+  public static final String JWT_TRANSACTION_CLAIM = "txn";
 
   public LinkedAccountWithPassportAndVisas enrichAccountWithPassportAndVisas(
       LinkedAccount linkedAccount, OAuth2User userInfo) {
@@ -65,6 +66,11 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig, JwtDecoderCache 
         .passport(buildPassport(passportJwt))
         .visas(visas)
         .build();
+  }
+
+  public Optional<String> getJwtTransactionClaim(String jwtString) {
+    var txnClaim = decodeAndValidateJwt(jwtString).getClaims().get(JWT_TRANSACTION_CLAIM);
+    return Optional.ofNullable(txnClaim).map(Objects::toString);
   }
 
   private static GA4GHPassport buildPassport(Jwt passportJwt) {

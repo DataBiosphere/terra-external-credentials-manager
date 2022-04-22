@@ -25,6 +25,7 @@ import com.nimbusds.jose.JOSEException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -137,6 +138,15 @@ class PassportServiceTest extends BaseTest {
     }
 
     @Test
+    void testTransactionIdAppearsInAuditInfo() throws URISyntaxException {
+      var params = new ValidPassportTestParams();
+      var transactionClaim = Map.of("txn", "testTransactionId");
+      params.customJwtClaims = transactionClaim;
+      params.customAuditInfoExpected = transactionClaim;
+      runValidPassportTest(params);
+    }
+
+    @Test
     void testValidPassportWithoutUserThrows() {
       var params = new ValidPassportTestParams();
       params.persistLinkedAccount = false;
@@ -192,6 +202,8 @@ class PassportServiceTest extends BaseTest {
       String visaPhsId = "phs000123";
       String criterionPhsId = visaPhsId;
       boolean persistLinkedAccount = true;
+      Map<String, String> customJwtClaims = Collections.emptyMap();
+      Map<String, String> customAuditInfoExpected = Collections.emptyMap();
     }
 
     private void runValidPassportTest(ValidPassportTestParams params) throws URISyntaxException {
@@ -215,10 +227,11 @@ class PassportServiceTest extends BaseTest {
           createDbGapVisa(Set.of(notMatchingPermission), params.visaType);
 
       var visas = List.of(visaWithMatchingPermission);
-      var passport = jwtSigningTestUtils.createTestPassport(visas);
+      var passport = jwtSigningTestUtils.createTestPassport(visas, params.customJwtClaims);
 
       var otherVisas = List.of(visaWithoutMatchingPermission);
-      var otherPassport = jwtSigningTestUtils.createTestPassport(otherVisas);
+      var otherPassport =
+          jwtSigningTestUtils.createTestPassport(otherVisas, params.customJwtClaims);
 
       if (params.persistLinkedAccount) {
         linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
@@ -250,7 +263,8 @@ class PassportServiceTest extends BaseTest {
         assertEquals(
             new ValidatePassportResultInternal.Builder()
                 .valid(true)
-                .auditInfo(expectedAuditInfo(linkedAccount, passport))
+                .auditInfo(
+                    expectedAuditInfo(linkedAccount, passport, params.customAuditInfoExpected))
                 .matchedCriterion(criterion)
                 .build(),
             result);
@@ -265,14 +279,20 @@ class PassportServiceTest extends BaseTest {
     }
 
     private Map<String, String> expectedAuditInfo(
-        LinkedAccount linkedAccount, GA4GHPassport passport) {
-      return Map.of(
-          "passport_jti",
-          passport.getJwtId(),
-          "external_user_id",
-          linkedAccount.getExternalUserId(),
-          "internal_user_id",
-          linkedAccount.getUserId());
+        LinkedAccount linkedAccount,
+        GA4GHPassport passport,
+        Map<String, String> customInfoExpected) {
+      var expectedAuditInfo =
+          new HashMap<>(
+              Map.of(
+                  "passport_jti",
+                  passport.getJwtId(),
+                  "external_user_id",
+                  linkedAccount.getExternalUserId(),
+                  "internal_user_id",
+                  linkedAccount.getUserId()));
+      expectedAuditInfo.putAll(customInfoExpected);
+      return expectedAuditInfo;
     }
 
     private Map<String, String> expectedAuditInfo(LinkedAccount linkedAccount) {
