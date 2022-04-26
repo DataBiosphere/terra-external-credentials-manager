@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.dao.support.DataAccessUtils;
@@ -89,6 +91,24 @@ public class SshKeyPairDAO {
 
     return sshKeyPairInternal.withId(
         Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
+  }
+
+  /** Gets expired or un-encrypted ssh key pair. */
+  public List<SshKeyPairInternal> getExpiredOrUnEncryptedSshKeyPair(
+      Instant refreshCutoffTimestamp) {
+    var kmsConfig = externalCredsConfig.getKmsConfiguration();
+    if (kmsConfig == null) {
+      return Collections.emptyList();
+    }
+    var namedParameters =
+        new MapSqlParameterSource("refreshCutoffTimestamp", Timestamp.from(refreshCutoffTimestamp));
+    var query =
+        "SELECT DISTINCT id, user_id, type, external_user_email, private_key, public_key, last_encrypted_timestamp"
+            + " FROM ssh_key_pair"
+            + " WHERE last_encrypted_timestamp <= :refreshCutoffTimestamp"
+            + " or last_encrypted_timestamp IS NULL";
+
+    return jdbcTemplate.query(query, namedParameters, sshKeyPairRowMapper);
   }
 
   private class SshKeyPairRowMapper implements RowMapper<SshKeyPairInternal> {

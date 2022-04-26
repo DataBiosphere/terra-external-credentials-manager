@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.SshKeyPairTestUtils;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
@@ -82,7 +82,7 @@ class SshKeyApiControllerTest extends BaseTest {
         String.format("\"%s@gmail.com\"", RandomStringUtils.randomAlphabetic(5));
     mockSamUser(accessToken);
     var sshKeyPairType = "gitlab";
-    var rsaEncodedKeyPair = TestUtils.getRSAEncodedKeyPair(externalUserEmail);
+    var rsaEncodedKeyPair = SshKeyPairTestUtils.getRSAEncodedKeyPair(externalUserEmail);
     var sshKeyPair =
         new SshKeyPair()
             .privateKey(rsaEncodedKeyPair.getLeft())

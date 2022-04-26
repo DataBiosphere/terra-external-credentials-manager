@@ -4,6 +4,7 @@ import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.SshKeyPairDAO;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
@@ -18,6 +19,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Instant;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
@@ -29,9 +31,11 @@ public class SshKeyPairService {
   private static final String DEFAULT_PUBLIC_KEY_BEGIN = "ssh-rsa";
 
   private final SshKeyPairDAO sshKeyPairDAO;
+  private final ExternalCredsConfig config;
 
-  public SshKeyPairService(SshKeyPairDAO sshKeyPairDAO) {
+  public SshKeyPairService(SshKeyPairDAO sshKeyPairDAO, ExternalCredsConfig config) {
     this.sshKeyPairDAO = sshKeyPairDAO;
+    this.config = config;
   }
 
   @ReadTransaction
@@ -80,6 +84,20 @@ public class SshKeyPairService {
               .build());
     } catch (NoSuchAlgorithmException | IOException e) {
       throw new ExternalCredsException(e);
+    }
+  }
+
+  @WriteTransaction
+  public void reEncryptExpiringSshKeyPairs() {
+    var kmsConfig = config.getKmsConfiguration();
+    if (kmsConfig == null) {
+      return;
+    }
+    var sshKeyPairs =
+        sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(
+            Instant.now().minus(kmsConfig.getSshKeyPairRefreshDuration()));
+    for (var sshKeyPair : sshKeyPairs) {
+      sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
     }
   }
 

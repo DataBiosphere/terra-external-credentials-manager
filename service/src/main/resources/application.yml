@@ -14,6 +14,7 @@ externalcreds:
     key-ring-id: ${KMS_KEYRING_ID:ecm-dev-kms-symmetric-key-ring}
     key-id: ${KMS_KEY_ID:ecm-dev-kms-symmetric-key-for-ssh-key-encrypt-decrypt}
     key-ring-location: ${kMS_KEY_LOCATION:us-central1}
+    ssh-key-pair-refresh-duration: ${KMS_KEY_REFRESH_DURATION:90d}
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
@@ -54,6 +55,7 @@ spring:
           max-age: 0
           must-revalidate: true
         use-last-modified: false
+  task.scheduling.pool.size: 2
 
 terra.common:
   tracing:
