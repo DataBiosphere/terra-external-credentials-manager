@@ -2,7 +2,6 @@ package bio.terra.externalcreds.dataAccess;
 
 import static bio.terra.externalcreds.SshKeyPairTestUtils.createRandomGithubSshKey;
 import static bio.terra.externalcreds.SshKeyPairTestUtils.getDefaultFakeKmsConfiguration;
-import static bio.terra.externalcreds.SshKeyPairTestUtils.getFakeKmsConfiguration;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -19,6 +18,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -217,14 +217,13 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       sshKeyPairDAO.upsertSshKeyPair(sshKey2);
 
       // refresh duration is set to 0, both keys are qualified for re-encryption.
-      var expiredSshKeys = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
+      var expiredSshKeys = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(Instant.now());
       assertEquals(2, expiredSshKeys.size());
 
       // refresh duration is set to 15 days, only the sshkey which is not encrypted is qualified
       // for re-encryption.
-      when(externalCredsConfig.getKmsConfiguration())
-          .thenReturn(getFakeKmsConfiguration(Duration.ofDays(15)));
-      var expiredSshKeys2 = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
+      var expiredSshKeys2 =
+          sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(Instant.now().minus(Duration.ofDays(15)));
       verifySshKeyPair(sshKey, expiredSshKeys2.get(0));
     }
 
@@ -235,7 +234,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       setUpDefaultKmsEncryptDecryptHelperMock(sshKey.getPrivateKey());
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
 
-      var expiringSshkeys = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
+      var expiringSshkeys = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(Instant.now());
 
       assertTrue(expiringSshkeys.isEmpty());
     }
@@ -257,7 +256,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       var cypheredKey2 = "3mi2k31-&3".getBytes(StandardCharsets.UTF_8);
       when(kmsEncryptDecryptHelper.encryptSymmetric(sshKeyPair.getPrivateKey()))
           .thenReturn(cypheredKey2);
-      var expiredSshKeyPair = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
+      var expiredSshKeyPair = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(Instant.now());
       verifySshKeyPair(sshKeyPair, expiredSshKeyPair.get(0));
 
       // Re-encrypt the ssh key.

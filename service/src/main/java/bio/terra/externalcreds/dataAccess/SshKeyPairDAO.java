@@ -94,15 +94,14 @@ public class SshKeyPairDAO {
   }
 
   /** Gets expired or un-encrypted ssh key pair. */
-  public List<SshKeyPairInternal> getExpiredOrUnEncryptedSshKeyPair() {
+  public List<SshKeyPairInternal> getExpiredOrUnEncryptedSshKeyPair(
+      Instant refreshCutoffTimestamp) {
     var kmsConfig = externalCredsConfig.getKmsConfiguration();
     if (kmsConfig == null) {
       return Collections.emptyList();
     }
     var namedParameters =
-        new MapSqlParameterSource(
-            "refreshCutoffTimestamp",
-            Timestamp.from(Instant.now().minus(kmsConfig.getSshKeyPairRefreshDuration())));
+        new MapSqlParameterSource("refreshCutoffTimestamp", Timestamp.from(refreshCutoffTimestamp));
     var query =
         "SELECT DISTINCT id, user_id, type, external_user_email, private_key, public_key, last_encrypted_timestamp"
             + " FROM ssh_key_pair"

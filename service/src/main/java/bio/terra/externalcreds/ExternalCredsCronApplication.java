@@ -64,7 +64,8 @@ public class ExternalCredsCronApplication {
       sshKeyPairService.reEncryptExpiringSshKeyPairs();
     } catch (Exception e) {
       LoggingUtils.logAlert(
-          log, "Unexpected error during checkForExpiringSshKeyPair execution, see stacktrace below");
+          log,
+          "Unexpected error during checkForExpiringSshKeyPair execution, see stacktrace below");
       log.error("checkForExpiringSshKeyPair failed, stacktrace: ", e);
     }
     log.info("Completed checkForExpiringSshKeyPair");

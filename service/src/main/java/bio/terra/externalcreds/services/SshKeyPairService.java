@@ -19,6 +19,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Instant;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
@@ -88,10 +89,13 @@ public class SshKeyPairService {
 
   @WriteTransaction
   public void reEncryptExpiringSshKeyPairs() {
-    if (config.getKmsConfiguration() == null) {
+    var kmsConfig = config.getKmsConfiguration();
+    if (kmsConfig == null) {
       return;
     }
-    var sshKeyPairs = sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair();
+    var sshKeyPairs =
+        sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(
+            Instant.now().minus(kmsConfig.getSshKeyPairRefreshDuration()));
     for (var sshKeyPair : sshKeyPairs) {
       sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
     }
