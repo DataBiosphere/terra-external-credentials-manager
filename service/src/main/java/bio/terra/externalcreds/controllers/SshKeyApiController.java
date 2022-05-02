@@ -9,6 +9,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.SshKeyPairApi;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
+import bio.terra.externalcreds.services.KmsEncryptDecryptHelper;
 import bio.terra.externalcreds.services.SamService;
 import bio.terra.externalcreds.services.SshKeyPairService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,7 +24,8 @@ public record SshKeyApiController(
     SamService samService,
     SshKeyPairService sshKeyPairService,
     AuditLogger auditLogger,
-    ObjectMapper objectMapper)
+    ObjectMapper objectMapper,
+    KmsEncryptDecryptHelper kmsEncryptDecryptHelper)
     implements SshKeyPairApi {
 
   @Override
@@ -59,7 +61,8 @@ public record SshKeyApiController(
       var sshKeyPair = sshKeyPairService.getSshKeyPair(userId, type);
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.GetSshKeyPairSucceeded).build());
-      return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
+      return ResponseEntity.ok(
+          OpenApiConverters.Output.convert(sshKeyPair, kmsEncryptDecryptHelper));
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.GetSshKeyPairFailed).build());
@@ -78,7 +81,7 @@ public record SshKeyApiController(
             .clientIP(request.getRemoteAddr())
             .auditLogEventType(AuditLogEventType.PutSshKeyPair)
             .build());
-    return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
+    return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair, kmsEncryptDecryptHelper));
   }
 
   @Override
@@ -99,7 +102,8 @@ public record SshKeyApiController(
       var generatedKey = sshKeyPairService.generateSshKeyPair(userId, userEmail, type);
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.SshKeyPairCreated).build());
-      return ResponseEntity.ok(OpenApiConverters.Output.convert(generatedKey));
+      return ResponseEntity.ok(
+          OpenApiConverters.Output.convert(generatedKey, kmsEncryptDecryptHelper));
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder

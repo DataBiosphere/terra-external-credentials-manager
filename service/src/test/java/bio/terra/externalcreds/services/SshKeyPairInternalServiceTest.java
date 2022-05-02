@@ -17,7 +17,6 @@ import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.SshKeyPairTestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.dataAccess.KmsEncryptDecryptHelper;
 import bio.terra.externalcreds.dataAccess.SshKeyPairDAO;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
@@ -160,9 +159,10 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
               .privateKey(pair.getLeft())
               .publicKey(pair.getRight())
               .externalUserEmail(externalUser);
+      var newEncryptedKey = RandomStringUtils.random(10).getBytes(StandardCharsets.UTF_8);
       when(kmsEncryptDecryptHelper.encryptSymmetric(
               pair.getLeft().getBytes(StandardCharsets.UTF_8)))
-          .thenReturn(RandomStringUtils.random(10).getBytes(StandardCharsets.UTF_8));
+          .thenReturn(newEncryptedKey);
       var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, newSshKeyPair);
 
       var newSshKeyPairExpected =
@@ -170,7 +170,7 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
               .userId(userId)
               .type(SshKeyPairType.GITHUB)
               .externalUserEmail(externalUser)
-              .privateKey(pair.getLeft().getBytes(StandardCharsets.UTF_8))
+              .privateKey(newEncryptedKey)
               .publicKey(pair.getRight())
               .build();
       assertNotEquals(sshKey.withId(storedSshKey.getId()), storedSshKey);
@@ -286,6 +286,9 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
               .publicKey(pair.getRight())
               .externalUserEmail(externalUser);
       var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, sshKeyPair);
+
+      var generatedGitLabKeyPair =
+          sshKeyPairService.generateSshKeyPair(userId, externalUser, SshKeyPairType.GITLAB);
       clearInvocations(kmsEncryptDecryptHelper);
 
       when(config.getKmsConfiguration()).thenReturn(getFakeKmsConfiguration(Duration.ofDays(90)));
@@ -301,9 +304,13 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
           .thenReturn(cypheredKey);
       when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredKey))
           .thenReturn(pair.getLeft().getBytes(StandardCharsets.UTF_8));
+      when(kmsEncryptDecryptHelper.encryptSymmetric(generatedGitLabKeyPair.getPrivateKey()))
+          .thenReturn(RandomStringUtils.random(10).getBytes(StandardCharsets.UTF_8));
       sshKeyPairService.reEncryptExpiringSshKeyPairs();
       verify(kmsEncryptDecryptHelper, times(1))
           .encryptSymmetric(pair.getLeft().getBytes(StandardCharsets.UTF_8));
+      verify(kmsEncryptDecryptHelper, times(1))
+          .encryptSymmetric(generatedGitLabKeyPair.getPrivateKey());
 
       loadedSshKey = sshKeyPairService.getSshKeyPair(userId, keyType);
       verifySshKeyPair(storedSshKey, loadedSshKey);
@@ -325,6 +332,10 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
 
   private void verifySshKeyPair(
       SshKeyPairInternal expectedSshKey, SshKeyPairInternal actualSshKey) {
-    assertEquals(expectedSshKey.withId(actualSshKey.getId()), actualSshKey);
+    assertEquals(
+        expectedSshKey
+            .withId(actualSshKey.getId())
+            .withLastEncryptedTimestamp(actualSshKey.getLastEncryptedTimestamp()),
+        actualSshKey);
   }
 }
