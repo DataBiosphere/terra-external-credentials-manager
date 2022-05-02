@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.models.LinkedAccount;
+import io.opencensus.contrib.spring.aop.Traced;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +39,7 @@ public class LinkedAccountDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
+  @Traced
   public Optional<LinkedAccount> getLinkedAccount(String userId, String providerName) {
     var namedParameters =
         new MapSqlParameterSource()
@@ -50,6 +52,7 @@ public class LinkedAccountDAO {
             jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER)));
   }
 
+  @Traced
   public Optional<LinkedAccount> getLinkedAccount(int linkedAccountId) {
     var namedParameters = new MapSqlParameterSource().addValue("linkedAccountId", linkedAccountId);
     var query = "SELECT * FROM linked_account WHERE id = :linkedAccountId";
@@ -58,6 +61,7 @@ public class LinkedAccountDAO {
             jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER)));
   }
 
+  @Traced
   public List<LinkedAccount> getExpiringLinkedAccounts(Timestamp expirationCutoff) {
     var namedParameters = new MapSqlParameterSource("expirationCutoff", expirationCutoff);
     var query =
@@ -72,6 +76,7 @@ public class LinkedAccountDAO {
     return jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER);
   }
 
+  @Traced
   public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
     var query =
         "INSERT INTO linked_account (user_id, provider_name, refresh_token, expires, external_user_id, is_authenticated)"
@@ -105,6 +110,7 @@ public class LinkedAccountDAO {
    * @param providerName
    * @return boolean whether or not an account was found and deleted
    */
+  @Traced
   public boolean deleteLinkedAccountIfExists(String userId, String providerName) {
     var query =
         "DELETE FROM linked_account WHERE user_id = :userId and provider_name = :providerName";
