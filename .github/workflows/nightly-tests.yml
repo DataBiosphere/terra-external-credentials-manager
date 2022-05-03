@@ -89,8 +89,7 @@ jobs:
           SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
           PORT: ${{ env.PORT }}
         run: |
-          ls -l $GOOGLE_APPLICATION_CREDENTIALS
-          docker run -d --name $SQL_PROXY_NAME -v $GOOGLE_APPLICATION_CREDENTIALS:/config.json -p "$PORT:$PORT" ubuntu:latest ls -l /config.json
+          docker run -d --name $SQL_PROXY_NAME -v $GOOGLE_APPLICATION_CREDENTIALS:/config.json -p "$PORT:$PORT" gcr.io/cloudsql-docker/gce-proxy:latest /cloud_sql_proxy -instances=$HOST=tcp:0.0.0.0:$PORT -credential_file=/config.json
 
       - name: Wait for sql proxy to be ready
         env:
