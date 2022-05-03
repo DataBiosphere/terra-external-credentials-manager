@@ -9,7 +9,7 @@ on:
 
 jobs:
   performance-tests:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
 
     env:
       PORT: 5432
@@ -82,30 +82,36 @@ jobs:
           workload_identity_provider: 'projects/1038484894585/locations/global/workloadIdentityPools/github-wi-pool/providers/github-wi-provider'
           service_account: 'externalcreds-perf-sqlproxy@broad-dsde-perf.iam.gserviceaccount.com'
 
+      - name: Download cloud sql proxy
+        env:
+          VERSION: v1.30.0
+        run: |
+          wget "https://storage.googleapis.com/cloudsql-proxy/$VERSION/cloud_sql_proxy.linux.amd64" -O cloud_sql_proxy
+          chmod +x cloud_sql_proxy
+
       - name: Start sql proxy
         env:
           HOST: ${{ secrets.PERF_DB_HOST }}
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
           SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
           PORT: ${{ env.PORT }}
         run: |
-          docker run -d --name $SQL_PROXY_NAME -v $GOOGLE_APPLICATION_CREDENTIALS:/config.json -p "$PORT:$PORT" gcr.io/cloudsql-docker/gce-proxy:latest /cloud_sql_proxy -instances=$HOST=tcp:0.0.0.0:$PORT -credential_file=/config.json
+          ./cloud_sql_proxy -instances=$HOST=tcp:$PORT
 
-      - name: Wait for sql proxy to be ready
-        env:
-          SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
-        run: |
-          x=1
-          until docker logs $SQL_PROXY_NAME 2>&1 | grep -o "Ready for new connections"
-          do
-            if [ $(( x++ )) -ge 20 ]; then
-              echo "sql proxy not ready after 1 minute, logs follow"
-              docker logs $SQL_PROXY_NAME
-              exit 1
-            else
-              sleep 1
-            fi
-          done
+#      - name: Wait for sql proxy to be ready
+#        env:
+#          SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
+#        run: |
+#          x=1
+#          until docker logs $SQL_PROXY_NAME 2>&1 | grep -o "Ready for new connections"
+#          do
+#            if [ $(( x++ )) -ge 20 ]; then
+#              echo "sql proxy not ready after 1 minute, logs follow"
+#              docker logs $SQL_PROXY_NAME
+#              exit 1
+#            else
+#              sleep 1
+#            fi
+#          done
 
       - name: Repopulate perf database
         env:
