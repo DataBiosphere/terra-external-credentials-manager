@@ -11,6 +11,11 @@ jobs:
   performance-tests:
     runs-on: [self-hosted]
 
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
       - uses: actions/checkout@v2
 
