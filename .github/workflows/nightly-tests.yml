@@ -87,7 +87,7 @@ jobs:
       - name: Wait for sql proxy to be ready
         run: |
           x=1
-          until docker logs ${PROXY_NAME} 2>&1 | grep -o "Ready for new connections"
+          until docker logs sql-proxy 2>&1 | grep -o "Ready for new connections"
           do
             if [ $(( x++ )) -ge 60 ]; then
               echo "sql proxy not ready after 1 minute, logs follow"
