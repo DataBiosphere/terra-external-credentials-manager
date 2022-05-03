@@ -82,7 +82,7 @@ jobs:
         env:
           HOST: ${{ secrets.PERF_DB_HOST }}
         run: |
-          docker run -d --name sql-proxy -e GOOGLE_PROJECT=broad-dsde-perf -e CLOUDSQL_ZONE=us-central1 -e CLOUDSQL_INSTANCE=${HOST} -e PORT=5432 -p "5432:5432" broadinstitute/cloudsqlproxy:1.11_20191120
+          docker run -d --name sql-proxy -v $GOOGLE_APPLICATION_CREDENTIALS:/etc/sqlproxy-service-account.json -e GOOGLE_PROJECT=broad-dsde-perf -e CLOUDSQL_ZONE=us-central1 -e CLOUDSQL_INSTANCE=${HOST} -e PORT=5432 -p "5432:5432" broadinstitute/cloudsqlproxy:1.11_20191120
 
       - name: Wait for sql proxy to be ready
         run: |
