@@ -98,22 +98,6 @@ jobs:
           ./cloud_sql_proxy -instances=broad-dsde-perf:us-central1:$HOST=tcp:$PORT &
           sleep 10
 
-#      - name: Wait for sql proxy to be ready
-#        env:
-#          SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
-#        run: |
-#          x=1
-#          until docker logs $SQL_PROXY_NAME 2>&1 | grep -o "Ready for new connections"
-#          do
-#            if [ $(( x++ )) -ge 20 ]; then
-#              echo "sql proxy not ready after 1 minute, logs follow"
-#              docker logs $SQL_PROXY_NAME
-#              exit 1
-#            else
-#              sleep 1
-#            fi
-#          done
-
       - name: Repopulate perf database
         env:
           PGPASSWORD: ${{ secrets.PERF_DB_PASSWORD }}
@@ -128,7 +112,7 @@ jobs:
           SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
         if: always()
         continue-on-error: true
-        run: docker rm -f $SQL_PROXY_NAME
+        run: pkill -SIGTERM cloud_sql_proxy
 
       - name: Run the perf test suite
         run: ./gradlew --build-cache runTest --args="suites/FullPerf.json /tmp/test-results"
@@ -136,19 +120,19 @@ jobs:
       - name: Upload results to Google Bucket
         run: ./gradlew uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/test-results"
 
-#  notify-slack:
-#   needs: [ performance-tests ]
-#   runs-on: ubuntu-latest
-#
-#   if: failure()
-#
-#   steps:
-#     - name: Notify slack on failure
-#       uses: 8398a7/action-slack@v3
-#       env:
-#         SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
-#       with:
-#         status: failure
-#         author_name: Test Runner
-#         fields: workflow,message
-#         text: 'Nightly perf tests failed :sadpanda:'
+  notify-slack:
+   needs: [ performance-tests ]
+   runs-on: ubuntu-latest
+
+   if: failure()
+
+   steps:
+     - name: Notify slack on failure
+       uses: 8398a7/action-slack@v3
+       env:
+         SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
+       with:
+         status: failure
+         author_name: Test Runner
+         fields: workflow,message
+         text: 'Nightly perf tests failed :sadpanda:'
