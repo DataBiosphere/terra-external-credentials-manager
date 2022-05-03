@@ -13,7 +13,6 @@ jobs:
 
     env:
       PORT: 5432
-      SQL_PROXY_NAME: sql-proxy
 
     # Add "id-token" with the intended permissions.
     permissions:
@@ -92,10 +91,10 @@ jobs:
       - name: Start sql proxy
         env:
           HOST: ${{ secrets.PERF_DB_HOST }}
-          SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
           PORT: ${{ env.PORT }}
         run: |
           ./cloud_sql_proxy -instances=broad-dsde-perf:us-central1:$HOST=tcp:$PORT &
+          # give sql proxy a few secs to be ready for connections
           sleep 10
 
       - name: Repopulate perf database
@@ -108,8 +107,6 @@ jobs:
           psql "host=127.0.0.1 port=$PORT sslmode=disable dbname=${DB_NAME} user=${DB_USER}" < "integration/src/main/resources/datageneration/regenerate_perf_data.sql"
 
       - name: Stop sql proxy
-        env:
-          SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
         if: always()
         continue-on-error: true
         run: pkill -SIGTERM cloud_sql_proxy
