@@ -82,14 +82,14 @@ jobs:
         env:
           HOST: ${{ secrets.PERF_DB_HOST }}
         run: |
-          docker run -d --name sql-proxy -v $GOOGLE_APPLICATION_CREDENTIALS:/config -p "5432:5432" gcr.io/cloudsql-docker/gce-proxy:latest /cloud_sql_proxy -instances="${HOST}"=tcp:0.0.0.0:"${5432}" -credential_file=/config
+          docker run -d --name sql-proxy -v $GOOGLE_APPLICATION_CREDENTIALS:/config:r -p "5432:5432" gcr.io/cloudsql-docker/gce-proxy:latest /cloud_sql_proxy -instances=${HOST}=tcp:0.0.0.0:5432 -credential_file=/config
 
       - name: Wait for sql proxy to be ready
         run: |
           x=1
           until docker logs sql-proxy 2>&1 | grep -o "Ready for new connections"
           do
-            if [ $(( x++ )) -ge 60 ]; then
+            if [ $(( x++ )) -ge 20 ]; then
               echo "sql proxy not ready after 1 minute, logs follow"
               docker logs sql-proxy
               exit 1
