@@ -95,7 +95,7 @@ jobs:
           SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
           PORT: ${{ env.PORT }}
         run: |
-          ./cloud_sql_proxy -instances=$HOST=tcp:$PORT
+          ./cloud_sql_proxy -instances=broad-dsde-perf:us-central1:$HOST=tcp:$PORT
 
 #      - name: Wait for sql proxy to be ready
 #        env:
