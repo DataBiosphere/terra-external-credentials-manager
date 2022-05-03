@@ -11,6 +11,10 @@ jobs:
   performance-tests:
     runs-on: [self-hosted]
 
+    env:
+      PORT: 5432
+      SQL_PROXY_NAME: sql-proxy
+
     # Add "id-token" with the intended permissions.
     permissions:
       contents: 'read'
@@ -81,17 +85,25 @@ jobs:
       - name: Start sql proxy
         env:
           HOST: ${{ secrets.PERF_DB_HOST }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+          SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
+          PORT: ${{ env.PORT }}
         run: |
-          echo docker run -d --name sql-proxy -v ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}:/config -p "5432:5432" gcr.io/cloudsql-docker/gce-proxy:latest /cloud_sql_proxy -instances=${HOST}=tcp:0.0.0.0:5432 -credential_file=/config
+          ls -l $GOOGLE_APPLICATION_CREDENTIALS
+          echo docker run -d --name $SQL_PROXY_NAME -v $GOOGLE_APPLICATION_CREDENTIALS:/config -p "$PORT:$PORT" gcr.io/cloudsql-docker/gce-proxy:latest /cloud_sql_proxy -instances=$HOST=tcp:0.0.0.0:$PORT -credential_file=/config
+          docker run -d --name $SQL_PROXY_NAME -v $GOOGLE_APPLICATION_CREDENTIALS:/config -p "$PORT:$PORT" gcr.io/cloudsql-docker/gce-proxy:latest ls -l /config
+          docker run -d --name $SQL_PROXY_NAME -v $GOOGLE_APPLICATION_CREDENTIALS:/config -p "$PORT:$PORT" gcr.io/cloudsql-docker/gce-proxy:latest /cloud_sql_proxy -instances=$HOST=tcp:0.0.0.0:$PORT -credential_file=/config
 
       - name: Wait for sql proxy to be ready
+        env:
+          SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
         run: |
           x=1
-          until docker logs sql-proxy 2>&1 | grep -o "Ready for new connections"
+          until docker logs $SQL_PROXY_NAME 2>&1 | grep -o "Ready for new connections"
           do
             if [ $(( x++ )) -ge 20 ]; then
               echo "sql proxy not ready after 1 minute, logs follow"
-              docker logs sql-proxy
+              docker logs $SQL_PROXY_NAME
               exit 1
             else
               sleep 1
@@ -103,13 +115,16 @@ jobs:
           PGPASSWORD: ${{ secrets.PERF_DB_PASSWORD }}
           DB_USER: ${{ secrets.PERF_DB_USER }}
           DB_NAME: ${{ secrets.PERF_DB_NAME }}
+          PORT: ${{ env.PORT }}
         run: |
-          psql "host=127.0.0.1 port=5432 sslmode=disable dbname=${DB_NAME} user=${DB_USER}" < "integration/src/main/resources/datageneration/regenerate_perf_data.sql"
+          psql "host=127.0.0.1 port=$PORT sslmode=disable dbname=${DB_NAME} user=${DB_USER}" < "integration/src/main/resources/datageneration/regenerate_perf_data.sql"
 
       - name: Stop sql proxy
+        env:
+          SQL_PROXY_NAME: ${{ env.SQL_PROXY_NAME }}
         if: always()
         continue-on-error: true
-        run: docker rm -f sql-proxy
+        run: docker rm -f $SQL_PROXY_NAME
 
       - name: Run the perf test suite
         run: ./gradlew --build-cache runTest --args="suites/FullPerf.json /tmp/test-results"
