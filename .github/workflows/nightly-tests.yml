@@ -73,13 +73,19 @@ jobs:
         env:
           HOST: ${{ secrets.PERF_DB_HOST }}
         run: |
-          docker run --rm -d --name sql-proxy -e GOOGLE_PROJECT=broad-dsde-perf -e CLOUDSQL_ZONE=us-central1 -e CLOUDSQL_INSTANCE=${HOST} "-e PORT=5432" "-p 5432:5432"
+          docker run --rm -d --name sql-proxy -e GOOGLE_PROJECT=broad-dsde-perf -e CLOUDSQL_ZONE=us-central1 -e CLOUDSQL_INSTANCE=${HOST} "-e PORT=5432" "-p 5432:5432" broadinstitute/cloudsqlproxy:1.11_20191120
 
       - name: Wait for sql proxy to be ready
         run: |
+          x=1
           until docker logs ${PROXY_NAME} 2>&1 | grep -o "Ready for new connections"
           do
-            sleep 1
+            if [ $(( x++ )) -ge 60 ]; then
+              echo "sql proxy not ready after 1 minute"
+              exit 1
+            else
+              sleep 1
+            fi
           done
 
       - name: Repopulate perf database
@@ -101,19 +107,19 @@ jobs:
       - name: Upload results to Google Bucket
         run: ./gradlew uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/test-results"
 
-  notify-slack:
-   needs: [ performance-tests ]
-   runs-on: ubuntu-latest
-
-   if: failure()
-
-   steps:
-     - name: Notify slack on failure
-       uses: 8398a7/action-slack@v3
-       env:
-         SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
-       with:
-         status: failure
-         author_name: Test Runner
-         fields: workflow,message
-         text: 'Nightly perf tests failed :sadpanda:'
+#  notify-slack:
+#   needs: [ performance-tests ]
+#   runs-on: ubuntu-latest
+#
+#   if: failure()
+#
+#   steps:
+#     - name: Notify slack on failure
+#       uses: 8398a7/action-slack@v3
+#       env:
+#         SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
+#       with:
+#         status: failure
+#         author_name: Test Runner
+#         fields: workflow,message
+#         text: 'Nightly perf tests failed :sadpanda:'
