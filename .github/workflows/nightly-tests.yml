@@ -82,7 +82,7 @@ jobs:
         env:
           HOST: ${{ secrets.PERF_DB_HOST }}
         run: |
-          docker run -d --name sql-proxy -v $GOOGLE_APPLICATION_CREDENTIALS:/config -p "5432:5432" gcr.io/cloudsql-docker/gce-proxy:latest /cloud_sql_proxy -instances="${HOST}"=tcp:0.0.0.0:"${5432}" -credential_file=/config)
+          docker run -d --name sql-proxy -v $GOOGLE_APPLICATION_CREDENTIALS:/config -p "5432:5432" gcr.io/cloudsql-docker/gce-proxy:latest /cloud_sql_proxy -instances="${HOST}"=tcp:0.0.0.0:"${5432}" -credential_file=/config
 
       - name: Wait for sql proxy to be ready
         run: |
