@@ -9,7 +9,7 @@ on:
 
 jobs:
   performance-tests:
-    runs-on: [self-hosted]
+    runs-on: ubuntu-latest
 
     env:
       PORT: 5432
