@@ -69,7 +69,7 @@ jobs:
         env:
           HOST: ${{ secrets.PERF_DB_HOST }}
         run: |
-          docker run --rm -d --name sql-proxy -e GOOGLE_PROJECT=broad-dsde-perf -e CLOUDSQL_ZONE=us-central1 -e CLOUDSQL_INSTANCE=${HOST} "-e PORT=5434" "-p 5434:5434" broadinstitute/cloudsqlproxy:1.11_20191120
+          docker run --rm -d --name sql-proxy -e GOOGLE_PROJECT=broad-dsde-perf -e CLOUDSQL_ZONE=us-central1 -e CLOUDSQL_INSTANCE=${HOST} -e PORT=5432 -p "5432:5432" broadinstitute/cloudsqlproxy:1.11_20191120
 
       - name: Wait for sql proxy to be ready
         run: |
@@ -90,7 +90,7 @@ jobs:
           DB_USER: ${{ secrets.PERF_DB_USER }}
           DB_NAME: ${{ secrets.PERF_DB_NAME }}
         run: |
-          psql "host=127.0.0.1 port=5434 sslmode=disable dbname=${DB_NAME} user=${DB_USER}" < "integration/src/main/resources/datageneration/regenerate_perf_data.sql"
+          psql "host=127.0.0.1 port=5432 sslmode=disable dbname=${DB_NAME} user=${DB_USER}" < "integration/src/main/resources/datageneration/regenerate_perf_data.sql"
 
       - name: Stop sql proxy
         if: always()
