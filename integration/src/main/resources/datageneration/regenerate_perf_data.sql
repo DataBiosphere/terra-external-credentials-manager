@@ -1,5 +1,5 @@
 -- Generate a random string of the correct length (to stand in for the JWTs)
-CREATE FUNCTION generate_random_string(approximate_length int) RETURNS text 
+CREATE FUNCTION generate_random_string(approximate_length int) RETURNS text
 LANGUAGE SQL AS $$
   SELECT string_agg (md5(random()::text), '') -- generate random hashes (of 32 chars each)
   FROM generate_series(1, approximate_length/32) -- repeat to generate the needed string length
@@ -23,19 +23,20 @@ AS $$
     true
   );
   -- Insert a corresponding passport and visa
-  INSERT INTO ga4gh_passport (id, linked_account_id, jwt, expires)
+  INSERT INTO ga4gh_passport (id, linked_account_id, jwt, expires, jwt_id)
   VALUES (
     nextval('ga4gh_passport_id_seq'),
     currval('linked_account_id_seq'),
-    generate_random_string(5000), 
-    current_timestamp + interval '3000 year'
+    generate_random_string(5000),
+    current_timestamp + interval '3000 year',
+    generate_random_string(50)
   );
 
   INSERT INTO ga4gh_visa (passport_id, visa_type, jwt, expires, issuer, token_type, last_validated)
   VALUES (
     currval('ga4gh_passport_id_seq'),
     'TestVisaType',
-    generate_random_string(2500), 
+    generate_random_string(2500),
     current_timestamp + interval '3000 year',
     'https://someissuer.com',
     'access_token',

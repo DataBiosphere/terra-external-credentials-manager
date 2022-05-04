@@ -11,8 +11,27 @@ jobs:
   performance-tests:
     runs-on: [self-hosted]
 
+    env:
+      PORT: 5432
+
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
       - uses: actions/checkout@v2
+
+      - name: Verify perf version matches dev
+        run: |
+          devVersion=$(curl https://externalcreds.dsde-dev.broadinstitute.org/version)
+          perfVersion=$(curl https://externalcreds.dsde-perf.broadinstitute.org/version)
+          if [ $devVersion != $perfVersion ]; then
+            echo "dev version: $devVersion"
+            echo "perf version: $perfVersion"
+            echo 'Perf and dev versions do not match, are you testing what you think you are testing?'
+            exit 1
+          fi
 
       - name: Get version files from terra-helmfile
         env:
@@ -52,6 +71,56 @@ jobs:
           echo "$DEV_FIRECLOUD_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/user-delegated-sa.json"
           echo "$PERF_TESTRUNNER_ACCOUNT_B64" | base64 -d >"./integration/src/main/resources/rendered/testrunner-sa.json"
           echo "$DEV_APP_SERVICE_ACCOUNT_B64" | base64 -d >"./service/src/main/resources/rendered/ecm-sa.json"
+
+      # Install postgres:
+      # - Create the file repository configuration.
+      # - Import the repository signing key.
+      # - Update the package lists.
+      # - Install the latest version of PostgreSQL. If you want a specific version, use 'postgresql-12' or similar instead of 'postgresql':
+      - name: Install the latest postgres
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          sudo sh -c 'curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - '
+          sudo apt-get update
+          sudo apt-get -y install postgresql
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          # Centralized in dsp-tools-k8s; ask in #dsp-devops-champions for help troubleshooting
+          workload_identity_provider: 'projects/1038484894585/locations/global/workloadIdentityPools/github-wi-pool/providers/github-wi-provider'
+          service_account: 'externalcreds-perf-sqlproxy@broad-dsde-perf.iam.gserviceaccount.com'
+
+      - name: Download cloud sql proxy
+        env:
+          VERSION: v1.30.0
+        run: |
+          wget "https://storage.googleapis.com/cloudsql-proxy/$VERSION/cloud_sql_proxy.linux.amd64" -O cloud_sql_proxy
+          chmod +x cloud_sql_proxy
+
+      - name: Start sql proxy
+        env:
+          HOST: ${{ secrets.PERF_DB_HOST }}
+          PORT: ${{ env.PORT }}
+        run: |
+          ./cloud_sql_proxy -instances=broad-dsde-perf:us-central1:$HOST=tcp:$PORT &
+          # give sql proxy a few secs to be ready for connections
+          sleep 10
+
+      - name: Repopulate perf database
+        env:
+          PGPASSWORD: ${{ secrets.PERF_DB_PASSWORD }}
+          DB_USER: ${{ secrets.PERF_DB_USER }}
+          DB_NAME: ${{ secrets.PERF_DB_NAME }}
+          PORT: ${{ env.PORT }}
+        run: |
+          psql "host=127.0.0.1 port=$PORT sslmode=disable dbname=${DB_NAME} user=${DB_USER}" < "integration/src/main/resources/datageneration/regenerate_perf_data.sql"
+
+      - name: Stop sql proxy
+        if: always()
+        continue-on-error: true
+        run: pkill -SIGTERM cloud_sql_proxy
 
       - name: Run the perf test suite
         run: ./gradlew --build-cache runTest --args="suites/FullPerf.json /tmp/test-results"
