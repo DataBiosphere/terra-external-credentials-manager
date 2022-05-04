@@ -31,7 +31,7 @@ jobs:
             echo "perf version: perfVersion"
             echo 'Perf and dev versions do not match, are you testing what you think you are testing?'
             exit 1
-         fi
+          fi
 
       - name: Get version files from terra-helmfile
         env:
