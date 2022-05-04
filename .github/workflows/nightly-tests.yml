@@ -22,6 +22,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Verify perf version matches dev
+        run: |
+          devVersion=$(curl https://externalcreds.dsde-dev.broadinstitute.org/version)
+          perfVersion=$(curl https://externalcreds.dsde-perf.broadinstitute.org/version)
+          if [ devVersion != perfVersion ]; then
+            echo "dev version: devVersion"
+            echo "perf version: perfVersion"
+            echo 'Perf and dev versions do not match, are you testing what you think you are testing?'
+            exit 1
+         fi
+
       - name: Get version files from terra-helmfile
         env:
           BROADBOT_TOKEN: ${{ secrets.BROADBOT_TOKEN }}
