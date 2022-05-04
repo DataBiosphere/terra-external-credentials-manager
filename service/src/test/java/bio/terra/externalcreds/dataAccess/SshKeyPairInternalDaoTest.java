@@ -147,7 +147,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       SshKeyPairTestUtils.cleanUp(jdbcTemplate);
 
       var sshKey =
-          createRandomGithubSshKey().withLastEncryptedTimestamp(Timestamp.from(Instant.now()));
+          createRandomGithubSshKey().withLastEncryptedTimestamp(Instant.now());
       var sshKey2 = createRandomGithubSshKey();
       // kms disabled, sshkey is not encrypted
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
