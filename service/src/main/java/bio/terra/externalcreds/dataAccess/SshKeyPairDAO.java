@@ -5,7 +5,6 @@ import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
-import bio.terra.externalcreds.services.KmsEncryptDecryptHelper;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collections;
@@ -31,16 +30,14 @@ public class SshKeyPairDAO {
               .privateKey(rs.getBytes("private_key"))
               .publicKey(rs.getString("public_key"))
               .lastEncryptedTimestamp(
-                  Optional.ofNullable(rs.getTimestamp("last_encrypted_timestamp")))
+                  Optional.ofNullable(rs.getTimestamp("last_encrypted_timestamp").toInstant()))
               .build();
 
   private final NamedParameterJdbcTemplate jdbcTemplate;
   private final ExternalCredsConfig externalCredsConfig;
 
   public SshKeyPairDAO(
-      NamedParameterJdbcTemplate jdbcTemplate,
-      ExternalCredsConfig externalCredsConfig,
-      KmsEncryptDecryptHelper kmsEncryptDecryptHelper) {
+      NamedParameterJdbcTemplate jdbcTemplate, ExternalCredsConfig externalCredsConfig) {
     this.jdbcTemplate = jdbcTemplate;
     this.externalCredsConfig = externalCredsConfig;
   }
@@ -92,7 +89,8 @@ public class SshKeyPairDAO {
     if (sshKeyPairInternal.getLastEncryptedTimestamp().isPresent()) {
       // Record the timestamp when the key is encrypted.
       namedParameters.addValue(
-          "lastEncryptedTimestamp", sshKeyPairInternal.getLastEncryptedTimestamp().get());
+          "lastEncryptedTimestamp",
+          Timestamp.from(sshKeyPairInternal.getLastEncryptedTimestamp().get()));
     }
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING

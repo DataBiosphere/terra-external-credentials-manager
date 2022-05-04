@@ -1,7 +1,7 @@
 package bio.terra.externalcreds.models;
 
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -19,7 +19,7 @@ public interface SshKeyPairInternal extends WithSshKeyPairInternal {
 
   String getPublicKey();
 
-  Optional<Timestamp> getLastEncryptedTimestamp();
+  Optional<Instant> getLastEncryptedTimestamp();
 
   class Builder extends ImmutableSshKeyPairInternal.Builder {}
 }

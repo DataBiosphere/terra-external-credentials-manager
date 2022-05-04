@@ -17,7 +17,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Optional;
 import org.apache.commons.codec.binary.Base64;
@@ -68,7 +67,7 @@ public class SshKeyPairService {
             .lastEncryptedTimestamp(
                 config.getKmsConfiguration() == null
                     ? Optional.empty()
-                    : Optional.ofNullable(Timestamp.from(Instant.now())))
+                    : Optional.ofNullable(Instant.now()))
             .publicKey(sshKeyPair.getPublicKey())
             .externalUserEmail(sshKeyPair.getExternalUserEmail())
             .userId(userId)
@@ -92,7 +91,7 @@ public class SshKeyPairService {
               .lastEncryptedTimestamp(
                   config.getKmsConfiguration() == null
                       ? Optional.empty()
-                      : Optional.ofNullable(Timestamp.from(Instant.now())))
+                      : Optional.of(Instant.now()))
               .publicKey(
                   encodeRSAPublicKey((RSAPublicKey) rsaKeyPair.getPublic(), externalUserEmail))
               .externalUserEmail(externalUserEmail)
@@ -122,9 +121,7 @@ public class SshKeyPairService {
         encryptedKey = encryptDecryptHelper.encryptSymmetric(sshKeyPair.getPrivateKey());
       }
       sshKeyPairDAO.upsertSshKeyPair(
-          sshKeyPair
-              .withPrivateKey(encryptedKey)
-              .withLastEncryptedTimestamp(Timestamp.from(Instant.now())));
+          sshKeyPair.withPrivateKey(encryptedKey).withLastEncryptedTimestamp(Instant.now()));
       sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
     }
   }
