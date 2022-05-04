@@ -30,7 +30,8 @@ public class SshKeyPairDAO {
               .privateKey(rs.getBytes("private_key"))
               .publicKey(rs.getString("public_key"))
               .lastEncryptedTimestamp(
-                  Optional.ofNullable(rs.getTimestamp("last_encrypted_timestamp").toInstant()))
+                  Optional.ofNullable(rs.getTimestamp("last_encrypted_timestamp"))
+                      .map(timestamp -> timestamp.toInstant()))
               .build();
 
   private final NamedParameterJdbcTemplate jdbcTemplate;

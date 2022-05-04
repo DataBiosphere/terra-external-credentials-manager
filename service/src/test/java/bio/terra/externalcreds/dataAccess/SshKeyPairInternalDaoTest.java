@@ -14,7 +14,6 @@ import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -146,8 +145,7 @@ class SshKeyPairInternalDaoTest extends BaseTest {
       // Delete all the row in the ssh_key_pair data table.
       SshKeyPairTestUtils.cleanUp(jdbcTemplate);
 
-      var sshKey =
-          createRandomGithubSshKey().withLastEncryptedTimestamp(Instant.now());
+      var sshKey = createRandomGithubSshKey().withLastEncryptedTimestamp(Instant.now());
       var sshKey2 = createRandomGithubSshKey();
       // kms disabled, sshkey is not encrypted
       sshKeyPairDAO.upsertSshKeyPair(sshKey);
