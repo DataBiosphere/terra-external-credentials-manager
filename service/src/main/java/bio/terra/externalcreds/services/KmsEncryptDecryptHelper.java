@@ -1,4 +1,4 @@
-package bio.terra.externalcreds.dataAccess;
+package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;

@@ -17,7 +17,6 @@ import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.SshKeyPairTestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.dataAccess.KmsEncryptDecryptHelper;
 import bio.terra.externalcreds.dataAccess.SshKeyPairDAO;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
@@ -26,6 +25,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Nested;
@@ -40,21 +40,65 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
   @Autowired SshKeyPairService sshKeyPairService;
   @Autowired SshKeyPairDAO sshKeyPairDAO;
 
-  @Test
-  void getSshKeyPair() throws NoSuchAlgorithmException, IOException {
-    var sshKey = createRandomGithubSshKey();
-    sshKeyPairDAO.upsertSshKeyPair(sshKey);
+  @Nested
+  @TestComponent
+  class getSshKeyPair {
 
-    var loadedSshKey = sshKeyPairService.getSshKeyPair(sshKey.getUserId(), SshKeyPairType.GITHUB);
+    @Autowired SshKeyPairService sshKeyPairService;
+    @Autowired SshKeyPairDAO sshKeyPairDAO;
+    @Autowired NamedParameterJdbcTemplate jdbcTemplate;
 
-    verifySshKeyPair(sshKey, loadedSshKey);
-  }
+    @MockBean ExternalCredsConfig config;
+    @MockBean KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
 
-  @Test
-  void getSshKeyPairKeyNotFound() {
-    assertThrows(
-        NotFoundException.class,
-        () -> sshKeyPairService.getSshKeyPair(RandomStringUtils.random(5), SshKeyPairType.GITHUB));
+    @Test
+    void getSshKeyPair() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
+
+      var loadedSshKey = sshKeyPairService.getSshKeyPair(sshKey.getUserId(), SshKeyPairType.GITHUB);
+
+      verifySshKeyPair(sshKey, loadedSshKey);
+    }
+
+    @Test
+    void getSshKeyPairPreviouslyUnencrypted() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      sshKeyPairDAO.upsertSshKeyPair(sshKey);
+
+      when(config.getKmsConfiguration()).thenReturn(getFakeKmsConfiguration(Duration.ofDays(90)));
+      var encryptedKey = RandomStringUtils.random(10).getBytes(StandardCharsets.UTF_8);
+      when(kmsEncryptDecryptHelper.encryptSymmetric(sshKey.getPrivateKey()))
+          .thenReturn(encryptedKey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(encryptedKey))
+          .thenReturn(sshKey.getPrivateKey());
+      var loadedSshKey = sshKeyPairService.getSshKeyPair(sshKey.getUserId(), SshKeyPairType.GITHUB);
+
+      verifySshKeyPair(sshKey, loadedSshKey);
+    }
+
+    @Test
+    void getEncryptedKeyPair() throws NoSuchAlgorithmException, IOException {
+      var sshKey = createRandomGithubSshKey();
+      when(config.getKmsConfiguration()).thenReturn(getFakeKmsConfiguration(Duration.ofDays(90)));
+      var encryptedKey = RandomStringUtils.random(10).getBytes(StandardCharsets.UTF_8);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(encryptedKey))
+          .thenReturn(sshKey.getPrivateKey());
+      sshKeyPairDAO.upsertSshKeyPair(
+          sshKey.withPrivateKey(encryptedKey).withLastEncryptedTimestamp(Instant.now()));
+
+      var loadedSshKeyPair = sshKeyPairService.getSshKeyPair(sshKey.getUserId(), sshKey.getType());
+      verifySshKeyPair(sshKey, loadedSshKeyPair);
+      verify(kmsEncryptDecryptHelper, times(1)).decryptSymmetric(encryptedKey);
+    }
+
+    @Test
+    void getSshKeyPairKeyNotFound() {
+      assertThrows(
+          NotFoundException.class,
+          () ->
+              sshKeyPairService.getSshKeyPair(RandomStringUtils.random(5), SshKeyPairType.GITHUB));
+    }
   }
 
   @Test
@@ -160,9 +204,12 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
               .privateKey(pair.getLeft())
               .publicKey(pair.getRight())
               .externalUserEmail(externalUser);
+      var newEncryptedKey = RandomStringUtils.random(10).getBytes(StandardCharsets.UTF_8);
       when(kmsEncryptDecryptHelper.encryptSymmetric(
               pair.getLeft().getBytes(StandardCharsets.UTF_8)))
-          .thenReturn(RandomStringUtils.random(10).getBytes(StandardCharsets.UTF_8));
+          .thenReturn(newEncryptedKey);
+      when(kmsEncryptDecryptHelper.decryptSymmetric(newEncryptedKey))
+          .thenReturn(pair.getLeft().getBytes(StandardCharsets.UTF_8));
       var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, newSshKeyPair);
 
       var newSshKeyPairExpected =
@@ -177,6 +224,7 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
       verifySshKeyPair(newSshKeyPairExpected, storedSshKey);
       verify(kmsEncryptDecryptHelper, times(1))
           .encryptSymmetric(pair.getLeft().getBytes(StandardCharsets.UTF_8));
+      verify(kmsEncryptDecryptHelper, times(1)).decryptSymmetric(newEncryptedKey);
     }
   }
 
@@ -286,26 +334,28 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
               .publicKey(pair.getRight())
               .externalUserEmail(externalUser);
       var storedSshKey = sshKeyPairService.putSshKeyPair(userId, keyType, sshKeyPair);
+
+      var generatedGitLabKeyPair =
+          sshKeyPairService.generateSshKeyPair(userId, externalUser, SshKeyPairType.GITLAB);
       clearInvocations(kmsEncryptDecryptHelper);
 
       when(config.getKmsConfiguration()).thenReturn(getFakeKmsConfiguration(Duration.ofDays(90)));
-      // Even when KMS config is enabled, if the key is not encrypted, we don't attempt to decrypt
-      // it when fetching it from the database. Thus we don't need to mock `kmsEncryptDecryptHelper`
-      // here.
-      var loadedSshKey = sshKeyPairService.getSshKeyPair(userId, keyType);
-      verifySshKeyPair(storedSshKey, loadedSshKey);
-
-      var cypheredKey = "ji32o10!2".getBytes(StandardCharsets.UTF_8);
+      var cypheredKey = RandomStringUtils.random(10).getBytes(StandardCharsets.UTF_8);
       when(kmsEncryptDecryptHelper.encryptSymmetric(
               pair.getLeft().getBytes(StandardCharsets.UTF_8)))
           .thenReturn(cypheredKey);
       when(kmsEncryptDecryptHelper.decryptSymmetric(cypheredKey))
           .thenReturn(pair.getLeft().getBytes(StandardCharsets.UTF_8));
+      when(kmsEncryptDecryptHelper.encryptSymmetric(generatedGitLabKeyPair.getPrivateKey()))
+          .thenReturn(RandomStringUtils.random(10).getBytes(StandardCharsets.UTF_8));
+
       sshKeyPairService.reEncryptExpiringSshKeyPairs();
       verify(kmsEncryptDecryptHelper, times(1))
           .encryptSymmetric(pair.getLeft().getBytes(StandardCharsets.UTF_8));
+      verify(kmsEncryptDecryptHelper, times(1))
+          .encryptSymmetric(generatedGitLabKeyPair.getPrivateKey());
 
-      loadedSshKey = sshKeyPairService.getSshKeyPair(userId, keyType);
+      var loadedSshKey = sshKeyPairService.getSshKeyPair(userId, keyType);
       verifySshKeyPair(storedSshKey, loadedSshKey);
     }
 
@@ -325,6 +375,10 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
 
   private void verifySshKeyPair(
       SshKeyPairInternal expectedSshKey, SshKeyPairInternal actualSshKey) {
-    assertEquals(expectedSshKey.withId(actualSshKey.getId()), actualSshKey);
+    assertEquals(
+        expectedSshKey
+            .withId(actualSshKey.getId())
+            .withLastEncryptedTimestamp(actualSshKey.getLastEncryptedTimestamp()),
+        actualSshKey);
   }
 }

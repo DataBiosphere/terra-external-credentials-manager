@@ -1,7 +1,5 @@
 package bio.terra.externalcreds.services;
 
-import bio.terra.common.db.ReadTransaction;
-import bio.terra.common.db.WriteTransaction;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
@@ -20,6 +18,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
+import java.util.Optional;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
@@ -32,20 +31,25 @@ public class SshKeyPairService {
 
   private final SshKeyPairDAO sshKeyPairDAO;
   private final ExternalCredsConfig config;
+  private final KmsEncryptDecryptHelper encryptDecryptHelper;
 
-  public SshKeyPairService(SshKeyPairDAO sshKeyPairDAO, ExternalCredsConfig config) {
+  public SshKeyPairService(
+      SshKeyPairDAO sshKeyPairDAO,
+      ExternalCredsConfig config,
+      KmsEncryptDecryptHelper kmsEncryptDecryptHelper) {
     this.sshKeyPairDAO = sshKeyPairDAO;
     this.config = config;
+    this.encryptDecryptHelper = kmsEncryptDecryptHelper;
   }
 
-  @ReadTransaction
   public SshKeyPairInternal getSshKeyPair(String userId, SshKeyPairType type) {
-    return sshKeyPairDAO
-        .getSshKeyPair(userId, type)
-        .orElseThrow(() -> new NotFoundException("Ssh Key is not found"));
+    SshKeyPairInternal sshKeyPairInternal =
+        sshKeyPairDAO
+            .getSshKeyPair(userId, type)
+            .orElseThrow(() -> new NotFoundException("Ssh Key is not found"));
+    return getUnencryptedSshKeyPairInternal(sshKeyPairInternal);
   }
 
-  @WriteTransaction
   public void deleteSshKeyPair(String userId, SshKeyPairType type) {
     var existed = sshKeyPairDAO.deleteSshKeyPairIfExists(userId, type);
     if (!existed) {
@@ -53,41 +57,67 @@ public class SshKeyPairService {
     }
   }
 
-  @WriteTransaction
   public SshKeyPairInternal putSshKeyPair(
       String userId, SshKeyPairType type, SshKeyPair sshKeyPair) {
-    return sshKeyPairDAO.upsertSshKeyPair(
-        new SshKeyPairInternal.Builder()
-            .privateKey(sshKeyPair.getPrivateKey().getBytes(StandardCharsets.UTF_8))
-            .publicKey(sshKeyPair.getPublicKey())
-            .externalUserEmail(sshKeyPair.getExternalUserEmail())
-            .userId(userId)
-            .type(type)
-            .build());
+    return getUnencryptedSshKeyPairInternal(
+        sshKeyPairDAO.upsertSshKeyPair(
+            new SshKeyPairInternal.Builder()
+                .privateKey(
+                    encryptDecryptHelper.encryptSymmetric(
+                        sshKeyPair.getPrivateKey().getBytes(StandardCharsets.UTF_8)))
+                .lastEncryptedTimestamp(
+                    config.getKmsConfiguration() == null
+                        ? Optional.empty()
+                        : Optional.ofNullable(Instant.now()))
+                .publicKey(sshKeyPair.getPublicKey())
+                .externalUserEmail(sshKeyPair.getExternalUserEmail())
+                .userId(userId)
+                .type(type)
+                .build()));
   }
 
-  @WriteTransaction
   public SshKeyPairInternal generateSshKeyPair(
       String userId, String externalUserEmail, SshKeyPairType type) {
     try {
       KeyPair rsaKeyPair = generateRSAKeyPair();
-      return sshKeyPairDAO.upsertSshKeyPair(
-          new SshKeyPairInternal.Builder()
-              .privateKey(
-                  encodeRSAPrivateKey((RSAPrivateKey) rsaKeyPair.getPrivate())
-                      .getBytes(StandardCharsets.UTF_8))
-              .publicKey(
-                  encodeRSAPublicKey((RSAPublicKey) rsaKeyPair.getPublic(), externalUserEmail))
-              .externalUserEmail(externalUserEmail)
-              .type(type)
-              .userId(userId)
-              .build());
+      var privateKey =
+          encodeRSAPrivateKey((RSAPrivateKey) rsaKeyPair.getPrivate())
+              .getBytes(StandardCharsets.UTF_8);
+      if (config.getKmsConfiguration() != null) {
+        privateKey = encryptDecryptHelper.encryptSymmetric(privateKey);
+      }
+      return getUnencryptedSshKeyPairInternal(
+          sshKeyPairDAO.upsertSshKeyPair(
+              new SshKeyPairInternal.Builder()
+                  .privateKey(privateKey)
+                  .lastEncryptedTimestamp(
+                      config.getKmsConfiguration() == null
+                          ? Optional.empty()
+                          : Optional.of(Instant.now()))
+                  .publicKey(
+                      encodeRSAPublicKey((RSAPublicKey) rsaKeyPair.getPublic(), externalUserEmail))
+                  .externalUserEmail(externalUserEmail)
+                  .type(type)
+                  .userId(userId)
+                  .build()));
     } catch (NoSuchAlgorithmException | IOException e) {
       throw new ExternalCredsException(e);
     }
   }
 
-  @WriteTransaction
+  private SshKeyPairInternal getUnencryptedSshKeyPairInternal(
+      SshKeyPairInternal sshKeyPairInternal) {
+    if (config.getKmsConfiguration() == null
+        || sshKeyPairInternal.getLastEncryptedTimestamp().isEmpty()) {
+      return sshKeyPairInternal;
+    }
+    byte[] decipheredPrivateKey =
+        encryptDecryptHelper.decryptSymmetric(sshKeyPairInternal.getPrivateKey());
+    return sshKeyPairInternal
+        .withPrivateKey(decipheredPrivateKey)
+        .withLastEncryptedTimestamp(Optional.empty());
+  }
+
   public void reEncryptExpiringSshKeyPairs() {
     var kmsConfig = config.getKmsConfiguration();
     if (kmsConfig == null) {
@@ -97,7 +127,16 @@ public class SshKeyPairService {
         sshKeyPairDAO.getExpiredOrUnEncryptedSshKeyPair(
             Instant.now().minus(kmsConfig.getSshKeyPairRefreshDuration()));
     for (var sshKeyPair : sshKeyPairs) {
-      sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
+      byte[] encryptedKey;
+      if (sshKeyPair.getLastEncryptedTimestamp().isPresent()) {
+        encryptedKey =
+            encryptDecryptHelper.encryptSymmetric(
+                encryptDecryptHelper.decryptSymmetric(sshKeyPair.getPrivateKey()));
+      } else {
+        encryptedKey = encryptDecryptHelper.encryptSymmetric(sshKeyPair.getPrivateKey());
+      }
+      sshKeyPairDAO.upsertSshKeyPair(
+          sshKeyPair.withPrivateKey(encryptedKey).withLastEncryptedTimestamp(Instant.now()));
     }
   }
 
