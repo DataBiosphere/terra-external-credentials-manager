@@ -59,14 +59,12 @@ public class SshKeyPairService {
 
   public SshKeyPairInternal putSshKeyPair(
       String userId, SshKeyPairType type, SshKeyPair sshKeyPair) {
-    var privateKey = sshKeyPair.getPrivateKey().getBytes(StandardCharsets.UTF_8);
-    if (config.getKmsConfiguration() != null) {
-      privateKey = encryptDecryptHelper.encryptSymmetric(privateKey);
-    }
     return getUnencryptedSshKeyPairInternal(
         sshKeyPairDAO.upsertSshKeyPair(
             new SshKeyPairInternal.Builder()
-                .privateKey(privateKey)
+                .privateKey(
+                    encryptDecryptHelper.encryptSymmetric(
+                        sshKeyPair.getPrivateKey().getBytes(StandardCharsets.UTF_8)))
                 .lastEncryptedTimestamp(
                     config.getKmsConfiguration() == null
                         ? Optional.empty()
@@ -109,18 +107,8 @@ public class SshKeyPairService {
 
   private SshKeyPairInternal getUnencryptedSshKeyPairInternal(
       SshKeyPairInternal sshKeyPairInternal) {
-    if (config.getKmsConfiguration() == null) {
-      return sshKeyPairInternal;
-    }
-    if (sshKeyPairInternal.getLastEncryptedTimestamp().isEmpty()) {
-      // If encryption is enabled and we are getting a previously unencrypted key, we will
-      // encrypt it as well as getting the key.
-      byte[] encryptedPrivateKey =
-          encryptDecryptHelper.encryptSymmetric(sshKeyPairInternal.getPrivateKey());
-      sshKeyPairDAO.upsertSshKeyPair(
-          sshKeyPairInternal
-              .withPrivateKey(encryptedPrivateKey)
-              .withLastEncryptedTimestamp(Instant.now()));
+    if (config.getKmsConfiguration() == null
+        || sshKeyPairInternal.getLastEncryptedTimestamp().isEmpty()) {
       return sshKeyPairInternal;
     }
     byte[] decipheredPrivateKey =
@@ -149,7 +137,6 @@ public class SshKeyPairService {
       }
       sshKeyPairDAO.upsertSshKeyPair(
           sshKeyPair.withPrivateKey(encryptedKey).withLastEncryptedTimestamp(Instant.now()));
-      sshKeyPairDAO.upsertSshKeyPair(sshKeyPair);
     }
   }
 

@@ -74,7 +74,6 @@ public class SshKeyPairInternalServiceTest extends BaseTest {
           .thenReturn(sshKey.getPrivateKey());
       var loadedSshKey = sshKeyPairService.getSshKeyPair(sshKey.getUserId(), SshKeyPairType.GITHUB);
 
-      verify(kmsEncryptDecryptHelper, times(1)).encryptSymmetric(sshKey.getPrivateKey());
       verifySshKeyPair(sshKey, loadedSshKey);
     }
 

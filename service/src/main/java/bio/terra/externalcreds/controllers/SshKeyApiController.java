@@ -9,7 +9,6 @@ import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.SshKeyPairApi;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
-import bio.terra.externalcreds.services.KmsEncryptDecryptHelper;
 import bio.terra.externalcreds.services.SamService;
 import bio.terra.externalcreds.services.SshKeyPairService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,8 +23,7 @@ public record SshKeyApiController(
     SamService samService,
     SshKeyPairService sshKeyPairService,
     AuditLogger auditLogger,
-    ObjectMapper objectMapper,
-    KmsEncryptDecryptHelper kmsEncryptDecryptHelper)
+    ObjectMapper objectMapper)
     implements SshKeyPairApi {
 
   @Override

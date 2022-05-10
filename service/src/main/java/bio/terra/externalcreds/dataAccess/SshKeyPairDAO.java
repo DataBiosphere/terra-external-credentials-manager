@@ -68,10 +68,7 @@ public class SshKeyPairDAO {
   public SshKeyPairInternal upsertSshKeyPair(SshKeyPairInternal sshKeyPairInternal) {
     var query =
         "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email, last_encrypted_timestamp)"
-            + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail,"
-            + (sshKeyPairInternal.getLastEncryptedTimestamp().isPresent()
-                ? " :lastEncryptedTimestamp)"
-                : " NULL)")
+            + " VALUES (:userId, :type, :privateKey, :publicKey, :externalUserEmail,:lastEncryptedTimestamp)"
             + " ON CONFLICT (type, user_id) DO UPDATE SET"
             + " private_key = excluded.private_key,"
             + " public_key = excluded.public_key,"
@@ -85,14 +82,13 @@ public class SshKeyPairDAO {
             .addValue("type", sshKeyPairInternal.getType().name())
             .addValue("privateKey", sshKeyPairInternal.getPrivateKey())
             .addValue("publicKey", sshKeyPairInternal.getPublicKey())
-            .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail());
-
-    if (sshKeyPairInternal.getLastEncryptedTimestamp().isPresent()) {
-      // Record the timestamp when the key is encrypted.
-      namedParameters.addValue(
-          "lastEncryptedTimestamp",
-          Timestamp.from(sshKeyPairInternal.getLastEncryptedTimestamp().get()));
-    }
+            .addValue("externalUserEmail", sshKeyPairInternal.getExternalUserEmail())
+            .addValue(
+                "lastEncryptedTimestamp",
+                sshKeyPairInternal
+                    .getLastEncryptedTimestamp()
+                    .map(instant -> Timestamp.from(instant))
+                    .orElse(null));
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
