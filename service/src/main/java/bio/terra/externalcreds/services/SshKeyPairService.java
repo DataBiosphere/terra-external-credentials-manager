@@ -43,9 +43,11 @@ public class SshKeyPairService {
   }
 
   public SshKeyPairInternal getSshKeyPair(String userId, SshKeyPairType type) {
-    return sshKeyPairDAO
-        .getSshKeyPair(userId, type)
-        .orElseThrow(() -> new NotFoundException("Ssh Key is not found"));
+    SshKeyPairInternal sshKeyPairInternal =
+        sshKeyPairDAO
+            .getSshKeyPair(userId, type)
+            .orElseThrow(() -> new NotFoundException("Ssh Key is not found"));
+    return getUnencryptedSshKeyPairInternal(sshKeyPairInternal);
   }
 
   public void deleteSshKeyPair(String userId, SshKeyPairType type) {
@@ -61,18 +63,19 @@ public class SshKeyPairService {
     if (config.getKmsConfiguration() != null) {
       privateKey = encryptDecryptHelper.encryptSymmetric(privateKey);
     }
-    return sshKeyPairDAO.upsertSshKeyPair(
-        new SshKeyPairInternal.Builder()
-            .privateKey(privateKey)
-            .lastEncryptedTimestamp(
-                config.getKmsConfiguration() == null
-                    ? Optional.empty()
-                    : Optional.ofNullable(Instant.now()))
-            .publicKey(sshKeyPair.getPublicKey())
-            .externalUserEmail(sshKeyPair.getExternalUserEmail())
-            .userId(userId)
-            .type(type)
-            .build());
+    return getUnencryptedSshKeyPairInternal(
+        sshKeyPairDAO.upsertSshKeyPair(
+            new SshKeyPairInternal.Builder()
+                .privateKey(privateKey)
+                .lastEncryptedTimestamp(
+                    config.getKmsConfiguration() == null
+                        ? Optional.empty()
+                        : Optional.ofNullable(Instant.now()))
+                .publicKey(sshKeyPair.getPublicKey())
+                .externalUserEmail(sshKeyPair.getExternalUserEmail())
+                .userId(userId)
+                .type(type)
+                .build()));
   }
 
   public SshKeyPairInternal generateSshKeyPair(
@@ -85,22 +88,46 @@ public class SshKeyPairService {
       if (config.getKmsConfiguration() != null) {
         privateKey = encryptDecryptHelper.encryptSymmetric(privateKey);
       }
-      return sshKeyPairDAO.upsertSshKeyPair(
-          new SshKeyPairInternal.Builder()
-              .privateKey(privateKey)
-              .lastEncryptedTimestamp(
-                  config.getKmsConfiguration() == null
-                      ? Optional.empty()
-                      : Optional.of(Instant.now()))
-              .publicKey(
-                  encodeRSAPublicKey((RSAPublicKey) rsaKeyPair.getPublic(), externalUserEmail))
-              .externalUserEmail(externalUserEmail)
-              .type(type)
-              .userId(userId)
-              .build());
+      return getUnencryptedSshKeyPairInternal(
+          sshKeyPairDAO.upsertSshKeyPair(
+              new SshKeyPairInternal.Builder()
+                  .privateKey(privateKey)
+                  .lastEncryptedTimestamp(
+                      config.getKmsConfiguration() == null
+                          ? Optional.empty()
+                          : Optional.of(Instant.now()))
+                  .publicKey(
+                      encodeRSAPublicKey((RSAPublicKey) rsaKeyPair.getPublic(), externalUserEmail))
+                  .externalUserEmail(externalUserEmail)
+                  .type(type)
+                  .userId(userId)
+                  .build()));
     } catch (NoSuchAlgorithmException | IOException e) {
       throw new ExternalCredsException(e);
     }
+  }
+
+  private SshKeyPairInternal getUnencryptedSshKeyPairInternal(
+      SshKeyPairInternal sshKeyPairInternal) {
+    if (config.getKmsConfiguration() == null) {
+      return sshKeyPairInternal;
+    }
+    if (sshKeyPairInternal.getLastEncryptedTimestamp().isEmpty()) {
+      // If encryption is enabled and we are getting a previously unencrypted key, we will
+      // encrypt it as well as getting the key.
+      byte[] encryptedPrivateKey =
+          encryptDecryptHelper.encryptSymmetric(sshKeyPairInternal.getPrivateKey());
+      sshKeyPairDAO.upsertSshKeyPair(
+          sshKeyPairInternal
+              .withPrivateKey(encryptedPrivateKey)
+              .withLastEncryptedTimestamp(Instant.now()));
+      return sshKeyPairInternal;
+    }
+    byte[] decipheredPrivateKey =
+        encryptDecryptHelper.decryptSymmetric(sshKeyPairInternal.getPrivateKey());
+    return sshKeyPairInternal
+        .withPrivateKey(decipheredPrivateKey)
+        .withLastEncryptedTimestamp(Optional.empty());
   }
 
   public void reEncryptExpiringSshKeyPairs() {

@@ -61,8 +61,7 @@ public record SshKeyApiController(
       var sshKeyPair = sshKeyPairService.getSshKeyPair(userId, type);
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.GetSshKeyPairSucceeded).build());
-      return ResponseEntity.ok(
-          OpenApiConverters.Output.convert(sshKeyPair, kmsEncryptDecryptHelper));
+      return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.GetSshKeyPairFailed).build());
@@ -81,7 +80,7 @@ public record SshKeyApiController(
             .clientIP(request.getRemoteAddr())
             .auditLogEventType(AuditLogEventType.PutSshKeyPair)
             .build());
-    return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair, kmsEncryptDecryptHelper));
+    return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
   }
 
   @Override
@@ -102,8 +101,7 @@ public record SshKeyApiController(
       var generatedKey = sshKeyPairService.generateSshKeyPair(userId, userEmail, type);
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.SshKeyPairCreated).build());
-      return ResponseEntity.ok(
-          OpenApiConverters.Output.convert(generatedKey, kmsEncryptDecryptHelper));
+      return ResponseEntity.ok(OpenApiConverters.Output.convert(generatedKey));
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder

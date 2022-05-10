@@ -11,7 +11,6 @@ import bio.terra.externalcreds.generated.model.ValidatePassportResult;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
 import bio.terra.externalcreds.models.ValidatePassportResultInternal;
-import bio.terra.externalcreds.services.KmsEncryptDecryptHelper;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
 import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
 import java.nio.charset.StandardCharsets;
@@ -76,15 +75,11 @@ public class OpenApiConverters {
           .authenticated(linkedAccount.isAuthenticated());
     }
 
-    public static SshKeyPair convert(
-        SshKeyPairInternal sshKeyPairInternal, KmsEncryptDecryptHelper encryptDecryptHelper) {
+    public static SshKeyPair convert(SshKeyPairInternal sshKeyPairInternal) {
       return new SshKeyPair()
           .externalUserEmail(sshKeyPairInternal.getExternalUserEmail())
           .publicKey(sshKeyPairInternal.getPublicKey())
-          .privateKey(
-              new String(
-                  encryptDecryptHelper.decryptSymmetric(sshKeyPairInternal.getPrivateKey()),
-                  StandardCharsets.UTF_8));
+          .privateKey(new String(sshKeyPairInternal.getPrivateKey(), StandardCharsets.UTF_8));
     }
   }
 }
