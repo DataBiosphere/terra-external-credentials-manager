@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.models.GA4GHPassport;
+import io.opencensus.contrib.spring.aop.Traced;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -29,12 +30,14 @@ public class GA4GHPassportDAO {
    * @param linkedAccountId id of the linked account
    * @return true if a passport was deleted
    */
+  @Traced
   public boolean deletePassport(int linkedAccountId) {
     var namedParameters = new MapSqlParameterSource("linkedAccountId", linkedAccountId);
     var query = "DELETE FROM ga4gh_passport WHERE linked_account_id = :linkedAccountId";
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
+  @Traced
   public GA4GHPassport insertPassport(GA4GHPassport passport) {
     var query =
         "INSERT INTO ga4gh_passport (linked_account_id, jwt, expires, jwt_id)"
@@ -56,6 +59,7 @@ public class GA4GHPassportDAO {
     return passport.withId(Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
   }
 
+  @Traced
   public Optional<GA4GHPassport> getPassport(String userId, String providerName) {
     var namedParameters =
         new MapSqlParameterSource("userId", userId).addValue("providerName", providerName);

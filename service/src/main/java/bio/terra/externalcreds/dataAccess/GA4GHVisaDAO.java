@@ -3,6 +3,7 @@ package bio.terra.externalcreds.dataAccess;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
+import io.opencensus.contrib.spring.aop.Traced;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -27,6 +28,7 @@ public class GA4GHVisaDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
+  @Traced
   public GA4GHVisa insertVisa(GA4GHVisa visa) {
     var query =
         "INSERT INTO ga4gh_visa (passport_id, visa_type, jwt, expires, issuer, token_type, last_validated)"
@@ -54,6 +56,7 @@ public class GA4GHVisaDAO {
     return visa.withId(Objects.requireNonNull(generatedKeyHolder.getKey()).intValue());
   }
 
+  @Traced
   public List<GA4GHVisa> listVisas(String userId, String providerName) {
     var namedParameters =
         new MapSqlParameterSource("userId", userId).addValue("providerName", providerName);
@@ -84,6 +87,7 @@ public class GA4GHVisaDAO {
     return jdbcTemplate.query(query, namedParameters, new VisaVerificationDetailsRowMapper());
   }
 
+  @Traced
   public void updateLastValidated(int visaId, Timestamp newLastValidated) {
     var namedParameters =
         new MapSqlParameterSource("id", visaId).addValue("newLastValidated", newLastValidated);

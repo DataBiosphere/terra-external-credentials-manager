@@ -9,6 +9,7 @@ import com.google.cloud.kms.v1.EncryptResponse;
 import com.google.cloud.kms.v1.KeyManagementServiceClient;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
+import io.opencensus.contrib.spring.aop.Traced;
 import java.io.IOException;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -49,6 +50,7 @@ public class KmsEncryptDecryptHelper {
   }
 
   /** Encrypt with KMS symmetric key. */
+  @Traced
   public byte[] encryptSymmetric(byte[] plainText) {
     if (client == null || config.getKmsConfiguration() == null) {
       log.info("KMS encryption for ssh private keys is disabled");
@@ -60,6 +62,7 @@ public class KmsEncryptDecryptHelper {
   }
 
   /** Decrypt with KMS symmetric key. */
+  @Traced
   public byte[] decryptSymmetric(byte[] cypheredText) {
     if (client == null || config.getKmsConfiguration() == null) {
       log.info("KMS encryption for ssh private keys is disabled");
