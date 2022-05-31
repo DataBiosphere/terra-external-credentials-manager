@@ -1,8 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
-import static bio.terra.externalcreds.controllers.UserStatusInfoUtils.getUserIdFromSam;
-
 import bio.terra.common.exception.BadRequestException;
+import bio.terra.common.iam.SamUserAuthenticatedRequestFactory;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
@@ -23,20 +22,22 @@ public record SshKeyApiController(
     SamService samService,
     SshKeyPairService sshKeyPairService,
     AuditLogger auditLogger,
-    ObjectMapper objectMapper)
+    ObjectMapper objectMapper,
+    SamUserAuthenticatedRequestFactory samUserAuthenticatedRequestFactory)
     implements SshKeyPairApi {
 
   @Override
   public ResponseEntity<Void> deleteSshKeyPair(SshKeyPairType type) {
-    var userId = getUserIdFromSam(request, samService);
+    var samUserAuthenticatedRequest =
+        samUserAuthenticatedRequestFactory.from(request, samService.samApiClient());
 
     var auditLoggerBuilder =
         new AuditLogEvent.Builder()
             .sshKeyPairType(type.name())
-            .userId(userId)
+            .userId(samUserAuthenticatedRequest.getSubjectId())
             .clientIP(request.getRemoteAddr());
     try {
-      sshKeyPairService.deleteSshKeyPair(userId, type);
+      sshKeyPairService.deleteSshKeyPair(samUserAuthenticatedRequest.getSubjectId(), type);
       auditLogger.logEvent(
           auditLoggerBuilder.auditLogEventType(AuditLogEventType.SshKeyPairDeleted).build());
       return ResponseEntity.ok().build();
@@ -49,14 +50,16 @@ public record SshKeyApiController(
 
   @Override
   public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type) {
-    var userId = getUserIdFromSam(request, samService);
+    var samUserAuthenticatedRequest =
+        samUserAuthenticatedRequestFactory.from(request, samService.samApiClient());
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
             .sshKeyPairType(type.name())
-            .userId(userId)
+            .userId(samUserAuthenticatedRequest.getSubjectId())
             .clientIP(request.getRemoteAddr());
     try {
-      var sshKeyPair = sshKeyPairService.getSshKeyPair(userId, type);
+      var sshKeyPair =
+          sshKeyPairService.getSshKeyPair(samUserAuthenticatedRequest.getSubjectId(), type);
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.GetSshKeyPairSucceeded).build());
       return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
@@ -69,12 +72,14 @@ public record SshKeyApiController(
 
   @Override
   public ResponseEntity<SshKeyPair> putSshKeyPair(SshKeyPairType type, SshKeyPair body) {
-    var userId = getUserIdFromSam(request, samService);
-    var sshKeyPair = sshKeyPairService.putSshKeyPair(userId, type, body);
+    var samUserAuthenticatedRequest =
+        samUserAuthenticatedRequestFactory.from(request, samService.samApiClient());
+    var sshKeyPair =
+        sshKeyPairService.putSshKeyPair(samUserAuthenticatedRequest.getSubjectId(), type, body);
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .sshKeyPairType(type.name())
-            .userId(userId)
+            .userId(samUserAuthenticatedRequest.getSubjectId())
             .clientIP(request.getRemoteAddr())
             .auditLogEventType(AuditLogEventType.PutSshKeyPair)
             .build());
@@ -89,14 +94,17 @@ public record SshKeyApiController(
     } catch (JsonProcessingException e) {
       throw new BadRequestException("Fail to parse json string email");
     }
-    var userId = getUserIdFromSam(request, samService);
+    var samUserAuthenticatedRequest =
+        samUserAuthenticatedRequestFactory.from(request, samService.samApiClient());
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
-            .userId(userId)
+            .userId(samUserAuthenticatedRequest.getSubjectId())
             .clientIP(request.getRemoteAddr())
             .sshKeyPairType(type.name());
     try {
-      var generatedKey = sshKeyPairService.generateSshKeyPair(userId, userEmail, type);
+      var generatedKey =
+          sshKeyPairService.generateSshKeyPair(
+              samUserAuthenticatedRequest.getSubjectId(), userEmail, type);
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.SshKeyPairCreated).build());
       return ResponseEntity.ok(OpenApiConverters.Output.convert(generatedKey));

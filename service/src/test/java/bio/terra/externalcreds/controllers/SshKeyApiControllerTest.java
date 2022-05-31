@@ -1,7 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -10,20 +10,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import bio.terra.common.iam.SamUserAuthenticatedRequest;
+import bio.terra.common.iam.SamUserAuthenticatedRequestFactory;
+import bio.terra.common.iam.TokenAuthenticatedRequest;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.SshKeyPairTestUtils;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
-import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.http.HttpStatus;
-import org.broadinstitute.dsde.workbench.client.sam.ApiException;
-import org.broadinstitute.dsde.workbench.client.sam.api.UsersApi;
-import org.broadinstitute.dsde.workbench.client.sam.model.UserStatusInfo;
+import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -40,7 +40,7 @@ class SshKeyApiControllerTest extends BaseTest {
   @Autowired private MockMvc mvc;
   @Autowired private ObjectMapper objectMapper;
 
-  @MockBean private SamService samServiceMock;
+  @MockBean private SamUserAuthenticatedRequestFactory samUserAuthenticatedRequestFactoryMock;
   @MockBean private AuditLogger auditLoggerMock;
 
   @Captor ArgumentCaptor<AuditLogEvent> auditLogEventArgumentCaptor;
@@ -185,48 +185,15 @@ class SshKeyApiControllerTest extends BaseTest {
         .andExpect(status().isBadRequest());
   }
 
-  @Test
-  void samThrowsApiException() throws Exception {
-    String accessToken = RandomStringUtils.randomAlphanumeric(10);
-    String externalUserEmail =
-        String.format("\"%s@gmail.com\"", RandomStringUtils.randomAlphabetic(5));
-    var usersApiMock = mock(UsersApi.class);
-    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
-    when(usersApiMock.getUserStatusInfo()).thenThrow(new ApiException());
-
-    var sshKeyPairType = "gitlab";
-    mvc.perform(
-            post("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                .header("authorization", "Bearer " + accessToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(externalUserEmail))
-        .andExpect(status().is5xxServerError());
-  }
-
-  @Test
-  void samThrowsNotFoundException() throws Exception {
-    String accessToken = RandomStringUtils.randomAlphanumeric(10);
-    String externalUserEmail =
-        String.format("\"%s@gmail.com\"", RandomStringUtils.randomAlphabetic(5));
-    var usersApiMock = mock(UsersApi.class);
-    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
-    when(usersApiMock.getUserStatusInfo())
-        .thenThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "user status info not found"));
-
-    var sshKeyPairType = "gitlab";
-    mvc.perform(
-            post("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                .header("authorization", "Bearer " + accessToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(externalUserEmail))
-        .andExpect(status().isForbidden());
-  }
-
-  private void mockSamUser(String accessToken) throws Exception {
-    var usersApiMock = mock(UsersApi.class);
-    var userStatusInfo = new UserStatusInfo().userSubjectId(UUID.randomUUID().toString());
-    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
-    when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
+  private void mockSamUser(String accessToken) {
+    when(samUserAuthenticatedRequestFactoryMock.from(
+            any(HttpServletRequest.class), any(ApiClient.class)))
+        .thenReturn(
+            SamUserAuthenticatedRequest.builder()
+                .setEmail("email")
+                .setTokenRequest(TokenAuthenticatedRequest.builder().setToken(accessToken).build())
+                .setSubjectId(UUID.randomUUID().toString())
+                .build());
   }
 
   private void verifyAuditLogEvent(String sshKeyPairType, AuditLogEventType auditLogEventType) {
