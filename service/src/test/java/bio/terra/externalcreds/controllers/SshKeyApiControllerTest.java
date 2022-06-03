@@ -10,9 +10,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import bio.terra.common.iam.SamUserAuthenticatedRequest;
-import bio.terra.common.iam.SamUserAuthenticatedRequestFactory;
-import bio.terra.common.iam.TokenAuthenticatedRequest;
+import bio.terra.common.iam.BearerToken;
+import bio.terra.common.iam.SamUser;
+import bio.terra.common.iam.SamUserFactory;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.SshKeyPairTestUtils;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -40,7 +39,7 @@ class SshKeyApiControllerTest extends BaseTest {
   @Autowired private MockMvc mvc;
   @Autowired private ObjectMapper objectMapper;
 
-  @MockBean private SamUserAuthenticatedRequestFactory samUserAuthenticatedRequestFactoryMock;
+  @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private AuditLogger auditLoggerMock;
 
   @Captor ArgumentCaptor<AuditLogEvent> auditLogEventArgumentCaptor;
@@ -186,14 +185,9 @@ class SshKeyApiControllerTest extends BaseTest {
   }
 
   private void mockSamUser(String accessToken) {
-    when(samUserAuthenticatedRequestFactoryMock.from(
-            any(HttpServletRequest.class), any(ApiClient.class)))
+    when(samUserFactoryMock.from(any(HttpServletRequest.class), any(String.class)))
         .thenReturn(
-            SamUserAuthenticatedRequest.builder()
-                .setEmail("email")
-                .setTokenRequest(TokenAuthenticatedRequest.builder().setToken(accessToken).build())
-                .setSubjectId(UUID.randomUUID().toString())
-                .build());
+            new SamUser("email", UUID.randomUUID().toString(), new BearerToken(accessToken)));
   }
 
   private void verifyAuditLogEvent(String sshKeyPairType, AuditLogEventType auditLogEventType) {

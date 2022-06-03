@@ -11,9 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.common.exception.NotFoundException;
-import bio.terra.common.iam.SamUserAuthenticatedRequest;
-import bio.terra.common.iam.SamUserAuthenticatedRequestFactory;
-import bio.terra.common.iam.TokenAuthenticatedRequest;
+import bio.terra.common.iam.BearerToken;
+import bio.terra.common.iam.SamUser;
+import bio.terra.common.iam.SamUserFactory;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.TestUtils;
@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
-import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +49,7 @@ class OidcApiControllerTest extends BaseTest {
 
   @MockBean private LinkedAccountService linkedAccountServiceMock;
   @MockBean private ProviderService providerServiceMock;
-  @MockBean private SamUserAuthenticatedRequestFactory samUserAuthenticatedRequestFactoryMock;
+  @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private PassportService passportServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
 
@@ -370,13 +369,7 @@ class OidcApiControllerTest extends BaseTest {
   }
 
   private void mockSamUser(String userId, String accessToken) {
-    when(samUserAuthenticatedRequestFactoryMock.from(
-            any(HttpServletRequest.class), any(ApiClient.class)))
-        .thenReturn(
-            SamUserAuthenticatedRequest.builder()
-                .setEmail("email")
-                .setTokenRequest(TokenAuthenticatedRequest.builder().setToken(accessToken).build())
-                .setSubjectId(userId)
-                .build());
+    when(samUserFactoryMock.from(any(HttpServletRequest.class), any(String.class)))
+        .thenReturn(new SamUser("email", userId, new BearerToken(accessToken)));
   }
 }
