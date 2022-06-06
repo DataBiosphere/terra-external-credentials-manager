@@ -48,41 +48,41 @@ public record OidcApiController(
 
   @Override
   public ResponseEntity<LinkInfo> getLink(String providerName) {
-    var samUserAuthenticatedRequest =
+    var samUser =
         samUserFactory.from(request, externalCredsConfig.getSamBasePath());
     var linkedAccount =
         linkedAccountService.getLinkedAccount(
-            samUserAuthenticatedRequest.getSubjectId(), providerName);
+            samUser.getSubjectId(), providerName);
     return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
   }
 
   @Override
   public ResponseEntity<String> getAuthUrl(String providerName, String redirectUri) {
-    var samUserAuthenticatedRequest =
+    var samUser =
         samUserFactory.from(request, externalCredsConfig.getSamBasePath());
 
     var authorizationUrl =
         providerService.getProviderAuthorizationUrl(
-            samUserAuthenticatedRequest.getSubjectId(), providerName, redirectUri);
+            samUser.getSubjectId(), providerName, redirectUri);
 
     return ResponseEntity.of(authorizationUrl.map(this::jsonString));
   }
 
   @Override
   public ResponseEntity<LinkInfo> createLink(String providerName, String state, String oauthcode) {
-    var samUserAuthenticatedRequest =
+    var samUser =
         samUserFactory.from(request, externalCredsConfig.getSamBasePath());
 
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
             .providerName(providerName)
-            .userId(samUserAuthenticatedRequest.getSubjectId())
+            .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr());
 
     try {
       var linkedAccountWithPassportAndVisas =
           providerService.createLink(
-              providerName, samUserAuthenticatedRequest.getSubjectId(), oauthcode, state);
+              providerName, samUser.getSubjectId(), oauthcode, state);
 
       var passport =
           linkedAccountWithPassportAndVisas.flatMap(LinkedAccountWithPassportAndVisas::getPassport);
@@ -111,16 +111,16 @@ public record OidcApiController(
 
   @Override
   public ResponseEntity<Void> deleteLink(String providerName) {
-    var samUserAuthenticatedRequest =
+    var samUser =
         samUserFactory.from(request, externalCredsConfig.getSamBasePath());
     var deletedLink =
-        providerService.deleteLink(samUserAuthenticatedRequest.getSubjectId(), providerName);
+        providerService.deleteLink(samUser.getSubjectId(), providerName);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.LinkDeleted)
             .providerName(providerName)
-            .userId(samUserAuthenticatedRequest.getSubjectId())
+            .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr())
             .externalUserId(deletedLink.getExternalUserId())
             .build());
@@ -130,19 +130,19 @@ public record OidcApiController(
 
   @Override
   public ResponseEntity<String> getProviderPassport(String providerName) {
-    var samUserAuthenticatedRequest =
+    var samUser =
         samUserFactory.from(request, externalCredsConfig.getSamBasePath());
     var maybeLinkedAccount =
         linkedAccountService.getLinkedAccount(
-            samUserAuthenticatedRequest.getSubjectId(), providerName);
+            samUser.getSubjectId(), providerName);
     var maybePassport =
-        passportService.getPassport(samUserAuthenticatedRequest.getSubjectId(), providerName);
+        passportService.getPassport(samUser.getSubjectId(), providerName);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.GetPassport)
             .providerName(providerName)
-            .userId(samUserAuthenticatedRequest.getSubjectId())
+            .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr())
             .externalUserId(maybeLinkedAccount.map(LinkedAccount::getExternalUserId))
             .build());
