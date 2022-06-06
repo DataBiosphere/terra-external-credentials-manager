@@ -1,11 +1,9 @@
 package bio.terra.externalcreds.controllers;
 
 import bio.terra.common.exception.BadRequestException;
-import bio.terra.common.iam.SamUserFactory;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
-import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.api.SshKeyPairApi;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
@@ -19,16 +17,15 @@ import org.springframework.stereotype.Controller;
 @Controller
 public record SshKeyApiController(
     HttpServletRequest request,
-    ExternalCredsConfig externalCredsConfig,
     SshKeyPairService sshKeyPairService,
     AuditLogger auditLogger,
     ObjectMapper objectMapper,
-    SamUserFactory samUserFactory)
+    ExternalCredsSamUserFactory samUserFactory)
     implements SshKeyPairApi {
 
   @Override
   public ResponseEntity<Void> deleteSshKeyPair(SshKeyPairType type) {
-    var samUser = samUserFactory.from(request, externalCredsConfig.getSamBasePath());
+    var samUser = samUserFactory.from(request);
 
     var auditLoggerBuilder =
         new AuditLogEvent.Builder()
@@ -49,7 +46,7 @@ public record SshKeyApiController(
 
   @Override
   public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type) {
-    var samUser = samUserFactory.from(request, externalCredsConfig.getSamBasePath());
+    var samUser = samUserFactory.from(request);
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
             .sshKeyPairType(type.name())
@@ -69,7 +66,7 @@ public record SshKeyApiController(
 
   @Override
   public ResponseEntity<SshKeyPair> putSshKeyPair(SshKeyPairType type, SshKeyPair body) {
-    var samUser = samUserFactory.from(request, externalCredsConfig.getSamBasePath());
+    var samUser = samUserFactory.from(request);
     var sshKeyPair = sshKeyPairService.putSshKeyPair(samUser.getSubjectId(), type, body);
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
@@ -89,7 +86,7 @@ public record SshKeyApiController(
     } catch (JsonProcessingException e) {
       throw new BadRequestException("Fail to parse json string email");
     }
-    var samUser = samUserFactory.from(request, externalCredsConfig.getSamBasePath());
+    var samUser = samUserFactory.from(request);
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
             .userId(samUser.getSubjectId())
