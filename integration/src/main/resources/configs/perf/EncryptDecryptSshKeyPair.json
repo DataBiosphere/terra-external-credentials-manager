@@ -1,0 +1,17 @@
+{
+  "name": "EncryptDecryptSshKeyPair",
+  "description": "Store and fetch ssh key pair with kms encryption enabled.",
+  "serverSpecificationFile": "ecm-local.json",
+  "kubernetes": {},
+  "application": {},
+  "testScripts": [
+    {
+      "name": "EncryptDecryptSshKeyPair",
+      "numberOfUserJourneyThreadsToRun": 1,
+      "userJourneyThreadPoolSize": 1,
+      "expectedTimeForEach": 10,
+      "expectedTimeForEachUnit": "MINUTES"
+    }
+  ],
+  "testUserFiles": ["scarlett.json"]
+}
