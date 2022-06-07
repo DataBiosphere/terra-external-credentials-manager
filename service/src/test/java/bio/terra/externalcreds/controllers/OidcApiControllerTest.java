@@ -2,7 +2,6 @@ package bio.terra.externalcreds.controllers;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -12,6 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.common.exception.NotFoundException;
+import bio.terra.common.iam.BearerToken;
+import bio.terra.common.iam.SamUser;
+import bio.terra.common.iam.SamUserFactory;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.TestUtils;
@@ -24,21 +26,17 @@ import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
-import bio.terra.externalcreds.services.SamService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import org.broadinstitute.dsde.workbench.client.sam.ApiException;
-import org.broadinstitute.dsde.workbench.client.sam.api.UsersApi;
-import org.broadinstitute.dsde.workbench.client.sam.model.UserStatusInfo;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 
@@ -51,7 +49,7 @@ class OidcApiControllerTest extends BaseTest {
 
   @MockBean private LinkedAccountService linkedAccountServiceMock;
   @MockBean private ProviderService providerServiceMock;
-  @MockBean private SamService samServiceMock;
+  @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private PassportService passportServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
 
@@ -147,30 +145,6 @@ class OidcApiControllerTest extends BaseTest {
       mvc.perform(
               get("/api/oidc/v1/" + providerName).header("authorization", "Bearer " + accessToken))
           .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testGetLink403() throws Exception {
-      var providerName = "provider";
-      var accessToken = "testToken";
-
-      mockSamUserError(accessToken, HttpStatus.NOT_FOUND);
-
-      mvc.perform(
-              get("/api/oidc/v1/" + providerName).header("authorization", "Bearer " + accessToken))
-          .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void testGetLink500() throws Exception {
-      String providerName = "provider";
-      String accessToken = "testToken";
-
-      mockSamUserError(accessToken, HttpStatus.NO_CONTENT);
-
-      mvc.perform(
-              get("/api/oidc/v1/" + providerName).header("authorization", "Bearer " + accessToken))
-          .andExpect(status().isInternalServerError());
     }
   }
 
@@ -394,17 +368,8 @@ class OidcApiControllerTest extends BaseTest {
     }
   }
 
-  private void mockSamUser(String userId, String accessToken) throws ApiException {
-    var usersApiMock = mock(UsersApi.class);
-    var userStatusInfo = new UserStatusInfo().userSubjectId(userId);
-    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
-    when(usersApiMock.getUserStatusInfo()).thenReturn(userStatusInfo);
-  }
-
-  private void mockSamUserError(String accessToken, HttpStatus notFound) throws ApiException {
-    var usersApiMock = mock(UsersApi.class);
-    when(samServiceMock.samUsersApi(accessToken)).thenReturn(usersApiMock);
-    when(usersApiMock.getUserStatusInfo())
-        .thenThrow(new ApiException(notFound.value(), "Not Found"));
+  private void mockSamUser(String userId, String accessToken) {
+    when(samUserFactoryMock.from(any(HttpServletRequest.class), any(String.class)))
+        .thenReturn(new SamUser("email", userId, new BearerToken(accessToken)));
   }
 }
