@@ -22,7 +22,8 @@ import org.springframework.scheduling.annotation.Scheduled;
       "bio.terra.externalcreds",
       "bio.terra.common.logging",
       "bio.terra.common.retry.transaction",
-      "bio.terra.common.tracing"
+      "bio.terra.common.tracing",
+      "bio.terra.common.iam"
     },
     excludeFilters = @Filter(type = FilterType.ANNOTATION, classes = SpringBootConfiguration.class))
 public class ExternalCredsCronApplication {
