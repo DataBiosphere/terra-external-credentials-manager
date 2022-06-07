@@ -1,5 +1,5 @@
 {
   "name": "testrunner-perf@broad-dsde-perf.iam.gserviceaccount.com",
   "jsonKeyFilename": "testrunner-sa.json",
-  "jsonKeyDirectoryPath": "../rendered"
+  "jsonKeyDirectoryPath": "./rendered"
 }
