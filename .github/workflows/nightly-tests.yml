@@ -143,4 +143,4 @@ jobs:
          status: failure
          author_name: Test Runner
          fields: workflow,message
-         text: 'Nightly perf tests failed :sadpanda:'
+         text: 'ECM nightly perf tests failed :sadpanda:'
