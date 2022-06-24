@@ -118,8 +118,10 @@ public class JwtUtilsTest extends BaseTest {
       var issuer = "https://stsstg.nih.gov";
       when(externalCredsConfigMock.getAllowedJwtIssuers()).thenReturn(List.of(new URI(issuer)));
 
+      // These are explicitly different from the RS256 algo
+      // used to create the signed test JWT
       when(externalCredsConfigMock.getAllowedJwtAlgorithms())
-          .thenReturn(List.of("testAlg", "testAlg2"));
+          .thenReturn(List.of("EdDSA", "ES256K"));
 
       var visaClaimSet =
           new JWTClaimsSet.Builder()
