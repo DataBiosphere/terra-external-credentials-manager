@@ -36,7 +36,10 @@ dependencies {
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-96c5f4d'
 	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
 	implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.70'
-
+	implementation 'org.codehaus.janino:janino:3.1.7' // Provides if/else xml parsing for logback config
+	implementation('org.springframework.cloud:spring-cloud-gcp-starter-logging:1.2.8.RELEASE') {
+		exclude group: 'org.springframework', module: 'spring-jcl'
+	}
 	// for testing with mock web server
 	testImplementation 'org.mock-server:mockserver-netty:5.13.0'
 	// https://mvnrepository.com/artifact/org.mockito/mockito-core
