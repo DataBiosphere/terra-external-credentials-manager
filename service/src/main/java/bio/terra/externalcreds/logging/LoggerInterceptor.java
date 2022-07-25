@@ -78,7 +78,7 @@ public record LoggerInterceptor(AuthenticatedUserRequestFactory authenticatedUse
       requestDuration = NOT_FOUND_DURATION;
     }
     // skip logging the status endpoint
-    if (LOG_EXCLUDE_LIST.stream().noneMatch(url::endsWith)) {
+    if (LOG_EXCLUDE_LIST.stream().noneMatch(url::equals)) {
 
       String requestPath;
       try {
