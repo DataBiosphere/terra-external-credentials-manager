@@ -141,7 +141,7 @@ public record OidcApiController(
               if (passport.getExpires().before(new Timestamp(System.currentTimeMillis()))) {
                 return Optional.empty();
               } else {
-                return Optional.of(jsonString(passport.getJwt()));
+                return Optional.of(passport.getJwt());
               }
             });
     return ResponseEntity.of(response);
