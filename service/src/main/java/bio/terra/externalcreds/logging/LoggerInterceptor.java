@@ -92,6 +92,8 @@ public record LoggerInterceptor(AuthenticatedUserRequestFactory authenticatedUse
       Map<String, String> stackDriverPayload = new HashMap<>();
       if (RequestMethod.POST.name().equalsIgnoreCase(method)
           || RequestMethod.PUT.name().equalsIgnoreCase(method)) {
+        // ECM will not log POST bodies, because the `validate` endpoint contains passports
+        // in the POST body.
         stackDriverPayload.put("userId", userId);
         stackDriverPayload.put("userEmail", userEmail);
         stackDriverPayload.put("params", paramString);
