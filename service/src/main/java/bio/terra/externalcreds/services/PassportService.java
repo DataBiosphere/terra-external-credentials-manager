@@ -39,7 +39,7 @@ public class PassportService {
   private final JwtUtils jwtUtils;
   private final Collection<VisaComparator> visaComparators;
 
-  private static final long VISA_VALIDITY_TIME = Duration.of(1, ChronoUnit.HOURS).toMillis();
+  private static final Duration VISA_VALIDITY_TIME = Duration.of(1, ChronoUnit.HOURS);
 
   public PassportService(
       LinkedAccountDAO linkedAccountDAO,
@@ -142,9 +142,10 @@ public class PassportService {
   }
 
   private boolean isPassportIssueTimeValid(GA4GHPassport passport) {
-    var issueTime = jwtUtils.getJwtIssuedAt(passport.getJwt()).getTime();
-    var now = Instant.now().toEpochMilli();
-    return (now - issueTime < VISA_VALIDITY_TIME);
+    int comparison =
+        Duration.between(jwtUtils.getJwtIssuedAt(passport.getJwt()).toInstant(), Instant.now())
+            .compareTo(VISA_VALIDITY_TIME);
+    return comparison < 0;
   }
 
   private Collection<PassportWithVisas> decodeAndValidatePassports(
