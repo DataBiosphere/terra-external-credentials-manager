@@ -17,6 +17,7 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -71,6 +72,14 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig, JwtDecoderCache 
   public Optional<String> getJwtTransactionClaim(String jwtString) {
     var txnClaim = decodeAndValidateJwt(jwtString).getClaims().get(JWT_TRANSACTION_CLAIM);
     return Optional.ofNullable(txnClaim).map(Objects::toString);
+  }
+
+  public Date getJwtIssuedAt(String jwtString) {
+    try {
+      return JWTParser.parse(jwtString).getJWTClaimsSet().getIssueTime();
+    } catch (ParseException e) {
+      throw new InvalidJwtException(e);
+    }
   }
 
   private static GA4GHPassport buildPassport(Jwt passportJwt) {

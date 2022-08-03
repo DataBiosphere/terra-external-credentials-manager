@@ -176,5 +176,10 @@ public class JwtUtilsTest extends BaseTest {
               InvalidJwtException.class, () -> jwtUtils.decodeAndValidateJwt(jwtMalformedJku));
       assertTrue(exception.getMessage().contains("URI is not absolute"));
     }
+
+    @Test
+    void testJwtGetIssuedJkuMalformed() {
+      assertThrows(InvalidJwtException.class, () -> jwtUtils.getJwtIssuedAt("garbage"));
+    }
   }
 }
