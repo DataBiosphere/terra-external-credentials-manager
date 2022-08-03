@@ -15,8 +15,12 @@ import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
 import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
+import com.nimbusds.jwt.JWTParser;
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +40,8 @@ public class PassportService {
   private final GA4GHVisaDAO visaDAO;
   private final JwtUtils jwtUtils;
   private final Collection<VisaComparator> visaComparators;
+
+  private static final long VISA_VALIDITY_TIME = Duration.of(1, ChronoUnit.HOURS).toMillis();
 
   public PassportService(
       LinkedAccountDAO linkedAccountDAO,
@@ -91,34 +97,62 @@ public class PassportService {
           if (visaComparator.visaTypeSupported(visa)
               && visa.getIssuer().equals(criterion.getIssuer())
               && visaComparator.matchesCriterion(visa, criterion)) {
-            var linkedAccount =
-                linkedAccountsByJwtId.get(passportWithVisas.getPassport().getJwtId());
             var auditInfoMap =
-                new HashMap<>(
-                    Map.of(
-                        "passport_jti",
-                        passportWithVisas.getPassport().getJwtId(),
-                        "external_user_id",
-                        linkedAccount.getExternalUserId(),
-                        "internal_user_id",
-                        linkedAccount.getUserId()));
+                new HashMap<>(Map.of("passport_jti", passportWithVisas.getPassport().getJwtId()));
             transactionClaim.map(t -> auditInfoMap.put("txn", t));
-            return new ValidatePassportResultInternal.Builder()
-                .valid(true)
-                .matchedCriterion(criterion)
-                .auditInfo(auditInfoMap)
-                .build();
+            var jwtId = passportWithVisas.getPassport().getJwtId();
+            var linkedAccount =
+                Optional.ofNullable(
+                    linkedAccountsByJwtId.get(passportWithVisas.getPassport().getJwtId()));
+            var passportValid =
+                linkedAccount
+                    .map(
+                        l -> {
+                          log.info("Found internal user {} for passport {}", l.getUserId(), jwtId);
+                          auditInfoMap.putAll(
+                              Map.of(
+                                  "external_user_id", l.getExternalUserId(),
+                                  "internal_user_id", l.getUserId()));
+                          return true;
+                        })
+                    .orElseGet(
+                        () -> {
+                          log.info(
+                              "No internal user found for passport {}. Checking issue time...",
+                              passportWithVisas.getPassport().getJwtId());
+                          return isPassportIssueTimeValid(passportWithVisas.getPassport());
+                        });
+            if (passportValid) {
+              return new ValidatePassportResultInternal.Builder()
+                  .valid(true)
+                  .matchedCriterion(criterion)
+                  .auditInfo(auditInfoMap)
+                  .build();
+            }
           }
         }
       }
     }
 
     // if we got this far there was no matching visa
-    var linkedAccount = linkedAccountsByJwtId.values().iterator().next();
-    return new ValidatePassportResultInternal.Builder()
-        .valid(false)
-        .auditInfo(Map.of("internal_user_id", linkedAccount.getUserId()))
-        .build();
+    var invalidResult = new ValidatePassportResultInternal.Builder().valid(false);
+    if (!linkedAccountsByJwtId.isEmpty()) {
+      var linkedAccount = linkedAccountsByJwtId.values().iterator().next();
+      invalidResult.auditInfo(Map.of("internal_user_id", linkedAccount.getUserId()));
+    }
+    return invalidResult.build();
+  }
+
+  private boolean isPassportIssueTimeValid(GA4GHPassport passport) {
+    try {
+      var issueTime = JWTParser.parse(passport.getJwt()).getJWTClaimsSet().getIssueTime().getTime();
+      var now = Instant.now().toEpochMilli();
+      return (now - issueTime < VISA_VALIDITY_TIME);
+    } catch (ParseException ex) {
+      throw new ExternalCredsException(
+          String.format("Unable to parse JWT for passport with JWT ID: %s", passport.getJwtId()),
+          ex);
+    }
   }
 
   private Collection<PassportWithVisas> decodeAndValidatePassports(
@@ -138,9 +172,6 @@ public class PassportService {
                 .map(p -> p.getPassport().getJwtId())
                 .collect(Collectors.toSet()));
 
-    if (linkedAccounts.isEmpty()) {
-      throw new BadRequestException("unknown user");
-    }
     if (linkedAccounts.values().stream()
             .map(LinkedAccount::getUserId)
             .collect(Collectors.toSet())
