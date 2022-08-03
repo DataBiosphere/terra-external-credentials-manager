@@ -15,9 +15,7 @@ import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
 import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
-import com.nimbusds.jwt.JWTParser;
 import java.sql.Timestamp;
-import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -144,15 +142,9 @@ public class PassportService {
   }
 
   private boolean isPassportIssueTimeValid(GA4GHPassport passport) {
-    try {
-      var issueTime = JWTParser.parse(passport.getJwt()).getJWTClaimsSet().getIssueTime().getTime();
-      var now = Instant.now().toEpochMilli();
-      return (now - issueTime < VISA_VALIDITY_TIME);
-    } catch (ParseException ex) {
-      throw new ExternalCredsException(
-          String.format("Unable to parse JWT for passport with JWT ID: %s", passport.getJwtId()),
-          ex);
-    }
+    var issueTime = jwtUtils.getJwtIssuedAt(passport.getJwt()).getTime();
+    var now = Instant.now().toEpochMilli();
+    return (now - issueTime < VISA_VALIDITY_TIME);
   }
 
   private Collection<PassportWithVisas> decodeAndValidatePassports(
