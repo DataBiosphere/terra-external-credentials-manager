@@ -22,6 +22,8 @@ public interface ExternalCredsConfigInterface {
 
   String getSamBasePath();
 
+  String getOrchestrationBasePath();
+
   int getBackgroundJobIntervalMins();
 
   Duration getTokenValidationDuration();
@@ -52,4 +54,7 @@ public interface ExternalCredsConfigInterface {
 
   @Nullable
   KmsConfiguration getKmsConfiguration();
+
+  @Nullable
+  NihCredentialsSyncConfig getNihCredentialsSyncConfig();
 }

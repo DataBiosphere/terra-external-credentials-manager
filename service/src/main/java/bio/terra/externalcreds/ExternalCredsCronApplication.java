@@ -2,8 +2,10 @@ package bio.terra.externalcreds;
 
 import bio.terra.common.logging.LoggingInitializer;
 import bio.terra.common.logging.LoggingUtils;
+import bio.terra.externalcreds.services.NihCredentialsSyncService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.SshKeyPairService;
+import java.time.Instant;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringBootConfiguration;
@@ -36,11 +38,15 @@ public class ExternalCredsCronApplication {
 
   private final ProviderService providerService;
   private final SshKeyPairService sshKeyPairService;
+  private final NihCredentialsSyncService nihCredentialsSyncService;
 
   public ExternalCredsCronApplication(
-      ProviderService providerService, SshKeyPairService sshKeyPairService) {
+      ProviderService providerService,
+      SshKeyPairService sshKeyPairService,
+      NihCredentialsSyncService nihCredentialsSyncService) {
     this.providerService = providerService;
     this.sshKeyPairService = sshKeyPairService;
+    this.nihCredentialsSyncService = nihCredentialsSyncService;
   }
 
   @Scheduled(fixedRateString = "#{${externalcreds.background-job-interval-mins} * 60 * 1000}")
@@ -70,5 +76,22 @@ public class ExternalCredsCronApplication {
       log.error("checkForExpiringSshKeyPair failed, stacktrace: ", e);
     }
     log.info("Completed checkForExpiringSshKeyPair");
+  }
+
+  // Run once per hour
+  @Scheduled(fixedRateString = "#{1000 * 60 * 60}")
+  public void ncbiAccessFailsafe() {
+    log.info("Beginning NCBIaccess failsafe check");
+    try {
+      if (nihCredentialsSyncService.allAllowlistsValid()) {
+        log.info("All allowlists confirmed valid at {}", Instant.now());
+      } else {
+        LoggingUtils.logAlert(log, "Some or all allowlists are invalid!");
+      }
+    } catch (Exception e) {
+      LoggingUtils.logAlert(
+          log, "Unexpected error during ncbiAccessFailsafe execution, see stacktrace below");
+      log.error("ncbiAccessFailsafe failed, stacktrace: ", e);
+    }
   }
 }

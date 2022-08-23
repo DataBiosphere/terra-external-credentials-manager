@@ -1,5 +1,6 @@
 externalcreds:
   sam-base-path: ${SAM_ADDRESS:https://sam.dsde-dev.broadinstitute.org}
+  orchestration-base-path: ${ORCH_ADDRESS:https://firecloud-orchestration.dsde-dev.broadinstitute.org}
   background-job-interval-mins: 5
   token-validation-duration: 50m # with 5m job interval, 50m allows 2 attempts to validate before 60m expires
   visa-and-passport-refresh-duration: 30m
@@ -15,6 +16,12 @@ externalcreds:
     key-id: ${KMS_KEY_ID:ecm-dev-kms-symmetric-key-for-ssh-key-encrypt-decrypt}
     key-ring-location: ${kMS_KEY_LOCATION:us-central1}
     ssh-key-pair-refresh-duration: ${KMS_KEY_REFRESH_DURATION:90d}
+  nih-credentials-sync-config:
+    allowlist-validity-duration: 12h
+    allowlist-manifest-path: ${NIH_ALLOWLIST_MANIFEST_PATH:/etc/nih_allowlist_manifest.tsv}
+    google-project-id: ${NIH_ALLOWLIST_GOOGLE_BUCKET_PROJECT:broad-dsde-dev}
+    bucket-name: ${NIH_ALLOWLIST_GOOGLE_BUCKET_NAME:firecloud-whitelist}
+    is-fail-closed: ${NIH_ALLOWLIST_FAIL_CLOSED:false}
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}

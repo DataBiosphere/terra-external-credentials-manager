@@ -1,0 +1,4 @@
+TEST_ALLOWLIST_1	test_authentication_file_phs000001.txt.enc	test-allowlist-1.txt	c1
+TEST_ALLOWLIST_2	test_authentication_file_phs000002.txt.enc	test-allowlist-2.txt	c1
+TEST_ALLOWLIST_3	test_authentication_file_phs000003.txt.enc	test-allowlist-3.txt	c1
+AnVIL_ALLOWLIST	test_authentication_file_phs000004.txt.enc	phs000004.c1.allowlist.txt	c1
