@@ -142,7 +142,7 @@ public class NihCredentialsSyncService {
     return allBlobsInBucket.filter(b -> validAllowlists.contains(b.getBlobId().getName()));
   }
 
-  // Get all the allowlists from the configured manifest
+  // Get all the allowlists from the configured manifest in the cloud bucket
   Set<String> getAllowListFileNames() {
     var bucketName = externalCredsConfig.getNihCredentialsSyncConfig().getBucketName();
     var manifestPath = externalCredsConfig.getNihCredentialsSyncConfig().getAllowlistManifestPath();

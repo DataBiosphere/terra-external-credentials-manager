@@ -36,7 +36,7 @@ public class GoogleCloudStorageDAO {
             Storage.BlobListOption.currentDirectory()
           };
     } else {
-      listOptions = new Storage.BlobListOption[0];
+      listOptions = new Storage.BlobListOption[] {Storage.BlobListOption.currentDirectory()};
     }
     Iterable<Blob> blobs = storage.list(bucketName, listOptions).iterateAll();
     return StreamSupport.stream(blobs.spliterator(), false);
