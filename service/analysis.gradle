@@ -24,6 +24,7 @@ spotbugs {
 spotbugsMain {
 	reports {
 		sarif { enabled = true }
+		html { enabled = true }
 	}
 }
 

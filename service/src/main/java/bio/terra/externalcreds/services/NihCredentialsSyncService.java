@@ -27,9 +27,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class NihCredentialsSyncService {
 
-  private ExternalCredsConfig externalCredsConfig;
-  private FirecloudOrchestrationClient firecloudOrchestrationClient;
-  private GoogleCloudStorageDAO googleCloudStorageDAO;
+  private final ExternalCredsConfig externalCredsConfig;
+  private final FirecloudOrchestrationClient firecloudOrchestrationClient;
+  private final GoogleCloudStorageDAO googleCloudStorageDAO;
 
   public NihCredentialsSyncService(
       ExternalCredsConfig externalCredsConfig,

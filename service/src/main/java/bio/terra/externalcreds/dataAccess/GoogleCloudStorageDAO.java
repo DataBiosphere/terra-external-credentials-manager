@@ -16,8 +16,8 @@ import org.springframework.stereotype.Repository;
 @Slf4j
 public class GoogleCloudStorageDAO {
 
-  public static int CONNECT_TIMEOUT_SECONDS = 20;
-  public static int READ_TIMEOUT_SECONDS = 40;
+  public static final int CONNECT_TIMEOUT_SECONDS = 20;
+  public static final int READ_TIMEOUT_SECONDS = 40;
   /**
    * It is important that the stream returned by this method be guaranteed to closed. Since this is
    * a stream from IO, we need to make sure that the handle is closed. This can be done by wrapping
