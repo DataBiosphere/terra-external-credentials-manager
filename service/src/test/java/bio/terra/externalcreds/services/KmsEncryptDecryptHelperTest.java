@@ -8,10 +8,12 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+@Tag("unit")
 class KmsEncryptDecryptHelperTest extends BaseTest {
 
   @Autowired KmsEncryptDecryptHelper encryptDecryptHelper;

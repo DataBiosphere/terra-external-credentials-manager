@@ -18,9 +18,9 @@ externalcreds:
     ssh-key-pair-refresh-duration: ${KMS_KEY_REFRESH_DURATION:90d}
   nih-credentials-sync-config:
     allowlist-validity-duration: 12h
-    allowlist-manifest-path: ${NIH_ALLOWLIST_MANIFEST_PATH:/etc/nih_allowlist_manifest.tsv}
+    allowlist-manifest-path: ${NIH_ALLOWLIST_MANIFEST_PATH:manifests/nih-allowlist-manifest.tsv}
     google-project-id: ${NIH_ALLOWLIST_GOOGLE_BUCKET_PROJECT:broad-dsde-dev}
-    bucket-name: ${NIH_ALLOWLIST_GOOGLE_BUCKET_NAME:firecloud-whitelist}
+    bucket-name: ${NIH_ALLOWLIST_GOOGLE_BUCKET_NAME:terra-nih-allowlist-dev}
     is-fail-closed: ${NIH_ALLOWLIST_FAIL_CLOSED:false}
 
 logging:

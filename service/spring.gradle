@@ -22,7 +22,17 @@ dependencies {
 	runtimeOnly 'org.postgresql:postgresql'
 }
 
-test { useJUnitPlatform() }
+test {
+	useJUnitPlatform {
+		includeTags 'unit'
+	}
+}
+
+task testFunctional(type: Test)  {
+	useJUnitPlatform {
+		includeTags 'functional'
+	}
+}
 
 def googleCredentialsFile = "${rootDir}/service/src/main/resources/rendered/ecm-sa.json"
 bootRun {

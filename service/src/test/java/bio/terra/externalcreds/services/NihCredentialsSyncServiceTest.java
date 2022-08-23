@@ -17,6 +17,7 @@ import bio.terra.externalcreds.exception.NihCredentialsSyncException;
 import bio.terra.externalcreds.terra.FirecloudOrchestrationClient;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -28,6 +29,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,7 @@ import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 
+@Tag("unit")
 class NihCredentialsSyncServiceTest extends BaseTest {
 
   @Nested
@@ -51,8 +54,7 @@ class NihCredentialsSyncServiceTest extends BaseTest {
 
     @BeforeEach
     void setup() throws Exception {
-      when(nihCredentialsSyncConfig.getAllowlistManifestPath())
-          .thenReturn(Path.of(this.getClass().getResource("/test-nih-allowlists.tsv").toURI()));
+      when(nihCredentialsSyncConfig.getAllowlistManifestPath()).thenReturn("foo");
       when(nihCredentialsSyncConfig.getAllowlistValidityDuration())
           .thenReturn(Duration.ofHours(12));
       when(nihCredentialsSyncConfig.getBucketName()).thenReturn("fooBucket");
@@ -70,6 +72,10 @@ class NihCredentialsSyncServiceTest extends BaseTest {
       when(invalidBlob2.getBlobId()).thenReturn(BlobId.of("fooBucket", "test-allowlist-3.txt"));
       when(googleCloudStorageDAO.streamBlobs(any(), any(), any()))
           .thenAnswer(invocation -> Stream.of(validBlob, invalidBlob1, invalidBlob2));
+      when(googleCloudStorageDAO.readLinesFromBlob(any(), any()))
+          .thenReturn(
+              Files.readAllLines(
+                  Path.of(this.getClass().getResource("/test-nih-allowlists.tsv").toURI())));
 
       doNothing().when(firecloudOrchestrationClient).syncNihAllowlist(any());
       doNothing().when(googleCloudStorageDAO).writeEmptyBlob(any());
@@ -108,8 +114,8 @@ class NihCredentialsSyncServiceTest extends BaseTest {
 
     @Test
     void testInProcessFailure() {
-      when(nihCredentialsSyncConfig.getAllowlistManifestPath())
-          .thenReturn(Path.of("Non-existent path"));
+      when(googleCloudStorageDAO.readLinesFromBlob(any(), any()))
+          .thenThrow(new RuntimeException("Failure"));
 
       try {
         nihCredentialsSyncService.allAllowlistsValid();
@@ -133,8 +139,7 @@ class NihCredentialsSyncServiceTest extends BaseTest {
 
     @BeforeEach
     void setup() throws Exception {
-      when(nihCredentialsSyncConfig.getAllowlistManifestPath())
-          .thenReturn(Path.of(this.getClass().getResource("/test-nih-allowlists.tsv").toURI()));
+      when(nihCredentialsSyncConfig.getAllowlistManifestPath()).thenReturn("foo");
       when(nihCredentialsSyncConfig.getAllowlistValidityDuration())
           .thenReturn(Duration.ofHours(12));
       when(nihCredentialsSyncConfig.getBucketName()).thenReturn("fooBucket");
@@ -150,6 +155,10 @@ class NihCredentialsSyncServiceTest extends BaseTest {
       when(invalidBlob2.getCreateTime())
           .thenReturn(Instant.now().minus(24, ChronoUnit.HOURS).toEpochMilli());
       when(invalidBlob2.getBlobId()).thenReturn(BlobId.of("fooBucket", "test-allowlist-3.txt"));
+      when(googleCloudStorageDAO.readLinesFromBlob(any(), any()))
+          .thenReturn(
+              Files.readAllLines(
+                  Path.of(this.getClass().getResource("/test-nih-allowlists.tsv").toURI())));
       when(googleCloudStorageDAO.streamBlobs(any(), any(), any()))
           .thenReturn(Stream.of(validBlob, invalidBlob1, invalidBlob2));
     }
@@ -180,16 +189,15 @@ class NihCredentialsSyncServiceTest extends BaseTest {
   @TestComponent
   class AllowlistManifestParsing {
 
-    @MockBean ExternalCredsConfig externalCredsConfig;
-    @Mock NihCredentialsSyncConfig nihCredentialsSyncConfig;
+    @MockBean GoogleCloudStorageDAO googleCloudStorageDAO;
     @Autowired NihCredentialsSyncService nihCredentialsSyncService;
 
     @Test
     void testReadingRecordsFromFile() throws Exception {
-      when(nihCredentialsSyncConfig.getAllowlistManifestPath())
-          .thenReturn(Path.of(this.getClass().getResource("/test-nih-allowlists.tsv").toURI()));
-      when(externalCredsConfig.getNihCredentialsSyncConfig()).thenReturn(nihCredentialsSyncConfig);
-
+      when(googleCloudStorageDAO.readLinesFromBlob(any(), any()))
+          .thenReturn(
+              Files.readAllLines(
+                  Path.of(this.getClass().getResource("/test-nih-allowlists.tsv").toURI())));
       var names = nihCredentialsSyncService.getAllowListFileNames();
       assertEquals(names.size(), 4);
       assertEquals(
@@ -205,6 +213,7 @@ class NihCredentialsSyncServiceTest extends BaseTest {
   @Nested
   @TestComponent
   class InvalidityFilter {
+    @Autowired NihCredentialsSyncService nihCredentialsSyncService;
     @Mock Blob testBlob;
 
     @Test
@@ -212,14 +221,14 @@ class NihCredentialsSyncServiceTest extends BaseTest {
       when(testBlob.getCreateTime())
           .thenReturn(Instant.now().minus(13, ChronoUnit.HOURS).toEpochMilli());
       Predicate<Blob> validityFilter =
-          NihCredentialsSyncService.createInvalidityFilter(Instant.now(), Duration.ofHours(12));
+          nihCredentialsSyncService.createInvalidityFilter(Instant.now(), Duration.ofHours(12));
       assertTrue(validityFilter.test(testBlob));
 
       var savedNow = Instant.now().truncatedTo(ChronoUnit.MILLIS);
       var savedMinusTwelve = savedNow.minus(12, ChronoUnit.HOURS);
       when(testBlob.getCreateTime()).thenReturn(savedMinusTwelve.toEpochMilli());
       validityFilter =
-          NihCredentialsSyncService.createInvalidityFilter(savedNow, Duration.ofHours(12));
+          nihCredentialsSyncService.createInvalidityFilter(savedNow, Duration.ofHours(12));
       assertTrue(validityFilter.test(testBlob));
     }
 
@@ -228,7 +237,7 @@ class NihCredentialsSyncServiceTest extends BaseTest {
       when(testBlob.getCreateTime())
           .thenReturn(Instant.now().minus(6, ChronoUnit.HOURS).toEpochMilli());
       Predicate<Blob> validityFilter =
-          NihCredentialsSyncService.createInvalidityFilter(Instant.now(), Duration.ofHours(12));
+          nihCredentialsSyncService.createInvalidityFilter(Instant.now(), Duration.ofHours(12));
       assertFalse(validityFilter.test(testBlob));
     }
   }

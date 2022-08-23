@@ -8,10 +8,11 @@ import bio.terra.externalcreds.terra.FirecloudOrchestrationClient;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.http.HttpTransportOptions;
 import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -118,15 +119,13 @@ public class NihCredentialsSyncService {
    * @return List of blobs pointing to invalid allowlists.
    */
   List<Blob> getInvalidAllowlists() {
-    var googleProjectId = externalCredsConfig.getNihCredentialsSyncConfig().getGoogleProjectId();
     var bucketName = externalCredsConfig.getNihCredentialsSyncConfig().getBucketName();
     var allowlistValidityDuration =
         externalCredsConfig.getNihCredentialsSyncConfig().getAllowlistValidityDuration();
     var invalidityFilter = createInvalidityFilter(Instant.now(), allowlistValidityDuration);
 
     try (var blobsStream =
-        googleCloudStorageDAO.streamBlobs(
-            getStorage(googleProjectId), bucketName, Optional.empty())) {
+        googleCloudStorageDAO.streamBlobs(getNihAllowlistStorage(), bucketName, Optional.empty())) {
       var blobsToCheck = getCurrentBlobs(blobsStream);
       return blobsToCheck.filter(invalidityFilter).collect(Collectors.toList());
     }
@@ -145,20 +144,22 @@ public class NihCredentialsSyncService {
 
   // Get all the allowlists from the configured manifest
   Set<String> getAllowListFileNames() {
+    var bucketName = externalCredsConfig.getNihCredentialsSyncConfig().getBucketName();
+    var manifestPath = externalCredsConfig.getNihCredentialsSyncConfig().getAllowlistManifestPath();
     try {
-      return Files.readAllLines(
-              externalCredsConfig.getNihCredentialsSyncConfig().getAllowlistManifestPath())
+      return googleCloudStorageDAO
+          .readLinesFromBlob(getNihAllowlistStorage(), BlobId.of(bucketName, manifestPath))
           .stream()
           .map(NihCredentialsManifestEntry::fromManifestLine)
           .map(NihCredentialsManifestEntry::outputFile)
           .collect(Collectors.toSet());
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new NihCredentialsSyncException("Failed to read manifest of allowlists", e);
     }
   }
 
   // Splitting this into its own method for unit-testability
-  static Predicate<Blob> createInvalidityFilter(Instant now, Duration allowlistValidityDuration) {
+  Predicate<Blob> createInvalidityFilter(Instant now, Duration allowlistValidityDuration) {
     return (Blob b) ->
         !Duration.between(Instant.ofEpochMilli(b.getCreateTime()), now)
             .minus(allowlistValidityDuration)
@@ -166,7 +167,9 @@ public class NihCredentialsSyncService {
   }
 
   // Get a Storage with application-default credentials
-  private static Storage getStorage(String googleProjectId) {
+  @VisibleForTesting
+  Storage getNihAllowlistStorage() {
+    var googleProjectId = externalCredsConfig.getNihCredentialsSyncConfig().getGoogleProjectId();
     HttpTransportOptions transportOptions = StorageOptions.getDefaultHttpTransportOptions();
     transportOptions =
         transportOptions.toBuilder()

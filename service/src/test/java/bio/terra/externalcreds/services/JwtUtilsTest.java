@@ -22,11 +22,13 @@ import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+@Tag("unit")
 public class JwtUtilsTest extends BaseTest {
 
   private static JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();

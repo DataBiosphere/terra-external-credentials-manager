@@ -10,7 +10,3 @@ spring:
     password: ${DATABASE_USER_PASSWORD:ecmpwd}
     url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/${DATABASE_NAME:ecm}
     username: ${DATABASE_USER:ecmuser}
-
-externalcreds:
-  nih-credentials-sync-config:
-    allowlist-manifest-path: ${NIH_ALLOWLIST_MANIFEST_PATH:test-nih-allowlists.tsv}

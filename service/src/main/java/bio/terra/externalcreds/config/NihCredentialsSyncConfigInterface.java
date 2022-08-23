@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.config;
 
-import java.nio.file.Path;
 import java.time.Duration;
 import org.immutables.value.Value;
 
@@ -10,7 +9,7 @@ public interface NihCredentialsSyncConfigInterface {
 
   Duration getAllowlistValidityDuration();
 
-  Path getAllowlistManifestPath();
+  String getAllowlistManifestPath();
 
   String getGoogleProjectId();
 

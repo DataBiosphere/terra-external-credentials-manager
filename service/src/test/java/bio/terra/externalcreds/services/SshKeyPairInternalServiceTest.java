@@ -29,12 +29,14 @@ import java.time.Instant;
 import java.util.UUID;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+@Tag("unit")
 public class SshKeyPairInternalServiceTest extends BaseTest {
 
   @Autowired SshKeyPairService sshKeyPairService;
