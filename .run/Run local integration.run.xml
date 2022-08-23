@@ -4,12 +4,15 @@
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$" />
       <option name="externalSystemIdString" value="GRADLE" />
-      <option name="scriptParameters" value="runTest --args=&quot;suites/FullIntegration.json /tmp/test-results&quot; --stacktrace" />
+      <option name="scriptParameters" value="--stacktrace" />
       <option name="taskDescriptions">
         <list />
       </option>
       <option name="taskNames">
-        <list />
+        <list>
+          <option value="runTest" />
+          <option value="--args=&quot;suites/FullIntegration.json /tmp/test-results&quot;" />
+        </list>
       </option>
       <option name="vmOptions" />
     </ExternalSystemSettings>

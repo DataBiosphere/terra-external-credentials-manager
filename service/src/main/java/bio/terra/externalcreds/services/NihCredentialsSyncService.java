@@ -5,14 +5,8 @@ import bio.terra.externalcreds.dataAccess.GoogleCloudStorageDAO;
 import bio.terra.externalcreds.exception.NihCredentialsSyncException;
 import bio.terra.externalcreds.models.NihCredentialsManifestEntry;
 import bio.terra.externalcreds.terra.FirecloudOrchestrationClient;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.http.HttpTransportOptions;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
-import com.google.common.annotations.VisibleForTesting;
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -120,12 +114,13 @@ public class NihCredentialsSyncService {
    */
   List<Blob> getInvalidAllowlists() {
     var bucketName = externalCredsConfig.getNihCredentialsSyncConfig().getBucketName();
+    var googleProjectId = externalCredsConfig.getNihCredentialsSyncConfig().getGoogleProjectId();
     var allowlistValidityDuration =
         externalCredsConfig.getNihCredentialsSyncConfig().getAllowlistValidityDuration();
     var invalidityFilter = createInvalidityFilter(Instant.now(), allowlistValidityDuration);
 
     try (var blobsStream =
-        googleCloudStorageDAO.streamBlobs(getNihAllowlistStorage(), bucketName, Optional.empty())) {
+        googleCloudStorageDAO.streamBlobs(googleProjectId, bucketName, Optional.empty())) {
       var blobsToCheck = getCurrentBlobs(blobsStream);
       return blobsToCheck.filter(invalidityFilter).collect(Collectors.toList());
     }
@@ -144,11 +139,12 @@ public class NihCredentialsSyncService {
 
   // Get all the allowlists from the configured manifest in the cloud bucket
   Set<String> getAllowListFileNames() {
+    var googleProjectId = externalCredsConfig.getNihCredentialsSyncConfig().getGoogleProjectId();
     var bucketName = externalCredsConfig.getNihCredentialsSyncConfig().getBucketName();
     var manifestPath = externalCredsConfig.getNihCredentialsSyncConfig().getAllowlistManifestPath();
     try {
       return googleCloudStorageDAO
-          .readLinesFromBlob(getNihAllowlistStorage(), BlobId.of(bucketName, manifestPath))
+          .readLinesFromBlob(googleProjectId, BlobId.of(bucketName, manifestPath))
           .stream()
           .map(NihCredentialsManifestEntry::fromManifestLine)
           .map(NihCredentialsManifestEntry::outputFile)
@@ -164,32 +160,5 @@ public class NihCredentialsSyncService {
         !Duration.between(Instant.ofEpochMilli(b.getCreateTime()), now)
             .minus(allowlistValidityDuration)
             .isNegative();
-  }
-
-  // Get a Storage with application-default credentials
-  @VisibleForTesting
-  Storage getNihAllowlistStorage() {
-    var googleProjectId = externalCredsConfig.getNihCredentialsSyncConfig().getGoogleProjectId();
-    HttpTransportOptions transportOptions = StorageOptions.getDefaultHttpTransportOptions();
-    transportOptions =
-        transportOptions.toBuilder()
-            .setConnectTimeout(GoogleCloudStorageDAO.CONNECT_TIMEOUT_SECONDS * 1000)
-            .setReadTimeout(GoogleCloudStorageDAO.READ_TIMEOUT_SECONDS * 1000)
-            .build();
-
-    try {
-      var credentials = GoogleCredentials.getApplicationDefault();
-
-      StorageOptions storageOptions =
-          StorageOptions.newBuilder()
-              .setTransportOptions(transportOptions)
-              .setProjectId(googleProjectId)
-              .setCredentials(credentials)
-              .build();
-
-      return storageOptions.getService();
-    } catch (IOException e) {
-      throw new NihCredentialsSyncException("Could not get google credentials for GCS access", e);
-    }
   }
 }

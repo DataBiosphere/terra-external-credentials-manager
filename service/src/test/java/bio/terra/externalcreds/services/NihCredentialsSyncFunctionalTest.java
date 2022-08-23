@@ -41,10 +41,11 @@ class NihCredentialsSyncFunctionalTest extends BaseTest {
   @BeforeEach
   public void setup() {
     var bucketName = externalCredsConfig.getNihCredentialsSyncConfig().getBucketName();
+    var googleProjectId = externalCredsConfig.getNihCredentialsSyncConfig().getGoogleProjectId();
     allowlistNames.forEach(
         l -> {
           googleCloudStorageDAO.writeLinesToBlob(
-              nihCredentialsSyncService.getNihAllowlistStorage(),
+              googleProjectId,
               BlobId.of(bucketName, l),
               List.of("a\tb\tc", "1\t2\t3", "you\tand\tme"));
         });

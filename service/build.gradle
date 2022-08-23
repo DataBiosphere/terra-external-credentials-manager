@@ -41,6 +41,8 @@ dependencies {
 		exclude group: 'org.springframework', module: 'spring-jcl'
 	}
 	implementation 'com.google.cloud:google-cloud-storage'
+	implementation 'org.apache.commons:commons-collections4:4.4'
+
 
 	// for testing with mock web server
 	testImplementation 'org.mock-server:mockserver-netty:5.13.0'
