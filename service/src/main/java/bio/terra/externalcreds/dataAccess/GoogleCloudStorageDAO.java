@@ -15,7 +15,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -36,19 +35,10 @@ public class GoogleCloudStorageDAO {
    * a stream from IO, we need to make sure that the handle is closed. This can be done by wrapping
    * the stream in a try-block once the stream is used for a terminal operation.
    */
-  public Stream<Blob> streamBlobs(
-      String googleProjectId, String bucketName, Optional<String> prefixFilter) {
+  public Stream<Blob> streamBlobs(String googleProjectId, String bucketName) {
     var storage = getStorage(googleProjectId);
-    final Storage.BlobListOption[] listOptions;
-    if (prefixFilter.isPresent()) {
-      listOptions =
-          new Storage.BlobListOption[] {
-            prefixFilter.map(Storage.BlobListOption::prefix).get(),
-            Storage.BlobListOption.currentDirectory()
-          };
-    } else {
-      listOptions = new Storage.BlobListOption[] {Storage.BlobListOption.currentDirectory()};
-    }
+    final Storage.BlobListOption[] listOptions =
+        new Storage.BlobListOption[] {Storage.BlobListOption.currentDirectory()};
     Iterable<Blob> blobs = storage.list(bucketName, listOptions).iterateAll();
     return StreamSupport.stream(blobs.spliterator(), false);
   }

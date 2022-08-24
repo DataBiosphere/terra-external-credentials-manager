@@ -3,13 +3,14 @@ package bio.terra.externalcreds.services;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GoogleCloudStorageDAO;
-import bio.terra.externalcreds.terra.FirecloudOrchestrationClient;
+import bio.terra.externalcreds.util.EcmRestTemplate;
 import com.google.cloud.storage.BlobId;
 import java.time.Duration;
 import java.time.Instant;
@@ -22,6 +23,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 
 @Tag("functional")
 class NihCredentialsSyncFunctionalTest extends BaseTest {
@@ -29,7 +33,7 @@ class NihCredentialsSyncFunctionalTest extends BaseTest {
   @Autowired GoogleCloudStorageDAO googleCloudStorageDAO;
   @Autowired ExternalCredsConfig externalCredsConfig;
   @SpyBean NihCredentialsSyncService nihCredentialsSyncService;
-  @MockBean FirecloudOrchestrationClient firecloudOrchestrationClient;
+  @MockBean EcmRestTemplate restTemplate;
 
   private final Set<String> allowlistNames =
       Set.of(
@@ -50,11 +54,15 @@ class NihCredentialsSyncFunctionalTest extends BaseTest {
               List.of("a\tb\tc", "1\t2\t3", "you\tand\tme"));
         });
 
-    doNothing().when(firecloudOrchestrationClient).syncNihAllowlist(any());
+    when(restTemplate.exchange(
+            any(String.class), eq(HttpMethod.POST), any(HttpEntity.class), eq(Object.class)))
+        .thenReturn(ResponseEntity.ok(new Object()));
+
+    externalCredsConfig.getNihCredentialsSyncConfig().setIsFailClosed(true);
   }
 
   @Test
-  void testGcsIntegrations() {
+  void testSuccessfulGcsIntegrations() {
     assertTrue(nihCredentialsSyncService.allAllowlistsValid());
   }
 

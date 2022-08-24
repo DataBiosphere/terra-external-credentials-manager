@@ -2,6 +2,7 @@ package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -15,6 +16,7 @@ import bio.terra.externalcreds.config.NihCredentialsSyncConfig;
 import bio.terra.externalcreds.dataAccess.GoogleCloudStorageDAO;
 import bio.terra.externalcreds.exception.NihCredentialsSyncException;
 import bio.terra.externalcreds.terra.FirecloudOrchestrationClient;
+import bio.terra.externalcreds.util.EcmRestTemplate;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import java.nio.file.Files;
@@ -36,6 +38,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 
 @Tag("unit")
 class NihCredentialsSyncServiceTest extends BaseTest {
@@ -44,8 +49,9 @@ class NihCredentialsSyncServiceTest extends BaseTest {
   @TestComponent
   class AllTogetherNow {
     @SpyBean NihCredentialsSyncService nihCredentialsSyncService;
+    @Autowired FirecloudOrchestrationClient firecloudOrchestrationClient;
     @MockBean GoogleCloudStorageDAO googleCloudStorageDAO;
-    @MockBean FirecloudOrchestrationClient firecloudOrchestrationClient;
+    @MockBean EcmRestTemplate restTemplate;
     @MockBean ExternalCredsConfig externalCredsConfig;
     @Mock NihCredentialsSyncConfig nihCredentialsSyncConfig;
     @Mock Blob validBlob;
@@ -70,14 +76,16 @@ class NihCredentialsSyncServiceTest extends BaseTest {
       when(invalidBlob2.getCreateTime())
           .thenReturn(Instant.now().minus(24, ChronoUnit.HOURS).toEpochMilli());
       when(invalidBlob2.getBlobId()).thenReturn(BlobId.of("fooBucket", "test-allowlist-3.txt"));
-      when(googleCloudStorageDAO.streamBlobs(any(), any(), any()))
+      when(googleCloudStorageDAO.streamBlobs(any(), any()))
           .thenAnswer(invocation -> Stream.of(validBlob, invalidBlob1, invalidBlob2));
       when(googleCloudStorageDAO.readLinesFromBlob(any(), any()))
           .thenReturn(
               Files.readAllLines(
                   Path.of(this.getClass().getResource("/test-nih-allowlists.tsv").toURI())));
 
-      doNothing().when(firecloudOrchestrationClient).syncNihAllowlist(any());
+      when(restTemplate.exchange(
+              any(String.class), eq(HttpMethod.POST), any(HttpEntity.class), eq(Object.class)))
+          .thenReturn(ResponseEntity.ok(new Object()));
       doNothing().when(googleCloudStorageDAO).writeEmptyBlob(any());
       when(nihCredentialsSyncConfig.isFailClosed()).thenReturn(false);
     }
@@ -94,7 +102,7 @@ class NihCredentialsSyncServiceTest extends BaseTest {
 
     @Test
     void testNothingToDo() {
-      when(googleCloudStorageDAO.streamBlobs(any(), any(), any()))
+      when(googleCloudStorageDAO.streamBlobs(any(), any()))
           .thenAnswer(invocation -> Stream.of(validBlob));
       assertTrue(nihCredentialsSyncService.allAllowlistsValid());
     }
@@ -159,7 +167,7 @@ class NihCredentialsSyncServiceTest extends BaseTest {
           .thenReturn(
               Files.readAllLines(
                   Path.of(this.getClass().getResource("/test-nih-allowlists.tsv").toURI())));
-      when(googleCloudStorageDAO.streamBlobs(any(), any(), any()))
+      when(googleCloudStorageDAO.streamBlobs(any(), any()))
           .thenReturn(Stream.of(validBlob, invalidBlob1, invalidBlob2));
     }
 

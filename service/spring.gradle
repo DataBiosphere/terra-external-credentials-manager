@@ -24,6 +24,12 @@ dependencies {
 
 test {
 	useJUnitPlatform {
+		includeTags 'unit', 'functional'
+	}
+}
+
+task testUnit (type: Test) {
+	useJUnitPlatform {
 		includeTags 'unit'
 	}
 }

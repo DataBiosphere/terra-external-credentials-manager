@@ -10,7 +10,6 @@ import com.google.cloud.storage.BlobId;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -98,7 +97,8 @@ public class NihCredentialsSyncService {
               } catch (Exception e) {
                 log.error(
                     "Failed to clear access for allowlist {}. THERE IS A POTENTIAL FOR UNAUTHORIZED ACCESS",
-                    name);
+                    name,
+                    e);
                 return false;
               }
               return true;
@@ -119,8 +119,7 @@ public class NihCredentialsSyncService {
         externalCredsConfig.getNihCredentialsSyncConfig().getAllowlistValidityDuration();
     var invalidityFilter = createInvalidityFilter(Instant.now(), allowlistValidityDuration);
 
-    try (var blobsStream =
-        googleCloudStorageDAO.streamBlobs(googleProjectId, bucketName, Optional.empty())) {
+    try (var blobsStream = googleCloudStorageDAO.streamBlobs(googleProjectId, bucketName)) {
       var blobsToCheck = getCurrentBlobs(blobsStream);
       return blobsToCheck.filter(invalidityFilter).collect(Collectors.toList());
     }
