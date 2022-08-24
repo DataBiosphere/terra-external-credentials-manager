@@ -13,11 +13,13 @@ import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
 import java.util.Optional;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DuplicateKeyException;
 
+@Tag("unit")
 class GA4GHPassportDAOTest extends BaseTest {
 
   @Autowired private LinkedAccountDAO linkedAccountDAO;

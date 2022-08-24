@@ -16,9 +16,11 @@ import java.util.Date;
 import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@Tag("unit")
 class RASv1Dot1VisaComparatorTest extends BaseTest {
   private static final JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
 

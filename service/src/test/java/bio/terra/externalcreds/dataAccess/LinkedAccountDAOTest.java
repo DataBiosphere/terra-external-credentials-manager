@@ -17,9 +17,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@Tag("unit")
 class LinkedAccountDAOTest extends BaseTest {
 
   @Autowired private LinkedAccountDAO linkedAccountDAO;

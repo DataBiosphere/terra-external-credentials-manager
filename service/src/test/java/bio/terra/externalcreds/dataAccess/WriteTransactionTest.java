@@ -6,12 +6,14 @@ import bio.terra.externalcreds.ExternalCredsWebApplication;
 import java.util.concurrent.CyclicBarrier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 // BaseTest includes @Transactional annotation which interferes with tests in this class
+@Tag("unit")
 @SpringBootTest(
     properties = {"DATABASE_NAME=ecm_test"},
     classes = ExternalCredsWebApplication.class)

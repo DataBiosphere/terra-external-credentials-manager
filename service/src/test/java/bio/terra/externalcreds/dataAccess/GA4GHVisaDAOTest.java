@@ -16,10 +16,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 
+@Tag("unit")
 class GA4GHVisaDAOTest extends BaseTest {
 
   @Autowired private LinkedAccountDAO linkedAccountDAO;

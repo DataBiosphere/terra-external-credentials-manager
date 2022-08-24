@@ -6,9 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.models.OAuth2State;
 import java.security.SecureRandom;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@Tag("unit")
 public class OAuth2StateDAOTest extends BaseTest {
   @Autowired private OAuth2StateDAO oAuth2StateDAO;
 
