@@ -129,7 +129,7 @@ jobs:
         run: ./gradlew uploadResults --args="CompressDirectoryToTerraKernelK8S.json /tmp/test-results"
 
   notify-slack:
-   needs: [ performance-tests, functional-tests ]
+   needs: [ performance-tests ]
    runs-on: ubuntu-latest
 
    if: failure()
