@@ -4,7 +4,7 @@ jacocoTestReport {
 		xml.required = true
 	}
 
-	dependsOn test
+	dependsOn test, testFunctional
 
 	// https://www.baeldung.com/jacoco-report-exclude#2-gradle-configuration
 	afterEvaluate {
