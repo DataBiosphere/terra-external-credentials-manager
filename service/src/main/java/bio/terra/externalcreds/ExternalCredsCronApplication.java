@@ -64,7 +64,8 @@ public class ExternalCredsCronApplication {
     log.info("completed validateVisas", Map.of("checked_passport_count", checkedPassportCount));
   }
 
-  @Scheduled(fixedRateString = "#{${externalcreds.background-job-interval-mins} * 60 * 1000}")
+  // Disabled by default in configs. Can be turned on with env var NIH_ALLOWLIST_CHECK_CRON_STRING
+  @Scheduled(cron = "${externalcreds.nih-credentials-sync-config.check-frequency}")
   public void checkForExpiringSshKeyPair() {
     log.info("Beginning checkForExpiringSshKeyPair");
     try {
