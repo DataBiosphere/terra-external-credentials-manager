@@ -64,8 +64,7 @@ public class ExternalCredsCronApplication {
     log.info("completed validateVisas", Map.of("checked_passport_count", checkedPassportCount));
   }
 
-  // Disabled by default in configs. Can be turned on with env var NIH_ALLOWLIST_CHECK_CRON_STRING
-  @Scheduled(cron = "${externalcreds.nih-credentials-sync-config.check-frequency}")
+  @Scheduled(fixedRateString = "#{${externalcreds.background-job-interval-mins} * 60 * 1000}")
   public void checkForExpiringSshKeyPair() {
     log.info("Beginning checkForExpiringSshKeyPair");
     try {
@@ -79,8 +78,8 @@ public class ExternalCredsCronApplication {
     log.info("Completed checkForExpiringSshKeyPair");
   }
 
-  // Run once per hour
-  @Scheduled(fixedRateString = "#{1000 * 60 * 60}")
+  // Disabled by default in configs. Can be turned on with env var NIH_ALLOWLIST_CHECK_CRON_STRING
+  @Scheduled(cron = "${externalcreds.nih-credentials-sync-config.check-frequency}")
   public void ncbiAccessFailsafe() {
     log.info("Beginning NCBIaccess failsafe check");
     try {
