@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.terra;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,21 +18,21 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
 @Tag("unit")
-public class FirecloudOrchestrationClientTest extends BaseTest {
+class FirecloudOrchestrationClientTest extends BaseTest {
 
   @Autowired private FirecloudOrchestrationClient firecloudOrchestrationClient;
   @MockBean private EcmRestTemplate restTemplate;
 
   @Test
-  public void testSuccessfulNihAllowlistCall() {
+  void testSuccessfulNihAllowlistCall() {
     when(restTemplate.exchange(
             any(String.class), eq(HttpMethod.POST), any(HttpEntity.class), eq(Object.class)))
         .thenReturn(ResponseEntity.ok(new Object()));
-    firecloudOrchestrationClient.syncNihAllowlist("foobar");
+    assertDoesNotThrow(() -> firecloudOrchestrationClient.syncNihAllowlist("foobar"));
   }
 
   @Test
-  public void testFailedNihAllowlistCall() {
+  void testFailedNihAllowlistCall() {
     when(restTemplate.exchange(
             any(String.class), eq(HttpMethod.POST), any(HttpEntity.class), eq(Object.class)))
         .thenReturn(ResponseEntity.internalServerError().body(new Object()));

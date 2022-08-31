@@ -121,7 +121,7 @@ public class NihCredentialsSyncService {
 
     try (var blobsStream = googleCloudStorageDAO.streamBlobs(googleProjectId, bucketName)) {
       var blobsToCheck = getCurrentBlobs(blobsStream);
-      return blobsToCheck.filter(invalidityFilter).collect(Collectors.toList());
+      return blobsToCheck.filter(invalidityFilter).toList();
     }
   }
 

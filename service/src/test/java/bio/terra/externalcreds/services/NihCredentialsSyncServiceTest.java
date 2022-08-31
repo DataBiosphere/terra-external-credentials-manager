@@ -207,7 +207,7 @@ class NihCredentialsSyncServiceTest extends BaseTest {
               Files.readAllLines(
                   Path.of(this.getClass().getResource("/test-nih-allowlists.tsv").toURI())));
       var names = nihCredentialsSyncService.getAllowListFileNames();
-      assertEquals(names.size(), 4);
+      assertEquals(4, names.size());
       assertEquals(
           Set.of(
               "test-allowlist-1.txt",
