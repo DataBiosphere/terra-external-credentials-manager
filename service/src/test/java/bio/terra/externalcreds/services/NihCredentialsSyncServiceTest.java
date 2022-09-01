@@ -15,6 +15,8 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.NihCredentialsSyncConfig;
 import bio.terra.externalcreds.dataAccess.GoogleCloudStorageDAO;
 import bio.terra.externalcreds.exception.NihCredentialsSyncException;
+import bio.terra.externalcreds.models.NihCredentialsBlob;
+import bio.terra.externalcreds.models.NihCredentialsManifestEntry;
 import bio.terra.externalcreds.terra.FirecloudOrchestrationClient;
 import bio.terra.externalcreds.util.EcmRestTemplate;
 import com.google.cloud.storage.Blob;
@@ -28,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -70,12 +73,15 @@ class NihCredentialsSyncServiceTest extends BaseTest {
       when(validBlob.getCreateTime())
           .thenReturn(Instant.now().minus(6, ChronoUnit.HOURS).toEpochMilli());
       when(validBlob.getBlobId()).thenReturn(BlobId.of("fooBucket", "test-allowlist-1.txt"));
+      when(validBlob.getName()).thenReturn("test-allowlist-1.txt");
       when(invalidBlob1.getCreateTime())
           .thenReturn(Instant.now().minus(13, ChronoUnit.HOURS).toEpochMilli());
       when(invalidBlob1.getBlobId()).thenReturn(BlobId.of("fooBucket", "test-allowlist-2.txt"));
+      when(invalidBlob1.getName()).thenReturn("test-allowlist-2.txt");
       when(invalidBlob2.getCreateTime())
           .thenReturn(Instant.now().minus(24, ChronoUnit.HOURS).toEpochMilli());
       when(invalidBlob2.getBlobId()).thenReturn(BlobId.of("fooBucket", "test-allowlist-3.txt"));
+      when(invalidBlob2.getName()).thenReturn("test-allowlist-3.txt");
       when(googleCloudStorageDAO.streamBlobs(any(), any()))
           .thenAnswer(invocation -> Stream.of(validBlob, invalidBlob1, invalidBlob2));
       when(googleCloudStorageDAO.readLinesFromBlob(any(), any()))
@@ -144,6 +150,9 @@ class NihCredentialsSyncServiceTest extends BaseTest {
     @Mock Blob validBlob;
     @Mock Blob invalidBlob1;
     @Mock Blob invalidBlob2;
+    @Mock bio.terra.externalcreds.models.NihCredentialsBlob validNihBlob;
+    @Mock NihCredentialsBlob invalidNihBlob1;
+    @Mock NihCredentialsBlob invalidNihBlob2;
 
     @BeforeEach
     void setup() throws Exception {
@@ -154,15 +163,45 @@ class NihCredentialsSyncServiceTest extends BaseTest {
       when(nihCredentialsSyncConfig.getGoogleProjectId()).thenReturn("google-project-id");
       when(externalCredsConfig.getNihCredentialsSyncConfig()).thenReturn(nihCredentialsSyncConfig);
 
+      when(validNihBlob.blob()).thenReturn(validBlob);
+      when(validNihBlob.entry())
+          .thenReturn(
+              new NihCredentialsManifestEntry(
+                  "TEST_ALLOWLIST_1",
+                  "test_authentication_file_phs000001.txt.enc",
+                  "test-allowlist-1.txt",
+                  " c1"));
       when(validBlob.getCreateTime())
           .thenReturn(Instant.now().minus(6, ChronoUnit.HOURS).toEpochMilli());
       when(validBlob.getBlobId()).thenReturn(BlobId.of("fooBucket", "test-allowlist-1.txt"));
+      when(validBlob.getName()).thenReturn("test-allowlist-1.txt");
+
+      when(invalidNihBlob1.blob()).thenReturn(invalidBlob1);
+      when(invalidNihBlob1.entry())
+          .thenReturn(
+              new NihCredentialsManifestEntry(
+                  "TEST_ALLOWLIST_2",
+                  "test_authentication_file_phs000002.txt.enc",
+                  "test-allowlist-2.txt",
+                  "c1"));
       when(invalidBlob1.getCreateTime())
           .thenReturn(Instant.now().minus(13, ChronoUnit.HOURS).toEpochMilli());
       when(invalidBlob1.getBlobId()).thenReturn(BlobId.of("fooBucket", "test-allowlist-2.txt"));
+      when(invalidBlob1.getName()).thenReturn("test-allowlist-2.txt");
+
+      when(invalidNihBlob2.blob()).thenReturn(invalidBlob2);
+      when(invalidNihBlob2.entry())
+          .thenReturn(
+              new NihCredentialsManifestEntry(
+                  "TEST_ALLOWLIST_3",
+                  "test_authentication_file_phs000003.txt.enc",
+                  "test-allowlist-3.txt",
+                  "c1"));
       when(invalidBlob2.getCreateTime())
           .thenReturn(Instant.now().minus(24, ChronoUnit.HOURS).toEpochMilli());
       when(invalidBlob2.getBlobId()).thenReturn(BlobId.of("fooBucket", "test-allowlist-3.txt"));
+      when(invalidBlob2.getName()).thenReturn("test-allowlist-3.txt");
+
       when(googleCloudStorageDAO.readLinesFromBlob(any(), any()))
           .thenReturn(
               Files.readAllLines(
@@ -173,7 +212,10 @@ class NihCredentialsSyncServiceTest extends BaseTest {
 
     @Test
     void testGettingInvalidBlobs() {
-      Set<Blob> invalidAllowlists = new HashSet<>(nihCredentialsSyncService.getInvalidAllowlists());
+      Set<Blob> invalidAllowlists =
+          nihCredentialsSyncService.getInvalidAllowlists().stream()
+              .map(NihCredentialsBlob::blob)
+              .collect(Collectors.toSet());
       Set<Blob> expectedInvalidLists = new HashSet<>(List.of(invalidBlob1, invalidBlob2));
 
       assertEquals(expectedInvalidLists, invalidAllowlists);
@@ -184,7 +226,7 @@ class NihCredentialsSyncServiceTest extends BaseTest {
       doNothing().when(firecloudOrchestrationClient).syncNihAllowlist(any());
       doNothing().when(googleCloudStorageDAO).writeEmptyBlob(any());
 
-      var invalidLists = List.of(invalidBlob1, invalidBlob2);
+      var invalidLists = List.of(invalidNihBlob1, invalidNihBlob2);
 
       nihCredentialsSyncService.failClosed(invalidLists);
 
@@ -206,15 +248,17 @@ class NihCredentialsSyncServiceTest extends BaseTest {
           .thenReturn(
               Files.readAllLines(
                   Path.of(this.getClass().getResource("/test-nih-allowlists.tsv").toURI())));
-      var names = nihCredentialsSyncService.getAllowListFileNames();
-      assertEquals(4, names.size());
+      var entries = nihCredentialsSyncService.getAllowListManifestEntries();
+      assertEquals(4, entries.size());
       assertEquals(
           Set.of(
               "test-allowlist-1.txt",
               "test-allowlist-2.txt",
               "test-allowlist-3.txt",
               "phs000004.c1.allowlist.txt"),
-          names);
+          entries.stream()
+              .map(NihCredentialsManifestEntry::outputFile)
+              .collect(Collectors.toSet()));
     }
   }
 
@@ -223,30 +267,33 @@ class NihCredentialsSyncServiceTest extends BaseTest {
   class InvalidityFilter {
     @Autowired NihCredentialsSyncService nihCredentialsSyncService;
     @Mock Blob testBlob;
+    @Mock NihCredentialsBlob testNihBlob;
 
     @Test
     void testInvalidityFilterMatchesOldAllowlists() {
       when(testBlob.getCreateTime())
           .thenReturn(Instant.now().minus(13, ChronoUnit.HOURS).toEpochMilli());
-      Predicate<Blob> validityFilter =
+      when(testNihBlob.blob()).thenReturn(testBlob);
+      Predicate<NihCredentialsBlob> validityFilter =
           nihCredentialsSyncService.createInvalidityFilter(Instant.now(), Duration.ofHours(12));
-      assertTrue(validityFilter.test(testBlob));
+      assertTrue(validityFilter.test(testNihBlob));
 
       var savedNow = Instant.now().truncatedTo(ChronoUnit.MILLIS);
       var savedMinusTwelve = savedNow.minus(12, ChronoUnit.HOURS);
       when(testBlob.getCreateTime()).thenReturn(savedMinusTwelve.toEpochMilli());
       validityFilter =
           nihCredentialsSyncService.createInvalidityFilter(savedNow, Duration.ofHours(12));
-      assertTrue(validityFilter.test(testBlob));
+      assertTrue(validityFilter.test(testNihBlob));
     }
 
     @Test
     void testInvalidityFilterExcludesValidAllowlists() {
       when(testBlob.getCreateTime())
           .thenReturn(Instant.now().minus(6, ChronoUnit.HOURS).toEpochMilli());
-      Predicate<Blob> validityFilter =
+      when(testNihBlob.blob()).thenReturn(testBlob);
+      Predicate<NihCredentialsBlob> validityFilter =
           nihCredentialsSyncService.createInvalidityFilter(Instant.now(), Duration.ofHours(12));
-      assertFalse(validityFilter.test(testBlob));
+      assertFalse(validityFilter.test(testNihBlob));
     }
   }
 }

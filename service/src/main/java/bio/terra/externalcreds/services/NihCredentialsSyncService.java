@@ -3,6 +3,7 @@ package bio.terra.externalcreds.services;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GoogleCloudStorageDAO;
 import bio.terra.externalcreds.exception.NihCredentialsSyncException;
+import bio.terra.externalcreds.models.NihCredentialsBlob;
 import bio.terra.externalcreds.models.NihCredentialsManifestEntry;
 import bio.terra.externalcreds.terra.FirecloudOrchestrationClient;
 import com.google.cloud.storage.Blob;
@@ -11,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,10 +57,10 @@ public class NihCredentialsSyncService {
     var now = Instant.now();
     invalidAllowlists.forEach(
         b -> {
-          var between = Duration.between(Instant.ofEpochMilli(b.getCreateTime()), now);
+          var between = Duration.between(Instant.ofEpochMilli(b.blob().getCreateTime()), now);
           log.error(
               "NIH allowlist {} is {} hours and {} minutes old",
-              b.getBlobId().getName(),
+              b.blob().getBlobId().getName(),
               between.toHoursPart(),
               between.toMinutesPart());
         });
@@ -83,21 +85,22 @@ public class NihCredentialsSyncService {
    * @param invalidAllowlists allowlists that are too old to be valid anymore.
    * @return if all the invalid allowlists could be updated and permissions revoked.
    */
-  boolean failClosed(List<Blob> invalidAllowlists) {
+  boolean failClosed(List<NihCredentialsBlob> invalidAllowlists) {
     return invalidAllowlists.stream()
         .map(
             b -> {
               log.warn(
-                  "Overwriting allowlist {} and telling Orch to sync", b.getBlobId().toGsUtilUri());
-              var name = b.getName();
+                  "Overwriting allowlist {} and telling Orch to sync",
+                  b.blob().getBlobId().toGsUtilUri());
+              var blobName = b.blob().getName();
               try {
-                googleCloudStorageDAO.writeEmptyBlob(b);
-                firecloudOrchestrationClient.syncNihAllowlist(name);
-                log.info("Successfully cleared all access for allowlist {}", name);
+                googleCloudStorageDAO.writeEmptyBlob(b.blob());
+                firecloudOrchestrationClient.syncNihAllowlist(b.entry().name());
+                log.info("Successfully cleared all access for allowlist {}", b.blob().getName());
               } catch (Exception e) {
                 log.error(
                     "Failed to clear access for allowlist {}. THERE IS A POTENTIAL FOR UNAUTHORIZED ACCESS",
-                    name,
+                    blobName,
                     e);
                 return false;
               }
@@ -112,7 +115,7 @@ public class NihCredentialsSyncService {
    *
    * @return List of blobs pointing to invalid allowlists.
    */
-  List<Blob> getInvalidAllowlists() {
+  List<NihCredentialsBlob> getInvalidAllowlists() {
     var bucketName = externalCredsConfig.getNihCredentialsSyncConfig().getBucketName();
     var googleProjectId = externalCredsConfig.getNihCredentialsSyncConfig().getGoogleProjectId();
     var allowlistValidityDuration =
@@ -131,13 +134,20 @@ public class NihCredentialsSyncService {
    * @param allBlobsInBucket
    * @return only the allowlists appearing in the configured manifest
    */
-  Stream<Blob> getCurrentBlobs(Stream<Blob> allBlobsInBucket) {
-    var validAllowlists = getAllowListFileNames();
-    return allBlobsInBucket.filter(b -> validAllowlists.contains(b.getBlobId().getName()));
+  Stream<NihCredentialsBlob> getCurrentBlobs(Stream<Blob> allBlobsInBucket) {
+    var validAllowlists = getAllowListManifestEntries();
+    var outputFileToEntry =
+        validAllowlists.stream()
+            .collect(
+                Collectors.toMap(NihCredentialsManifestEntry::outputFile, Function.identity()));
+    var outputFileNames = outputFileToEntry.keySet();
+    return allBlobsInBucket
+        .filter(b -> outputFileNames.contains(b.getName()))
+        .map(b -> outputFileToEntry.get(b.getName()).withBlob(b));
   }
 
   // Get all the allowlists from the configured manifest in the cloud bucket
-  Set<String> getAllowListFileNames() {
+  Set<NihCredentialsManifestEntry> getAllowListManifestEntries() {
     var googleProjectId = externalCredsConfig.getNihCredentialsSyncConfig().getGoogleProjectId();
     var bucketName = externalCredsConfig.getNihCredentialsSyncConfig().getBucketName();
     var manifestPath = externalCredsConfig.getNihCredentialsSyncConfig().getAllowlistManifestPath();
@@ -146,7 +156,6 @@ public class NihCredentialsSyncService {
           .readLinesFromBlob(googleProjectId, BlobId.of(bucketName, manifestPath))
           .stream()
           .map(NihCredentialsManifestEntry::fromManifestLine)
-          .map(NihCredentialsManifestEntry::outputFile)
           .collect(Collectors.toSet());
     } catch (Exception e) {
       throw new NihCredentialsSyncException("Failed to read manifest of allowlists", e);
@@ -154,9 +163,10 @@ public class NihCredentialsSyncService {
   }
 
   // Splitting this into its own method for unit-testability
-  Predicate<Blob> createInvalidityFilter(Instant now, Duration allowlistValidityDuration) {
-    return (Blob b) ->
-        !Duration.between(Instant.ofEpochMilli(b.getCreateTime()), now)
+  Predicate<NihCredentialsBlob> createInvalidityFilter(
+      Instant now, Duration allowlistValidityDuration) {
+    return (NihCredentialsBlob b) ->
+        !Duration.between(Instant.ofEpochMilli(b.blob().getCreateTime()), now)
             .minus(allowlistValidityDuration)
             .isNegative();
   }
