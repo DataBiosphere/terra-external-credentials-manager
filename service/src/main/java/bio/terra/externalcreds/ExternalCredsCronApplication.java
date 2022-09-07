@@ -78,8 +78,8 @@ public class ExternalCredsCronApplication {
     log.info("Completed checkForExpiringSshKeyPair");
   }
 
-  // Disabled by default in configs. Can be turned on with env var NIH_ALLOWLIST_CHECK_CRON_STRING
-  @Scheduled(cron = "${externalcreds.nih-credentials-sync-config.check-frequency}")
+  // Disabled by default in configs. Can be turned on with env var NIH_ALLOWLIST_SYNC_FREQUENCY
+  @Scheduled(cron = "${externalcreds.nih-credentials-sync-config.frequency}")
   public void ncbiAccessFailsafe() {
     log.info("Beginning NCBIaccess failsafe check");
     try {

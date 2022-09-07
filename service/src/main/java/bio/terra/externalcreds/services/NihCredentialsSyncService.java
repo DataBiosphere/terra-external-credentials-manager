@@ -107,6 +107,10 @@ public class NihCredentialsSyncService {
               return true;
             })
         .reduce(true, Boolean::logicalAnd);
+    // `allMatch` seems like an obvious choice here,
+    // but can short-circuit the computation of the stream.
+    // Using `reduce` and &&-ing the input and accumulator achieves the same result,
+    // but makes sure the whole stream is computed.
   }
 
   /**

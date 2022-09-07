@@ -17,8 +17,8 @@ externalcreds:
     key-ring-location: ${kMS_KEY_LOCATION:us-central1}
     ssh-key-pair-refresh-duration: ${KMS_KEY_REFRESH_DURATION:90d}
   nih-credentials-sync-config:
-    check-frequency: ${NIH_ALLOWLIST_CHECK_CRON_STRING:-} # For once-per-hour, use @hourly
-    allowlist-validity-duration: 24h
+    frequency: ${NIH_ALLOWLIST_SYNC_FREQUENCY:-} # Cron-like string. For once-per-hour, use @hourly
+    allowlist-validity-duration: 23h
     allowlist-manifest-path: ${NIH_ALLOWLIST_MANIFEST_PATH:manifests/nih-allowlist-manifest.tsv}
     google-project-id: ${NIH_ALLOWLIST_GOOGLE_BUCKET_PROJECT:broad-dsde-dev}
     bucket-name: ${NIH_ALLOWLIST_GOOGLE_BUCKET_NAME:terra-nih-allowlist-dev}
