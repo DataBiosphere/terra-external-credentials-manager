@@ -7,7 +7,7 @@ import org.immutables.value.Value;
 @PropertiesInterfaceStyle
 public interface NihCredentialsSyncConfigInterface {
 
-  String checkFrequency();
+  String frequency();
 
   Duration getAllowlistValidityDuration();
 
