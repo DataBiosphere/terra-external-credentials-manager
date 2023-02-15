@@ -165,6 +165,8 @@ paths:
     parameters:
       - $ref: '#/components/parameters/sshKeyPairTypeParam'
     get:
+      parameters:
+        - $ref: '#/components/parameters/includePrivateKey'
       summary: Get the ssh key pair of the given provider.
       tags: [ ssh key pair ]
       operationId: getSshKeyPair
@@ -192,6 +194,8 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
     post:
+      parameters:
+        - $ref: '#/components/parameters/includePrivateKey'
       summary: Generates a pair of ssh keys
       tags: [ ssh key pair ]
       operationId: generateSshKeyPair
@@ -221,7 +225,6 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
-
 components:
   parameters:
     sshKeyPairTypeParam:
@@ -230,6 +233,13 @@ components:
       schema:
         $ref: '#/components/schemas/SshKeyPairType'
       required: true
+    includePrivateKey:
+      name: includePrivateKey
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
     providerParam:
       name: provider
       in: path
@@ -319,7 +329,7 @@ components:
         - azure
     SshKeyPair:
       type: object
-      required: [ privateKey, publicKey, externalUserEmail ]
+      required: [ publicKey, externalUserEmail ]
       properties:
         privateKey:
           type: string
