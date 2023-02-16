@@ -21,16 +21,22 @@ public class EncryptDecryptSshKeyPair extends TestScript {
 
     // generate a key for each ssh key pair type
     var githubSshKeyPair =
-        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.GITHUB);
+        sshKeyPairApi.generateSshKeyPair(
+            '"' + testUser.userEmail + '"', SshKeyPairType.GITHUB, /*includePrivateKey=*/ true);
     var gitlabSshKeyPair =
-        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.GITLAB);
+        sshKeyPairApi.generateSshKeyPair(
+            '"' + testUser.userEmail + '"', SshKeyPairType.GITLAB, /*includePrivateKey=*/ false);
     var azureSshKeyPair =
-        sshKeyPairApi.generateSshKeyPair('"' + testUser.userEmail + '"', SshKeyPairType.AZURE);
+        sshKeyPairApi.generateSshKeyPair(
+            '"' + testUser.userEmail + '"', SshKeyPairType.AZURE, /*includePrivateKey=*/ false);
 
     // get the key for each ssh key pair type
-    var githubLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITHUB);
-    var gitlabLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITLAB);
-    var azureLoadedSshKeyPair = sshKeyPairApi.getSshKeyPair(SshKeyPairType.AZURE);
+    var githubLoadedSshKeyPair =
+        sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITHUB, /*includePrivateKey=*/ true);
+    var gitlabLoadedSshKeyPair =
+        sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITLAB, /*includePrivateKey=*/ false);
+    var azureLoadedSshKeyPair =
+        sshKeyPairApi.getSshKeyPair(SshKeyPairType.AZURE, /*includePrivateKey=*/ false);
 
     assertEquals(githubSshKeyPair, githubLoadedSshKeyPair);
     assertEquals(gitlabSshKeyPair, gitlabLoadedSshKeyPair);
@@ -40,7 +46,7 @@ public class EncryptDecryptSshKeyPair extends TestScript {
     var notFoundException =
         assertThrows(
             HttpStatusCodeException.class,
-            () -> sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITHUB));
+            () -> sshKeyPairApi.getSshKeyPair(SshKeyPairType.GITHUB, /*includePrivateKey=*/ false));
     assertEquals(HttpStatus.NOT_FOUND, notFoundException.getStatusCode());
 
     // clean up

@@ -99,7 +99,10 @@ class SshKeyApiControllerTest extends BaseTest {
             .andExpect(status().isOk())
             .andReturn();
     verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.PutSshKeyPair);
-    SshKeyPair publicKeyOnly = sshKeyPair.privateKey(null);
+    SshKeyPair publicKeyOnly =
+        new SshKeyPair()
+            .publicKey(sshKeyPair.getPublicKey())
+            .externalUserEmail(sshKeyPair.getExternalUserEmail());
     assertEquals(
         publicKeyOnly,
         objectMapper.readValue(putResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
@@ -174,11 +177,12 @@ class SshKeyApiControllerTest extends BaseTest {
     var getResult =
         mvc.perform(
                 get("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                    .header("authorization", "Bearer " + accessToken))
+                    .header("authorization", "Bearer " + accessToken)
+                    .queryParam("includePrivateKey", "true"))
             .andExpect(status().isOk())
             .andReturn();
     assertEquals(
-        generatedSshKeyPair,
+        generatedSshKeyPairWithPrivateKey,
         objectMapper.readValue(getResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
     verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.GetSshKeyPairSucceeded);
 
