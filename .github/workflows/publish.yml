@@ -81,9 +81,9 @@ jobs:
   report-to-sherlock:
     # Report new ECM version to Broad DevOps
     uses: broadinstitute/sherlock/.github/workflows/client-report-app-version.yaml@main
-    needs: tag-publish-job
+    needs: publish-job
     with:
-      new-version: ${{ needs.tag-publish-job.outputs.tag }}
+      new-version: ${{ needs.publish-job.outputs.tag }}
       chart-name: 'externalcreds'
     permissions:
       contents: 'read'
@@ -92,9 +92,9 @@ jobs:
   set-version-in-dev:
     # Put new ECM version in Broad dev environment
     uses: broadinstitute/sherlock/.github/workflows/client-set-environment-app-version.yaml@main
-    needs: [tag-publish-job, report-to-sherlock]
+    needs: [publish-job, report-to-sherlock]
     with:
-      new-version: ${{ needs.tag-publish-job.outputs.tag }}
+      new-version: ${{ needs.publish-job.outputs.tag }}
       chart-name: 'externalcreds'
       environment-name: 'dev'
     secrets:
