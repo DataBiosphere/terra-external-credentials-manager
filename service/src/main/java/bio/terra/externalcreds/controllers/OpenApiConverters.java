@@ -75,11 +75,15 @@ public class OpenApiConverters {
           .authenticated(linkedAccount.isAuthenticated());
     }
 
-    public static SshKeyPair convert(SshKeyPairInternal sshKeyPairInternal) {
+    public static SshKeyPair convert(
+        SshKeyPairInternal sshKeyPairInternal, boolean includePrivateKey) {
       return new SshKeyPair()
           .externalUserEmail(sshKeyPairInternal.getExternalUserEmail())
           .publicKey(sshKeyPairInternal.getPublicKey())
-          .privateKey(new String(sshKeyPairInternal.getPrivateKey(), StandardCharsets.UTF_8));
+          .privateKey(
+              includePrivateKey
+                  ? new String(sshKeyPairInternal.getPrivateKey(), StandardCharsets.UTF_8)
+                  : null);
     }
   }
 }

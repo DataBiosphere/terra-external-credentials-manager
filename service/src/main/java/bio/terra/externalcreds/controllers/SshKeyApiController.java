@@ -45,7 +45,7 @@ public record SshKeyApiController(
   }
 
   @Override
-  public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type) {
+  public ResponseEntity<SshKeyPair> getSshKeyPair(SshKeyPairType type, Boolean includePrivateKey) {
     var samUser = samUserFactory.from(request);
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
@@ -56,7 +56,7 @@ public record SshKeyApiController(
       var sshKeyPair = sshKeyPairService.getSshKeyPair(samUser.getSubjectId(), type);
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.GetSshKeyPairSucceeded).build());
-      return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
+      return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair, includePrivateKey));
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.GetSshKeyPairFailed).build());
@@ -75,11 +75,13 @@ public record SshKeyApiController(
             .clientIP(request.getRemoteAddr())
             .auditLogEventType(AuditLogEventType.PutSshKeyPair)
             .build());
-    return ResponseEntity.ok(OpenApiConverters.Output.convert(sshKeyPair));
+    return ResponseEntity.ok(
+        OpenApiConverters.Output.convert(sshKeyPair, /*includePrivateKey=*/ false));
   }
 
   @Override
-  public ResponseEntity<SshKeyPair> generateSshKeyPair(SshKeyPairType type, String email) {
+  public ResponseEntity<SshKeyPair> generateSshKeyPair(
+      SshKeyPairType type, String email, Boolean includePrivateKey) {
     String userEmail;
     try {
       userEmail = objectMapper.readValue(email, String.class);
@@ -97,7 +99,7 @@ public record SshKeyApiController(
           sshKeyPairService.generateSshKeyPair(samUser.getSubjectId(), userEmail, type);
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.SshKeyPairCreated).build());
-      return ResponseEntity.ok(OpenApiConverters.Output.convert(generatedKey));
+      return ResponseEntity.ok(OpenApiConverters.Output.convert(generatedKey, includePrivateKey));
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder
