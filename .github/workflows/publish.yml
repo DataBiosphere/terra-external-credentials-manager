@@ -29,8 +29,7 @@ jobs:
 
       - name: Parse tag
         id: tag
-        run: echo ::set-output name=tag::$(git describe --tags)
-
+        run: echo tag=$(git describe --tags) >> $GITHUB_OUTPUT
       - name: Publish to Artifactory
         run: ./gradlew --build-cache :client-resttemplate:artifactoryPublish
         env:
@@ -47,8 +46,8 @@ jobs:
 
       - name: Construct docker image name and tag
         id: image-name
-        run: echo ::set-output name=name::gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }}
-
+        run: echo status=$pass >> $GITHUB_OUTPUT
+        run: echo name=gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }} >> $GITHUB_OUTPUT        
       - name: Add Google Cloud Profiler to Docker Image
         run: docker build ./service -t externalcreds:local
 
