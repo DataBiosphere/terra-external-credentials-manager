@@ -43,7 +43,7 @@ jobs:
         run: gcloud auth configure-docker --quiet
       - name: Construct docker image name and tag
         id: image-name
-        run: echo name=gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }} >> $GITHUB_OUTPUT        
+        run: echo name=gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }} >> $GITHUB_OUTPUT
       - name: Build image locally with jib
         run: './gradlew :service:jibDockerBuild --image=${{ steps.image-name.outputs.name }} -Djib.console=plain'
       - name: Push GCR image
