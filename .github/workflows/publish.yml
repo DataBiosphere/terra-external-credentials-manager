@@ -39,7 +39,7 @@ jobs:
           ARTIFACTORY_REPO_KEY: libs-snapshot-local
 
       - name: Auth to GCR
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCR_PUBLISH_KEY_B64 }}
       - name: Explicitly auth Docker for GCR
