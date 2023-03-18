@@ -47,7 +47,7 @@ jobs:
 
       - name: Construct docker image name and tag
         id: image-name
-        run: echo name=gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }} >> $GITHUB_OUTPUT        
+        run: echo name=gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }} >> $GITHUB_OUTPUT
 
       - name: Add Google Cloud Profiler to Docker Image
         run: docker build ./service -t externalcreds:local
