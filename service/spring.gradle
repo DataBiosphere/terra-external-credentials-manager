@@ -9,7 +9,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	implementation 'org.springframework.security:spring-security-oauth2-core'
-	implementation 'org.springframework.security:spring-security-oauth2-client'
+	implementation ('org.springframework.security:spring-security-oauth2-client') {
+		// Need to exclude this because its strictly tied to a vulnerable version.
+		exclude group: 'net.minidev', module: 'json-smart'
+	}
+	implementation('net.minidev:json-smart:2.4.10')
 	implementation 'org.springframework.security:spring-security-oauth2-jose'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.retry:spring-retry'
