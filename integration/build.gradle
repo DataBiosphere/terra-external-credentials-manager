@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.junit.jupiter:junit-jupiter-api'
+	implementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
 
 	// Google Dependencies
 	implementation 'com.google.auth:google-auth-library-oauth2-http:1.5.3'

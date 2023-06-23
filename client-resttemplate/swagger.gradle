@@ -2,8 +2,8 @@
 dependencies {
 	api 'org.springframework.boot:spring-boot-starter-json:2.7.1'
 
-	implementation 'io.swagger.core.v3:swagger-annotations'
-	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli'
+	implementation 'io.swagger.core.v3:swagger-annotations:2.1.13'
+	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.33'
 }
 
 

@@ -14,12 +14,6 @@ plugins {
 
 repositories { mavenCentral() }
 
-allprojects {
-	dependencyLocking {
-		lockAllConfigurations()
-	}
-}
-
 subprojects {
 	group = 'bio.terra'
 	version = '0.104.0-SNAPSHOT'
