@@ -28,14 +28,14 @@ apply from: 'analysis.gradle'
 dependencies {
 	// google
 	implementation platform('com.google.cloud:libraries-bom:25.1.0')
-	implementation 'com.google.cloud:google-cloud-pubsub'
-	implementation 'com.google.cloud:google-cloud-kms'
+	implementation 'com.google.cloud:google-cloud-pubsub:1.116.3'
+	implementation 'com.google.cloud:google-cloud-kms:2.4.2'
 
 	annotationProcessor 'org.immutables:value:2.9.0'
 	implementation 'bio.terra:terra-common-lib:0.0.60-SNAPSHOT'
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-96c5f4d'
 	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
-	implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.70'
+	implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
 	implementation 'org.codehaus.janino:janino:3.1.7' // Provides if/else xml parsing for logback config
 	implementation('org.springframework.cloud:spring-cloud-gcp-starter-logging:1.2.8.RELEASE') {
 		exclude group: 'org.springframework', module: 'spring-jcl'
