@@ -32,7 +32,7 @@ dependencies {
 	implementation 'com.google.cloud:google-cloud-kms:2.4.2'
 
 	annotationProcessor 'org.immutables:value:2.9.0'
-	implementation 'bio.terra:terra-common-lib:0.0.60-SNAPSHOT'
+	implementation 'bio.terra:terra-common-lib:0.0.93-SNAPSHOT'
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-96c5f4d'
 	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
 	implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
