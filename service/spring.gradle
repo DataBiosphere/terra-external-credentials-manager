@@ -1,7 +1,7 @@
 configurations { compileOnly { extendsFrom annotationProcessor } }
 
-def springBootVersion = '2.6.6'
-def springSecurityVersion = '5.6.2'
+def springBootVersion = '2.7.15'
+def springSecurityVersion = '5.6.9'
 
 dependencies {
 	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:$springBootVersion"
@@ -25,8 +25,8 @@ dependencies {
 	testImplementation 'org.mockito:mockito-inline:4.0.0'
 
 	// DB deps (still versioned by Spring):
-	implementation 'org.liquibase:liquibase-core:4.5.0'
-	runtimeOnly 'org.postgresql:postgresql:42.3.3'
+	implementation 'org.liquibase:liquibase-core:4.8.0'
+	runtimeOnly 'org.postgresql:postgresql:42.3.7'
 }
 
 test { useJUnitPlatform() }
