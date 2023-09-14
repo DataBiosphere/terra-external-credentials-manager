@@ -49,7 +49,10 @@ dependencies {
 		implementation('org.apache.bcel:bcel:6.6.0')
 	}
 	// for testing with mock web server
-	testImplementation 'org.mock-server:mockserver-netty:5.15.0'
+	testImplementation('org.mock-server:mockserver-netty:5.15.0') {
+		// Incompatible with the version brought in as a non-test dependency
+		exclude group: 'com.nimbusds', module: 'nimbus-jose-jwt'
+	}
 	// https://mvnrepository.com/artifact/org.mockito/mockito-core
 	testImplementation group: 'org.mockito', name: 'mockito-core', version: '4.4.0'
 }
