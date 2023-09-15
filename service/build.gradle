@@ -45,7 +45,6 @@ dependencies {
 	constraints {
 		implementation('com.google.protobuf:protobuf-java:3.21.10')
 		implementation('org.mozilla:rhino:1.7.12')
-		spotbugs('org.apache.bcel:bcel:6.6.0')
 	}
 	// for testing with mock web server
 	testImplementation('org.mock-server:mockserver-netty:5.15.0') {
