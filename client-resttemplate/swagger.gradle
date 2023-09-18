@@ -4,6 +4,13 @@ dependencies {
 
 	implementation 'io.swagger.core.v3:swagger-annotations:2.1.13'
 	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.33'
+
+	// Transitive dependency constraints due to security vulnerabilities in prior versions.
+	// These are not directly included, they are just constrained if they are pulled in as
+	// transitive dependencies.
+	constraints {
+		implementation('org.yaml:snakeyaml:1.31')
+	}
 }
 
 

@@ -2,7 +2,7 @@ plugins {
 	id 'idea'
 
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
-	id 'org.springframework.boot' version '2.6.6' apply false
+	id 'org.springframework.boot' version '2.7.15' apply false
 	id 'com.diffplug.spotless' version '6.3.0' apply false
 	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
 	id 'com.google.cloud.tools.jib' version '3.1.4' apply false
@@ -13,6 +13,11 @@ plugins {
 }
 
 repositories { mavenCentral() }
+
+// Dependency versions for libraries managed by Spring dependency management, affecting all projects
+// This can be removed once ECM has migrated to Spring Boot 3
+ext['thymeleaf.version'] = '3.1.2.RELEASE'
+ext['snakeyaml.version'] = '1.33'
 
 subprojects {
 	group = 'bio.terra'
