@@ -9,8 +9,10 @@ import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.PassportWithVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.google.common.annotations.VisibleForTesting;
+import com.nimbusds.jose.Algorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.shaded.json.JSONObject;
+import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTParser;
 import java.net.URI;
 import java.sql.Timestamp;
@@ -131,49 +133,71 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig, JwtDecoderCache 
   }
 
   @VisibleForTesting
-  Jwt decodeAndValidateJwt(String jwtString) {
+  public Jwt decodeAndValidateJwt(String jwtString) {
     try {
       // first we need to get the issuer from the jwt, the issuer is needed to validate
-      var jwt = JWTParser.parse(jwtString);
-      var issuer = jwt.getJWTClaimsSet().getIssuer();
-      if (issuer == null) {
-        throw new InvalidJwtException("jwt missing issuer (iss) claim");
-      }
-
-      if (!externalCredsConfig.getAllowedJwtIssuers().contains(URI.create(issuer))) {
-        throw new InvalidJwtException(
-            String.format("URI [%s] specified by iss claim not on allowed list", issuer));
-      }
-
-      // validate the algorithm field
-      var allowedAlgorithms = externalCredsConfig.getAllowedJwtAlgorithms();
-      var algorithm = ((JWSHeader) jwt.getHeader()).getAlgorithm();
-
-      if (algorithm == null) {
-        throw new InvalidJwtException("jwt missing algorithm (alg) header");
-      }
-
-      if (!allowedAlgorithms.contains(algorithm.toString())) {
-        throw new InvalidJwtException(
-            String.format("Algorithm [%s] is not on allowed list", algorithm));
-      }
+      var jwt = parseAndValidateJwt(jwtString);
 
       var jkuOption = Optional.ofNullable(((JWSHeader) jwt.getHeader()).getJWKURL());
       if (jkuOption.isPresent()) {
         // presence of the jku header means the url it specifies contains the key set that must be
         // used validate the signature
         URI jku = jkuOption.get();
-        if (externalCredsConfig.getAllowedJwksUris().contains(jku)) {
-          return jwtDecoderCache.fromJku(jku).decode(jwtString);
-        } else {
-          throw new InvalidJwtException(
-              String.format("URI [%s] specified by jku header not on allowed list", jku));
-        }
+        return jwtDecoderCache.fromJku(jku).decode(jwtString);
+
       } else {
+        var issuer = jwt.getJWTClaimsSet().getIssuer();
         // no jku means use the issuer to lookup configuration and location of key set
         return jwtDecoderCache.fromIssuer(issuer).decode(jwtString);
       }
     } catch (ParseException | JwtException | IllegalArgumentException | IllegalStateException e) {
+      throw new InvalidJwtException(e);
+    }
+  }
+
+  JWT parseAndValidateJwt(String jwtString) {
+    try {
+      var jwt = JWTParser.parse(jwtString);
+      // validate the issuer
+      String issuer = jwt.getJWTClaimsSet().getIssuer();
+      var allowedIssuers = externalCredsConfig.getAllowedJwtIssuers();
+
+      if (issuer == null) {
+        throw new InvalidJwtException("jwt missing issuer (iss) claim");
+      }
+
+      if (!allowedIssuers.contains(URI.create(issuer))) {
+        throw new InvalidJwtException(
+            String.format("URI [%s] specified by iss claim not on allowed list", issuer));
+      }
+
+      JWSHeader header = (JWSHeader) jwt.getHeader();
+
+      // validate the algorithm field
+      var allowedAlgorithms = externalCredsConfig.getAllowedJwtAlgorithms();
+      Algorithm algorithm = header.getAlgorithm();
+
+      if (algorithm == null) {
+        throw new InvalidJwtException("jwt missing algorithm (alg) header");
+      }
+
+      if (!allowedAlgorithms.contains(algorithm.getName())) {
+        throw new InvalidJwtException(
+            String.format("Algorithm [%s] is not on allowed list", algorithm));
+      }
+
+      var jkuOption = Optional.ofNullable(header.getJWKURL());
+      if (jkuOption.isPresent()) {
+        // presence of the jku header means the url it specifies contains the key set that must be
+        // used validate the signature
+        URI jku = jkuOption.get();
+        if (!externalCredsConfig.getAllowedJwksUris().contains(jku)) {
+          throw new InvalidJwtException(
+              String.format("URI [%s] specified by jku header not on allowed list", jku));
+        }
+      }
+      return jwt;
+    } catch (ParseException e) {
       throw new InvalidJwtException(e);
     }
   }
