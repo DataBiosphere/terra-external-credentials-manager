@@ -77,7 +77,7 @@ jobs:
           status: ${{ job.status }}
           author_name: Publish to dev
           fields: job
-          text: 'ECM Publish to dev job failed :sadpanda:'
+          text: 'ECM publish to dev job failed :sadpanda:'
   report-to-sherlock:
     # Report new ECM version to Broad DevOps
     uses: broadinstitute/sherlock/.github/workflows/client-report-app-version.yaml@main
