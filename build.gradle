@@ -21,7 +21,7 @@ ext['snakeyaml.version'] = '1.33'
 
 subprojects {
 	group = 'bio.terra'
-	version = '0.108.0-SNAPSHOT'
+	version = '0.109.0-SNAPSHOT'
 
 	apply plugin: 'idea'
 	apply plugin: 'java'
