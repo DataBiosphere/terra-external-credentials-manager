@@ -1,7 +1,9 @@
 dependencies {
-	implementation 'io.swagger.core.v3:swagger-annotations:2.1.13'
-	runtimeOnly 'org.webjars.npm:swagger-ui-dist:4.10.0'
-	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.33'
+	// All version controlled by dependency management plugin
+	implementation 'io.swagger.core.v3:swagger-annotations'
+	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli'
+
+	runtimeOnly 'org.webjars.npm:swagger-ui-dist:4.18.1'
 
 	// Versioned by Spring:
 	implementation 'javax.validation:validation-api'

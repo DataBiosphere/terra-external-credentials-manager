@@ -31,8 +31,15 @@ jobs:
         id: tag
         run: echo tag=$(git describe --tags) >> $GITHUB_OUTPUT
 
-      - name: Publish to Artifactory
+      - name: Publish to Artifactory (javax for clients running Spring 2)
         run: ./gradlew --build-cache :client-resttemplate:artifactoryPublish
+        env:
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          ARTIFACTORY_REPO_KEY: libs-snapshot-local
+
+      - name: Publish to Artifactory (jakarta for clients running Spring 3)
+        run: ./gradlew --build-cache :client-resttemplate-jakarta:artifactoryPublish
         env:
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}

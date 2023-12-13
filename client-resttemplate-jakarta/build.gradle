@@ -1,0 +1,15 @@
+plugins {
+	id 'idea'
+	id 'java-library'
+	id 'maven-publish'
+
+	id 'com.jfrog.artifactory' version '4.32.0'
+	id 'org.hidetake.swagger.generator'
+}
+
+repositories { mavenCentral() }
+
+apply from: 'artifactory.gradle'
+apply from: 'swagger.gradle'
+
+sourceCompatibility = JavaLanguageVersion.of(11)
