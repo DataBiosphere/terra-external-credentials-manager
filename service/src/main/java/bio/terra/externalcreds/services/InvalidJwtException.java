@@ -1,8 +1,8 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.ExternalCredsException;
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.springframework.http.HttpStatus;
 
 public class InvalidJwtException extends ExternalCredsException {

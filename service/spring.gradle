@@ -1,29 +1,37 @@
 configurations { compileOnly { extendsFrom annotationProcessor } }
 
+// All version controlled by dependency management plugin
 dependencies {
-	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:$springBootVersion"
-	developmentOnly "org.springframework.boot:spring-boot-devtools:$springBootVersion"
-	implementation "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
-	implementation "org.springframework.boot:spring-boot-starter-thymeleaf:$springBootVersion"
-	implementation "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
-	implementation "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
-	implementation "org.springframework.boot:spring-boot-starter-cache:$springBootVersion"
-	testImplementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-	implementation "org.springframework.security:spring-security-oauth2-core:$springSecurityVersion"
-	implementation ("org.springframework.security:spring-security-oauth2-client:$springSecurityVersion") {
-		// Need to exclude this because its strictly tied to a vulnerable version.
-		exclude group: 'net.minidev', module: 'json-smart'
-	}
-	implementation('net.minidev:json-smart:2.4.10')
-	implementation "org.springframework.security:spring-security-oauth2-jose:$springSecurityVersion"
-	implementation 'org.springframework.retry:spring-retry:1.3.2'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	implementation 'org.springframework:spring-aop'
+	implementation 'org.springframework:spring-aspects'
+
+	implementation 'org.springframework.security:spring-security-oauth2-core'
+	implementation 'org.springframework.security:spring-security-oauth2-client'
+	implementation 'org.springframework.security:spring-security-oauth2-jose'
+	implementation 'org.springframework.retry:spring-retry'
 
 	// allows mocking final classes
-	testImplementation 'org.mockito:mockito-inline:4.0.0'
+	testImplementation 'org.mockito:mockito-inline:5.2.0'
 
 	// DB deps (still versioned by Spring):
-	implementation 'org.liquibase:liquibase-core:4.8.0'
-	runtimeOnly 'org.postgresql:postgresql:42.3.7'
+	implementation 'org.liquibase:liquibase-core'
+	runtimeOnly 'org.postgresql:postgresql'
+
+	// See https://nvd.nist.gov/vuln/detail/cve-2023-6378
+	// TODO: when latest versions of Spring are released on 2023-12-21, see if upgrading also brings
+	// its logback versions >= 1.4.14, which would allow us to stop explicitly pulling them in.
+	var logbackVersion = '1.4.14'
+	implementation "ch.qos.logback:logback-classic:$logbackVersion"
+	implementation "ch.qos.logback:logback-core:$logbackVersion"
 }
 
 test { useJUnitPlatform() }

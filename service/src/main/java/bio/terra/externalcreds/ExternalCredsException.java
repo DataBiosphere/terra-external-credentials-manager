@@ -1,8 +1,8 @@
 package bio.terra.externalcreds;
 
 import bio.terra.common.exception.ErrorReportException;
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.springframework.http.HttpStatus;
 
 public class ExternalCredsException extends ErrorReportException {

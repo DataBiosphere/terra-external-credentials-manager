@@ -1,5 +1,5 @@
 # terra-external-credentials-manager
-ECM Javax-based Client Library for compatibility with Java clients running Spring Boot 2.
+ECM jakarta-based Client Library for compatibility with Java clients running Spring Boot 3.
 
 ## Publish a new version
 To publish a new version of this client library:
