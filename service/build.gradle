@@ -47,7 +47,7 @@ dependencies {
 	testImplementation group: 'org.mockito', name: 'mockito-core', version: '4.4.0'
 
 	// OpenTelemetry
-	var openTelemetryVersion = '1.31.0'
+	var openTelemetryVersion = '1.32.0'
 	implementation "io.opentelemetry:opentelemetry-api:${openTelemetryVersion}"
 	implementation "io.opentelemetry:opentelemetry-sdk:${openTelemetryVersion}"
 	implementation "io.opentelemetry:opentelemetry-sdk-metrics:${openTelemetryVersion}"
