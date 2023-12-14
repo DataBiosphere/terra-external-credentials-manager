@@ -2,7 +2,7 @@ package bio.terra.externalcreds.controllers;
 
 import bio.terra.common.exception.ErrorReportException;
 import bio.terra.externalcreds.generated.model.ErrorReport;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.core.convert.ConversionFailedException;
