@@ -5,7 +5,7 @@ import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.SshKeyPairType;
 import bio.terra.externalcreds.models.SshKeyPairInternal;
-import io.opencensus.contrib.spring.aop.Traced;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collections;
@@ -45,7 +45,7 @@ public class SshKeyPairDAO {
   }
 
   @ReadTransaction
-  @Traced
+  @WithSpan
   public Optional<SshKeyPairInternal> getSshKeyPair(String userId, SshKeyPairType type) {
     var namedParameters =
         new MapSqlParameterSource().addValue("userId", userId).addValue("type", type.name());
@@ -58,7 +58,7 @@ public class SshKeyPairDAO {
   }
 
   @WriteTransaction
-  @Traced
+  @WithSpan
   public boolean deleteSshKeyPairIfExists(String userId, SshKeyPairType type) {
     var query = "DELETE FROM ssh_key_pair WHERE user_id = :userId and type = :type";
     var namedParameters =
@@ -68,7 +68,7 @@ public class SshKeyPairDAO {
   }
 
   @WriteTransaction
-  @Traced
+  @WithSpan
   public SshKeyPairInternal upsertSshKeyPair(SshKeyPairInternal sshKeyPairInternal) {
     var query =
         "INSERT INTO ssh_key_pair (user_id, type, private_key, public_key, external_user_email, last_encrypted_timestamp)"

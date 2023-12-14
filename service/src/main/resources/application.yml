@@ -20,6 +20,19 @@ logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
   pattern.level: '%X{requestId} %5p'
 
+otel:
+  sdk:
+    disabled: false # set to true to disable all open telemetry features
+  traces:
+    sampler:
+      probability: ${SAMPLING_PROBABILITY:0}
+
+  springboot:
+    resource:
+      attributes:
+        service:
+          name: ${spring.application.name}
+
 server:
   compression:
     enabled: true
@@ -58,6 +71,6 @@ spring:
   task.scheduling.pool.size: 2
 
 terra.common:
-  tracing:
-    stackdriverExportEnabled: ${CLOUD_TRACE_ENABLED:false}
-    samplingRate: ${SAMPLING_PROBABILITY:0}
+  google:
+    tracing:
+      enabled: ${CLOUD_TRACE_ENABLED:false}

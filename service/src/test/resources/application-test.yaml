@@ -1,5 +1,9 @@
-spring:
+otel:
+  instrumentation:
+    spring-webmvc:
+      enabled: false
 
+spring:
   datasource:
     hikari:
       connection-timeout: 5000

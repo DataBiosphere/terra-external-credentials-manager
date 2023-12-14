@@ -9,12 +9,12 @@ import com.google.cloud.kms.v1.EncryptResponse;
 import com.google.cloud.kms.v1.KeyManagementServiceClient;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
-import io.opencensus.contrib.spring.aop.Traced;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+import jakarta.annotation.Nullable;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.Optional;
-import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -50,7 +50,7 @@ public class KmsEncryptDecryptHelper {
   }
 
   /** Encrypt with KMS symmetric key. */
-  @Traced
+  @WithSpan
   public byte[] encryptSymmetric(byte[] plainText) {
     if (client == null || config.getKmsConfiguration() == null) {
       log.info("KMS encryption for ssh private keys is disabled");
@@ -62,7 +62,7 @@ public class KmsEncryptDecryptHelper {
   }
 
   /** Decrypt with KMS symmetric key. */
-  @Traced
+  @WithSpan
   public byte[] decryptSymmetric(byte[] cypheredText) {
     if (client == null || config.getKmsConfiguration() == null) {
       log.info("KMS encryption for ssh private keys is disabled");
