@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copied from Terra RBS repo
-# Publish ECM javax Client Package:
+# Publish ECM jakarta Client Package:
 VAULT_TOKEN=${1:-$(cat "$HOME"/.vault-token)}
 DSDE_TOOLBOX_DOCKER_IMAGE=broadinstitute/dsde-toolbox:consul-0.20.0
 ARTIFACTORY_ACCOUNT_PATH=secret/dsp/accts/artifactory/dsdejenkins
