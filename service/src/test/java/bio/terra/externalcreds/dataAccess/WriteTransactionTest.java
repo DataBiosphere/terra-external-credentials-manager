@@ -15,7 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest(
     properties = {"DATABASE_NAME=ecm_test"},
     classes = ExternalCredsWebApplication.class)
-@ActiveProfiles("human-readable-logging")
+@ActiveProfiles({"test", "human-readable-logging"})
 class WriteTransactionTest {
   @Autowired private WriteTransactionProbe writeTransactionProbe;
 
