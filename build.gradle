@@ -1,8 +1,11 @@
+import org.hidetake.gradle.swagger.generator.GenerateSwaggerCode
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
+
 plugins {
 	id 'idea'
 
-	id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
-	id 'org.springframework.boot' version '2.7.15' apply false
+	id 'io.spring.dependency-management' version '1.1.4' apply false
+	id 'org.springframework.boot' version '3.1.6' apply false
 	id 'com.diffplug.spotless' version '6.3.0' apply false
 	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
 	id 'com.google.cloud.tools.jib' version '3.1.4' apply false
@@ -13,16 +16,6 @@ plugins {
 }
 
 repositories { mavenCentral() }
-
-ext {
-	springBootVersion = '2.7.15'
-	springSecurityVersion = '5.6.9'
-
-	// Dependency versions for libraries managed by Spring dependency management, affecting all projects
-	// This can be removed once ECM has migrated to Spring Boot 3
-	set('thymeleaf.version', '3.1.2.RELEASE')
-	set('snakeyaml.version', '1.33')
-}
 
 subprojects {
 	group = 'bio.terra'
@@ -39,7 +32,7 @@ subprojects {
 
 	dependencyManagement {
 		imports {
-			mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+			mavenBom(SpringBootPlugin.BOM_COORDINATES)
 		}
 
 		dependencies {
@@ -48,7 +41,7 @@ subprojects {
 		}
 	}
 
-	tasks.withType(org.hidetake.gradle.swagger.generator.GenerateSwaggerCode).all {
+	tasks.withType(GenerateSwaggerCode).all {
 		jvmArgs = ['--add-opens=java.base/java.util=ALL-UNNAMED'] // for jvm 16+
 	}
 

@@ -6,7 +6,7 @@ dependencies {
 	runtimeOnly 'org.webjars.npm:swagger-ui-dist:4.18.1'
 
 	// Versioned by Spring:
-	implementation 'javax.validation:validation-api'
+	implementation 'jakarta.validation:jakarta.validation-api'
 	implementation 'org.webjars:webjars-locator-core'
 }
 
@@ -19,6 +19,7 @@ generateSwaggerCode {
 			apiPackage       : "${artifactGroup}.generated.api",
 			dateLibrary      : 'java11',
 			interfaceOnly    : 'true',
+			jakarta          : 'true',
 			useTags          : 'true',
 			springBootVersion: dependencyManagement.managedVersions['org.springframework.boot:spring-boot']
 	]

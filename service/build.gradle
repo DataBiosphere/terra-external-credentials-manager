@@ -28,14 +28,14 @@ apply from: 'analysis.gradle'
 dependencies {
 	// google
 	implementation platform('com.google.cloud:libraries-bom:25.1.0')
-	implementation 'com.google.cloud:google-cloud-pubsub:1.120.19'
-	implementation 'com.google.cloud:google-cloud-kms:2.6.8'
+	implementation 'com.google.cloud:google-cloud-pubsub:1.123.6'
+	implementation 'com.google.cloud:google-cloud-kms:2.15.0'
 
-	annotationProcessor 'org.immutables:value:2.9.0'
-	implementation 'bio.terra:terra-common-lib:0.0.93-SNAPSHOT'
-	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
-	implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
-	implementation 'org.codehaus.janino:janino:3.1.7' // Provides if/else xml parsing for logback config
+	annotationProcessor 'org.immutables:value:2.9.2'
+	implementation 'bio.terra:terra-common-lib:0.1.9-SNAPSHOT'
+	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
+	implementation 'org.bouncycastle:bcprov-jdk18on:1.76'
+	implementation 'org.codehaus.janino:janino:3.1.9' // Provides if/else xml parsing for logback config
 	implementation('org.springframework.cloud:spring-cloud-gcp-starter-logging:1.2.8.RELEASE') {
 		exclude group: 'org.springframework', module: 'spring-jcl'
 	}
@@ -53,6 +53,18 @@ dependencies {
 	}
 	// https://mvnrepository.com/artifact/org.mockito/mockito-core
 	testImplementation group: 'org.mockito', name: 'mockito-core', version: '4.4.0'
+
+	// OpenTelemetry
+	var openTelemetryVersion = '1.31.0'
+	implementation "io.opentelemetry:opentelemetry-api:${openTelemetryVersion}"
+	implementation "io.opentelemetry:opentelemetry-sdk:${openTelemetryVersion}"
+	implementation "io.opentelemetry:opentelemetry-sdk-metrics:${openTelemetryVersion}"
+	implementation "io.opentelemetry:opentelemetry-exporter-logging:${openTelemetryVersion}"
+	implementation "io.opentelemetry.semconv:opentelemetry-semconv:1.21.0-alpha"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-spring-webmvc-6.0:${openTelemetryVersion}-alpha"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:${openTelemetryVersion}"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-spring-boot:${openTelemetryVersion}-alpha"
+	implementation "com.google.cloud.opentelemetry:exporter-trace:0.25.2"
 }
 
 sonarqube {
