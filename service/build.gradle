@@ -27,25 +27,17 @@ apply from: 'analysis.gradle'
 
 dependencies {
 	// google
-	implementation platform('com.google.cloud:libraries-bom:25.1.0')
-	implementation 'com.google.cloud:google-cloud-pubsub:1.123.6'
-	implementation 'com.google.cloud:google-cloud-kms:2.15.0'
+	implementation platform('com.google.cloud:libraries-bom:26.28.0')
+	implementation 'com.google.cloud:google-cloud-pubsub'
+	implementation 'com.google.cloud:google-cloud-kms'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:4.9.0'
 
 	annotationProcessor 'org.immutables:value:2.9.2'
 	implementation 'bio.terra:terra-common-lib:0.1.9-SNAPSHOT'
 	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
 	implementation 'org.bouncycastle:bcprov-jdk18on:1.76'
 	implementation 'org.codehaus.janino:janino:3.1.9' // Provides if/else xml parsing for logback config
-	implementation('org.springframework.cloud:spring-cloud-gcp-starter-logging:1.2.8.RELEASE') {
-		exclude group: 'org.springframework', module: 'spring-jcl'
-	}
-	// Transitive dependency constraints due to security vulnerabilities in prior versions.
-	// These are not directly included, they are just constrained if they are pulled in as
-	// transitive dependencies.
-	constraints {
-		implementation('com.google.protobuf:protobuf-java:3.21.10')
-		implementation('org.mozilla:rhino:1.7.12')
-	}
+
 	// for testing with mock web server
 	testImplementation('org.mock-server:mockserver-netty:5.15.0') {
 		// Incompatible with the version brought in as a non-test dependency
