@@ -1,12 +1,12 @@
 package bio.terra.externalcreds.config;
 
+import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Modifiable

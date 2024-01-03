@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
@@ -407,7 +407,7 @@ public class ProviderService {
             .retrieve();
     var responseBody =
         response
-            .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
+            .onStatus(HttpStatusCode::isError, clientResponse -> Mono.empty())
             .bodyToMono(String.class)
             .block(Duration.of(1000, ChronoUnit.MILLIS));
 
@@ -461,7 +461,7 @@ public class ProviderService {
 
     String responseBody =
         response
-            .onStatus(HttpStatus::isError, clientResponse -> Mono.empty())
+            .onStatus(HttpStatusCode::isError, clientResponse -> Mono.empty())
             .bodyToMono(String.class)
             .block(Duration.of(1000, ChronoUnit.MILLIS));
 

@@ -10,14 +10,15 @@ import bio.terra.externalcreds.models.PassportWithVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import com.google.common.annotations.VisibleForTesting;
 import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.shaded.json.JSONObject;
 import com.nimbusds.jwt.JWTParser;
 import java.net.URI;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -73,6 +74,14 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig, JwtDecoderCache 
     return Optional.ofNullable(txnClaim).map(Objects::toString);
   }
 
+  public Date getJwtIssuedAt(String jwtString) {
+    try {
+      return JWTParser.parse(jwtString).getJWTClaimsSet().getIssueTime();
+    } catch (ParseException e) {
+      throw new InvalidJwtException(e);
+    }
+  }
+
   private static GA4GHPassport buildPassport(Jwt passportJwt) {
     var passportExpiresAt = getJwtExpires(passportJwt);
 
@@ -84,7 +93,7 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig, JwtDecoderCache 
   }
 
   private static GA4GHVisa buildVisa(Jwt visaJwt) {
-    JSONObject visaClaims = getJwtClaim(visaJwt, GA4GH_VISA_V1_CLAIM);
+    Map<String, Object> visaClaims = getJwtClaim(visaJwt, GA4GH_VISA_V1_CLAIM);
     var visaType = visaClaims.get(VISA_TYPE_CLAIM);
     if (visaType == null) {
       throw new InvalidJwtException(String.format("visa missing claim [%s]", VISA_TYPE_CLAIM));

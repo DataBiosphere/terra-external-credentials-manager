@@ -1,5 +1,6 @@
 configurations { compileOnly { extendsFrom annotationProcessor } }
 
+// All version controlled by dependency management plugin
 dependencies {
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -7,15 +8,19 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	implementation 'org.springframework:spring-aop'
+	implementation 'org.springframework:spring-aspects'
+
 	implementation 'org.springframework.security:spring-security-oauth2-core'
 	implementation 'org.springframework.security:spring-security-oauth2-client'
 	implementation 'org.springframework.security:spring-security-oauth2-jose'
-	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.retry:spring-retry'
 
 	// allows mocking final classes
-	testImplementation 'org.mockito:mockito-inline'
+	testImplementation 'org.mockito:mockito-inline:5.2.0'
 
 	// DB deps (still versioned by Spring):
 	implementation 'org.liquibase:liquibase-core'

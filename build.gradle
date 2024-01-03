@@ -1,8 +1,11 @@
+import org.hidetake.gradle.swagger.generator.GenerateSwaggerCode
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
+
 plugins {
 	id 'idea'
 
-	id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
-	id 'org.springframework.boot' version '2.6.6' apply false
+	id 'io.spring.dependency-management' version '1.1.4' apply false
+	id 'org.springframework.boot' version '3.1.7' apply false
 	id 'com.diffplug.spotless' version '6.3.0' apply false
 	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
 	id 'com.google.cloud.tools.jib' version '3.1.4' apply false
@@ -14,15 +17,9 @@ plugins {
 
 repositories { mavenCentral() }
 
-allprojects {
-	dependencyLocking {
-		lockAllConfigurations()
-	}
-}
-
 subprojects {
 	group = 'bio.terra'
-	version = '0.95.0-SNAPSHOT'
+	version = '1.2.0-SNAPSHOT'
 
 	apply plugin: 'idea'
 	apply plugin: 'java'
@@ -35,16 +32,16 @@ subprojects {
 
 	dependencyManagement {
 		imports {
-			mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+			mavenBom(SpringBootPlugin.BOM_COORDINATES)
 		}
 
 		dependencies {
 			dependency 'io.swagger.core.v3:swagger-annotations:2.1.13'
-			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.33'
+			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.47'
 		}
 	}
 
-	tasks.withType(org.hidetake.gradle.swagger.generator.GenerateSwaggerCode).all {
+	tasks.withType(GenerateSwaggerCode).all {
 		jvmArgs = ['--add-opens=java.base/java.util=ALL-UNNAMED'] // for jvm 16+
 	}
 

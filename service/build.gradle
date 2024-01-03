@@ -5,7 +5,7 @@ plugins {
 
 	id 'com.diffplug.spotless'
 	id 'com.github.ben-manes.versions' version '0.42.0'
-	id 'com.github.spotbugs' version '5.0.6'
+	id 'com.github.spotbugs' version '5.1.3'
 	id 'com.google.cloud.tools.jib'
 	id 'com.gorylenko.gradle-git-properties' version '2.4.0'
 	id 'io.freefair.lombok'
@@ -27,20 +27,36 @@ apply from: 'analysis.gradle'
 
 dependencies {
 	// google
-	implementation platform('com.google.cloud:libraries-bom:25.1.0')
+	implementation platform('com.google.cloud:libraries-bom:26.28.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 	implementation 'com.google.cloud:google-cloud-kms'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:4.9.0'
 
-	annotationProcessor 'org.immutables:value:2.9.0'
-	implementation 'bio.terra:terra-common-lib:0.0.60-SNAPSHOT'
-	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-96c5f4d'
-	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
-	implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.70'
+	annotationProcessor 'org.immutables:value:2.9.2'
+	implementation 'bio.terra:terra-common-lib:0.1.9-SNAPSHOT'
+	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
+	implementation 'org.bouncycastle:bcprov-jdk18on:1.76'
+	implementation 'org.codehaus.janino:janino:3.1.9' // Provides if/else xml parsing for logback config
 
 	// for testing with mock web server
-	testImplementation 'org.mock-server:mockserver-netty:5.13.0'
+	testImplementation('org.mock-server:mockserver-netty:5.15.0') {
+		// Incompatible with the version brought in as a non-test dependency
+		exclude group: 'com.nimbusds', module: 'nimbus-jose-jwt'
+	}
 	// https://mvnrepository.com/artifact/org.mockito/mockito-core
 	testImplementation group: 'org.mockito', name: 'mockito-core', version: '4.4.0'
+
+	// OpenTelemetry
+	var openTelemetryVersion = '1.32.0'
+	implementation "io.opentelemetry:opentelemetry-api:${openTelemetryVersion}"
+	implementation "io.opentelemetry:opentelemetry-sdk:${openTelemetryVersion}"
+	implementation "io.opentelemetry:opentelemetry-sdk-metrics:${openTelemetryVersion}"
+	implementation "io.opentelemetry:opentelemetry-exporter-logging:${openTelemetryVersion}"
+	implementation "io.opentelemetry.semconv:opentelemetry-semconv:1.21.0-alpha"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-spring-webmvc-6.0:${openTelemetryVersion}-alpha"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:${openTelemetryVersion}"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-spring-boot:${openTelemetryVersion}-alpha"
+	implementation "com.google.cloud.opentelemetry:exporter-trace:0.25.2"
 }
 
 sonarqube {

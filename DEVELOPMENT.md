@@ -61,6 +61,9 @@ psql -h 127.0.0.1 -U postgres -f ./common/postgres-init.sql
 
 ## Running
 
+### Human-Readable Logging
+To enable human-readable logging, add `ECM_LOG_APPENDER=Console-Standard` to your env.
+
 ### Running Tests
 
 Unit tests will run on build.  Integration tests can be run by following the instructions in the [integration README](/integration/README.md).

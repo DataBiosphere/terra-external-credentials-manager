@@ -22,10 +22,14 @@ import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator.DbGapPerm
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jwt.JWTClaimNames;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -140,17 +144,31 @@ class PassportServiceTest extends BaseTest {
     @Test
     void testTransactionIdAppearsInAuditInfo() throws URISyntaxException {
       var params = new ValidPassportTestParams();
-      var transactionClaim = Map.of("txn", "testTransactionId");
-      params.customJwtClaims = transactionClaim;
-      params.customAuditInfoExpected = transactionClaim;
+      // Java's type system can't cast a Map<String, String> to a Map<String, Object>
+      // so we need 2 instantiations here.
+      params.customJwtClaims = Map.of("txn", "testTransactionId");
+      params.customAuditInfoExpected = Map.of("txn", "testTransactionId");
       runValidPassportTest(params);
     }
 
     @Test
-    void testValidPassportWithoutUserThrows() {
+    void testValidPassportNoLinkedUser() throws URISyntaxException {
       var params = new ValidPassportTestParams();
       params.persistLinkedAccount = false;
-      assertThrows(BadRequestException.class, () -> runValidPassportTest(params));
+      params.noLinkedAccount = true;
+      params.customJwtClaims = Map.of(JWTClaimNames.ISSUED_AT, new Date());
+      runValidPassportTest(params);
+    }
+
+    @Test
+    void testExpiredPassportNoLinkedUser() throws URISyntaxException {
+      var params = new ValidPassportTestParams();
+      params.persistLinkedAccount = false;
+      params.noLinkedAccount = true;
+      params.customJwtClaims =
+          Map.of(JWTClaimNames.ISSUED_AT, Date.from(Instant.now().minus(2, ChronoUnit.HOURS)));
+      params.valid = false;
+      runValidPassportTest(params);
     }
 
     @Test
@@ -202,7 +220,8 @@ class PassportServiceTest extends BaseTest {
       String visaPhsId = "phs000123";
       String criterionPhsId = visaPhsId;
       boolean persistLinkedAccount = true;
-      Map<String, String> customJwtClaims = Collections.emptyMap();
+      boolean noLinkedAccount = false;
+      Map<String, Object> customJwtClaims = Collections.emptyMap();
       Map<String, String> customAuditInfoExpected = Collections.emptyMap();
     }
 
@@ -264,7 +283,11 @@ class PassportServiceTest extends BaseTest {
             new ValidatePassportResultInternal.Builder()
                 .valid(true)
                 .auditInfo(
-                    expectedAuditInfo(linkedAccount, passport, params.customAuditInfoExpected))
+                    expectedAuditInfo(
+                        linkedAccount,
+                        passport,
+                        params.customAuditInfoExpected,
+                        params.noLinkedAccount))
                 .matchedCriterion(criterion)
                 .build(),
             result);
@@ -272,7 +295,7 @@ class PassportServiceTest extends BaseTest {
         assertEquals(
             new ValidatePassportResultInternal.Builder()
                 .valid(false)
-                .auditInfo(expectedAuditInfo(linkedAccount))
+                .auditInfo(expectedAuditInfo(linkedAccount, params.noLinkedAccount))
                 .build(),
             result);
       }
@@ -281,22 +304,26 @@ class PassportServiceTest extends BaseTest {
     private Map<String, String> expectedAuditInfo(
         LinkedAccount linkedAccount,
         GA4GHPassport passport,
-        Map<String, String> customInfoExpected) {
-      var expectedAuditInfo =
-          new HashMap<>(
-              Map.of(
-                  "passport_jti",
-                  passport.getJwtId(),
-                  "external_user_id",
-                  linkedAccount.getExternalUserId(),
-                  "internal_user_id",
-                  linkedAccount.getUserId()));
+        Map<String, String> customInfoExpected,
+        boolean noLinkedAccount) {
+      var expectedAuditInfo = new HashMap<>(Map.of("passport_jti", passport.getJwtId()));
+      if (!noLinkedAccount) {
+        expectedAuditInfo.putAll(
+            Map.of(
+                "external_user_id",
+                linkedAccount.getExternalUserId(),
+                "internal_user_id",
+                linkedAccount.getUserId()));
+      }
       expectedAuditInfo.putAll(customInfoExpected);
       return expectedAuditInfo;
     }
 
-    private Map<String, String> expectedAuditInfo(LinkedAccount linkedAccount) {
-      return Map.of("internal_user_id", linkedAccount.getUserId());
+    private Optional<Map<String, String>> expectedAuditInfo(
+        LinkedAccount linkedAccount, boolean noLinkedAccount) {
+      return noLinkedAccount
+          ? Optional.empty()
+          : Optional.of(Map.of("internal_user_id", linkedAccount.getUserId()));
     }
 
     private void mockProviderConfig(LinkedAccount... linkedAccounts) throws URISyntaxException {

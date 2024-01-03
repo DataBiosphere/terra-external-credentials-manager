@@ -11,10 +11,10 @@ import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
+import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

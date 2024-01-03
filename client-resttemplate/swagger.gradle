@@ -1,9 +1,12 @@
 // All version controlled by dependency management plugin
 dependencies {
-	api 'org.springframework.boot:spring-boot-starter-json:+'
+	api 'org.springframework.boot:spring-boot-starter-json'
 
 	implementation 'io.swagger.core.v3:swagger-annotations'
 	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli'
+
+	implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
+	implementation 'jakarta.ws.rs:jakarta.ws.rs-api:3.1.0'
 }
 
 
@@ -21,7 +24,8 @@ generateSwaggerCode {
 			modelPackage  : "${artifactGroup}.model",
 			apiPackage    : "${artifactGroup}.api",
 			invokerPackage: "${artifactGroup}.client",
-			dateLibrary   : 'java11'
+			dateLibrary   : 'java11',
+			jakarta       : true
 	]
 
 	rawOptions = ["--ignore-file-override", "${projectDir}/.swagger-codegen-ignore"]

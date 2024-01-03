@@ -148,7 +148,7 @@ public class JwtSigningTestUtils {
     return visa;
   }
 
-  public GA4GHPassport createTestPassport(List<GA4GHVisa> visas, Map<String, String> customClaims) {
+  public GA4GHPassport createTestPassport(List<GA4GHVisa> visas, Map<String, Object> customClaims) {
     var visaJwts = visas.stream().map(GA4GHVisa::getJwt).toList();
     var jwtId = UUID.randomUUID().toString();
     var jwtString = createPassportJwtString(passportExpires, visaJwts, jwtId, customClaims);
@@ -164,7 +164,7 @@ public class JwtSigningTestUtils {
   }
 
   private String createPassportJwtString(
-      Date expires, List<String> visaJwts, String jwtId, Map<String, String> customClaims) {
+      Date expires, List<String> visaJwts, String jwtId, Map<String, Object> customClaims) {
 
     var passportClaimSetBuilder =
         new JWTClaimsSet.Builder()

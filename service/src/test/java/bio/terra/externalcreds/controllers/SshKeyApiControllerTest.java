@@ -1,6 +1,8 @@
 package bio.terra.externalcreds.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,8 +22,8 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.SshKeyPair;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -97,8 +99,12 @@ class SshKeyApiControllerTest extends BaseTest {
             .andExpect(status().isOk())
             .andReturn();
     verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.PutSshKeyPair);
+    SshKeyPair publicKeyOnly =
+        new SshKeyPair()
+            .publicKey(sshKeyPair.getPublicKey())
+            .externalUserEmail(sshKeyPair.getExternalUserEmail());
     assertEquals(
-        sshKeyPair,
+        publicKeyOnly,
         objectMapper.readValue(putResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
 
     var getResult =
@@ -108,8 +114,20 @@ class SshKeyApiControllerTest extends BaseTest {
             .andExpect(status().isOk())
             .andReturn();
     assertEquals(
-        sshKeyPair,
+        publicKeyOnly,
         objectMapper.readValue(getResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.GetSshKeyPairSucceeded);
+    var getResultWithPrivateKey =
+        mvc.perform(
+                get("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                    .header("authorization", "Bearer " + accessToken)
+                    .queryParam("includePrivateKey", "true"))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertEquals(
+        sshKeyPair,
+        objectMapper.readValue(
+            getResultWithPrivateKey.getResponse().getContentAsByteArray(), SshKeyPair.class));
     verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.GetSshKeyPairSucceeded);
 
     mvc.perform(
@@ -138,16 +156,33 @@ class SshKeyApiControllerTest extends BaseTest {
 
     var generatedSshKeyPair =
         objectMapper.readValue(postResult.getResponse().getContentAsByteArray(), SshKeyPair.class);
+    assertNull(generatedSshKeyPair.getPrivateKey());
+    verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKeyPairCreated);
+
+    var postResultWithPrivateKey =
+        mvc.perform(
+                post("/api/sshkeypair/v1/{type}", sshKeyPairType)
+                    .header("authorization", "Bearer " + accessToken)
+                    .queryParam("includePrivateKey", "true")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(externalUserEmail))
+            .andExpect(status().isOk())
+            .andReturn();
+    var generatedSshKeyPairWithPrivateKey =
+        objectMapper.readValue(
+            postResultWithPrivateKey.getResponse().getContentAsByteArray(), SshKeyPair.class);
+    assertNotNull(generatedSshKeyPairWithPrivateKey.getPrivateKey());
     verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.SshKeyPairCreated);
 
     var getResult =
         mvc.perform(
                 get("/api/sshkeypair/v1/{type}", sshKeyPairType)
-                    .header("authorization", "Bearer " + accessToken))
+                    .header("authorization", "Bearer " + accessToken)
+                    .queryParam("includePrivateKey", "true"))
             .andExpect(status().isOk())
             .andReturn();
     assertEquals(
-        generatedSshKeyPair,
+        generatedSshKeyPairWithPrivateKey,
         objectMapper.readValue(getResult.getResponse().getContentAsByteArray(), SshKeyPair.class));
     verifyAuditLogEvent(sshKeyPairType, AuditLogEventType.GetSshKeyPairSucceeded);
 
