@@ -101,9 +101,9 @@ paths:
       description: Gets passport signed by provider, not Terra, containing only visas from provider. Passport and visas should be valid.
       responses:
         '200':
-          description: A JSON object
+          description: A base64-encoded passport
           content:
-            application/json:
+            text/plain:
               schema:
                 type: string
                 format: base64

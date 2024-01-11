@@ -320,7 +320,7 @@ class OidcApiControllerTest extends BaseTest {
               get("/api/oidc/v1/{provider}/passport", providerName)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isOk())
-          .andExpect(content().json("\"" + passport.getJwt() + "\""));
+          .andExpect(content().string(passport.getJwt()));
 
       // check that a log was recorded
       verify(auditLoggerMock)
