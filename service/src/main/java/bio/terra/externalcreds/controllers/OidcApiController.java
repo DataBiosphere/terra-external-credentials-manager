@@ -1,16 +1,17 @@
 package bio.terra.externalcreds.controllers;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.models.LinkedAccount;
-import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.JwtUtils;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
+import bio.terra.externalcreds.services.PassportProviderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ public record OidcApiController(
     ObjectMapper mapper,
     PassportService passportService,
     ProviderService providerService,
+    PassportProviderService passportProviderService,
     ExternalCredsSamUserFactory samUserFactory)
     implements OidcApi {
 
@@ -72,27 +74,15 @@ public record OidcApiController(
             .clientIP(request.getRemoteAddr());
 
     try {
-      var linkedAccountWithPassportAndVisas =
-          providerService.createLink(providerName, samUser.getSubjectId(), oauthcode, state);
-
-      var passport =
-          linkedAccountWithPassportAndVisas.flatMap(LinkedAccountWithPassportAndVisas::getPassport);
-      var transactionClaim = passport.flatMap(p -> jwtUtils.getJwtTransactionClaim(p.getJwt()));
-      auditLogger.logEvent(
-          auditLogEventBuilder
-              .externalUserId(
-                  linkedAccountWithPassportAndVisas.map(
-                      l -> l.getLinkedAccount().getExternalUserId()))
-              .auditLogEventType(
-                  linkedAccountWithPassportAndVisas
-                      .map(x -> AuditLogEventType.LinkCreated)
-                      .orElse(AuditLogEventType.LinkCreationFailed))
-              .transactionClaim(transactionClaim)
-              .build());
-
-      return ResponseEntity.of(
-          linkedAccountWithPassportAndVisas.map(
-              x -> OpenApiConverters.Output.convert(x.getLinkedAccount())));
+      if (providerName.equals("ras")) {
+        var linkedAccountWithPassportAndVisas =
+            passportProviderService.createLink(providerName, samUser.getSubjectId(), oauthcode,
+                state, auditLogEventBuilder);
+        return ResponseEntity.of(linkedAccountWithPassportAndVisas.map(
+            x -> OpenApiConverters.Output.convert(x.getLinkedAccount())));
+      } else {
+        throw new BadRequestException("Invalid providerName");
+      }
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());

@@ -24,6 +24,7 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount.Builder;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
+import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,6 +50,7 @@ class OidcApiControllerTest extends BaseTest {
 
   @MockBean private LinkedAccountService linkedAccountServiceMock;
   @MockBean private ProviderService providerServiceMock;
+  @MockBean private PassportProviderService passportProviderServiceMock;
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private PassportService passportServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
@@ -161,11 +163,13 @@ class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
-      when(providerServiceMock.createLink(
+      when(passportProviderServiceMock.createLink(
               inputLinkedAccount.getProviderName(),
               inputLinkedAccount.getUserId(),
               oauthcode,
-              state))
+              state,
+              new AuditLogEvent.Builder()
+          ))
           .thenReturn(
               Optional.of(
                   new LinkedAccountWithPassportAndVisas.Builder()
@@ -203,7 +207,7 @@ class OidcApiControllerTest extends BaseTest {
       var userId = "userId";
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.createLink(any(), any(), any(), any()))
+      when(passportProviderServiceMock.createLink(any(), any(), any(), any(), any()))
           .thenThrow(new ExternalCredsException("This is a drill!"));
 
       // check that an internal server error code is returned

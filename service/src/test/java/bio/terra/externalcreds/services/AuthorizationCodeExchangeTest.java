@@ -9,6 +9,8 @@ import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.JwtSigningTestUtils;
 import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.auditLogging.AuditLogEvent;
+import bio.terra.externalcreds.auditLogging.AuditLogEvent.Builder;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
@@ -46,7 +48,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   @MockBean ProviderClientCache providerClientCacheMock;
   @MockBean ExternalCredsConfig externalCredsConfigMock;
 
-  @Autowired ProviderService providerService;
+  @Autowired PassportProviderService passportProviderService;
   @Autowired PassportService passportService;
   @Autowired LinkedAccountService linkedAccountService;
   @Autowired JwtUtils jwtUtils;
@@ -151,11 +153,12 @@ class AuthorizationCodeExchangeTest extends BaseTest {
         assertThrows(
             BadRequestException.class,
             () ->
-                providerService.createLink(
+                passportProviderService.createLink(
                     linkedAccount.getProviderName(),
                     linkedAccount.getUserId(),
                     authorizationCode,
-                    encodedState));
+                    encodedState,
+                    new AuditLogEvent.Builder()));
 
     // make sure the BadRequestException is for the right reason
     assertInstanceOf(OAuth2AuthorizationException.class, exception.getCause());
@@ -233,11 +236,12 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     linkedAccountService.upsertOAuth2State(expectedLinkedAccount.getUserId(), state);
 
     var linkedAccountWithPassportAndVisas =
-        providerService.createLink(
+        passportProviderService.createLink(
             expectedLinkedAccount.getProviderName(),
             expectedLinkedAccount.getUserId(),
             authorizationCode,
-            encodedState);
+            encodedState,
+            new AuditLogEvent.Builder());
 
     assertPresent(linkedAccountWithPassportAndVisas);
 

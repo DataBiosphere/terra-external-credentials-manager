@@ -2,7 +2,7 @@ package bio.terra.externalcreds;
 
 import bio.terra.common.logging.LoggingInitializer;
 import bio.terra.common.logging.LoggingUtils;
-import bio.terra.externalcreds.services.ProviderService;
+import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.SshKeyPairService;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -34,12 +34,12 @@ public class ExternalCredsCronApplication {
         .run(args);
   }
 
-  private final ProviderService providerService;
+  private final PassportProviderService passportProviderService;
   private final SshKeyPairService sshKeyPairService;
 
   public ExternalCredsCronApplication(
-      ProviderService providerService, SshKeyPairService sshKeyPairService) {
-    this.providerService = providerService;
+      PassportProviderService passportProviderService, SshKeyPairService sshKeyPairService) {
+    this.passportProviderService = passportProviderService;
     this.sshKeyPairService = sshKeyPairService;
   }
 
@@ -47,14 +47,14 @@ public class ExternalCredsCronApplication {
   public void checkForExpiringCredentials() {
     // check and refresh expiring visas and passports
     log.info("beginning checkForExpiringCredentials");
-    var expiringPassportCount = providerService.refreshExpiringPassports();
+    var expiringPassportCount = passportProviderService.refreshExpiringPassports();
     log.info(
         "completed checkForExpiringCredentials",
         Map.of("expiring_passport_count", expiringPassportCount));
 
     // check and validate visas not validated since job was last run
     log.info("beginning validateVisas");
-    var checkedPassportCount = providerService.validateAccessTokenVisas();
+    var checkedPassportCount = passportProviderService.validateAccessTokenVisas();
     log.info("completed validateVisas", Map.of("checked_passport_count", checkedPassportCount));
   }
 
