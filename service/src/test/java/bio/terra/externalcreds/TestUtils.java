@@ -20,9 +20,13 @@ public class TestUtils {
   }
 
   public static LinkedAccount createRandomLinkedAccount() {
+    return createRandomLinkedAccount("ras");
+  }
+
+  public static LinkedAccount createRandomLinkedAccount(String providerName) {
     return new LinkedAccount.Builder()
         .expires(getRandomTimestamp())
-        .providerName(UUID.randomUUID().toString())
+        .providerName(providerName)
         .refreshToken(UUID.randomUUID().toString())
         .userId(UUID.randomUUID().toString())
         .externalUserId(UUID.randomUUID().toString())

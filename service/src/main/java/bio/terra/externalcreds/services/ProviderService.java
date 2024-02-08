@@ -37,7 +37,7 @@ import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
-public abstract class ProviderService {
+public class ProviderService {
   public final ExternalCredsConfig externalCredsConfig;
   public final ProviderClientCache providerClientCache;
   public final OAuth2Service oAuth2Service;
@@ -165,7 +165,8 @@ public abstract class ProviderService {
               "user info from provider %s did not contain external id claim %s",
               providerName, providerInfo.getExternalIdClaim()));
     }
-    LinkedAccount linkedAccount = new LinkedAccount.Builder()
+    LinkedAccount linkedAccount =
+        new LinkedAccount.Builder()
             .providerName(providerName)
             .userId(userId)
             .expires(expires)
@@ -199,7 +200,6 @@ public abstract class ProviderService {
     return errorCode;
   }
 
-
   public LinkedAccount deleteLink(String userId, String providerName) {
     var providerInfo = externalCredsConfig.getProviders().get(providerName);
 
@@ -218,7 +218,6 @@ public abstract class ProviderService {
 
     return linkedAccount;
   }
-
 
   public void invalidateLinkedAccount(LinkedAccount linkedAccount) {
     auditLogger.logEvent(

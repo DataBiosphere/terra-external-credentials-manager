@@ -10,7 +10,6 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.JwtSigningTestUtils;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
-import bio.terra.externalcreds.auditLogging.AuditLogEvent.Builder;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
@@ -235,13 +234,18 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
     linkedAccountService.upsertOAuth2State(expectedLinkedAccount.getUserId(), state);
 
+    var auditLogEventBuilder =
+        new AuditLogEvent.Builder()
+            .providerName(expectedLinkedAccount.getProviderName())
+            .userId(expectedLinkedAccount.getUserId())
+            .clientIP("127.0.0.1");
     var linkedAccountWithPassportAndVisas =
         passportProviderService.createLink(
             expectedLinkedAccount.getProviderName(),
             expectedLinkedAccount.getUserId(),
             authorizationCode,
             encodedState,
-            new AuditLogEvent.Builder());
+            auditLogEventBuilder);
 
     assertPresent(linkedAccountWithPassportAndVisas);
 

@@ -36,6 +36,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -49,8 +50,15 @@ class OidcApiControllerTest extends BaseTest {
   @Autowired private MockMvc mvc;
 
   @MockBean private LinkedAccountService linkedAccountServiceMock;
-  @MockBean private ProviderService providerServiceMock;
-  @MockBean private PassportProviderService passportProviderServiceMock;
+
+  @MockBean
+  @Qualifier("providerService")
+  private ProviderService providerServiceMock;
+
+  @MockBean
+  @Qualifier("passportProviderService")
+  private PassportProviderService passportProviderServiceMock;
+
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private PassportService passportServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
@@ -163,13 +171,17 @@ class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
+      var auditLogEventBuilder =
+          new AuditLogEvent.Builder()
+              .providerName(inputLinkedAccount.getProviderName())
+              .userId(inputLinkedAccount.getUserId())
+              .clientIP("127.0.0.1");
       when(passportProviderServiceMock.createLink(
               inputLinkedAccount.getProviderName(),
               inputLinkedAccount.getUserId(),
               oauthcode,
               state,
-              new AuditLogEvent.Builder()
-          ))
+              auditLogEventBuilder))
           .thenReturn(
               Optional.of(
                   new LinkedAccountWithPassportAndVisas.Builder()
@@ -211,7 +223,7 @@ class OidcApiControllerTest extends BaseTest {
           .thenThrow(new ExternalCredsException("This is a drill!"));
 
       // check that an internal server error code is returned
-      var testProviderName = "testProviderName";
+      var testProviderName = "ras";
       mvc.perform(
               post("/api/oidc/v1/{provider}/oauthcode", testProviderName)
                   .header("authorization", "Bearer " + accessToken)
