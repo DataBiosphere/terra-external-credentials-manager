@@ -9,9 +9,9 @@ import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.JwtUtils;
 import bio.terra.externalcreds.services.LinkedAccountService;
+import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
-import bio.terra.externalcreds.services.PassportProviderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -76,10 +76,11 @@ public record OidcApiController(
     try {
       if (providerName.equals("ras")) {
         var linkedAccountWithPassportAndVisas =
-            passportProviderService.createLink(providerName, samUser.getSubjectId(), oauthcode,
-                state, auditLogEventBuilder);
-        return ResponseEntity.of(linkedAccountWithPassportAndVisas.map(
-            x -> OpenApiConverters.Output.convert(x.getLinkedAccount())));
+            passportProviderService.createLink(
+                providerName, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
+        return ResponseEntity.of(
+            linkedAccountWithPassportAndVisas.map(
+                x -> OpenApiConverters.Output.convert(x.getLinkedAccount())));
       } else {
         throw new BadRequestException("Invalid providerName");
       }

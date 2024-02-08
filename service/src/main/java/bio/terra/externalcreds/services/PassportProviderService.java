@@ -10,6 +10,12 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.models.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
@@ -17,12 +23,6 @@ import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -39,41 +39,55 @@ public class PassportProviderService extends ProviderService {
       JwtUtils jwtUtils,
       AuditLogger auditLogger,
       ObjectMapper objectMapper) {
-    super(externalCredsConfig, providerClientCache, oAuth2Service, linkedAccountService, auditLogger, objectMapper);
+    super(
+        externalCredsConfig,
+        providerClientCache,
+        oAuth2Service,
+        linkedAccountService,
+        auditLogger,
+        objectMapper);
     this.passportService = passportService;
     this.jwtUtils = jwtUtils;
   }
 
   public Optional<LinkedAccountWithPassportAndVisas> createLink(
-      String providerName, String userId, String authorizationCode, String encodedState, AuditLogEvent.Builder auditLogEventBuilder) {
+      String providerName,
+      String userId,
+      String authorizationCode,
+      String encodedState,
+      AuditLogEvent.Builder auditLogEventBuilder) {
 
     var oAuth2State = validateOAuth2State(providerName, userId, encodedState);
 
-    Optional<LinkedAccountWithPassportAndVisas> linkedAccountWithPassportAndVisas = providerClientCache
-        .getProviderClient(providerName)
-        .map(
-            providerClient -> {
-              var providerInfo = externalCredsConfig.getProviders().get(providerName);
-              try {
-                var linkedAccount = createLinkInternal(
-                    providerName,
-                    userId,
-                    authorizationCode,
-                    oAuth2State.getRedirectUri(),
-                    new HashSet<>(providerInfo.getScopes()),
-                    encodedState,
-                    providerClient);
-                return linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-                    jwtUtils.enrichAccountWithPassportAndVisas(linkedAccount.getLeft(), linkedAccount.getRight()));
-              } catch (OAuth2AuthorizationException oauthEx) {
-                throw new BadRequestException(oauthEx);
-              }
-            });
+    Optional<LinkedAccountWithPassportAndVisas> linkedAccountWithPassportAndVisas =
+        providerClientCache
+            .getProviderClient(providerName)
+            .map(
+                providerClient -> {
+                  var providerInfo = externalCredsConfig.getProviders().get(providerName);
+                  try {
+                    var linkedAccount =
+                        createLinkInternal(
+                            providerName,
+                            userId,
+                            authorizationCode,
+                            oAuth2State.getRedirectUri(),
+                            new HashSet<>(providerInfo.getScopes()),
+                            encodedState,
+                            providerClient);
+                    return linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+                        jwtUtils.enrichAccountWithPassportAndVisas(
+                            linkedAccount.getLeft(), linkedAccount.getRight()));
+                  } catch (OAuth2AuthorizationException oauthEx) {
+                    throw new BadRequestException(oauthEx);
+                  }
+                });
     logLinkCreation(linkedAccountWithPassportAndVisas, auditLogEventBuilder);
     return linkedAccountWithPassportAndVisas;
   }
 
-  private void logLinkCreation(Optional<LinkedAccountWithPassportAndVisas> linkedAccountWithPassportAndVisas,
+  private void logLinkCreation(
+      Optional<LinkedAccountWithPassportAndVisas> linkedAccountWithPassportAndVisas,
       AuditLogEvent.Builder auditLogEventBuilder) {
     var passport =
         linkedAccountWithPassportAndVisas.flatMap(LinkedAccountWithPassportAndVisas::getPassport);
@@ -139,8 +153,6 @@ public class PassportProviderService extends ProviderService {
 
     return expiringLinkedAccounts.size();
   }
-
-
 
   @VisibleForTesting
   void authAndRefreshPassport(LinkedAccount linkedAccount) {
@@ -262,5 +274,4 @@ public class PassportProviderService extends ProviderService {
     }
     return visaValid;
   }
-
 }

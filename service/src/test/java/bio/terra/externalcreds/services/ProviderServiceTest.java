@@ -461,7 +461,8 @@ public class ProviderServiceTest extends BaseTest {
           mockValidationEndpointConfigsAndResponse(
               visaVerificationDetails, HttpStatus.OK, "Valid")) {
 
-        var responseBody = passportProviderService.validateVisaWithProvider(visaVerificationDetails);
+        var responseBody =
+            passportProviderService.validateVisaWithProvider(visaVerificationDetails);
         assertEquals(true, responseBody);
 
         // verify that visa last validated has been updated
@@ -492,7 +493,8 @@ public class ProviderServiceTest extends BaseTest {
           mockValidationEndpointConfigsAndResponse(
               visaVerificationDetails, HttpStatus.BAD_REQUEST, "Invalid Passport")) {
 
-        var responseBody = passportProviderService.validateVisaWithProvider(visaVerificationDetails);
+        var responseBody =
+            passportProviderService.validateVisaWithProvider(visaVerificationDetails);
         assertEquals(false, responseBody);
 
         // verify that visa last validated has NOT been updated
