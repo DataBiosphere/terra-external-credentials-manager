@@ -67,7 +67,7 @@ public class PassportProviderService extends ProviderService {
                   var providerInfo = externalCredsConfig.getProviders().get(providerName);
                   try {
                     var linkedAccount =
-                        createLinkInternal(
+                        createLinkedAccount(
                             providerName,
                             userId,
                             authorizationCode,

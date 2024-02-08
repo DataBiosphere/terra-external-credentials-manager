@@ -129,7 +129,7 @@ public class ProviderService {
     }
   }
 
-  public ImmutablePair<LinkedAccount, OAuth2User> createLinkInternal(
+  protected ImmutablePair<LinkedAccount, OAuth2User> createLinkedAccount(
       String providerName,
       String userId,
       String authorizationCode,
@@ -183,7 +183,7 @@ public class ProviderService {
    * OAuth2AuthorizationExceptions with other OAuth2AuthorizationExceptions that have non-standard
    * error codes. We just want to handle standard error codes which should be in the root cause.
    */
-  public String getRootOAuth2ErrorCode(OAuth2AuthorizationException oauthEx) {
+  protected String getRootOAuth2ErrorCode(OAuth2AuthorizationException oauthEx) {
     var errorCode = oauthEx.getError().getErrorCode();
     Throwable currentThrowable = oauthEx.getCause();
     var visitedThrowables = new ArrayList<Throwable>();
@@ -219,7 +219,7 @@ public class ProviderService {
     return linkedAccount;
   }
 
-  public void invalidateLinkedAccount(LinkedAccount linkedAccount) {
+  protected void invalidateLinkedAccount(LinkedAccount linkedAccount) {
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.LinkExpired)
