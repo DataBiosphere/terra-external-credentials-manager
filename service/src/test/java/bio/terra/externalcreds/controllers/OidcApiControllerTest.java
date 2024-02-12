@@ -21,6 +21,7 @@ import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount.Builder;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
@@ -63,6 +64,7 @@ class OidcApiControllerTest extends BaseTest {
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private PassportService passportServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
+  private String providerName = Provider.RAS.name();
 
   @Test
   void testListProviders() throws Exception {
@@ -82,7 +84,6 @@ class OidcApiControllerTest extends BaseTest {
       var userId = "fakeUser";
       var accessToken = "fakeAccessToken";
       var result = "https://test/authorization/uri";
-      var providerName = "fake";
       var redirectUri = "fakeuri";
 
       mockSamUser(userId, accessToken);
@@ -103,7 +104,6 @@ class OidcApiControllerTest extends BaseTest {
     void testGetAuthUrl404() throws Exception {
       var userId = "fakeUser";
       var accessToken = "fakeAccessToken";
-      var providerName = "fake";
       var redirectUri = "fakeuri";
 
       mockSamUser(userId, accessToken);
@@ -148,7 +148,6 @@ class OidcApiControllerTest extends BaseTest {
     @Test
     void testGetLink404() throws Exception {
       var userId = "non-existent-user";
-      var providerName = "non-existent-provider";
       var accessToken = "testToken";
 
       mockSamUser(userId, accessToken);
@@ -209,7 +208,7 @@ class OidcApiControllerTest extends BaseTest {
           .thenThrow(new ExternalCredsException("This is a drill!"));
 
       // check that an internal server error code is returned
-      var testProviderName = "ras";
+      var testProviderName = Provider.RAS.name();
       mvc.perform(
               post("/api/oidc/v1/{provider}/oauthcode", testProviderName)
                   .header("authorization", "Bearer " + accessToken)
@@ -238,7 +237,6 @@ class OidcApiControllerTest extends BaseTest {
     void testDeleteLink() throws Exception {
       var accessToken = "testToken";
       var userId = UUID.randomUUID().toString();
-      var providerName = UUID.randomUUID().toString();
       var externalId = UUID.randomUUID().toString();
       mockSamUser(userId, accessToken);
 
@@ -276,7 +274,6 @@ class OidcApiControllerTest extends BaseTest {
     void testDeleteLink404() throws Exception {
       var accessToken = "testToken";
       var userId = UUID.randomUUID().toString();
-      var providerName = UUID.randomUUID().toString();
       mockSamUser(userId, accessToken);
 
       doThrow(new NotFoundException("not found"))
@@ -297,7 +294,6 @@ class OidcApiControllerTest extends BaseTest {
     void testGetProviderPassport() throws Exception {
       var accessToken = "testToken";
       var userId = UUID.randomUUID().toString();
-      var providerName = UUID.randomUUID().toString();
       var externalUserId = UUID.randomUUID().toString();
       var passport =
           TestUtils.createRandomPassport()
@@ -340,7 +336,6 @@ class OidcApiControllerTest extends BaseTest {
     void testGetProviderPassportDoesNotReturnExpired() throws Exception {
       var accessToken = "testToken";
       var userId = UUID.randomUUID().toString();
-      var providerName = UUID.randomUUID().toString();
       var passport =
           TestUtils.createRandomPassport()
               .withExpires(new Timestamp(System.currentTimeMillis() - 1000));
@@ -359,7 +354,6 @@ class OidcApiControllerTest extends BaseTest {
     void testGetProviderPassport404() throws Exception {
       var accessToken = "testToken";
       var userId = UUID.randomUUID().toString();
-      var providerName = UUID.randomUUID().toString();
 
       mockSamUser(userId, accessToken);
 

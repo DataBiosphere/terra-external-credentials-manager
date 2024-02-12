@@ -243,10 +243,9 @@ components:
     providerParam:
       name: provider
       in: path
-      schema:
-        type: string
-        default: ras
       required: true
+      schema:
+        $ref: '#/components/schemas/Provider'
     redirectUriParam:
       name: redirectUri
       description: oidc redirect uri
@@ -320,6 +319,11 @@ components:
             $ref: '#/components/schemas/ErrorReport'
 
   schemas:
+    Provider:
+      description: Enum containing valid identity providers.
+      type: string
+      enum:
+        - ras
     SshKeyPairType:
       description: Enum containing valid ssh key types.
       type: string
