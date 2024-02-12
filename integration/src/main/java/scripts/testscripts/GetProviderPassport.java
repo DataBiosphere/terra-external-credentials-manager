@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import bio.terra.externalcreds.api.OidcApi;
+import bio.terra.externalcreds.model.Provider;
 import bio.terra.testrunner.runner.TestScript;
 import bio.terra.testrunner.runner.config.TestUserSpecification;
 import java.util.List;
@@ -31,7 +32,7 @@ public class GetProviderPassport extends TestScript {
 
     // TODO: update GetProviderPassport.json in perf to run 120 tests per second
     // check the response code
-    var passportResponse = oidcApi.getProviderPassportWithHttpInfo(provider);
+    var passportResponse = oidcApi.getProviderPassportWithHttpInfo(Provider.fromValue(provider));
     var httpCode = passportResponse.getStatusCode();
 
     assertEquals(HttpStatus.OK, httpCode);

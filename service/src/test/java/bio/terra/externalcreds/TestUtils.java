@@ -1,6 +1,7 @@
 package bio.terra.externalcreds;
 
 import bio.terra.externalcreds.config.ProviderProperties;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -20,9 +21,13 @@ public class TestUtils {
   }
 
   public static LinkedAccount createRandomLinkedAccount() {
+    return createRandomLinkedAccount(Provider.RAS.name());
+  }
+
+  public static LinkedAccount createRandomLinkedAccount(String providerName) {
     return new LinkedAccount.Builder()
         .expires(getRandomTimestamp())
-        .providerName(UUID.randomUUID().toString())
+        .providerName(providerName)
         .refreshToken(UUID.randomUUID().toString())
         .userId(UUID.randomUUID().toString())
         .externalUserId(UUID.randomUUID().toString())
