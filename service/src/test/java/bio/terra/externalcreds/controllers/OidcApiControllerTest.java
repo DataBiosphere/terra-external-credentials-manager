@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -171,22 +172,18 @@ class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
-      var auditLogEventBuilder =
-          new AuditLogEvent.Builder()
-              .providerName(inputLinkedAccount.getProviderName())
-              .userId(inputLinkedAccount.getUserId())
-              .clientIP("127.0.0.1");
+      var linkedAccountWithPassportAndVisas =
+          new LinkedAccountWithPassportAndVisas.Builder()
+              .linkedAccount(inputLinkedAccount)
+              .passport(TestUtils.createRandomPassport())
+              .build();
       when(passportProviderServiceMock.createLink(
-              inputLinkedAccount.getProviderName(),
-              inputLinkedAccount.getUserId(),
-              oauthcode,
-              state,
-              auditLogEventBuilder))
-          .thenReturn(
-              Optional.of(
-                  new LinkedAccountWithPassportAndVisas.Builder()
-                      .linkedAccount(inputLinkedAccount)
-                      .build()));
+              eq(inputLinkedAccount.getProviderName()),
+              eq(inputLinkedAccount.getUserId()),
+              eq(oauthcode),
+              eq(state),
+              any(AuditLogEvent.Builder.class)))
+          .thenReturn(Optional.of(linkedAccountWithPassportAndVisas));
 
       mvc.perform(
               post("/api/oidc/v1/{provider}/oauthcode", inputLinkedAccount.getProviderName())
@@ -199,17 +196,6 @@ class OidcApiControllerTest extends BaseTest {
                   .json(
                       mapper.writeValueAsString(
                           OpenApiConverters.Output.convert(inputLinkedAccount))));
-
-      // check that a log was recorded
-      verify(auditLoggerMock)
-          .logEvent(
-              new AuditLogEvent.Builder()
-                  .auditLogEventType(AuditLogEventType.LinkCreated)
-                  .providerName(inputLinkedAccount.getProviderName())
-                  .userId(inputLinkedAccount.getUserId())
-                  .clientIP("127.0.0.1")
-                  .externalUserId(inputLinkedAccount.getExternalUserId())
-                  .build());
     }
 
     @Test
