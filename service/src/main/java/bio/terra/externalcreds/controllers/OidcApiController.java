@@ -4,6 +4,7 @@ import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
+import bio.terra.externalcreds.controllers.OpenApiConverters.Output;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
@@ -13,6 +14,7 @@ import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
+import bio.terra.externalcreds.services.TokenProviderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +37,7 @@ public record OidcApiController(
     PassportService passportService,
     ProviderService providerService,
     PassportProviderService passportProviderService,
+    TokenProviderService tokenProviderService,
     ExternalCredsSamUserFactory samUserFactory)
     implements OidcApi {
 
@@ -76,6 +79,7 @@ public record OidcApiController(
             .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr());
 
+    Optional<LinkInfo> linkInfo;
     try {
       if (providerName.equals(Provider.RAS)) {
         var linkedAccountWithPassportAndVisas =
@@ -85,12 +89,22 @@ public record OidcApiController(
                 oauthcode,
                 state,
                 auditLogEventBuilder);
-        return ResponseEntity.of(
+        linkInfo =
             linkedAccountWithPassportAndVisas.map(
-                x -> OpenApiConverters.Output.convert(x.getLinkedAccount())));
+                x -> OpenApiConverters.Output.convert(x.getLinkedAccount()));
+      } else if (providerName.equals(Provider.GITHUB)) {
+        var linkedAccount =
+            tokenProviderService.createLink(
+                providerName.name(),
+                samUser.getSubjectId(),
+                oauthcode,
+                state,
+                auditLogEventBuilder);
+        linkInfo = linkedAccount.map(Output::convert);
       } else {
         throw new BadRequestException("Invalid providerName");
       }
+      return ResponseEntity.of(linkInfo);
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());

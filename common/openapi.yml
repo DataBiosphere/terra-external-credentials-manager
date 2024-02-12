@@ -324,6 +324,7 @@ components:
       type: string
       enum:
         - ras
+        - github
     SshKeyPairType:
       description: Enum containing valid ssh key types.
       type: string

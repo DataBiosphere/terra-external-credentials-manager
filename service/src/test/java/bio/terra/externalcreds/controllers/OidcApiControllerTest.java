@@ -29,6 +29,7 @@ import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
+import bio.terra.externalcreds.services.TokenProviderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
@@ -60,6 +61,10 @@ class OidcApiControllerTest extends BaseTest {
   @MockBean
   @Qualifier("passportProviderService")
   private PassportProviderService passportProviderServiceMock;
+
+  @MockBean
+  @Qualifier("tokenProviderService")
+  private TokenProviderService tokenProviderServiceMock;
 
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private PassportService passportServiceMock;
@@ -162,14 +167,26 @@ class OidcApiControllerTest extends BaseTest {
   class CreateLink {
 
     @Test
-    void testCreatesLinkSuccessfully() throws Exception {
-      var accessToken = "testToken";
-      var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
-
+    void testCreatesTokenProviderLinkSuccessfully() throws Exception {
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.GITHUB.name());
       var state = UUID.randomUUID().toString();
       var oauthcode = UUID.randomUUID().toString();
 
-      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
+      when(tokenProviderServiceMock.createLink(
+              eq(inputLinkedAccount.getProviderName()),
+              eq(inputLinkedAccount.getUserId()),
+              eq(oauthcode),
+              eq(state),
+              any(AuditLogEvent.Builder.class)))
+          .thenReturn(Optional.of(inputLinkedAccount));
+      testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode);
+    }
+
+    @Test
+    void testCreatesPassportProviderLinkSuccessfully() throws Exception {
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var state = UUID.randomUUID().toString();
+      var oauthcode = UUID.randomUUID().toString();
 
       var linkedAccountWithPassportAndVisas =
           new LinkedAccountWithPassportAndVisas.Builder()
@@ -183,7 +200,13 @@ class OidcApiControllerTest extends BaseTest {
               eq(state),
               any(AuditLogEvent.Builder.class)))
           .thenReturn(Optional.of(linkedAccountWithPassportAndVisas));
+      testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode);
+    }
 
+    private void testCreatesLinkSuccessfully(
+        LinkedAccount inputLinkedAccount, String state, String oauthcode) throws Exception {
+      var accessToken = "testToken";
+      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
       mvc.perform(
               post("/api/oidc/v1/{provider}/oauthcode", inputLinkedAccount.getProviderName())
                   .header("authorization", "Bearer " + accessToken)
