@@ -146,6 +146,25 @@ class OidcApiControllerTest extends BaseTest {
     }
 
     @Test
+    void testGetLinkCaseInsensitive() throws Exception {
+      var accessToken = "testToken";
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
+
+      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
+
+      when(linkedAccountServiceMock.getLinkedAccount(
+              inputLinkedAccount.getUserId(), inputLinkedAccount.getProviderName()))
+          .thenReturn(Optional.of(inputLinkedAccount));
+
+      mvc.perform(get("/api/oidc/v1/" + "RaS").header("authorization", "Bearer " + accessToken))
+          .andExpect(
+              content()
+                  .json(
+                      mapper.writeValueAsString(
+                          OpenApiConverters.Output.convert(inputLinkedAccount))));
+    }
+
+    @Test
     void testGetLink404() throws Exception {
       var userId = "non-existent-user";
       var accessToken = "testToken";
