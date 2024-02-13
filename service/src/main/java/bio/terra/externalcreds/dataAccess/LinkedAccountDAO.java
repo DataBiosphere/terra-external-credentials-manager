@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.sql.Timestamp;
@@ -40,11 +41,11 @@ public class LinkedAccountDAO {
   }
 
   @WithSpan
-  public Optional<LinkedAccount> getLinkedAccount(String userId, String providerName) {
+  public Optional<LinkedAccount> getLinkedAccount(String userId, Provider provider) {
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", userId)
-            .addValue("providerName", providerName);
+            .addValue("providerName", provider.toString());
     var query =
         "SELECT * FROM linked_account WHERE user_id = :userId and provider_name = :providerName";
     return Optional.ofNullable(
@@ -107,17 +108,17 @@ public class LinkedAccountDAO {
 
   /**
    * @param userId
-   * @param providerName
+   * @param provider
    * @return boolean whether or not an account was found and deleted
    */
   @WithSpan
-  public boolean deleteLinkedAccountIfExists(String userId, String providerName) {
+  public boolean deleteLinkedAccountIfExists(String userId, Provider provider) {
     var query =
         "DELETE FROM linked_account WHERE user_id = :userId and provider_name = :providerName";
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", userId)
-            .addValue("providerName", providerName);
+            .addValue("providerName", provider.toString());
 
     return jdbcTemplate.update(query, namedParameters) > 0;
   }

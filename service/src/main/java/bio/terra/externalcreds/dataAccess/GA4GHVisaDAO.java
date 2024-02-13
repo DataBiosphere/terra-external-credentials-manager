@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
@@ -57,9 +58,9 @@ public class GA4GHVisaDAO {
   }
 
   @WithSpan
-  public List<GA4GHVisa> listVisas(String userId, String providerName) {
+  public List<GA4GHVisa> listVisas(String userId, Provider provider) {
     var namedParameters =
-        new MapSqlParameterSource("userId", userId).addValue("providerName", providerName);
+        new MapSqlParameterSource("userId", userId).addValue("providerName", provider.toString());
     var query =
         "SELECT v.* FROM ga4gh_visa v"
             + " INNER JOIN ga4gh_passport p ON p.id = v.passport_id"

@@ -64,7 +64,8 @@ class OidcApiControllerTest extends BaseTest {
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private PassportService passportServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
-  private String providerName = Provider.RAS.toString();
+  private Provider provider = Provider.RAS;
+  private String providerName = provider.toString();
 
   @Test
   void testListProviders() throws Exception {
@@ -88,7 +89,7 @@ class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, providerName, redirectUri))
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri))
           .thenReturn(Optional.of(result));
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -108,7 +109,7 @@ class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, providerName, redirectUri))
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri))
           .thenReturn(Optional.empty());
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -132,7 +133,8 @@ class OidcApiControllerTest extends BaseTest {
       mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
       when(linkedAccountServiceMock.getLinkedAccount(
-              inputLinkedAccount.getUserId(), inputLinkedAccount.getProviderName()))
+              inputLinkedAccount.getUserId(),
+              Provider.fromValue(inputLinkedAccount.getProviderName())))
           .thenReturn(Optional.of(inputLinkedAccount));
 
       mvc.perform(
@@ -153,7 +155,8 @@ class OidcApiControllerTest extends BaseTest {
       mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
       when(linkedAccountServiceMock.getLinkedAccount(
-              inputLinkedAccount.getUserId(), inputLinkedAccount.getProviderName()))
+              inputLinkedAccount.getUserId(),
+              Provider.fromValue(inputLinkedAccount.getProviderName())))
           .thenReturn(Optional.of(inputLinkedAccount));
 
       mvc.perform(get("/api/oidc/v1/" + "RaS").header("authorization", "Bearer " + accessToken))
@@ -196,7 +199,7 @@ class OidcApiControllerTest extends BaseTest {
               .passport(TestUtils.createRandomPassport())
               .build();
       when(passportProviderServiceMock.createLink(
-              eq(inputLinkedAccount.getProviderName()),
+              eq(Provider.fromValue(inputLinkedAccount.getProviderName())),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
               eq(state),
@@ -258,7 +261,7 @@ class OidcApiControllerTest extends BaseTest {
       var externalId = UUID.randomUUID().toString();
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.deleteLink(userId, providerName))
+      when(providerServiceMock.deleteLink(userId, provider))
           .thenReturn(
               new Builder()
                   .providerName(providerName)
@@ -274,7 +277,7 @@ class OidcApiControllerTest extends BaseTest {
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isOk());
 
-      verify(providerServiceMock).deleteLink(userId, providerName);
+      verify(providerServiceMock).deleteLink(userId, provider);
 
       // check that a log was recorded
       verify(auditLoggerMock)
@@ -296,7 +299,7 @@ class OidcApiControllerTest extends BaseTest {
 
       doThrow(new NotFoundException("not found"))
           .when(providerServiceMock)
-          .deleteLink(userId, providerName);
+          .deleteLink(userId, provider);
 
       mvc.perform(
               delete("/api/oidc/v1/{provider}", providerName)
@@ -319,7 +322,7 @@ class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(linkedAccountServiceMock.getLinkedAccount(userId, providerName))
+      when(linkedAccountServiceMock.getLinkedAccount(userId, provider))
           .thenReturn(
               Optional.of(
                   new LinkedAccount.Builder()
@@ -330,7 +333,7 @@ class OidcApiControllerTest extends BaseTest {
                       .expires(new Timestamp(0))
                       .isAuthenticated(true)
                       .build()));
-      when(passportServiceMock.getPassport(userId, providerName)).thenReturn(Optional.of(passport));
+      when(passportServiceMock.getPassport(userId, provider)).thenReturn(Optional.of(passport));
 
       mvc.perform(
               get("/api/oidc/v1/{provider}/passport", providerName)
@@ -360,7 +363,7 @@ class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(passportServiceMock.getPassport(userId, providerName)).thenReturn(Optional.of(passport));
+      when(passportServiceMock.getPassport(userId, provider)).thenReturn(Optional.of(passport));
 
       mvc.perform(
               get("/api/oidc/v1/{provider}/passport", providerName)

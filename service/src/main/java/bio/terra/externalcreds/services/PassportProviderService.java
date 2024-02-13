@@ -7,6 +7,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -51,24 +52,24 @@ public class PassportProviderService extends ProviderService {
   }
 
   public Optional<LinkedAccountWithPassportAndVisas> createLink(
-      String providerName,
+      Provider provider,
       String userId,
       String authorizationCode,
       String encodedState,
       AuditLogEvent.Builder auditLogEventBuilder) {
 
-    var oAuth2State = validateOAuth2State(providerName, userId, encodedState);
+    var oAuth2State = validateOAuth2State(provider, userId, encodedState);
 
     Optional<LinkedAccountWithPassportAndVisas> linkedAccountWithPassportAndVisas =
         providerClientCache
-            .getProviderClient(providerName)
+            .getProviderClient(provider.toString())
             .map(
                 providerClient -> {
-                  var providerInfo = externalCredsConfig.getProviders().get(providerName);
+                  var providerInfo = externalCredsConfig.getProviders().get(provider.toString());
                   try {
                     var linkedAccount =
                         createLinkedAccount(
-                            providerName,
+                            provider,
                             userId,
                             authorizationCode,
                             oAuth2State.getRedirectUri(),

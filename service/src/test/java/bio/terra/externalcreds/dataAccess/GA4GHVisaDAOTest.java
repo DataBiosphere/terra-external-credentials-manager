@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import java.sql.Timestamp;
@@ -173,7 +174,9 @@ class GA4GHVisaDAOTest extends BaseTest {
     assertEquals(expectedVisa2, savedVisa2.withId(Optional.empty()));
 
     var loadedVisas =
-        visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
+        visaDAO.listVisas(
+            savedLinkedAccount.getUserId(),
+            Provider.fromValue(savedLinkedAccount.getProviderName()));
     assertEquals(2, loadedVisas.size());
     assertEquals(Set.of(savedVisa1, savedVisa2), Set.copyOf(loadedVisas));
   }
@@ -186,7 +189,7 @@ class GA4GHVisaDAOTest extends BaseTest {
 
   @Test
   void testListNoVisas() {
-    var loadedVisas = visaDAO.listVisas("foo", "bar");
+    var loadedVisas = visaDAO.listVisas("foo", Provider.RAS);
     assertEquals(Collections.emptyList(), loadedVisas);
   }
 
@@ -204,7 +207,9 @@ class GA4GHVisaDAOTest extends BaseTest {
     visaDAO.updateLastValidated(savedVisa.getId().get(), expectedLastValidated);
 
     var visas =
-        visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
+        visaDAO.listVisas(
+            savedLinkedAccount.getUserId(),
+            Provider.fromValue(savedLinkedAccount.getProviderName()));
     assertEquals(1, visas.size());
     assertEquals(expectedLastValidated, visas.get(0).getLastValidated().get());
   }
