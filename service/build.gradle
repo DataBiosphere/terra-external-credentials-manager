@@ -57,6 +57,10 @@ dependencies {
 	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:${openTelemetryVersion}"
 	implementation "io.opentelemetry.instrumentation:opentelemetry-spring-boot:${openTelemetryVersion}-alpha"
 	implementation "com.google.cloud.opentelemetry:exporter-trace:0.25.2"
+
+	// For Micrometer metrics gathering
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+
 }
 
 sonarqube {
