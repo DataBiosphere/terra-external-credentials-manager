@@ -64,7 +64,7 @@ class OidcApiControllerTest extends BaseTest {
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private PassportService passportServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
-  private String providerName = Provider.RAS.name();
+  private String providerName = Provider.RAS.toString();
 
   @Test
   void testListProviders() throws Exception {
@@ -227,9 +227,8 @@ class OidcApiControllerTest extends BaseTest {
           .thenThrow(new ExternalCredsException("This is a drill!"));
 
       // check that an internal server error code is returned
-      var testProviderName = Provider.RAS.name();
       mvc.perform(
-              post("/api/oidc/v1/{provider}/oauthcode", testProviderName)
+              post("/api/oidc/v1/{provider}/oauthcode", providerName)
                   .header("authorization", "Bearer " + accessToken)
                   .param("scopes", "foo")
                   .param("redirectUri", "redirectUri")
@@ -242,7 +241,7 @@ class OidcApiControllerTest extends BaseTest {
           .logEvent(
               new AuditLogEvent.Builder()
                   .auditLogEventType(AuditLogEventType.LinkCreationFailed)
-                  .providerName(testProviderName)
+                  .providerName(providerName)
                   .userId(userId)
                   .clientIP("127.0.0.1")
                   .build());

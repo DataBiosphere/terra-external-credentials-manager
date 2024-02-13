@@ -21,7 +21,7 @@ public class TestUtils {
   }
 
   public static LinkedAccount createRandomLinkedAccount() {
-    return createRandomLinkedAccount(Provider.RAS.name());
+    return createRandomLinkedAccount(Provider.RAS.toString());
   }
 
   public static LinkedAccount createRandomLinkedAccount(String providerName) {
