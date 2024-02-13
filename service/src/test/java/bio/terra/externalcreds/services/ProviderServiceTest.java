@@ -26,7 +26,6 @@ import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
-import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.CannotDecodeOAuth2State;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
@@ -94,22 +93,26 @@ public class ProviderServiceTest extends BaseTest {
 
       assertThrows(
           NotFoundException.class,
-          () -> providerService.deleteLink(UUID.randomUUID().toString(), Provider.RAS));
+          () ->
+              providerService.deleteLink(
+                  UUID.randomUUID().toString(), UUID.randomUUID().toString()));
     }
 
     @Test
     void testDeleteLinkLinkNotFound() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
-      Provider provider = Provider.fromValue(linkedAccount.getProviderName());
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderName(), TestUtils.createRandomProvider()));
 
-      when(linkedAccountServiceMock.getLinkedAccount(linkedAccount.getUserId(), provider))
+      when(linkedAccountServiceMock.getLinkedAccount(
+              linkedAccount.getUserId(), linkedAccount.getProviderName()))
           .thenReturn(Optional.empty());
 
       assertThrows(
           NotFoundException.class,
-          () -> providerService.deleteLink(linkedAccount.getUserId(), provider));
+          () ->
+              providerService.deleteLink(
+                  linkedAccount.getUserId(), linkedAccount.getProviderName()));
     }
 
     private void testWithRevokeResponseCode(HttpStatus httpStatus) {
@@ -131,10 +134,11 @@ public class ProviderServiceTest extends BaseTest {
         when(externalCredsConfigMock.getProviders())
             .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
 
-        Provider provider = Provider.fromValue(linkedAccount.getProviderName());
-        when(linkedAccountServiceMock.getLinkedAccount(linkedAccount.getUserId(), provider))
+        when(linkedAccountServiceMock.getLinkedAccount(
+                linkedAccount.getUserId(), linkedAccount.getProviderName()))
             .thenReturn(Optional.of(linkedAccount));
-        when(linkedAccountServiceMock.deleteLinkedAccount(linkedAccount.getUserId(), provider))
+        when(linkedAccountServiceMock.deleteLinkedAccount(
+                linkedAccount.getUserId(), linkedAccount.getProviderName()))
             .thenReturn(true);
 
         //  Mock the server response
@@ -145,8 +149,9 @@ public class ProviderServiceTest extends BaseTest {
                     .withQueryStringParameters(expectedParameters))
             .respond(HttpResponse.response().withStatusCode(httpStatus.value()));
 
-        providerService.deleteLink(linkedAccount.getUserId(), provider);
-        verify(linkedAccountServiceMock).deleteLinkedAccount(linkedAccount.getUserId(), provider);
+        providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProviderName());
+        verify(linkedAccountServiceMock)
+            .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProviderName());
       }
     }
   }
@@ -181,10 +186,12 @@ public class ProviderServiceTest extends BaseTest {
       passportProviderService.authAndRefreshPassport(expiredLinkedAccount);
 
       // check that the passport was deleted and the linked account was marked as invalid
-      Provider provider = Provider.fromValue(expiredLinkedAccount.getProviderName());
-      assertEmpty(passportDAO.getPassport(expiredLinkedAccount.getUserId(), provider));
+      assertEmpty(
+          passportDAO.getPassport(
+              expiredLinkedAccount.getUserId(), expiredLinkedAccount.getProviderName()));
       var updatedLinkedAccount =
-          linkedAccountDAO.getLinkedAccount(expiredLinkedAccount.getUserId(), provider);
+          linkedAccountDAO.getLinkedAccount(
+              expiredLinkedAccount.getUserId(), expiredLinkedAccount.getProviderName());
       assertFalse(updatedLinkedAccount.get().isAuthenticated());
     }
 
@@ -253,10 +260,12 @@ public class ProviderServiceTest extends BaseTest {
       passportProviderService.authAndRefreshPassport(savedLinkedAccount);
 
       // check that the passport was deleted and the linked account was marked as invalid
-      Provider provider = Provider.fromValue(savedLinkedAccount.getProviderName());
-      assertEmpty(passportDAO.getPassport(savedLinkedAccount.getUserId(), provider));
+      assertEmpty(
+          passportDAO.getPassport(
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName()));
       var updatedLinkedAccount =
-          linkedAccountDAO.getLinkedAccount(savedLinkedAccount.getUserId(), provider);
+          linkedAccountDAO.getLinkedAccount(
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
       assertFalse(updatedLinkedAccount.get().isAuthenticated());
     }
 
@@ -346,13 +355,16 @@ public class ProviderServiceTest extends BaseTest {
       // attempt to auth and refresh
       passportProviderService.authAndRefreshPassport(savedLinkedAccount);
 
-      Provider provider = Provider.fromValue(savedLinkedAccount.getProviderName());
       // check that the passport and visa were updated in the DB
       var actualUpdatedPassport =
-          passportDAO.getPassport(savedLinkedAccount.getUserId(), provider).get();
+          passportDAO
+              .getPassport(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName())
+              .get();
       var actualUpdatedLinkedAccount =
-          linkedAccountDAO.getLinkedAccount(savedLinkedAccount.getUserId(), provider);
-      var actualUpdatedVisas = visaDAO.listVisas(savedLinkedAccount.getUserId(), provider);
+          linkedAccountDAO.getLinkedAccount(
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
+      var actualUpdatedVisas =
+          visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
       assertEquals(
           savedLinkedAccount.withRefreshToken(updatedRefreshToken),
           actualUpdatedLinkedAccount.get());
@@ -457,8 +469,7 @@ public class ProviderServiceTest extends BaseTest {
         var updatedVisas =
             visaDAO.listVisas(
                 savedLinkedAccountWithPassportAndVisa.getLinkedAccount().getUserId(),
-                Provider.fromValue(
-                    savedLinkedAccountWithPassportAndVisa.getLinkedAccount().getProviderName()));
+                savedLinkedAccountWithPassportAndVisa.getLinkedAccount().getProviderName());
         assertEquals(savedLinkedAccountWithPassportAndVisa.getVisas().size(), updatedVisas.size());
         assertTrue(
             savedLinkedAccountWithPassportAndVisa
@@ -490,8 +501,7 @@ public class ProviderServiceTest extends BaseTest {
         var unchangedVisas =
             visaDAO.listVisas(
                 savedLinkedAccountWithPassportAndVisa.getLinkedAccount().getUserId(),
-                Provider.fromValue(
-                    savedLinkedAccountWithPassportAndVisa.getLinkedAccount().getProviderName()));
+                savedLinkedAccountWithPassportAndVisa.getLinkedAccount().getProviderName());
         assertEquals(
             savedLinkedAccountWithPassportAndVisa.getVisas().size(), unchangedVisas.size());
         assertEquals(
@@ -675,9 +685,7 @@ public class ProviderServiceTest extends BaseTest {
 
       var result =
           providerService.getProviderAuthorizationUrl(
-              linkedAccount.getUserId(),
-              Provider.fromValue(linkedAccount.getProviderName()),
-              redirectUri);
+              linkedAccount.getUserId(), linkedAccount.getProviderName(), redirectUri);
       assertPresent(result);
       // the result here should be only the state because of the mock above
       var savedState =
@@ -707,7 +715,7 @@ public class ProviderServiceTest extends BaseTest {
           BadRequestException.class,
           () ->
               passportProviderService.createLink(
-                  Provider.fromValue(expectedLinkedAccount.getProviderName()),
+                  expectedLinkedAccount.getProviderName(),
                   expectedLinkedAccount.getUserId(),
                   UUID.randomUUID().toString(),
                   state.withRandom("wrong").encode(objectMapper),
@@ -732,7 +740,7 @@ public class ProviderServiceTest extends BaseTest {
           BadRequestException.class,
           () ->
               passportProviderService.createLink(
-                  Provider.fromValue(expectedLinkedAccount.getProviderName()),
+                  expectedLinkedAccount.getProviderName(),
                   expectedLinkedAccount.getUserId(),
                   UUID.randomUUID().toString(),
                   state.withProvider("wrong").encode(objectMapper),
@@ -748,7 +756,7 @@ public class ProviderServiceTest extends BaseTest {
               BadRequestException.class,
               () ->
                   passportProviderService.createLink(
-                      Provider.fromValue(expectedLinkedAccount.getProviderName()),
+                      expectedLinkedAccount.getProviderName(),
                       expectedLinkedAccount.getUserId(),
                       UUID.randomUUID().toString(),
                       "not base64 encoded",
@@ -767,7 +775,7 @@ public class ProviderServiceTest extends BaseTest {
               BadRequestException.class,
               () ->
                   passportProviderService.createLink(
-                      Provider.fromValue(expectedLinkedAccount.getProviderName()),
+                      expectedLinkedAccount.getProviderName(),
                       expectedLinkedAccount.getUserId(),
                       UUID.randomUUID().toString(),
                       new String(Base64.getEncoder().encode("not json".getBytes())),
@@ -786,7 +794,7 @@ public class ProviderServiceTest extends BaseTest {
               BadRequestException.class,
               () ->
                   passportProviderService.createLink(
-                      Provider.fromValue(expectedLinkedAccount.getProviderName()),
+                      expectedLinkedAccount.getProviderName(),
                       expectedLinkedAccount.getUserId(),
                       UUID.randomUUID().toString(),
                       new String(
@@ -846,9 +854,7 @@ public class ProviderServiceTest extends BaseTest {
           .thenReturn("");
 
       return providerService.getProviderAuthorizationUrl(
-          linkedAccount.getUserId(),
-          Provider.fromValue(linkedAccount.getProviderName()),
-          redirectUri);
+          linkedAccount.getUserId(), linkedAccount.getProviderName(), redirectUri);
     }
   }
 

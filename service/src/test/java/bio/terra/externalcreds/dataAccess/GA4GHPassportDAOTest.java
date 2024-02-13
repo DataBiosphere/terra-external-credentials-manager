@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import java.sql.Timestamp;
@@ -27,14 +26,14 @@ class GA4GHPassportDAOTest extends BaseTest {
 
   @MockBean private ExternalCredsConfig externalCredsConfig;
 
+  @Test
+  void testGetMissingPassport() {
+    var shouldBeEmpty = passportDAO.getPassport("nonexistent_user_id", "nonexistent_provider_name");
+    assertEmpty(shouldBeEmpty);
+  }
+
   @Nested
   class CreatePassport {
-
-    @Test
-    void testGetMissingPassport() {
-      var shouldBeEmpty = passportDAO.getPassport("nonexistent_user_id", Provider.RAS);
-      assertEmpty(shouldBeEmpty);
-    }
 
     @Test
     void testCreateAndGetPassport() {
@@ -54,8 +53,7 @@ class GA4GHPassportDAOTest extends BaseTest {
           savedPassport);
 
       var loadedPassport =
-          passportDAO.getPassport(
-              savedAccount.getUserId(), Provider.fromValue(savedAccount.getProviderName()));
+          passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderName());
       assertEquals(Optional.of(savedPassport), loadedPassport);
     }
 
@@ -104,12 +102,10 @@ class GA4GHPassportDAOTest extends BaseTest {
           TestUtils.createRandomPassport().withLinkedAccountId(savedAccount.getId()));
 
       assertPresent(
-          passportDAO.getPassport(
-              savedAccount.getUserId(), Provider.fromValue(savedAccount.getProviderName())));
+          passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderName()));
       assertTrue(passportDAO.deletePassport(savedAccount.getId().get()));
       assertEmpty(
-          passportDAO.getPassport(
-              savedAccount.getUserId(), Provider.fromValue(savedAccount.getProviderName())));
+          passportDAO.getPassport(savedAccount.getUserId(), savedAccount.getProviderName()));
     }
 
     @Test
@@ -137,16 +133,10 @@ class GA4GHPassportDAOTest extends BaseTest {
               .build());
 
       assertFalse(
-          visaDAO
-              .listVisas(
-                  linkedAccount.getUserId(), Provider.fromValue(linkedAccount.getProviderName()))
-              .isEmpty());
+          visaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderName()).isEmpty());
       assertTrue(passportDAO.deletePassport(linkedAccount.getId().get()));
       assertTrue(
-          visaDAO
-              .listVisas(
-                  linkedAccount.getUserId(), Provider.fromValue(linkedAccount.getProviderName()))
-              .isEmpty());
+          visaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderName()).isEmpty());
     }
   }
 }

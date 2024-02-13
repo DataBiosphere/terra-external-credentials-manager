@@ -11,7 +11,6 @@ import bio.terra.externalcreds.JwtSigningTestUtils;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -154,7 +153,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             BadRequestException.class,
             () ->
                 passportProviderService.createLink(
-                    Provider.fromValue(linkedAccount.getProviderName()),
+                    linkedAccount.getProviderName(),
                     linkedAccount.getUserId(),
                     authorizationCode,
                     encodedState,
@@ -242,7 +241,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             .clientIP("127.0.0.1");
     var linkedAccountWithPassportAndVisas =
         passportProviderService.createLink(
-            Provider.fromValue(expectedLinkedAccount.getProviderName()),
+            expectedLinkedAccount.getProviderName(),
             expectedLinkedAccount.getUserId(),
             authorizationCode,
             encodedState,

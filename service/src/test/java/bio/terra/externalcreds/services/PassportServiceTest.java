@@ -11,7 +11,6 @@ import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
-import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -78,8 +77,7 @@ class PassportServiceTest extends BaseTest {
           passportDAO.insertPassport(passport.withLinkedAccountId(savedLinkedAccount.getId()));
 
       var loadedPassport =
-          passportService.getPassport(
-              linkedAccount.getUserId(), Provider.fromValue(linkedAccount.getProviderName()));
+          passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderName());
 
       assertPresent(loadedPassport);
       assertEquals(passport.getJwt(), savedPassport.getJwt());
@@ -89,8 +87,9 @@ class PassportServiceTest extends BaseTest {
     @Test
     void testGetGA4GHPassportNoLinkedAccount() {
       var userId = "nonexistent_user_id";
+      var providerName = "fake_provider";
 
-      assertEmpty(passportService.getPassport(userId, Provider.RAS));
+      assertEmpty(passportService.getPassport(userId, providerName));
     }
 
     @Test
@@ -99,8 +98,7 @@ class PassportServiceTest extends BaseTest {
       linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
       assertEmpty(
-          passportService.getPassport(
-              linkedAccount.getUserId(), Provider.fromValue(linkedAccount.getProviderName())));
+          passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderName()));
     }
   }
 

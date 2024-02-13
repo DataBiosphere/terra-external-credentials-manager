@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
-import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -29,7 +28,7 @@ class LinkedAccountDAOTest extends BaseTest {
 
   @Test
   void testGetMissingLinkedAccount() {
-    var shouldBeEmpty = linkedAccountDAO.getLinkedAccount("", Provider.RAS);
+    var shouldBeEmpty = linkedAccountDAO.getLinkedAccount("", "");
     assertEmpty(shouldBeEmpty);
   }
 
@@ -54,7 +53,7 @@ class LinkedAccountDAOTest extends BaseTest {
 
     var loadedLinkedAccount =
         linkedAccountDAO.getLinkedAccount(
-            linkedAccount.getUserId(), Provider.fromValue(linkedAccount.getProviderName()));
+            linkedAccount.getUserId(), linkedAccount.getProviderName());
     assertEquals(Optional.of(savedLinkedAccount), loadedLinkedAccount);
   }
 
@@ -78,7 +77,7 @@ class LinkedAccountDAOTest extends BaseTest {
 
     var loadedLinkedAccount =
         linkedAccountDAO.getLinkedAccount(
-            linkedAccount.getUserId(), Provider.fromValue(linkedAccount.getProviderName()));
+            linkedAccount.getUserId(), linkedAccount.getProviderName());
     assertEquals(Optional.of(updatedLinkedAccount), loadedLinkedAccount);
   }
 
@@ -91,21 +90,18 @@ class LinkedAccountDAOTest extends BaseTest {
           linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
       var deletionSucceeded =
           linkedAccountDAO.deleteLinkedAccountIfExists(
-              createdLinkedAccount.getUserId(),
-              Provider.fromValue(createdLinkedAccount.getProviderName()));
+              createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderName());
       assertTrue(deletionSucceeded);
       assertEmpty(
           linkedAccountDAO.getLinkedAccount(
-              createdLinkedAccount.getUserId(),
-              Provider.fromValue(createdLinkedAccount.getProviderName())));
+              createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderName()));
     }
 
     @Test
     void testDeleteNonexistentLinkedAccount() {
-      var nonexistentUserId = UUID.randomUUID().toString();
-      var deletionSucceeded =
-          linkedAccountDAO.deleteLinkedAccountIfExists(nonexistentUserId, Provider.RAS);
-      assertEmpty(linkedAccountDAO.getLinkedAccount(nonexistentUserId, Provider.RAS));
+      var userId = UUID.randomUUID().toString();
+      var deletionSucceeded = linkedAccountDAO.deleteLinkedAccountIfExists(userId, "fake_provider");
+      assertEmpty(linkedAccountDAO.getLinkedAccount(userId, "fake_provider"));
       assertFalse(deletionSucceeded);
     }
 
@@ -122,9 +118,11 @@ class LinkedAccountDAOTest extends BaseTest {
               .jwtId(UUID.randomUUID().toString())
               .build();
       passportDAO.insertPassport(passport);
-      Provider provider = Provider.fromValue(savedLinkedAccount.getProviderName());
-      linkedAccountDAO.deleteLinkedAccountIfExists(savedLinkedAccount.getUserId(), provider);
-      assertEmpty(passportDAO.getPassport(savedLinkedAccount.getUserId(), provider));
+      linkedAccountDAO.deleteLinkedAccountIfExists(
+          savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
+      assertEmpty(
+          passportDAO.getPassport(
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName()));
     }
   }
 

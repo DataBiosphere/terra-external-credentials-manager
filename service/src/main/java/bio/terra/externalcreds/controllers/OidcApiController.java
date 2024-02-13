@@ -49,7 +49,8 @@ public record OidcApiController(
   @Override
   public ResponseEntity<LinkInfo> getLink(Provider providerName) {
     var samUser = samUserFactory.from(request);
-    var linkedAccount = linkedAccountService.getLinkedAccount(samUser.getSubjectId(), providerName);
+    var linkedAccount =
+        linkedAccountService.getLinkedAccount(samUser.getSubjectId(), providerName.toString());
     return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
   }
 
@@ -59,7 +60,7 @@ public record OidcApiController(
 
     var authorizationUrl =
         providerService.getProviderAuthorizationUrl(
-            samUser.getSubjectId(), providerName, redirectUri);
+            samUser.getSubjectId(), providerName.toString(), redirectUri);
 
     return ResponseEntity.of(authorizationUrl.map(this::jsonString));
   }
@@ -79,7 +80,11 @@ public record OidcApiController(
       if (providerName.equals(Provider.RAS)) {
         var linkedAccountWithPassportAndVisas =
             passportProviderService.createLink(
-                providerName, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
+                providerName.toString(),
+                samUser.getSubjectId(),
+                oauthcode,
+                state,
+                auditLogEventBuilder);
         return ResponseEntity.of(
             linkedAccountWithPassportAndVisas.map(
                 x -> OpenApiConverters.Output.convert(x.getLinkedAccount())));
@@ -96,7 +101,7 @@ public record OidcApiController(
   @Override
   public ResponseEntity<Void> deleteLink(Provider providerName) {
     var samUser = samUserFactory.from(request);
-    var deletedLink = providerService.deleteLink(samUser.getSubjectId(), providerName);
+    var deletedLink = providerService.deleteLink(samUser.getSubjectId(), providerName.toString());
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
@@ -114,8 +119,9 @@ public record OidcApiController(
   public ResponseEntity<String> getProviderPassport(Provider providerName) {
     var samUser = samUserFactory.from(request);
     var maybeLinkedAccount =
-        linkedAccountService.getLinkedAccount(samUser.getSubjectId(), providerName);
-    var maybePassport = passportService.getPassport(samUser.getSubjectId(), providerName);
+        linkedAccountService.getLinkedAccount(samUser.getSubjectId(), providerName.toString());
+    var maybePassport =
+        passportService.getPassport(samUser.getSubjectId(), providerName.toString());
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
