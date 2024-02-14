@@ -6,6 +6,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
+import bio.terra.externalcreds.generated.model.PassportProvider;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.JwtUtils;
@@ -13,6 +14,7 @@ import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
+import bio.terra.externalcreds.services.TokenProviderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +36,7 @@ public record OidcApiController(
     ObjectMapper mapper,
     PassportService passportService,
     ProviderService providerService,
+    TokenProviderService tokenProviderService,
     PassportProviderService passportProviderService,
     ExternalCredsSamUserFactory samUserFactory)
     implements OidcApi {
@@ -116,7 +119,7 @@ public record OidcApiController(
   }
 
   @Override
-  public ResponseEntity<String> getProviderPassport(Provider providerName) {
+  public ResponseEntity<String> getProviderPassport(PassportProvider providerName) {
     var samUser = samUserFactory.from(request);
     var maybeLinkedAccount =
         linkedAccountService.getLinkedAccount(samUser.getSubjectId(), providerName.toString());

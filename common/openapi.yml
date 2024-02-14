@@ -93,7 +93,7 @@ paths:
 
   /api/oidc/v1/{provider}/passport:
     parameters:
-      - $ref: '#/components/parameters/providerParam'
+      - $ref: '#/components/parameters/passportProviderParam'
     get:
       summary: Get the original passport from this provider
       tags: [ oidc ]
@@ -240,6 +240,12 @@ components:
       schema:
         type: boolean
         default: false
+    passportProviderParam:
+      name: provider
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/PassportProvider'
     providerParam:
       name: provider
       in: path
@@ -319,11 +325,17 @@ components:
             $ref: '#/components/schemas/ErrorReport'
 
   schemas:
+    PassportProvider:
+      description: Enum containing valid passport providers.
+      type: string
+      enum:
+        - ras
     Provider:
       description: Enum containing valid identity providers.
       type: string
       enum:
         - ras
+        - github
     SshKeyPairType:
       description: Enum containing valid ssh key types.
       type: string
