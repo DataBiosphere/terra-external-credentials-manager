@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.services;
 
-import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
@@ -47,30 +46,27 @@ public class ProviderClientCache {
 
   private ClientRegistration buildClientRegistration(
       String providerName, ProviderProperties providerInfo) {
-    ClientRegistration.Builder builder;
-    if (providerName.equals(Provider.RAS.toString())) {
-      builder =
-          ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
-              .clientId(providerInfo.getClientId())
-              .clientSecret(providerInfo.getClientSecret())
-              .issuerUri(providerInfo.getIssuer());
-    } else if (providerName.equals(Provider.GITHUB.toString())) {
-      var redirectUri =
-          providerInfo.getAllowedRedirectUriPatterns().stream()
-              .map(Pattern::toString)
-              .toList()
-              .get(0);
-      builder =
-          ClientRegistration.withRegistrationId(providerName)
-              .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-              .clientId(providerInfo.getClientId())
-              .clientSecret(providerInfo.getClientSecret())
-              .issuerUri(providerInfo.getIssuer())
-              .redirectUri(redirectUri)
-              .userNameAttributeName(providerInfo.getUserNameAttributeName());
-    } else {
-      throw new BadRequestException("Invalid provider");
-    }
+    Provider provider = Provider.valueOf(providerName);
+    ClientRegistration.Builder builder = switch (provider) {
+        case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+                .clientId(providerInfo.getClientId())
+                .clientSecret(providerInfo.getClientSecret())
+                .issuerUri(providerInfo.getIssuer());
+        case GITHUB -> {
+            String redirectUri =
+                    providerInfo.getAllowedRedirectUriPatterns().stream()
+                            .map(Pattern::toString)
+                            .toList()
+                            .get(0);
+            yield ClientRegistration.withRegistrationId(providerName)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .clientId(providerInfo.getClientId())
+                    .clientSecret(providerInfo.getClientSecret())
+                    .issuerUri(providerInfo.getIssuer())
+                    .redirectUri(redirectUri)
+                    .userNameAttributeName(providerInfo.getUserNameAttributeName());
+        }
+    };
 
     // set optional overrides
     providerInfo.getUserInfoEndpoint().ifPresent(builder::userInfoUri);
