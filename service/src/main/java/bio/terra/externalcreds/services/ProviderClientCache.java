@@ -1,15 +1,19 @@
 package bio.terra.externalcreds.services;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
+import bio.terra.externalcreds.generated.model.Provider;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrations;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -32,7 +36,7 @@ public class ProviderClientCache {
   public Optional<ClientRegistration> getProviderClient(String providerName) {
     log.info("Loading ProviderClient {}", providerName);
     return Optional.ofNullable(externalCredsConfig.getProviders().get(providerName))
-        .map(this::buildClientRegistration);
+        .map(p -> buildClientRegistration(providerName, p));
   }
 
   @Scheduled(fixedRateString = "6", timeUnit = TimeUnit.HOURS)
@@ -41,12 +45,32 @@ public class ProviderClientCache {
     log.info("ProviderClientCache reset");
   }
 
-  private ClientRegistration buildClientRegistration(ProviderProperties providerInfo) {
-    var builder =
-        ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
-            .clientId(providerInfo.getClientId())
-            .clientSecret(providerInfo.getClientSecret())
-            .issuerUri(providerInfo.getIssuer());
+  private ClientRegistration buildClientRegistration(
+      String providerName, ProviderProperties providerInfo) {
+    ClientRegistration.Builder builder;
+    if (providerName.equals(Provider.RAS.toString())) {
+      builder =
+          ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+              .clientId(providerInfo.getClientId())
+              .clientSecret(providerInfo.getClientSecret())
+              .issuerUri(providerInfo.getIssuer());
+    } else if (providerName.equals(Provider.GITHUB.toString())) {
+      var redirectUri =
+          providerInfo.getAllowedRedirectUriPatterns().stream()
+              .map(Pattern::toString)
+              .toList()
+              .get(0);
+      builder =
+          ClientRegistration.withRegistrationId(providerName)
+              .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+              .clientId(providerInfo.getClientId())
+              .clientSecret(providerInfo.getClientSecret())
+              .issuerUri(providerInfo.getIssuer())
+              .redirectUri(redirectUri)
+              .userNameAttributeName(providerInfo.getUserNameAttributeName());
+    } else {
+      throw new BadRequestException("Invalid provider");
+    }
 
     // set optional overrides
     providerInfo.getUserInfoEndpoint().ifPresent(builder::userInfoUri);

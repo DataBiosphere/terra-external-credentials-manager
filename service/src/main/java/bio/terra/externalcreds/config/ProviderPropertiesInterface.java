@@ -28,6 +28,8 @@ public interface ProviderPropertiesInterface {
 
   String getExternalIdClaim();
 
+  String getUserNameAttributeName();
+
   // optional overrides for values in provider's /.well-known/openid-configuration
   Optional<String> getUserInfoEndpoint();
 
