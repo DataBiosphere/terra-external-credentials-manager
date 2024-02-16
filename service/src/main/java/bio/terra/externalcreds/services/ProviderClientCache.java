@@ -44,29 +44,30 @@ public class ProviderClientCache {
     log.info("ProviderClientCache reset");
   }
 
-  private ClientRegistration buildClientRegistration(
+  public ClientRegistration buildClientRegistration(
       String providerName, ProviderProperties providerInfo) {
-    Provider provider = Provider.valueOf(providerName);
-    ClientRegistration.Builder builder = switch (provider) {
-        case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+    Provider provider = Provider.fromValue(providerName);
+    ClientRegistration.Builder builder =
+        switch (provider) {
+          case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+              .clientId(providerInfo.getClientId())
+              .clientSecret(providerInfo.getClientSecret())
+              .issuerUri(providerInfo.getIssuer());
+          case GITHUB -> {
+            String redirectUri =
+                providerInfo.getAllowedRedirectUriPatterns().stream()
+                    .map(Pattern::toString)
+                    .toList()
+                    .get(0);
+            yield ClientRegistration.withRegistrationId(providerName)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .clientId(providerInfo.getClientId())
                 .clientSecret(providerInfo.getClientSecret())
-                .issuerUri(providerInfo.getIssuer());
-        case GITHUB -> {
-            String redirectUri =
-                    providerInfo.getAllowedRedirectUriPatterns().stream()
-                            .map(Pattern::toString)
-                            .toList()
-                            .get(0);
-            yield ClientRegistration.withRegistrationId(providerName)
-                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                    .clientId(providerInfo.getClientId())
-                    .clientSecret(providerInfo.getClientSecret())
-                    .issuerUri(providerInfo.getIssuer())
-                    .redirectUri(redirectUri)
-                    .userNameAttributeName(providerInfo.getUserNameAttributeName());
-        }
-    };
+                .issuerUri(providerInfo.getIssuer())
+                .redirectUri(redirectUri)
+                .userNameAttributeName(providerInfo.getUserNameAttributeName());
+          }
+        };
 
     // set optional overrides
     providerInfo.getUserInfoEndpoint().ifPresent(builder::userInfoUri);
