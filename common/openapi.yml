@@ -4,6 +4,24 @@ info:
   description: A manager for external credentials
   version: 0.0.1
 paths:
+  /api/oauth/v1/{provider}/authorization-url:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+      - $ref: '#/components/parameters/redirectUriParam'
+    get:
+      summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
+      tags: [ oauth ]
+      operationId: getAuthUrl
+      description: First step to link a new provider. Creates a 1 time use link. There can only be 1 active link per user per provider. The last link created will invalidate any prior links.
+      responses:
+        '200':
+          description: The authorization URL
+          content:
+            application/json:
+              schema:
+                type: string
+        '500':
+          $ref: '#/components/responses/ServerError'
   /api/oidc/v1/providers:
     get:
       summary: Lists the available OIDC providers.
@@ -55,6 +73,7 @@ paths:
     get:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
       tags: [ oidc ]
+      deprecated: true
       operationId: getAuthUrl
       description: First step to link a new provider. Creates a 1 time use link. There can only be 1 active link per user per provider. The last link created will invalidate any prior links.
       responses:
