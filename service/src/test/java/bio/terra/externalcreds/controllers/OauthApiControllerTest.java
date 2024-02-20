@@ -56,7 +56,7 @@ class OauthApiControllerTest extends BaseTest {
               get("/api/oauth/v1/{provider}/authorization-url", providerName)
                   .header("authorization", "Bearer " + accessToken)
                   .queryParams(queryParams))
-          .andExpect(content().json("\"" + result + "\""));
+          .andExpect(content().string(result));
     }
 
     @Test
