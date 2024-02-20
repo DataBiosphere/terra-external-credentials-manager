@@ -10,10 +10,19 @@ import bio.terra.common.iam.BearerToken;
 import bio.terra.common.iam.SamUser;
 import bio.terra.common.iam.SamUserFactory;
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.auditLogging.AuditLogEvent;
+import bio.terra.externalcreds.auditLogging.AuditLogEventType;
+import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.ProviderService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +34,7 @@ import org.springframework.util.LinkedMultiValueMap;
 
 @AutoConfigureMockMvc
 class OauthApiControllerTest extends BaseTest {
+  @Autowired private ObjectMapper mapper;
 
   @Autowired private MockMvc mvc;
 
@@ -32,7 +42,13 @@ class OauthApiControllerTest extends BaseTest {
   @Qualifier("providerService")
   private ProviderService providerServiceMock;
 
+  @MockBean
+  @Qualifier("passportProviderService")
+  private PassportProviderService passportProviderServiceMock;
+
   @MockBean private SamUserFactory samUserFactoryMock;
+  @MockBean private AuditLogger auditLoggerMock;
+
   private String providerName = Provider.RAS.toString();
 
   @Nested
@@ -77,6 +93,77 @@ class OauthApiControllerTest extends BaseTest {
                   .header("authorization", "Bearer " + accessToken)
                   .queryParams(queryParams))
           .andExpect(status().isNotFound());
+    }
+  }
+
+  @Nested
+  class CreateLink {
+
+    @Test
+    void testCreatesLinkSuccessfully() throws Exception {
+      var accessToken = "testToken";
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
+
+      var state = UUID.randomUUID().toString();
+      var oauthcode = UUID.randomUUID().toString();
+
+      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
+
+      var linkedAccountWithPassportAndVisas =
+          new LinkedAccountWithPassportAndVisas.Builder()
+              .linkedAccount(inputLinkedAccount)
+              .passport(TestUtils.createRandomPassport())
+              .build();
+      when(passportProviderServiceMock.createLink(
+          eq(inputLinkedAccount.getProviderName()),
+          eq(inputLinkedAccount.getUserId()),
+          eq(oauthcode),
+          eq(state),
+          any(AuditLogEvent.Builder.class)))
+          .thenReturn(Optional.of(linkedAccountWithPassportAndVisas));
+
+      mvc.perform(
+              post("/api/oauth/v1/{provider}/oauthcode", inputLinkedAccount.getProviderName())
+                  .header("authorization", "Bearer " + accessToken)
+                  .param("state", state)
+                  .param("oauthcode", oauthcode))
+          .andExpect(status().isOk())
+          .andExpect(
+              content()
+                  .json(
+                      mapper.writeValueAsString(
+                          OpenApiConverters.Output.convert(inputLinkedAccount))));
+    }
+
+    @Test
+    void testExceptionIsLogged() throws Exception {
+      var accessToken = "testToken";
+
+      var userId = "userId";
+      mockSamUser(userId, accessToken);
+
+      when(passportProviderServiceMock.createLink(any(), any(), any(), any(), any()))
+          .thenThrow(new ExternalCredsException("This is a drill!"));
+
+      // check that an internal server error code is returned
+      mvc.perform(
+              post("/api/oidc/v1/{provider}/oauthcode", providerName)
+                  .header("authorization", "Bearer " + accessToken)
+                  .param("scopes", "foo")
+                  .param("redirectUri", "redirectUri")
+                  .param("state", "state")
+                  .param("oauthcode", "oauthcode"))
+          .andExpect(status().isInternalServerError());
+
+      // check that a log was recorded
+      verify(auditLoggerMock)
+          .logEvent(
+              new AuditLogEvent.Builder()
+                  .auditLogEventType(AuditLogEventType.LinkCreationFailed)
+                  .providerName(providerName)
+                  .userId(userId)
+                  .clientIP("127.0.0.1")
+                  .build());
     }
   }
 
