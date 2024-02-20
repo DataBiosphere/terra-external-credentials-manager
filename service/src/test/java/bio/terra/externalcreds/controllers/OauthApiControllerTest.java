@@ -113,11 +113,11 @@ class OauthApiControllerTest extends BaseTest {
       var oauthcode = UUID.randomUUID().toString();
 
       when(tokenProviderServiceMock.createLink(
-          eq(inputLinkedAccount.getProviderName()),
-          eq(inputLinkedAccount.getUserId()),
-          eq(oauthcode),
-          eq(state),
-          any(AuditLogEvent.Builder.class)))
+              eq(inputLinkedAccount.getProviderName()),
+              eq(inputLinkedAccount.getUserId()),
+              eq(oauthcode),
+              eq(state),
+              any(AuditLogEvent.Builder.class)))
           .thenReturn(Optional.of(inputLinkedAccount));
       testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode);
     }
@@ -134,11 +134,11 @@ class OauthApiControllerTest extends BaseTest {
               .passport(TestUtils.createRandomPassport())
               .build();
       when(passportProviderServiceMock.createLink(
-          eq(inputLinkedAccount.getProviderName()),
-          eq(inputLinkedAccount.getUserId()),
-          eq(oauthcode),
-          eq(state),
-          any(AuditLogEvent.Builder.class)))
+              eq(inputLinkedAccount.getProviderName()),
+              eq(inputLinkedAccount.getUserId()),
+              eq(oauthcode),
+              eq(state),
+              any(AuditLogEvent.Builder.class)))
           .thenReturn(Optional.of(linkedAccountWithPassportAndVisas));
 
       testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode);
@@ -176,7 +176,8 @@ class OauthApiControllerTest extends BaseTest {
     }
   }
 
-  private void testCreatesLinkSuccessfully(LinkedAccount inputLinkedAccount, String state, String oauthcode) throws Exception {
+  private void testCreatesLinkSuccessfully(
+      LinkedAccount inputLinkedAccount, String state, String oauthcode) throws Exception {
     var accessToken = "testToken";
     mockSamUser(inputLinkedAccount.getUserId(), accessToken);
     mvc.perform(

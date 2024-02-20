@@ -10,9 +10,9 @@ import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.services.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import java.util.Optional;
 
 @Controller
 public record OauthApiController(
@@ -58,8 +58,9 @@ public record OauthApiController(
                   oauthcode,
                   state,
                   auditLogEventBuilder);
-          linkInfo = linkedAccountWithPassportAndVisas.map(
-              x -> OpenApiConverters.Output.convert(x.getLinkedAccount()));
+          linkInfo =
+              linkedAccountWithPassportAndVisas.map(
+                  x -> OpenApiConverters.Output.convert(x.getLinkedAccount()));
         }
         case GITHUB -> {
           var linkedAccount =
@@ -73,10 +74,10 @@ public record OauthApiController(
         }
       }
       return ResponseEntity.of(linkInfo);
-    } catch(Exception e) {
-        auditLogger.logEvent(
-            auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());
-        throw e;
+    } catch (Exception e) {
+      auditLogger.logEvent(
+          auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());
+      throw e;
     }
   }
 }
