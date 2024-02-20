@@ -16,9 +16,11 @@ import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.ProviderService;
+import bio.terra.externalcreds.services.TokenProviderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
@@ -45,6 +47,10 @@ class OauthApiControllerTest extends BaseTest {
   @MockBean
   @Qualifier("passportProviderService")
   private PassportProviderService passportProviderServiceMock;
+
+  @MockBean
+  @Qualifier("tokenProviderService")
+  private TokenProviderService tokenProviderServiceMock;
 
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private AuditLogger auditLoggerMock;
@@ -100,14 +106,27 @@ class OauthApiControllerTest extends BaseTest {
   class CreateLink {
 
     @Test
-    void testCreatesLinkSuccessfully() throws Exception {
-      var accessToken = "testToken";
+    void testCreatesTokenProviderLinkSuccessfully() throws Exception {
       var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
 
       var state = UUID.randomUUID().toString();
       var oauthcode = UUID.randomUUID().toString();
 
-      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
+      when(tokenProviderServiceMock.createLink(
+          eq(inputLinkedAccount.getProviderName()),
+          eq(inputLinkedAccount.getUserId()),
+          eq(oauthcode),
+          eq(state),
+          any(AuditLogEvent.Builder.class)))
+          .thenReturn(Optional.of(inputLinkedAccount));
+      testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode);
+    }
+
+    @Test
+    void testCreatesPassportProviderLinkSuccessfully() throws Exception {
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var state = UUID.randomUUID().toString();
+      var oauthcode = UUID.randomUUID().toString();
 
       var linkedAccountWithPassportAndVisas =
           new LinkedAccountWithPassportAndVisas.Builder()
@@ -122,17 +141,7 @@ class OauthApiControllerTest extends BaseTest {
           any(AuditLogEvent.Builder.class)))
           .thenReturn(Optional.of(linkedAccountWithPassportAndVisas));
 
-      mvc.perform(
-              post("/api/oauth/v1/{provider}/oauthcode", inputLinkedAccount.getProviderName())
-                  .header("authorization", "Bearer " + accessToken)
-                  .param("state", state)
-                  .param("oauthcode", oauthcode))
-          .andExpect(status().isOk())
-          .andExpect(
-              content()
-                  .json(
-                      mapper.writeValueAsString(
-                          OpenApiConverters.Output.convert(inputLinkedAccount))));
+      testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode);
     }
 
     @Test
@@ -165,6 +174,22 @@ class OauthApiControllerTest extends BaseTest {
                   .clientIP("127.0.0.1")
                   .build());
     }
+  }
+
+  private void testCreatesLinkSuccessfully(LinkedAccount inputLinkedAccount, String state, String oauthcode) throws Exception {
+    var accessToken = "testToken";
+    mockSamUser(inputLinkedAccount.getUserId(), accessToken);
+    mvc.perform(
+            post("/api/oauth/v1/{provider}/oauthcode", inputLinkedAccount.getProviderName())
+                .header("authorization", "Bearer " + accessToken)
+                .param("state", state)
+                .param("oauthcode", oauthcode))
+        .andExpect(status().isOk())
+        .andExpect(
+            content()
+                .json(
+                    mapper.writeValueAsString(
+                        OpenApiConverters.Output.convert(inputLinkedAccount))));
   }
 
   private void mockSamUser(String userId, String accessToken) {
