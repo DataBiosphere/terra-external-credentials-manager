@@ -11,8 +11,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class TestUtils {
 
@@ -57,12 +59,17 @@ public class TestUtils {
   public static ProviderProperties createRandomProvider() {
     try {
       return ProviderProperties.create()
+          .setAllowedRedirectUriPatterns(List.of(Pattern.compile("http://redirect")))
+          .setAuthorizationEndpoint("http://authorize")
           .setClientId(UUID.randomUUID().toString())
           .setClientSecret(UUID.randomUUID().toString())
           .setIssuer("http://does/not/exist")
           .setLinkLifespan(Duration.ofDays(SecureRandom.getInstanceStrong().nextInt(10)))
           .setRevokeEndpoint("http://does/not/exist")
-          .setExternalIdClaim("preferred_username");
+          .setTokenEndpoint("http://token")
+          .setExternalIdClaim("preferred_username")
+          .setUserNameAttributeName("username")
+          .setUserInfoEndpoint("http://userinfo");
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }

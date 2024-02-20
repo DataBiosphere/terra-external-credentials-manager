@@ -6,6 +6,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.api.OidcApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
+import bio.terra.externalcreds.generated.model.PassportProvider;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.JwtUtils;
@@ -116,7 +117,7 @@ public record OidcApiController(
   }
 
   @Override
-  public ResponseEntity<String> getProviderPassport(Provider providerName) {
+  public ResponseEntity<String> getProviderPassport(PassportProvider providerName) {
     var samUser = samUserFactory.from(request);
     var maybeLinkedAccount =
         linkedAccountService.getLinkedAccount(samUser.getSubjectId(), providerName.toString());
