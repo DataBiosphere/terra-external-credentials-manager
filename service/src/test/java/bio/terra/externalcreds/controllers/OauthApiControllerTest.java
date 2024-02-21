@@ -107,7 +107,7 @@ class OauthApiControllerTest extends BaseTest {
 
     @Test
     void testCreatesTokenProviderLinkSuccessfully() throws Exception {
-      var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.GITHUB.toString());
 
       var state = UUID.randomUUID().toString();
       var oauthcode = UUID.randomUUID().toString();
