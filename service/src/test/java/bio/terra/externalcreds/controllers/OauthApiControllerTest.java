@@ -156,7 +156,7 @@ class OauthApiControllerTest extends BaseTest {
 
       // check that an internal server error code is returned
       mvc.perform(
-              post("/api/oidc/v1/{provider}/oauthcode", providerName)
+              post("/api/oauth/v1/{provider}/oauthcode", providerName)
                   .header("authorization", "Bearer " + accessToken)
                   .param("scopes", "foo")
                   .param("redirectUri", "redirectUri")

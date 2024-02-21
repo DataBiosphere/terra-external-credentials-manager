@@ -68,7 +68,7 @@ public class TokenProviderService extends ProviderService {
     return linkedAccount;
   }
 
-  private void logLinkCreation(
+  public void logLinkCreation(
       Optional<LinkedAccount> linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
     auditLogger.logEvent(
         auditLogEventBuilder
