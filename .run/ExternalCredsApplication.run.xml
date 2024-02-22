@@ -1,6 +1,11 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="ExternalCredsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="externalcreds.service.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="bio.terra.externalcreds.ExternalCredsWebApplication" />
+    <option name="HIDE_BANNER" value="true" />
     <option name="ACTIVE_PROFILES" value="human-readable-logging" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <option name="SHORTEN_COMMAND_LINE" value="NONE" />
     <additionalParameters>
       <param>
         <option name="enabled" value="true" />
@@ -10,21 +15,7 @@
     </additionalParameters>
     <envs>
       <env name="GOOGLE_APPLICATION_CREDENTIALS" value="service/src/main/resources/rendered/ecm-sa.json" />
-      <env name="ECM_LOG_APPENDER" value="Console-Standard" />
     </envs>
-    <option name="HIDE_BANNER" value="true" />
-    <module name="externalcreds.service.main" />
-    <option name="SPRING_BOOT_MAIN_CLASS" value="bio.terra.externalcreds.ExternalCredsWebApplication" />
-    <extension name="net.ashald.envfile">
-      <option name="IS_ENABLED" value="false" />
-      <option name="IS_SUBST" value="false" />
-      <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
-      <option name="IS_IGNORE_MISSING_FILES" value="false" />
-      <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
-      <ENTRIES>
-        <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
-      </ENTRIES>
-    </extension>
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
