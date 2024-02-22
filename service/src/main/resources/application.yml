@@ -54,6 +54,14 @@ server:
     enabled: true
     mime-types: text/css,application/javascript
   port: 8080
+  error:
+    whitelabel:
+      enabled: false # error management fallback on Tomcat default error page
+    # To prevent Tomcat's default error page disclosing information :
+    include-binding-errors: never
+    include-message: never
+    include-stacktrace: never # most important one : prevent Tomcat version disclose
+    include-exception: false
 
 spring:
   # application name and version are used to populate the logging serviceContext
