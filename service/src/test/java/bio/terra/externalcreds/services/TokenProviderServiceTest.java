@@ -65,14 +65,14 @@ public class TokenProviderServiceTest extends BaseTest {
 // test failure if no linked account found? no that's already covered
 
   @Test
-  void testCreateGithubAccessTokenRequest() {
-    tokenProviderService.getGithubAccessToken(providerName, userId);
+  void testCreateProviderAccessTokenRequest() {
+    tokenProviderService.getProviderAccessToken(providerName, userId);
 
   }
 
   @Test
-  void testLogAccessTokenRequest() {
-    tokenProviderService.getGithubAccessToken(providerName, userId);
+  void testLogProviderAccessTokenResponse() {
+    tokenProviderService.getProviderAccessToken(providerName, userId);
 
   }
 

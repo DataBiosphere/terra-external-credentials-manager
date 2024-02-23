@@ -60,7 +60,7 @@ public class ProviderClientCache {
                     .toList()
                     .get(0);
             yield ClientRegistration.withRegistrationId(providerName)
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .clientId(providerInfo.getClientId())
                 .clientSecret(providerInfo.getClientSecret())
                 .issuerUri(providerInfo.getIssuer())

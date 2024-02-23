@@ -12,8 +12,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashSet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -97,7 +99,7 @@ public class TokenProviderService extends ProviderService {
 
   // test gets correct params for request?
 // some stuff copied from passportproviderservice.getrefreshedpassportsandvisas
-  public void getGithubAccessToken(String userId, String providerName) {
+  public OAuth2AccessToken getProviderAccessToken(String userId, String providerName) {
     // get linked account
     var linkedAccount =
         linkedAccountService
@@ -108,21 +110,37 @@ public class TokenProviderService extends ProviderService {
     //get client registration from provider client cache
     var clientRegistration =
         providerClientCache
-            .getProviderClient(linkedAccount.getProviderName())
+            .getProviderClient(providerName)
             .orElseThrow(
                 () ->
                     new ExternalCredsException(
                         String.format(
                             "Unable to find configs for the provider: %s",
-                            linkedAccount.getProviderName())));
+                            providerName)));
 
-    // TODO: might need to build more pieces of data into  this request
+    var refreshToken = linkedAccount.getRefreshToken();
+
+    // make sure refresh token is populated
+    if (refreshToken.isEmpty()) {
+      throw new NotFoundException(String.format("No refresh token found for provider %s", providerName));
+    }
+
+    // TODO: might need to build more pieces of data into this request
+    // exchange refresh token for access token
     var accessTokenResponse =
-        oAuth2Service.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+        oAuth2Service
+            .authorizeWithRefreshToken(clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
 
-    // make a POST to https://github.com/login/oauth/access_token
-    // with query params:
-    //    client_id: look at revokeAccessToken, if we take in a providerProperties, then we can
+    // save the linked account with the new refresh token to replace the old one
+    var linkedAccountWithRefreshToken =
+        Optional.ofNullable(accessTokenResponse.getRefreshToken())
+            .map(
+                refreshToken ->
+                    linkedAccountService.upsertLinkedAccount(
+                        linkedAccount.withRefreshToken(refreshToken.getTokenValue())))
+            .orElse(linkedAccount);
+
+    return accessTokenResponse.getAccessToken();
   }
+
 }
