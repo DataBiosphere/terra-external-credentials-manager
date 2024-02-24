@@ -108,7 +108,7 @@ public class TokenProviderService extends ProviderService {
                     new NotFoundException(
                         String.format(
                             "No linked account found for UserId %s with Provider %s",
-                            userId, providerName.toString())));
+                            userId, providerName)));
 
     // get client registration from provider client cache
     var clientRegistration =
@@ -118,13 +118,12 @@ public class TokenProviderService extends ProviderService {
                 () ->
                     new ExternalCredsException(
                         String.format(
-                            "Unable to find configs for the provider: %s",
-                            providerName.toString())));
+                            "Unable to find configs for the provider: %s", providerName)));
 
     // make sure refresh token is populated in the linked account
     if (linkedAccount.getRefreshToken().isEmpty()) {
       throw new NotFoundException(
-          String.format("No refresh token found for provider %s", providerName.toString()));
+          String.format("No refresh token found for provider %s", providerName));
     }
 
     // TODO: might need to build more pieces of data into this request
@@ -142,6 +141,6 @@ public class TokenProviderService extends ProviderService {
                         linkedAccount.withRefreshToken(refreshToken.getTokenValue())))
             .orElse(linkedAccount);
 
-    return Optional.of(accessTokenResponse.getAccessToken().toString());
+    return Optional.of(accessTokenResponse.getAccessToken().getTokenValue());
   }
 }
