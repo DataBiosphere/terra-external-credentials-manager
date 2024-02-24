@@ -36,6 +36,11 @@ public record OauthApiController(
     return ResponseEntity.of(authorizationUrl);
   }
 
+  public ResponseEntity<String> getProviderAccessToken(String userId, Provider providerName) {
+    var accessToken = tokenProviderService.getProviderAccessToken(userId, providerName);
+    return ResponseEntity.of(accessToken);
+  }
+
   @Override
   public ResponseEntity<LinkInfo> createLink(
       Provider providerName, String state, String oauthcode) {

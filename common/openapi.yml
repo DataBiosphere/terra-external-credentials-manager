@@ -47,17 +47,12 @@ paths:
           $ref: '#/components/responses/ServerError'
   /api/oauth/v1/{provider}/accesstoken:
     parameters:
-      - $ref: '#/components/parameters/providerParam'
       - $ref: '#/components/parameters/userIdParam'
-      - name: accesstoken
-        description: access token returned by the identity provider
-        in: query
-        schema:
-          type: string
-    post:
+      - $ref: '#/components/parameters/providerParam'
+    get:
       summary: Return an access token from the provider.
       tags: [ oauth ]
-      operationId: accessToken
+      operationId: getProviderAccessToken
       description: Returns a String containing the user's Access Token from the provider
       responses:
         '200':

@@ -7,12 +7,12 @@ import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashSet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Service;
@@ -98,32 +98,33 @@ public class TokenProviderService extends ProviderService {
 
   // test gets correct params for request?
   // some stuff copied from passportproviderservice.getrefreshedpassportsandvisas
-  public OAuth2AccessToken getProviderAccessToken(String userId, String providerName) {
+  public Optional<String> getProviderAccessToken(String userId, Provider providerName) {
     // get linked account
     var linkedAccount =
         linkedAccountService
-            .getLinkedAccount(userId, providerName)
+            .getLinkedAccount(userId, providerName.toString())
             .orElseThrow(
                 () ->
                     new NotFoundException(
                         String.format(
                             "No linked account found for UserId %s with Provider %s",
-                            userId, providerName)));
+                            userId, providerName.toString())));
 
     // get client registration from provider client cache
     var clientRegistration =
         providerClientCache
-            .getProviderClient(providerName)
+            .getProviderClient(providerName.toString())
             .orElseThrow(
                 () ->
                     new ExternalCredsException(
                         String.format(
-                            "Unable to find configs for the provider: %s", providerName)));
+                            "Unable to find configs for the provider: %s",
+                            providerName.toString())));
 
     // make sure refresh token is populated in the linked account
     if (linkedAccount.getRefreshToken().isEmpty()) {
       throw new NotFoundException(
-          String.format("No refresh token found for provider %s", providerName));
+          String.format("No refresh token found for provider %s", providerName.toString()));
     }
 
     // TODO: might need to build more pieces of data into this request
@@ -141,6 +142,6 @@ public class TokenProviderService extends ProviderService {
                         linkedAccount.withRefreshToken(refreshToken.getTokenValue())))
             .orElse(linkedAccount);
 
-    return accessTokenResponse.getAccessToken();
+    return Optional.of(accessTokenResponse.getAccessToken().toString());
   }
 }
