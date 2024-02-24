@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
-import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -98,16 +97,20 @@ public class TokenProviderService extends ProviderService {
   // access token.
 
   // test gets correct params for request?
-// some stuff copied from passportproviderservice.getrefreshedpassportsandvisas
+  // some stuff copied from passportproviderservice.getrefreshedpassportsandvisas
   public OAuth2AccessToken getProviderAccessToken(String userId, String providerName) {
     // get linked account
     var linkedAccount =
         linkedAccountService
             .getLinkedAccount(userId, providerName)
-            .orElseThrow(() -> new NotFoundException(
-                String.format("No linked account found for UserId %s with Provider %s", userId, providerName)));
+            .orElseThrow(
+                () ->
+                    new NotFoundException(
+                        String.format(
+                            "No linked account found for UserId %s with Provider %s",
+                            userId, providerName)));
 
-    //get client registration from provider client cache
+    // get client registration from provider client cache
     var clientRegistration =
         providerClientCache
             .getProviderClient(providerName)
@@ -115,21 +118,19 @@ public class TokenProviderService extends ProviderService {
                 () ->
                     new ExternalCredsException(
                         String.format(
-                            "Unable to find configs for the provider: %s",
-                            providerName)));
+                            "Unable to find configs for the provider: %s", providerName)));
 
-    var refreshToken = linkedAccount.getRefreshToken();
-
-    // make sure refresh token is populated
-    if (refreshToken.isEmpty()) {
-      throw new NotFoundException(String.format("No refresh token found for provider %s", providerName));
+    // make sure refresh token is populated in the linked account
+    if (linkedAccount.getRefreshToken().isEmpty()) {
+      throw new NotFoundException(
+          String.format("No refresh token found for provider %s", providerName));
     }
 
     // TODO: might need to build more pieces of data into this request
     // exchange refresh token for access token
     var accessTokenResponse =
-        oAuth2Service
-            .authorizeWithRefreshToken(clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+        oAuth2Service.authorizeWithRefreshToken(
+            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
 
     // save the linked account with the new refresh token to replace the old one
     var linkedAccountWithRefreshToken =
@@ -142,5 +143,4 @@ public class TokenProviderService extends ProviderService {
 
     return accessTokenResponse.getAccessToken();
   }
-
 }
