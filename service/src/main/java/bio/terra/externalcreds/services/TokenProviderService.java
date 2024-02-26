@@ -120,13 +120,11 @@ public class TokenProviderService extends ProviderService {
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
 
     // save the linked account with the new refresh token to replace the old one
-    var linkedAccountWithRefreshToken =
         Optional.ofNullable(accessTokenResponse.getRefreshToken())
             .map(
                 refreshToken ->
                     linkedAccountService.upsertLinkedAccount(
-                        linkedAccount.withRefreshToken(refreshToken.getTokenValue())))
-            .orElse(linkedAccount);
+                        linkedAccount.withRefreshToken(refreshToken.getTokenValue())));
 
     return Optional.of(accessTokenResponse.getAccessToken().getTokenValue());
   }
