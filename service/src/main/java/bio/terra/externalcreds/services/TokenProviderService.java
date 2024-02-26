@@ -84,20 +84,8 @@ public class TokenProviderService extends ProviderService {
             .build());
   }
 
-  //  Make a POST request to this URL, along with the following query parameters:
-  // https://github.com/login/oauth/access_token
-  //
-  //  Query parameter	Type	Description
-  //  client_id	string	Required. The client ID for your GitHub App. The client ID is different from
-  // the app ID. You can find the client ID on the settings page for your app.
-  //  client_secret	string	Required. The client secret for your GitHub App. You can generate a
-  // client secret on the settings page for your app.
-  //  grant_type	string	Required. The value must be "refresh_token".
-  //  refresh_token	string	Required. The refresh token that you received when you generated a user
-  // access token.
-
-  // test gets correct params for request?
-  // some stuff copied from passportproviderservice.getrefreshedpassportsandvisas
+  // much of this is cribbed from passportProviderService.getRefreshedPassportsAndVisas
+  // could probably de-dupe this in a refactor
   public Optional<String> getProviderAccessToken(String userId, Provider providerName) {
     // get linked account
     var linkedAccount =
@@ -126,7 +114,6 @@ public class TokenProviderService extends ProviderService {
           String.format("No refresh token found for provider %s", providerName));
     }
 
-    // TODO: might need to build more pieces of data into this request
     // exchange refresh token for access token
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
