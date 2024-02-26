@@ -14,6 +14,7 @@ import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
+import bio.terra.externalcreds.services.TokenProviderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +36,7 @@ public record OidcApiController(
     ObjectMapper mapper,
     PassportService passportService,
     ProviderService providerService,
+    TokenProviderService tokenProviderService,
     PassportProviderService passportProviderService,
     ExternalCredsSamUserFactory samUserFactory)
     implements OidcApi {
@@ -114,6 +116,11 @@ public record OidcApiController(
             .build());
 
     return ResponseEntity.ok().build();
+  }
+
+  public ResponseEntity<String> getProviderAccessToken(String userId, Provider providerName) {
+    var accessToken = tokenProviderService.getProviderAccessToken(userId, providerName);
+    return ResponseEntity.of(accessToken);
   }
 
   @Override

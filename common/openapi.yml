@@ -45,28 +45,6 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
-  /api/oauth/v1/{provider}/accesstoken:
-    parameters:
-      - $ref: '#/components/parameters/userIdParam'
-      - $ref: '#/components/parameters/providerParam'
-    get:
-      summary: Return an access token from the provider.
-      tags: [ oauth ]
-      operationId: getProviderAccessToken
-      description: Returns a String containing the user's Access Token from the provider
-      responses:
-        '200':
-          description: The user's access token for the requested provider
-          content:
-            text/plain:
-              schema:
-                type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
 
   /api/oidc/v1/providers:
     get:
@@ -109,6 +87,29 @@ paths:
           description: Deletes the refresh token and revokes it with the provider.
         '404':
           $ref: '#/components/responses/LinkNotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/oidc/v1/{provider}/accessToken:
+    parameters:
+      - $ref: '#/components/parameters/userIdParam'
+      - $ref: '#/components/parameters/providerParam'
+    get:
+      summary: Return an access token from the provider.
+      tags: [ oidc ]
+      operationId: getProviderAccessToken
+      description: Returns a String containing the user's Access Token from the provider
+      responses:
+        '200':
+          description: The user's access token for the requested provider
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
 
