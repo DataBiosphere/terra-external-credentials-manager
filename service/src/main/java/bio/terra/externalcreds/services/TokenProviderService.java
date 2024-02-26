@@ -83,7 +83,7 @@ public class TokenProviderService extends ProviderService {
                     .orElse(AuditLogEventType.LinkCreationFailed))
             .build());
   }
-  
+
   public Optional<String> getProviderAccessToken(String userId, Provider providerName) {
     // get linked account
     var linkedAccount =
@@ -93,7 +93,9 @@ public class TokenProviderService extends ProviderService {
                 () ->
                     new NotFoundException(
                         String.format(
-                            "No linked account found for UserId %s with Provider %s",
+                            "No linked account found for user ID: %s and provider: %s. "
+                                + "Please go to the Terra Profile page External Identities tab "
+                                + "to link your account for this provider.",
                             userId, providerName)));
 
     // get client registration from provider client cache
