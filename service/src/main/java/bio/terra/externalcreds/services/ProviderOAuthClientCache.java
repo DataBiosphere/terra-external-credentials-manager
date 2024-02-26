@@ -24,14 +24,14 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class ProviderClientCache {
+public class ProviderOAuthClientCache {
   private final ExternalCredsConfig externalCredsConfig;
 
-  public ProviderClientCache(ExternalCredsConfig externalCredsConfig) {
+  public ProviderOAuthClientCache(ExternalCredsConfig externalCredsConfig) {
     this.externalCredsConfig = externalCredsConfig;
   }
 
-  @Cacheable(cacheNames = "providerTokenClients", sync = true)
+  @Cacheable(cacheNames = "providerOAuthClients", sync = true)
   public Optional<ClientRegistration> getProviderClient(String providerName) {
     log.info("Loading ProviderClient {}", providerName);
     return Optional.ofNullable(externalCredsConfig.getProviders().get(providerName))
@@ -39,7 +39,7 @@ public class ProviderClientCache {
   }
 
   @Scheduled(fixedRateString = "6", timeUnit = TimeUnit.HOURS)
-  @CacheEvict(allEntries = true, cacheNames = "providerTokenClients")
+  @CacheEvict(allEntries = true, cacheNames = "providerOAuthClients")
   public void resetCache() {
     log.info("ProviderClientCache reset");
   }

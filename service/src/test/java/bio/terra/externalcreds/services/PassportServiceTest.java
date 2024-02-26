@@ -110,7 +110,7 @@ class PassportServiceTest extends BaseTest {
     @Autowired ObjectMapper objectMapper;
 
     @MockBean ExternalCredsConfig externalCredsConfigMock;
-    @MockBean ProviderClientCache providerClientCacheMock;
+    @MockBean ProviderOAuthClientCache providerOAuthClientCacheMock;
 
     @Test
     void testValidPassportMatchingCriteria() throws URISyntaxException {
@@ -354,7 +354,8 @@ class PassportServiceTest extends BaseTest {
                     ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
                         .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                         .build();
-                when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+                when(providerOAuthClientCacheMock.getProviderClient(
+                        linkedAccount.getProviderName()))
                     .thenReturn(Optional.of(providerClient));
               });
     }

@@ -16,7 +16,7 @@ public class OAuth2ServiceTest {
 
   @Autowired private ExternalCredsConfig externalCredsConfig;
   @Autowired private OAuth2Service oAuth2Service;
-  @Autowired private ProviderClientCache providerClientCache;
+  @Autowired private ProviderOAuthClientCache providerOAuthClientCache;
 
   public static void main(String[] args) {
     new SpringApplicationBuilder(OAuth2ServiceTest.class)
@@ -33,7 +33,7 @@ public class OAuth2ServiceTest {
    */
   void test() {
     String providerName = "ras-old";
-    var providerClient = providerClientCache.getProviderClient(providerName).orElseThrow();
+    var providerClient = providerOAuthClientCache.getProviderClient(providerName).orElseThrow();
 
     var redirectUri = "http://localhost:9000/fence-callback";
     String state = null;

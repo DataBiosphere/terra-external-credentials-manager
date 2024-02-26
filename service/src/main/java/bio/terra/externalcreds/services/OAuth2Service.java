@@ -36,7 +36,7 @@ public class OAuth2Service {
   /**
    * Construct authorization uri user should visit to authenticate
    *
-   * @param providerClient identity provider client, see {@link ProviderClientCache}
+   * @param providerClient identity provider client, see {@link ProviderOAuthClientCache}
    * @param redirectUri uri the user will be directed to after authentication
    * @param scopes scopes requested for authentication
    * @param state oauth thing
@@ -74,7 +74,7 @@ public class OAuth2Service {
   /**
    * After authentication, the resulting code should be used here
    *
-   * @param providerClient identity provider client, see {@link ProviderClientCache}
+   * @param providerClient identity provider client, see {@link ProviderOAuthClientCache}
    * @param redirectUri uri the user will be directed to after authentication
    * @param scopes scopes requested for authentication
    * @param state oauth thing
@@ -111,7 +111,7 @@ public class OAuth2Service {
   /**
    * Given a refresh token, get an access token
    *
-   * @param providerClient identity provider client, see {@link ProviderClientCache}
+   * @param providerClient identity provider client, see {@link ProviderOAuthClientCache}
    * @param refreshToken
    * @return token response containing access and refresh tokens, note that if there is a refresh
    *     token in this response it should replace the original refresh token which is likely invalid

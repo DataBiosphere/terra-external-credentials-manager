@@ -44,7 +44,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 
 class AuthorizationCodeExchangeTest extends BaseTest {
   @MockBean OAuth2Service oAuth2ServiceMock;
-  @MockBean ProviderClientCache providerClientCacheMock;
+  @MockBean ProviderOAuthClientCache providerOAuthClientCacheMock;
   @MockBean ExternalCredsConfig externalCredsConfigMock;
 
   @Autowired PassportProviderService passportProviderService;
@@ -137,7 +137,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
     when(externalCredsConfigMock.getProviders())
         .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
-    when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
         .thenReturn(Optional.of(providerClient));
     when(oAuth2ServiceMock.authorizationCodeExchange(
             providerClient,
@@ -196,7 +196,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     when(externalCredsConfigMock.getAllowedJwksUris())
         .thenReturn(
             List.of(new URI(jwtSigningTestUtils.getIssuer() + JwtSigningTestUtils.JKU_PATH)));
-    when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
         .thenReturn(Optional.of(providerClient));
     when(oAuth2ServiceMock.authorizationCodeExchange(
             providerClient,

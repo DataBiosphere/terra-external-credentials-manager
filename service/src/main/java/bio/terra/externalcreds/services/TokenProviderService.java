@@ -23,7 +23,7 @@ public class TokenProviderService extends ProviderService {
 
   public TokenProviderService(
       ExternalCredsConfig externalCredsConfig,
-      ProviderClientCache providerClientCache,
+      ProviderOAuthClientCache providerOAuthClientCache,
       ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
@@ -31,7 +31,7 @@ public class TokenProviderService extends ProviderService {
       ObjectMapper objectMapper) {
     super(
         externalCredsConfig,
-        providerClientCache,
+        providerOAuthClientCache,
         providerTokenClientCache,
         oAuth2Service,
         linkedAccountService,
@@ -49,7 +49,7 @@ public class TokenProviderService extends ProviderService {
     var oAuth2State = validateOAuth2State(providerName, userId, encodedState);
 
     Optional<LinkedAccount> linkedAccount =
-        providerClientCache
+        providerOAuthClientCache
             .getProviderClient(providerName)
             .map(
                 providerClient -> {
