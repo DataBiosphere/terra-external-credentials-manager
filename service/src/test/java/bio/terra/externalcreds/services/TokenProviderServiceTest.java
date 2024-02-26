@@ -55,22 +55,4 @@ public class TokenProviderServiceTest extends BaseTest {
                 .clientIP(clientIP)
                 .build());
   }
-
-  // test creation of post request to github
-  // test access token request is logged on success and failure
-
-  // can't really test github itself
-  // test selects correct refresh token? already covered
-  // test failure if no refresh token? already covered
-  // test failure if no linked account found? no that's already covered
-
-  //  @Test
-  //  void testCreateProviderAccessTokenRequest() {
-  //    tokenProviderService.getProviderAccessToken(providerName, userId);
-  //  }
-  //
-  //  @Test
-  //  void testLogProviderAccessTokenResponse() {
-  //    tokenProviderService.getProviderAccessToken(providerName, userId);
-  //  }
 }
