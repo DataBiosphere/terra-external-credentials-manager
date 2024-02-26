@@ -33,6 +33,7 @@ public class PassportProviderService extends ProviderService {
   public PassportProviderService(
       ExternalCredsConfig externalCredsConfig,
       ProviderClientCache providerClientCache,
+      ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
       PassportService passportService,
@@ -42,6 +43,7 @@ public class PassportProviderService extends ProviderService {
     super(
         externalCredsConfig,
         providerClientCache,
+        providerTokenClientCache,
         oAuth2Service,
         linkedAccountService,
         auditLogger,

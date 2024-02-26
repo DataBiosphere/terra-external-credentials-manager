@@ -24,6 +24,7 @@ public class TokenProviderService extends ProviderService {
   public TokenProviderService(
       ExternalCredsConfig externalCredsConfig,
       ProviderClientCache providerClientCache,
+      ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
       AuditLogger auditLogger,
@@ -31,6 +32,7 @@ public class TokenProviderService extends ProviderService {
     super(
         externalCredsConfig,
         providerClientCache,
+        providerTokenClientCache,
         oAuth2Service,
         linkedAccountService,
         auditLogger,
@@ -100,13 +102,13 @@ public class TokenProviderService extends ProviderService {
 
     // get client registration from provider client cache
     var clientRegistration =
-        providerClientCache
+        providerTokenClientCache
             .getProviderClient(providerName.toString())
             .orElseThrow(
                 () ->
                     new ExternalCredsException(
                         String.format(
-                            "Unable to find configs for the provider: %s", providerName)));
+                            "Unable to find token configs for the provider: %s", providerName)));
 
     // make sure refresh token is populated in the linked account
     if (linkedAccount.getRefreshToken().isEmpty()) {
@@ -120,11 +122,11 @@ public class TokenProviderService extends ProviderService {
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
 
     // save the linked account with the new refresh token to replace the old one
-        Optional.ofNullable(accessTokenResponse.getRefreshToken())
-            .map(
-                refreshToken ->
-                    linkedAccountService.upsertLinkedAccount(
-                        linkedAccount.withRefreshToken(refreshToken.getTokenValue())));
+    Optional.ofNullable(accessTokenResponse.getRefreshToken())
+        .map(
+            refreshToken ->
+                linkedAccountService.upsertLinkedAccount(
+                    linkedAccount.withRefreshToken(refreshToken.getTokenValue())));
 
     return Optional.of(accessTokenResponse.getAccessToken().getTokenValue());
   }

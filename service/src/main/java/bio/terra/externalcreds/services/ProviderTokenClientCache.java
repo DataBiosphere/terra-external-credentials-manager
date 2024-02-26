@@ -18,16 +18,17 @@ import org.springframework.stereotype.Component;
 /**
  * Creating a provider client requires an api call to [provider
  * issuer]/.well-known/openid-configuration. That information almost never changes and we don't want
- * to hammer that api. Therefore this cache.
+ * to hammer that api. This cache is for the client info for exchanging refresh tokens for access
+ * tokens.
  *
  * <p>The cache is reset every 6 hours to detect infrequent changes.
  */
 @Component
 @Slf4j
-public class ProviderClientCache {
+public class ProviderTokenClientCache {
   private final ExternalCredsConfig externalCredsConfig;
 
-  public ProviderClientCache(ExternalCredsConfig externalCredsConfig) {
+  public ProviderTokenClientCache(ExternalCredsConfig externalCredsConfig) {
     this.externalCredsConfig = externalCredsConfig;
   }
 
@@ -41,7 +42,7 @@ public class ProviderClientCache {
   @Scheduled(fixedRateString = "6", timeUnit = TimeUnit.HOURS)
   @CacheEvict(allEntries = true, cacheNames = "providerTokenClients")
   public void resetCache() {
-    log.info("ProviderClientCache reset");
+    log.info("ProviderTokenClientCache reset");
   }
 
   public ClientRegistration buildClientRegistration(

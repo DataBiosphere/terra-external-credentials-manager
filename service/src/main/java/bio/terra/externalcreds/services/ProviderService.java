@@ -40,6 +40,7 @@ import reactor.core.publisher.Mono;
 public class ProviderService {
   public final ExternalCredsConfig externalCredsConfig;
   public final ProviderClientCache providerClientCache;
+  public final ProviderTokenClientCache providerTokenClientCache;
   public final OAuth2Service oAuth2Service;
   public final LinkedAccountService linkedAccountService;
   public final AuditLogger auditLogger;
@@ -63,12 +64,14 @@ public class ProviderService {
   public ProviderService(
       ExternalCredsConfig externalCredsConfig,
       ProviderClientCache providerClientCache,
+      ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
       AuditLogger auditLogger,
       ObjectMapper objectMapper) {
     this.externalCredsConfig = externalCredsConfig;
     this.providerClientCache = providerClientCache;
+    this.providerTokenClientCache = providerTokenClientCache;
     this.oAuth2Service = oAuth2Service;
     this.linkedAccountService = linkedAccountService;
     this.auditLogger = auditLogger;
