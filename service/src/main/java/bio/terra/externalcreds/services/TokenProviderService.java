@@ -83,9 +83,7 @@ public class TokenProviderService extends ProviderService {
                     .orElse(AuditLogEventType.LinkCreationFailed))
             .build());
   }
-
-  // much of this is cribbed from passportProviderService.getRefreshedPassportsAndVisas
-  // could probably de-dupe this in a refactor
+  
   public Optional<String> getProviderAccessToken(String userId, Provider providerName) {
     // get linked account
     var linkedAccount =
