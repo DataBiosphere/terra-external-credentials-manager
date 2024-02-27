@@ -29,6 +29,7 @@ import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.services.ProviderService;
+import bio.terra.externalcreds.services.TokenProviderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
@@ -61,6 +62,7 @@ class OidcApiControllerTest extends BaseTest {
   @Qualifier("passportProviderService")
   private PassportProviderService passportProviderServiceMock;
 
+  @MockBean private TokenProviderService tokenProviderServiceMock;
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private PassportService passportServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
@@ -74,6 +76,48 @@ class OidcApiControllerTest extends BaseTest {
     mvc.perform(get("/api/oidc/v1/providers"))
         .andExpect(content().json("""
             ["fake-provider1","fake-provider2"]"""));
+  }
+
+  @Nested
+  class GetProviderAccessToken {
+
+    @Test
+    void testGetProviderAccessToken() throws Exception {
+      var userId = "fakeUser";
+      var accessToken = "fakeAccessToken";
+      var githubAccessToken = "fakeGithubAccessToken";
+      var provider = Provider.GITHUB;
+      mockSamUser(userId, accessToken);
+
+      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+          .thenReturn(Optional.of(githubAccessToken));
+
+      mvc.perform(
+              get("/api/oidc/v1/{provider}/access-token", provider.toString())
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isOk())
+          .andExpect(content().string(githubAccessToken));
+    }
+
+    @Test
+    void testGetProviderAccessToken404() throws Exception {
+      var userId = "fakeUser";
+      var accessToken = "fakeAccessToken";
+      var redirectUri = "fakeuri";
+
+      mockSamUser(userId, accessToken);
+
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, providerName, redirectUri))
+          .thenReturn(Optional.empty());
+
+      var queryParams = new LinkedMultiValueMap<String, String>();
+      queryParams.add("redirectUri", redirectUri);
+      mvc.perform(
+              get("/api/oidc/v1/{provider}/authorization-url", providerName)
+                  .header("authorization", "Bearer " + accessToken)
+                  .queryParams(queryParams))
+          .andExpect(status().isNotFound());
+    }
   }
 
   @Nested
