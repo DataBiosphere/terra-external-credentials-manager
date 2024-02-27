@@ -92,7 +92,6 @@ paths:
 
   /api/oidc/v1/{provider}/access-token:
     parameters:
-      - $ref: '#/components/parameters/userIdParam'
       - $ref: '#/components/parameters/providerParam'
     get:
       summary: Return an access token from the provider.

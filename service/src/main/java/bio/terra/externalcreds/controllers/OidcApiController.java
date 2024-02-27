@@ -118,8 +118,10 @@ public record OidcApiController(
     return ResponseEntity.ok().build();
   }
 
-  public ResponseEntity<String> getProviderAccessToken(String userId, Provider providerName) {
-    var accessToken = tokenProviderService.getProviderAccessToken(userId, providerName);
+  public ResponseEntity<String> getProviderAccessToken(Provider providerName) {
+    var samUser = samUserFactory.from(request);
+    var accessToken =
+        tokenProviderService.getProviderAccessToken(samUser.getSubjectId(), providerName);
     return ResponseEntity.of(accessToken);
   }
 
