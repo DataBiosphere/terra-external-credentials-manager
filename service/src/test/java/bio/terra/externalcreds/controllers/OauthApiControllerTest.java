@@ -58,6 +58,44 @@ class OauthApiControllerTest extends BaseTest {
   private String providerName = Provider.RAS.toString();
 
   @Nested
+  class GetProviderAccessToken {
+
+    @Test
+    void testGetProviderAccessToken() throws Exception {
+      var userId = "fakeUser";
+      var accessToken = "fakeAccessToken";
+      var githubAccessToken = "fakeGithubAccessToken";
+      var provider = Provider.GITHUB;
+      mockSamUser(userId, accessToken);
+
+      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+          .thenReturn(Optional.of(githubAccessToken));
+
+      mvc.perform(
+              get("/api/oidc/v1/{provider}/access-token", provider.toString())
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isOk())
+          .andExpect(content().string(githubAccessToken));
+    }
+
+    @Test
+    void testGetProviderAccessToken404() throws Exception {
+      var userId = "fakeUser";
+      var accessToken = "fakeAccessToken";
+      var provider = Provider.GITHUB;
+      mockSamUser(userId, accessToken);
+
+      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+          .thenReturn(Optional.empty());
+
+      mvc.perform(
+              get("/api/oidc/v1/{provider}/access-token", provider.toString())
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isNotFound());
+    }
+  }
+  
+  @Nested
   class GetAuthUrl {
 
     @Test

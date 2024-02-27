@@ -118,21 +118,6 @@ public record OidcApiController(
     return ResponseEntity.ok().build();
   }
 
-  public ResponseEntity<String> getProviderAccessToken(Provider providerName) {
-    var samUser = samUserFactory.from(request);
-
-    var auditLogEventBuilder =
-        new AuditLogEvent.Builder()
-            .providerName(providerName.toString())
-            .userId(samUser.getSubjectId())
-            .clientIP(request.getRemoteAddr());
-
-    var accessToken =
-        tokenProviderService.getProviderAccessToken(
-            samUser.getSubjectId(), providerName, auditLogEventBuilder);
-    return ResponseEntity.of(accessToken);
-  }
-
   @Override
   public ResponseEntity<String> getProviderPassport(PassportProvider providerName) {
     var samUser = samUserFactory.from(request);
