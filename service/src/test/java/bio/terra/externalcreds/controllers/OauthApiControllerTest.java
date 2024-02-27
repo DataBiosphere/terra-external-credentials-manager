@@ -94,7 +94,7 @@ class OauthApiControllerTest extends BaseTest {
           .andExpect(status().isNotFound());
     }
   }
-  
+
   @Nested
   class GetAuthUrl {
 
