@@ -33,7 +33,7 @@ public class ProviderOAuthClientCache {
 
   @Cacheable(cacheNames = "providerOAuthClients", sync = true)
   public Optional<ClientRegistration> getProviderClient(String providerName) {
-    log.info("Loading ProviderClient {}", providerName);
+    log.info("Loading ProviderOAuthClient {}", providerName);
     return Optional.ofNullable(externalCredsConfig.getProviders().get(providerName))
         .map(p -> buildClientRegistration(providerName, p));
   }
@@ -41,7 +41,7 @@ public class ProviderOAuthClientCache {
   @Scheduled(fixedRateString = "6", timeUnit = TimeUnit.HOURS)
   @CacheEvict(allEntries = true, cacheNames = "providerOAuthClients")
   public void resetCache() {
-    log.info("ProviderClientCache reset");
+    log.info("ProviderOAuthClientCache reset");
   }
 
   public ClientRegistration buildClientRegistration(

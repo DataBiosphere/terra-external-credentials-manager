@@ -34,7 +34,7 @@ public class ProviderTokenClientCache {
 
   @Cacheable(cacheNames = "providerTokenClients", sync = true)
   public Optional<ClientRegistration> getProviderClient(String providerName) {
-    log.info("Loading ProviderClient {}", providerName);
+    log.info("Loading ProviderTokenClient {}", providerName);
     return Optional.ofNullable(externalCredsConfig.getProviders().get(providerName))
         .map(p -> buildClientRegistration(providerName, p));
   }

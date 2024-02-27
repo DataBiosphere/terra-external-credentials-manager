@@ -121,12 +121,6 @@ public class TokenProviderService extends ProviderService {
                         String.format(
                             "Unable to find token configs for the provider: %s", providerName)));
 
-    // make sure refresh token is populated in the linked account
-    if (linkedAccount.getRefreshToken().isEmpty()) {
-      throw new NotFoundException(
-          String.format("No refresh token found for provider %s", providerName));
-    }
-
     // exchange refresh token for access token
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
