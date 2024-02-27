@@ -99,24 +99,19 @@ class OidcApiControllerTest extends BaseTest {
           .andExpect(content().string(githubAccessToken));
     }
 
-    //    TODO: finish the below test
     @Test
     void testGetProviderAccessToken404() throws Exception {
       var userId = "fakeUser";
       var accessToken = "fakeAccessToken";
-      var redirectUri = "fakeuri";
-
+      var provider = Provider.GITHUB;
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, providerName, redirectUri))
+      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
           .thenReturn(Optional.empty());
 
-      var queryParams = new LinkedMultiValueMap<String, String>();
-      queryParams.add("redirectUri", redirectUri);
       mvc.perform(
-              get("/api/oidc/v1/{provider}/authorization-url", providerName)
-                  .header("authorization", "Bearer " + accessToken)
-                  .queryParams(queryParams))
+              get("/api/oidc/v1/{provider}/access-token", provider.toString())
+                  .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isNotFound());
     }
   }
