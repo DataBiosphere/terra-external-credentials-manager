@@ -86,7 +86,18 @@ public class TokenProviderService extends ProviderService {
             .build());
   }
 
-  public Optional<String> getProviderAccessToken(String userId, Provider providerName) {
+  public void logGetProviderAccessToken(
+      LinkedAccount linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
+    auditLogger.logEvent(
+        auditLogEventBuilder
+            .externalUserId(linkedAccount.getExternalUserId())
+            .providerName(linkedAccount.getProviderName())
+            .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
+            .build());
+  }
+
+  public Optional<String> getProviderAccessToken(
+      String userId, Provider providerName, AuditLogEvent.Builder auditLogEventBuilder) {
     // get linked account
     var linkedAccount =
         linkedAccountService
@@ -127,6 +138,8 @@ public class TokenProviderService extends ProviderService {
             refreshToken ->
                 linkedAccountService.upsertLinkedAccount(
                     linkedAccount.withRefreshToken(refreshToken.getTokenValue())));
+
+    logGetProviderAccessToken(linkedAccount, auditLogEventBuilder);
 
     return Optional.of(accessTokenResponse.getAccessToken().getTokenValue());
   }
