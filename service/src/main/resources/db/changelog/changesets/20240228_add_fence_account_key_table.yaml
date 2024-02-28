@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_fence_account_key_table"
+      author: sehsan
+      changes:
+        - createTable:
+            tableName: fence_account_key
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: key_json
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: update_lock_timeout
+                  type: timestamp
+                  constraints:
+                    nullable: false
