@@ -6,6 +6,7 @@ import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.AuthorizationChangeEvent;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -24,6 +25,8 @@ import org.springframework.stereotype.Service;
 public class LinkedAccountService {
 
   private final LinkedAccountDAO linkedAccountDAO;
+
+  private final FenceProviderService fenceProviderService;
   private final GA4GHPassportDAO ga4ghPassportDAO;
   private final GA4GHVisaDAO ga4ghVisaDAO;
   private final Collection<VisaComparator> visaComparators;
@@ -32,12 +35,14 @@ public class LinkedAccountService {
 
   public LinkedAccountService(
       LinkedAccountDAO linkedAccountDAO,
+      FenceProviderService fenceProviderService,
       GA4GHPassportDAO ga4ghPassportDAO,
       GA4GHVisaDAO ga4ghVisaDAO,
       Collection<VisaComparator> visaComparators,
       EventPublisher eventPublisher,
       OAuth2StateDAO oAuth2StateDAO) {
     this.linkedAccountDAO = linkedAccountDAO;
+    this.fenceProviderService = fenceProviderService;
     this.ga4ghPassportDAO = ga4ghPassportDAO;
     this.ga4ghVisaDAO = ga4ghVisaDAO;
     this.visaComparators = visaComparators;
@@ -52,9 +57,18 @@ public class LinkedAccountService {
 
   @ReadTransaction
   public Optional<LinkedAccount> getLinkedAccount(String userId, String providerName) {
-    return linkedAccountDAO.getLinkedAccount(userId, providerName);
+    var provider = Provider.valueOf(providerName);
+    return switch (provider) {
+      case RAS, GITHUB -> linkedAccountDAO.getLinkedAccount(userId, provider.toString());
+      case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> {
+        var ecmLinkedAccount  = linkedAccountDAO.getLinkedAccount(userId, provider.toString());
+        if (ecmLinkedAccount.isPresent()) {
+          yield ecmLinkedAccount;
+        }
+        yield fenceProviderService.getBondLinkedAccount(userId, provider);
+      }
+    };
   }
-
   @WriteTransaction
   public LinkedAccountWithPassportAndVisas upsertLinkedAccountWithPassportAndVisas(
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
@@ -102,6 +116,10 @@ public class LinkedAccountService {
   public boolean deleteLinkedAccount(String userId, String providerName) {
     var existingVisas = ga4ghVisaDAO.listVisas(userId, providerName);
     var accountExisted = linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerName);
+    var provider = Provider.valueOf(providerName);
+    switch (provider) {
+      case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.deleteBondLinkedAccount(userId, provider);
+    }
     if (!existingVisas.isEmpty()) {
       eventPublisher.publishAuthorizationChangeEvent(
           new AuthorizationChangeEvent.Builder().providerName(providerName).userId(userId).build());

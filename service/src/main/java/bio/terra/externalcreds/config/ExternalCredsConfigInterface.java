@@ -52,4 +52,7 @@ public interface ExternalCredsConfigInterface {
 
   @Nullable
   KmsConfiguration getKmsConfiguration();
+
+  @Nullable
+  BondDatastoreConfiguration getBondDatastoreConfiguration();
 }

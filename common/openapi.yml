@@ -45,6 +45,33 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
+  /api/oauth/v1/{provider}:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+    get:
+      summary: Returns info about the linked account for the provider.
+      tags: [ oauth ]
+      operationId: getLink
+      responses:
+        '200':
+          $ref: '#/components/responses/LinkInfoResponse'
+        '404':
+          $ref: '#/components/responses/LinkNotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Delete the account link for the provider, if an account has been linked.
+      tags: [ oauth ]
+      operationId: deleteLink
+      description: Requires an authenticated user.
+      responses:
+        '204':
+          description: Deletes the refresh token and revokes it with the provider.
+        '404':
+          $ref: '#/components/responses/LinkNotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
 
   /api/oidc/v1/{provider}/access-token:
     parameters:
@@ -409,6 +436,10 @@ components:
       enum:
         - ras
         - github
+        - fence
+        - dcf-fence
+        - kids-first
+        - anvil
     SshKeyPairType:
       description: Enum containing valid ssh key types.
       type: string

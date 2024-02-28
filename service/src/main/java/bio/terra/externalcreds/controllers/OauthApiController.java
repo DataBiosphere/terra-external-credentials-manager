@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.controllers;
 
+import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
@@ -19,11 +20,39 @@ public record OauthApiController(
     AuditLogger auditLogger,
     HttpServletRequest request,
     ObjectMapper mapper,
+    LinkedAccountService linkedAccountService,
     ProviderService providerService,
     PassportProviderService passportProviderService,
     TokenProviderService tokenProviderService,
+    FenceProviderService fenceProviderService,
     ExternalCredsSamUserFactory samUserFactory)
     implements OauthApi {
+
+  @Override
+  public ResponseEntity<LinkInfo> getLink(Provider provider) {
+    var samUser = samUserFactory.from(request);
+
+    var linkedAccount = linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider.toString());
+    return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
+
+  }
+
+  @Override
+  public ResponseEntity<Void> deleteLink(Provider providerName) {
+    var samUser = samUserFactory.from(request);
+    var deletedLink = providerService.deleteLink(samUser.getSubjectId(), providerName.toString());
+
+    auditLogger.logEvent(
+        new AuditLogEvent.Builder()
+            .auditLogEventType(AuditLogEventType.LinkDeleted)
+            .providerName(providerName.toString())
+            .userId(samUser.getSubjectId())
+            .clientIP(request.getRemoteAddr())
+            .externalUserId(deletedLink.getExternalUserId())
+            .build());
+
+    return ResponseEntity.ok().build();
+  }
 
   @Override
   public ResponseEntity<String> getAuthorizationUrl(Provider providerName, String redirectUri) {
