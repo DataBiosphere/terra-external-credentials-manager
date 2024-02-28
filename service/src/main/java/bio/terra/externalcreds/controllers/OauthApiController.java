@@ -36,6 +36,21 @@ public record OauthApiController(
     return ResponseEntity.of(authorizationUrl);
   }
 
+  public ResponseEntity<String> getProviderAccessToken(Provider providerName) {
+    var samUser = samUserFactory.from(request);
+
+    var auditLogEventBuilder =
+        new AuditLogEvent.Builder()
+            .providerName(providerName.toString())
+            .userId(samUser.getSubjectId())
+            .clientIP(request.getRemoteAddr());
+
+    var accessToken =
+        tokenProviderService.getProviderAccessToken(
+            samUser.getSubjectId(), providerName, auditLogEventBuilder);
+    return ResponseEntity.of(accessToken);
+  }
+
   @Override
   public ResponseEntity<LinkInfo> createLink(
       Provider providerName, String state, String oauthcode) {

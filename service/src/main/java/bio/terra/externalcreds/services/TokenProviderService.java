@@ -1,16 +1,20 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.common.exception.BadRequestException;
+import bio.terra.common.exception.NotFoundException;
+import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashSet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
+import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,14 +23,16 @@ public class TokenProviderService extends ProviderService {
 
   public TokenProviderService(
       ExternalCredsConfig externalCredsConfig,
-      ProviderClientCache providerClientCache,
+      ProviderOAuthClientCache providerOAuthClientCache,
+      ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
       AuditLogger auditLogger,
       ObjectMapper objectMapper) {
     super(
         externalCredsConfig,
-        providerClientCache,
+        providerOAuthClientCache,
+        providerTokenClientCache,
         oAuth2Service,
         linkedAccountService,
         auditLogger,
@@ -43,7 +49,7 @@ public class TokenProviderService extends ProviderService {
     var oAuth2State = validateOAuth2State(providerName, userId, encodedState);
 
     Optional<LinkedAccount> linkedAccount =
-        providerClientCache
+        providerOAuthClientCache
             .getProviderClient(providerName)
             .map(
                 providerClient -> {
@@ -78,5 +84,57 @@ public class TokenProviderService extends ProviderService {
                     .map(x -> AuditLogEventType.LinkCreated)
                     .orElse(AuditLogEventType.LinkCreationFailed))
             .build());
+  }
+
+  public void logGetProviderAccessToken(
+      LinkedAccount linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
+    auditLogger.logEvent(
+        auditLogEventBuilder
+            .externalUserId(linkedAccount.getExternalUserId())
+            .providerName(linkedAccount.getProviderName())
+            .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
+            .build());
+  }
+
+  public Optional<String> getProviderAccessToken(
+      String userId, Provider providerName, AuditLogEvent.Builder auditLogEventBuilder) {
+    // get linked account
+    var linkedAccount =
+        linkedAccountService
+            .getLinkedAccount(userId, providerName.toString())
+            .orElseThrow(
+                () ->
+                    new NotFoundException(
+                        String.format(
+                            "No linked account found for user ID: %s and provider: %s. "
+                                + "Please go to the Terra Profile page External Identities tab "
+                                + "to link your account for this provider.",
+                            userId, providerName)));
+
+    // get client registration from provider client cache
+    var clientRegistration =
+        providerTokenClientCache
+            .getProviderClient(providerName.toString())
+            .orElseThrow(
+                () ->
+                    new ExternalCredsException(
+                        String.format(
+                            "Unable to find token configs for the provider: %s", providerName)));
+
+    // exchange refresh token for access token
+    var accessTokenResponse =
+        oAuth2Service.authorizeWithRefreshToken(
+            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+
+    // save the linked account with the new refresh token to replace the old one
+    var refreshToken = accessTokenResponse.getRefreshToken();
+    if (refreshToken != null) {
+      linkedAccountService.upsertLinkedAccount(
+          linkedAccount.withRefreshToken(refreshToken.getTokenValue()));
+    }
+
+    logGetProviderAccessToken(linkedAccount, auditLogEventBuilder);
+
+    return Optional.of(accessTokenResponse.getAccessToken().getTokenValue());
   }
 }

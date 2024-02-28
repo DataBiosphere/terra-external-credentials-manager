@@ -167,7 +167,7 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired private GA4GHVisaDAO visaDAO;
 
     @MockBean private ExternalCredsConfig externalCredsConfigMock;
-    @MockBean private ProviderClientCache providerClientCacheMock;
+    @MockBean private ProviderOAuthClientCache providerOAuthClientCacheMock;
     @MockBean private OAuth2Service oAuth2ServiceMock;
     @MockBean private JwtUtils jwtUtilsMock;
 
@@ -218,7 +218,7 @@ public class ProviderServiceTest extends BaseTest {
               Map.of(
                   savedLinkedAccount.getProviderName(),
                   TestUtils.createRandomProvider().setIssuer("BadIssuer")));
-      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
+      when(providerOAuthClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
           .thenThrow(new IllegalArgumentException());
 
       // check that an exception is thrown
@@ -245,7 +245,7 @@ public class ProviderServiceTest extends BaseTest {
 
       // mock the ClientRegistration
       var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderName());
-      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
+      when(providerOAuthClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
           .thenReturn(Optional.of(clientRegistration));
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
@@ -287,7 +287,7 @@ public class ProviderServiceTest extends BaseTest {
 
       // mock the ClientRegistration
       var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderName());
-      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
+      when(providerOAuthClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
           .thenReturn(Optional.of(clientRegistration));
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
@@ -322,7 +322,7 @@ public class ProviderServiceTest extends BaseTest {
 
       // mock the ClientRegistration
       var clientRegistration = createClientRegistration(savedLinkedAccount.getProviderName());
-      when(providerClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
+      when(providerOAuthClientCacheMock.getProviderClient(savedLinkedAccount.getProviderName()))
           .thenReturn(Optional.of(clientRegistration));
 
       // mock the OAuth2Authorization response
@@ -385,7 +385,7 @@ public class ProviderServiceTest extends BaseTest {
               .withExpires(
                   new Timestamp(Instant.now().plus(Duration.ofMinutes(60)).toEpochMilli()));
       // mock providerClientCache.getProviderClient to return an empty optional
-      when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+      when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
           .thenReturn(Optional.empty());
       // check that ExternalCredsException is thrown
       assertThrows(
@@ -647,7 +647,7 @@ public class ProviderServiceTest extends BaseTest {
   @TestComponent
   class OAuth2State {
     @MockBean OAuth2Service oAuth2ServiceMock;
-    @MockBean ProviderClientCache providerClientCacheMock;
+    @MockBean ProviderOAuthClientCache providerOAuthClientCacheMock;
     @MockBean ExternalCredsConfig externalCredsConfigMock;
 
     @Autowired ProviderService providerService;
@@ -669,7 +669,7 @@ public class ProviderServiceTest extends BaseTest {
 
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderName(), providerProperties));
-      when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+      when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
           .thenReturn(Optional.of(clientRegistration));
 
       // this mock captures the `state` parameter and returns it
@@ -814,7 +814,7 @@ public class ProviderServiceTest extends BaseTest {
   @TestComponent
   class RedirectUriValidation {
     @MockBean OAuth2Service oAuth2ServiceMock;
-    @MockBean ProviderClientCache providerClientCacheMock;
+    @MockBean ProviderOAuthClientCache providerOAuthClientCacheMock;
     @MockBean ExternalCredsConfig externalCredsConfigMock;
 
     @Autowired ProviderService providerService;
@@ -842,7 +842,7 @@ public class ProviderServiceTest extends BaseTest {
 
       when(externalCredsConfigMock.getProviders())
           .thenReturn(Map.of(linkedAccount.getProviderName(), providerProperties));
-      when(providerClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+      when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
           .thenReturn(Optional.of(clientRegistration));
 
       when(oAuth2ServiceMock.getAuthorizationRequestUri(

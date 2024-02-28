@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.services;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
@@ -14,9 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.*;
 
-public class ProviderClientCacheTest extends BaseTest {
+class ProviderOAuthClientCacheTest extends BaseTest {
 
-  private ProviderClientCache providerClientCache;
+  private ProviderOAuthClientCache providerOAuthClientCache;
   private ExternalCredsConfig externalCredsConfig;
 
   @BeforeEach
@@ -29,7 +29,7 @@ public class ProviderClientCacheTest extends BaseTest {
                     TestUtils.createRandomProvider(),
                     Provider.RAS.toString(),
                     TestUtils.createRandomProvider()));
-    providerClientCache = new ProviderClientCache(externalCredsConfig);
+    providerOAuthClientCache = new ProviderOAuthClientCache(externalCredsConfig);
   }
 
   @Test
@@ -42,20 +42,13 @@ public class ProviderClientCacheTest extends BaseTest {
             .toList()
             .get(0);
     ClientRegistration gitHubClient =
-        providerClientCache.buildClientRegistration(
+        providerOAuthClientCache.buildClientRegistration(
             providerName, externalCredsConfig.getProviders().get(providerName));
-    ClientRegistration expectedClient =
-        ClientRegistration.withRegistrationId(providerName)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .clientId(providerInfo.getClientId())
-            .clientSecret(providerInfo.getClientSecret())
-            .issuerUri(providerInfo.getIssuer())
-            .redirectUri(redirectUri)
-            .userNameAttributeName(providerInfo.getUserNameAttributeName())
-            .userInfoUri(providerInfo.getUserInfoEndpoint().get())
-            .authorizationUri(providerInfo.getAuthorizationEndpoint().get())
-            .tokenUri(providerInfo.getTokenEndpoint().get())
-            .build();
-    assertThat(gitHubClient.equals(expectedClient));
+
+    assertEquals(
+        AuthorizationGrantType.AUTHORIZATION_CODE, gitHubClient.getAuthorizationGrantType());
+    assertEquals(providerInfo.getClientId(), gitHubClient.getClientId());
+    assertEquals(providerInfo.getClientSecret(), gitHubClient.getClientSecret());
+    assertEquals(redirectUri, gitHubClient.getRedirectUri());
   }
 }

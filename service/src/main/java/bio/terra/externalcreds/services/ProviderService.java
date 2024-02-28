@@ -39,7 +39,8 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class ProviderService {
   public final ExternalCredsConfig externalCredsConfig;
-  public final ProviderClientCache providerClientCache;
+  public final ProviderOAuthClientCache providerOAuthClientCache;
+  public final ProviderTokenClientCache providerTokenClientCache;
   public final OAuth2Service oAuth2Service;
   public final LinkedAccountService linkedAccountService;
   public final AuditLogger auditLogger;
@@ -62,13 +63,15 @@ public class ProviderService {
 
   public ProviderService(
       ExternalCredsConfig externalCredsConfig,
-      ProviderClientCache providerClientCache,
+      ProviderOAuthClientCache providerOAuthClientCache,
+      ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
       AuditLogger auditLogger,
       ObjectMapper objectMapper) {
     this.externalCredsConfig = externalCredsConfig;
-    this.providerClientCache = providerClientCache;
+    this.providerOAuthClientCache = providerOAuthClientCache;
+    this.providerTokenClientCache = providerTokenClientCache;
     this.oAuth2Service = oAuth2Service;
     this.linkedAccountService = linkedAccountService;
     this.auditLogger = auditLogger;
@@ -81,7 +84,7 @@ public class ProviderService {
 
   public Optional<String> getProviderAuthorizationUrl(
       String userId, String providerName, String redirectUri) {
-    return providerClientCache
+    return providerOAuthClientCache
         .getProviderClient(providerName)
         .map(
             providerClient -> {

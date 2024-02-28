@@ -24,24 +24,24 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class ProviderClientCache {
+public class ProviderOAuthClientCache {
   private final ExternalCredsConfig externalCredsConfig;
 
-  public ProviderClientCache(ExternalCredsConfig externalCredsConfig) {
+  public ProviderOAuthClientCache(ExternalCredsConfig externalCredsConfig) {
     this.externalCredsConfig = externalCredsConfig;
   }
 
-  @Cacheable(cacheNames = "providerClients", sync = true)
+  @Cacheable(cacheNames = "providerOAuthClients", sync = true)
   public Optional<ClientRegistration> getProviderClient(String providerName) {
-    log.info("Loading ProviderClient {}", providerName);
+    log.info("Loading ProviderOAuthClient {}", providerName);
     return Optional.ofNullable(externalCredsConfig.getProviders().get(providerName))
         .map(p -> buildClientRegistration(providerName, p));
   }
 
   @Scheduled(fixedRateString = "6", timeUnit = TimeUnit.HOURS)
-  @CacheEvict(allEntries = true, cacheNames = "providerClients")
+  @CacheEvict(allEntries = true, cacheNames = "providerOAuthClients")
   public void resetCache() {
-    log.info("ProviderClientCache reset");
+    log.info("ProviderOAuthClientCache reset");
   }
 
   public ClientRegistration buildClientRegistration(

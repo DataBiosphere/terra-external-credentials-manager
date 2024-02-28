@@ -32,7 +32,8 @@ public class PassportProviderService extends ProviderService {
 
   public PassportProviderService(
       ExternalCredsConfig externalCredsConfig,
-      ProviderClientCache providerClientCache,
+      ProviderOAuthClientCache providerOAuthClientCache,
+      ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
       PassportService passportService,
@@ -41,7 +42,8 @@ public class PassportProviderService extends ProviderService {
       ObjectMapper objectMapper) {
     super(
         externalCredsConfig,
-        providerClientCache,
+        providerOAuthClientCache,
+        providerTokenClientCache,
         oAuth2Service,
         linkedAccountService,
         auditLogger,
@@ -60,7 +62,7 @@ public class PassportProviderService extends ProviderService {
     var oAuth2State = validateOAuth2State(providerName, userId, encodedState);
 
     Optional<LinkedAccountWithPassportAndVisas> linkedAccountWithPassportAndVisas =
-        providerClientCache
+        providerOAuthClientCache
             .getProviderClient(providerName)
             .map(
                 providerClient -> {
@@ -204,7 +206,7 @@ public class PassportProviderService extends ProviderService {
   private LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
       LinkedAccount linkedAccount) {
     var clientRegistration =
-        providerClientCache
+        providerOAuthClientCache
             .getProviderClient(linkedAccount.getProviderName())
             .orElseThrow(
                 () ->
