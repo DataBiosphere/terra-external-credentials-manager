@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.services;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.*;
 
-public class ProviderOAuthClientCacheTest extends BaseTest {
+class ProviderOAuthClientCacheTest extends BaseTest {
 
   private ProviderOAuthClientCache providerOAuthClientCache;
   private ExternalCredsConfig externalCredsConfig;
@@ -56,6 +56,6 @@ public class ProviderOAuthClientCacheTest extends BaseTest {
             .authorizationUri(providerInfo.getAuthorizationEndpoint().get())
             .tokenUri(providerInfo.getTokenEndpoint().get())
             .build();
-    assertThat(gitHubClient.equals(expectedClient));
+    assertEquals(expectedClient, gitHubClient);
   }
 }

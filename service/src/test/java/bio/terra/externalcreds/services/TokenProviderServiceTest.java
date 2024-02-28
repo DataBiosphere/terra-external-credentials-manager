@@ -2,7 +2,6 @@ package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -91,7 +90,7 @@ public class TokenProviderServiceTest extends BaseTest {
         .thenReturn(oAuth2TokenResponse);
     var updatedLinkedAccount =
         linkedAccount.withRefreshToken(oAuth2TokenResponse.getRefreshToken().getTokenValue());
-    when(linkedAccountService.upsertLinkedAccount(eq(updatedLinkedAccount)))
+    when(linkedAccountService.upsertLinkedAccount(updatedLinkedAccount))
         .thenReturn(updatedLinkedAccount);
 
     var auditLogEventBuilder =
