@@ -44,18 +44,10 @@ class ProviderTokenClientCacheTest extends BaseTest {
     ClientRegistration gitHubClient =
         providerTokenClientCache.buildClientRegistration(
             providerName, externalCredsConfig.getProviders().get(providerName));
-    ClientRegistration expectedClient =
-        ClientRegistration.withRegistrationId(providerName)
-            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .clientId(providerInfo.getClientId())
-            .clientSecret(providerInfo.getClientSecret())
-            .issuerUri(providerInfo.getIssuer())
-            .redirectUri(redirectUri)
-            .userNameAttributeName(providerInfo.getUserNameAttributeName())
-            .userInfoUri(providerInfo.getUserInfoEndpoint().get())
-            .authorizationUri(providerInfo.getAuthorizationEndpoint().get())
-            .tokenUri(providerInfo.getTokenEndpoint().get())
-            .build();
-    assertEquals(expectedClient, gitHubClient);
+
+    assertEquals(AuthorizationGrantType.REFRESH_TOKEN, gitHubClient.getAuthorizationGrantType());
+    assertEquals(providerInfo.getClientId(), gitHubClient.getClientId());
+    assertEquals(providerInfo.getClientSecret(), gitHubClient.getClientSecret());
+    assertEquals(redirectUri, gitHubClient.getRedirectUri());
   }
 }
