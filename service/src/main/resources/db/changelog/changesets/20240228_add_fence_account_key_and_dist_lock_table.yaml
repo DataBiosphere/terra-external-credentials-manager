@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: "add_fence_account_key_table"
+      id: "add_fence_account_key_and_dist_lock_table"
       author: sehsan
       changes:
         - createTable:
@@ -23,8 +23,23 @@ databaseChangeLog:
                   type: timestamp
                   constraints:
                     nullable: false
+        - createTable:
+            tableName: distributed_lock
+            columns:
               - column:
-                  name: update_lock_timeout
+                  name: lock_name
+                  type: text
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_dist_lock
+              - column:
+                  name: user_id
+                  type: text
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_dist_lock
+              - column:
+                  name: expires_at
                   type: timestamp
                   constraints:
                     nullable: false

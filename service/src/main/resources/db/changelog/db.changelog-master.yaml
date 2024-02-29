@@ -30,5 +30,5 @@ databaseChangeLog:
       file: changesets/20220412_add_last_encrypt_timestamp_to_ssh_key_pair_table.yaml
       relativeToChangelogFile: true
   - include:
-      file: changesets/20240228_add_fence_account_key_table.yaml
+      file: changesets/20240228_add_fence_account_key_and_dist_lock_table.yaml
       relativeToChangelogFile: true
