@@ -61,7 +61,7 @@ public class LinkedAccountService {
     return switch (provider) {
       case RAS, GITHUB -> linkedAccountDAO.getLinkedAccount(userId, provider.toString());
       case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> {
-        var ecmLinkedAccount  = linkedAccountDAO.getLinkedAccount(userId, provider.toString());
+        var ecmLinkedAccount = linkedAccountDAO.getLinkedAccount(userId, provider.toString());
         if (ecmLinkedAccount.isPresent()) {
           yield ecmLinkedAccount;
         }
@@ -69,6 +69,7 @@ public class LinkedAccountService {
       }
     };
   }
+
   @WriteTransaction
   public LinkedAccountWithPassportAndVisas upsertLinkedAccountWithPassportAndVisas(
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
@@ -118,7 +119,8 @@ public class LinkedAccountService {
     var accountExisted = linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerName);
     var provider = Provider.valueOf(providerName);
     switch (provider) {
-      case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.deleteBondLinkedAccount(userId, provider);
+      case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.deleteBondLinkedAccount(
+          userId, provider);
     }
     if (!existingVisas.isEmpty()) {
       eventPublisher.publishAuthorizationChangeEvent(

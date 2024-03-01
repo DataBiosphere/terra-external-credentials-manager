@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.controllers;
 
-import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
@@ -32,9 +31,9 @@ public record OauthApiController(
   public ResponseEntity<LinkInfo> getLink(Provider provider) {
     var samUser = samUserFactory.from(request);
 
-    var linkedAccount = linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider.toString());
+    var linkedAccount =
+        linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider.toString());
     return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
-
   }
 
   @Override
