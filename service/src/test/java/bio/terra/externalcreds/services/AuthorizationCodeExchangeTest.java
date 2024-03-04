@@ -2,6 +2,7 @@ package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
@@ -24,7 +25,6 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -135,10 +135,10 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
     String encodedState = state.encode(objectMapper);
 
-    when(externalCredsConfigMock.getProviders())
-        .thenReturn(Map.of(linkedAccount.getProvider(), providerInfo));
+    when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+        .thenReturn(providerInfo);
     when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
-        .thenReturn(Optional.of(providerClient));
+        .thenReturn(providerClient);
     when(oAuth2ServiceMock.authorizationCodeExchange(
             providerClient,
             authorizationCode,
@@ -157,7 +157,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
                     linkedAccount.getUserId(),
                     authorizationCode,
                     encodedState,
-                    new AuditLogEvent.Builder()));
+                    new AuditLogEvent.Builder().userId("userId")));
 
     // make sure the BadRequestException is for the right reason
     assertInstanceOf(OAuth2AuthorizationException.class, exception.getCause());
@@ -189,15 +189,15 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     OAuth2User user =
         new DefaultOAuth2User(null, userAttributes, providerInfo.getExternalIdClaim());
 
-    when(externalCredsConfigMock.getProviders())
-        .thenReturn(Map.of(linkedAccount.getProvider(), providerInfo));
+    when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+        .thenReturn(providerInfo);
     when(externalCredsConfigMock.getAllowedJwtIssuers())
         .thenReturn(List.of(new URI(jwtSigningTestUtils.getIssuer())));
     when(externalCredsConfigMock.getAllowedJwksUris())
         .thenReturn(
             List.of(new URI(jwtSigningTestUtils.getIssuer() + JwtSigningTestUtils.JKU_PATH)));
     when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
-        .thenReturn(Optional.of(providerClient));
+        .thenReturn(providerClient);
     when(oAuth2ServiceMock.authorizationCodeExchange(
             providerClient,
             authorizationCode,
@@ -247,25 +247,23 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             encodedState,
             auditLogEventBuilder);
 
-    assertPresent(linkedAccountWithPassportAndVisas);
+    assertNotNull(linkedAccountWithPassportAndVisas);
 
     assertEquals(
         expectedLinkedAccount,
         linkedAccountWithPassportAndVisas
-            .get()
             .getLinkedAccount()
             .withExpires(jwtSigningTestUtils.passportExpiresTime)
             .withId(Optional.empty()));
 
     var stablePassport =
         linkedAccountWithPassportAndVisas
-            .get()
             .getPassport()
             .map(p -> p.withId(Optional.empty()).withLinkedAccountId(Optional.empty()));
     assertEquals(Optional.ofNullable(expectedPassport), stablePassport);
 
     var stableVisas =
-        linkedAccountWithPassportAndVisas.get().getVisas().stream()
+        linkedAccountWithPassportAndVisas.getVisas().stream()
             .map(
                 visa ->
                     visa.withLastValidated(Optional.empty())

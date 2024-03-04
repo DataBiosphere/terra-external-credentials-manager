@@ -34,11 +34,11 @@ public class OAuth2ServiceTest {
    */
   void test() {
     Provider provider = Provider.RAS;
-    var providerClient = providerOAuthClientCache.getProviderClient(provider).orElseThrow();
+    var providerClient = providerOAuthClientCache.getProviderClient(provider);
 
     var redirectUri = "http://localhost:9000/fence-callback";
     String state = null;
-    ProviderProperties providerProperties = externalCredsConfig.getProviders().get(provider);
+    ProviderProperties providerProperties = externalCredsConfig.getProviderProperties(provider);
     var scopes = new HashSet<>(providerProperties.getScopes());
     var authorizationParameters = providerProperties.getAdditionalAuthorizationParameters();
 

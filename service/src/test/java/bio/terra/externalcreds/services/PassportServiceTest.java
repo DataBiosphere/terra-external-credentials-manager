@@ -328,19 +328,12 @@ class PassportServiceTest extends BaseTest {
     }
 
     private void mockProviderConfig(LinkedAccount... linkedAccounts) throws URISyntaxException {
-      var providerInfos =
-          Arrays.stream(linkedAccounts)
-              .map(
-                  linkedAccount ->
-                      Map.of(linkedAccount.getProvider(), TestUtils.createRandomProvider()))
-              .reduce(
-                  new HashMap<>(),
-                  (a, b) -> {
-                    a.putAll(b);
-                    return a;
-                  });
+      Arrays.stream(linkedAccounts)
+          .forEach(
+              linkedAccount ->
+                  when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+                      .thenReturn(TestUtils.createRandomProvider()));
 
-      when(externalCredsConfigMock.getProviders()).thenReturn(providerInfos);
       when(externalCredsConfigMock.getAllowedJwtIssuers())
           .thenReturn(List.of(new URI(jwtSigningTestUtils.getIssuer())));
       when(externalCredsConfigMock.getAllowedJwksUris())
@@ -355,7 +348,7 @@ class PassportServiceTest extends BaseTest {
                         .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                         .build();
                 when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
-                    .thenReturn(Optional.of(providerClient));
+                    .thenReturn(providerClient);
               });
     }
 

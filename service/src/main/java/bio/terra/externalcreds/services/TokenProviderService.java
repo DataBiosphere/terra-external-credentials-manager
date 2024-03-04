@@ -2,7 +2,6 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.common.exception.BadRequestException;
 import bio.terra.common.exception.NotFoundException;
-import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
@@ -39,7 +38,7 @@ public class TokenProviderService extends ProviderService {
         objectMapper);
   }
 
-  public Optional<LinkedAccount> createLink(
+  public LinkedAccount createLink(
       Provider provider,
       String userId,
       String authorizationCode,
@@ -47,31 +46,26 @@ public class TokenProviderService extends ProviderService {
       AuditLogEvent.Builder auditLogEventBuilder) {
 
     var oAuth2State = validateOAuth2State(provider, userId, encodedState);
-
-    Optional<LinkedAccount> linkedAccount =
-        providerOAuthClientCache
-            .getProviderClient(provider)
-            .map(
-                providerClient -> {
-                  var providerInfo = externalCredsConfig.getProviders().get(provider);
-                  try {
-                    var account =
-                        createLinkedAccount(
-                                provider,
-                                userId,
-                                authorizationCode,
-                                oAuth2State.getRedirectUri(),
-                                new HashSet<>(providerInfo.getScopes()),
-                                encodedState,
-                                providerClient)
-                            .getLeft();
-                    return linkedAccountService.upsertLinkedAccount(account);
-                  } catch (OAuth2AuthorizationException oauthEx) {
-                    throw new BadRequestException(oauthEx);
-                  }
-                });
-    logLinkCreation(linkedAccount, auditLogEventBuilder);
-    return linkedAccount;
+    var providerClient = providerOAuthClientCache.getProviderClient(provider);
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
+    try {
+      var account =
+          createLinkedAccount(
+                  provider,
+                  userId,
+                  authorizationCode,
+                  oAuth2State.getRedirectUri(),
+                  new HashSet<>(providerInfo.getScopes()),
+                  encodedState,
+                  providerClient)
+              .getLeft();
+      var linkedAccount = linkedAccountService.upsertLinkedAccount(account);
+      logLinkCreation(Optional.of(linkedAccount), auditLogEventBuilder);
+      return linkedAccount;
+    } catch (OAuth2AuthorizationException oauthEx) {
+      logLinkCreation(Optional.empty(), auditLogEventBuilder);
+      throw new BadRequestException(oauthEx);
+    }
   }
 
   public void logLinkCreation(
@@ -112,14 +106,7 @@ public class TokenProviderService extends ProviderService {
                             userId, provider)));
 
     // get client registration from provider client cache
-    var clientRegistration =
-        providerTokenClientCache
-            .getProviderClient(provider)
-            .orElseThrow(
-                () ->
-                    new ExternalCredsException(
-                        String.format(
-                            "Unable to find token configs for the provider: %s", provider)));
+    var clientRegistration = providerTokenClientCache.getProviderClient(provider);
 
     // exchange refresh token for access token
     var accessTokenResponse =

@@ -75,7 +75,7 @@ public class TokenProviderServiceTest extends BaseTest {
     when(linkedAccountService.getLinkedAccount(linkedAccount.getUserId(), provider))
         .thenReturn(Optional.of(linkedAccount));
     when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
-        .thenReturn(Optional.of(clientRegistration));
+        .thenReturn(clientRegistration);
 
     var accessToken = "tokenValue";
     var updatedRefreshToken = "newRefreshToken";
@@ -137,7 +137,7 @@ public class TokenProviderServiceTest extends BaseTest {
     when(linkedAccountService.getLinkedAccount(linkedAccount.getUserId(), provider))
         .thenReturn(Optional.of(linkedAccount));
     when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
-        .thenReturn(Optional.of(clientRegistration));
+        .thenReturn(clientRegistration);
     when(oAuth2ServiceMock.authorizeWithRefreshToken(
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
         .thenThrow(

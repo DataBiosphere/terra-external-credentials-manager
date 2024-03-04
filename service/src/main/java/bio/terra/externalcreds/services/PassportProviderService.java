@@ -53,7 +53,7 @@ public class PassportProviderService extends ProviderService {
     this.jwtUtils = jwtUtils;
   }
 
-  public Optional<LinkedAccountWithPassportAndVisas> createLink(
+  public LinkedAccountWithPassportAndVisas createLink(
       Provider provider,
       String userId,
       String authorizationCode,
@@ -61,32 +61,28 @@ public class PassportProviderService extends ProviderService {
       AuditLogEvent.Builder auditLogEventBuilder) {
 
     var oAuth2State = validateOAuth2State(provider, userId, encodedState);
-
-    Optional<LinkedAccountWithPassportAndVisas> linkedAccountWithPassportAndVisas =
-        providerOAuthClientCache
-            .getProviderClient(provider)
-            .map(
-                providerClient -> {
-                  var providerInfo = externalCredsConfig.getProviders().get(provider);
-                  try {
-                    var linkedAccount =
-                        createLinkedAccount(
-                            provider,
-                            userId,
-                            authorizationCode,
-                            oAuth2State.getRedirectUri(),
-                            new HashSet<>(providerInfo.getScopes()),
-                            encodedState,
-                            providerClient);
-                    return linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-                        jwtUtils.enrichAccountWithPassportAndVisas(
-                            linkedAccount.getLeft(), linkedAccount.getRight()));
-                  } catch (OAuth2AuthorizationException oauthEx) {
-                    throw new BadRequestException(oauthEx);
-                  }
-                });
-    logLinkCreation(linkedAccountWithPassportAndVisas, auditLogEventBuilder);
-    return linkedAccountWithPassportAndVisas;
+    var providerClient = providerOAuthClientCache.getProviderClient(provider);
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
+    try {
+      var linkedAccount =
+          createLinkedAccount(
+              provider,
+              userId,
+              authorizationCode,
+              oAuth2State.getRedirectUri(),
+              new HashSet<>(providerInfo.getScopes()),
+              encodedState,
+              providerClient);
+      var linkedAccountWithPassportAndVisas =
+          linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+              jwtUtils.enrichAccountWithPassportAndVisas(
+                  linkedAccount.getLeft(), linkedAccount.getRight()));
+      logLinkCreation(Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
+      return linkedAccountWithPassportAndVisas;
+    } catch (OAuth2AuthorizationException oauthEx) {
+      logLinkCreation(Optional.empty(), auditLogEventBuilder);
+      throw new BadRequestException(oauthEx);
+    }
   }
 
   private void logLinkCreation(
@@ -206,14 +202,7 @@ public class PassportProviderService extends ProviderService {
   private LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
       LinkedAccount linkedAccount) {
     var clientRegistration =
-        providerOAuthClientCache
-            .getProviderClient(linkedAccount.getProvider())
-            .orElseThrow(
-                () ->
-                    new ExternalCredsException(
-                        String.format(
-                            "Unable to find configs for the provider: %s",
-                            linkedAccount.getProvider())));
+        providerOAuthClientCache.getProviderClient(linkedAccount.getProvider());
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
@@ -235,7 +224,7 @@ public class PassportProviderService extends ProviderService {
 
   @VisibleForTesting
   boolean validateVisaWithProvider(VisaVerificationDetails visaDetails) {
-    var providerProperties = externalCredsConfig.getProviders().get(visaDetails.getProvider());
+    var providerProperties = externalCredsConfig.getProviderProperties(visaDetails.getProvider());
     if (providerProperties == null) {
       throw new NotFoundException(
           String.format("Provider %s not found", visaDetails.getProvider()));

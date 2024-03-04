@@ -1,9 +1,7 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -32,20 +30,12 @@ public class ProviderOAuthClientCache {
   }
 
   @Cacheable(cacheNames = "providerOAuthClients", sync = true)
-  public Optional<ClientRegistration> getProviderClient(Provider provider) {
+  public ClientRegistration getProviderClient(Provider provider) {
     log.info("Loading ProviderOAuthClient {}", provider);
-    return Optional.ofNullable(externalCredsConfig.getProviders().get(provider))
-        .map(p -> buildClientRegistration(provider, p));
-  }
-
-  @Scheduled(fixedRateString = "6", timeUnit = TimeUnit.HOURS)
-  @CacheEvict(allEntries = true, cacheNames = "providerOAuthClients")
-  public void resetCache() {
-    log.info("ProviderOAuthClientCache reset");
-  }
-
-  public ClientRegistration buildClientRegistration(
-      Provider provider, ProviderProperties providerInfo) {
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
+    if (providerInfo == null) {
+      throw new IllegalArgumentException("Provider not found: " + provider);
+    }
     ClientRegistration.Builder builder =
         switch (provider) {
           case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
@@ -75,5 +65,11 @@ public class ProviderOAuthClientCache {
     providerInfo.getJwksUri().ifPresent(builder::jwkSetUri);
 
     return builder.build();
+  }
+
+  @Scheduled(fixedRateString = "6", timeUnit = TimeUnit.HOURS)
+  @CacheEvict(allEntries = true, cacheNames = "providerOAuthClients")
+  public void resetCache() {
+    log.info("ProviderOAuthClientCache reset");
   }
 }

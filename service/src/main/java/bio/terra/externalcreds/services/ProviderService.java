@@ -80,39 +80,33 @@ public class ProviderService {
   }
 
   public Set<String> getProviderList() {
-    return externalCredsConfig.getProviders().keySet().stream()
-        .map(Provider::toString)
-        .collect(Collectors.toSet());
+    return Set.of(Provider.values()).stream().map(Provider::toString).collect(Collectors.toSet());
   }
 
-  public Optional<String> getProviderAuthorizationUrl(
-      String userId, Provider provider, String redirectUri) {
-    return providerOAuthClientCache
-        .getProviderClient(provider)
-        .map(
-            providerClient -> {
-              var providerInfo = externalCredsConfig.getProviders().get(provider);
+  public String getProviderAuthorizationUrl(String userId, Provider provider, String redirectUri) {
+    var providerClient = providerOAuthClientCache.getProviderClient(provider);
 
-              validateRedirectUri(redirectUri, providerInfo);
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
 
-              // oAuth2State is used to prevent CRSF attacks
-              // see https://auth0.com/docs/secure/attack-protection/state-parameters
-              // a random value is generated and stored here then validated in createLink below
-              var oAuth2State =
-                  new OAuth2State.Builder()
-                      .provider(provider)
-                      .random(OAuth2State.generateRandomState(secureRandom))
-                      .redirectUri(redirectUri)
-                      .build();
-              linkedAccountService.upsertOAuth2State(userId, oAuth2State);
+    validateRedirectUri(redirectUri, providerInfo);
 
-              return oAuth2Service.getAuthorizationRequestUri(
-                  providerClient,
-                  redirectUri,
-                  new HashSet<>(providerInfo.getScopes()),
-                  oAuth2State.encode(objectMapper),
-                  providerInfo.getAdditionalAuthorizationParameters());
-            });
+    // oAuth2State is used to prevent CRSF attacks
+    // see https://auth0.com/docs/secure/attack-protection/state-parameters
+    // a random value is generated and stored here then validated in createLink below
+    var oAuth2State =
+        new OAuth2State.Builder()
+            .provider(provider)
+            .random(OAuth2State.generateRandomState(secureRandom))
+            .redirectUri(redirectUri)
+            .build();
+    linkedAccountService.upsertOAuth2State(userId, oAuth2State);
+
+    return oAuth2Service.getAuthorizationRequestUri(
+        providerClient,
+        redirectUri,
+        new HashSet<>(providerInfo.getScopes()),
+        oAuth2State.encode(objectMapper),
+        providerInfo.getAdditionalAuthorizationParameters());
   }
 
   private void validateRedirectUri(String redirectUri, ProviderProperties providerInfo) {
@@ -143,7 +137,7 @@ public class ProviderService {
       Set<String> scopes,
       String state,
       ClientRegistration providerClient) {
-    var providerInfo = externalCredsConfig.getProviders().get(provider);
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
 
     var tokenResponse =
         oAuth2Service.authorizationCodeExchange(
@@ -207,7 +201,7 @@ public class ProviderService {
   }
 
   public LinkedAccount deleteLink(String userId, Provider provider) {
-    var providerInfo = externalCredsConfig.getProviders().get(provider);
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
 
     if (providerInfo == null) {
       throw new NotFoundException(String.format("Provider %s not found", provider));

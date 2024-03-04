@@ -3,6 +3,7 @@ package bio.terra.externalcreds.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,7 +40,6 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,7 +90,8 @@ public class ProviderServiceTest extends BaseTest {
 
     @Test
     void testDeleteLinkProviderNotFound() {
-      when(externalCredsConfigMock.getProviders()).thenReturn(Map.of());
+      when(externalCredsConfigMock.getProviderProperties(any()))
+          .thenThrow(new NotFoundException("Provider not found"));
 
       assertThrows(
           NotFoundException.class,
@@ -100,8 +101,8 @@ public class ProviderServiceTest extends BaseTest {
     @Test
     void testDeleteLinkLinkNotFound() {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
-      when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(linkedAccount.getProvider(), TestUtils.createRandomProvider()));
+      when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+          .thenReturn(TestUtils.createRandomProvider());
 
       when(linkedAccountServiceMock.getLinkedAccount(
               linkedAccount.getUserId(), linkedAccount.getProvider()))
@@ -128,8 +129,8 @@ public class ProviderServiceTest extends BaseTest {
                 new Parameter("client_id", providerInfo.getClientId()),
                 new Parameter("client_secret", providerInfo.getClientSecret()));
 
-        when(externalCredsConfigMock.getProviders())
-            .thenReturn(Map.of(linkedAccount.getProvider(), providerInfo));
+        when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+            .thenReturn(providerInfo);
 
         when(linkedAccountServiceMock.getLinkedAccount(
                 linkedAccount.getUserId(), linkedAccount.getProvider()))
@@ -210,11 +211,8 @@ public class ProviderServiceTest extends BaseTest {
               .withIssuer("BadIssuer"));
 
       // mock configs
-      when(externalCredsConfigMock.getProviders())
-          .thenReturn(
-              Map.of(
-                  savedLinkedAccount.getProvider(),
-                  TestUtils.createRandomProvider().setIssuer("BadIssuer")));
+      when(externalCredsConfigMock.getProviderProperties(savedLinkedAccount.getProvider()))
+          .thenReturn(TestUtils.createRandomProvider().setIssuer("BadIssuer"));
       when(providerOAuthClientCacheMock.getProviderClient(savedLinkedAccount.getProvider()))
           .thenThrow(new IllegalArgumentException());
 
@@ -243,7 +241,7 @@ public class ProviderServiceTest extends BaseTest {
       // mock the ClientRegistration
       var clientRegistration = createClientRegistration(savedLinkedAccount.getProvider());
       when(providerOAuthClientCacheMock.getProviderClient(savedLinkedAccount.getProvider()))
-          .thenReturn(Optional.of(clientRegistration));
+          .thenReturn(clientRegistration);
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
       when(oAuth2ServiceMock.authorizeWithRefreshToken(
@@ -285,7 +283,7 @@ public class ProviderServiceTest extends BaseTest {
       // mock the ClientRegistration
       var clientRegistration = createClientRegistration(savedLinkedAccount.getProvider());
       when(providerOAuthClientCacheMock.getProviderClient(savedLinkedAccount.getProvider()))
-          .thenReturn(Optional.of(clientRegistration));
+          .thenReturn(clientRegistration);
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
       when(oAuth2ServiceMock.authorizeWithRefreshToken(
@@ -320,7 +318,7 @@ public class ProviderServiceTest extends BaseTest {
       // mock the ClientRegistration
       var clientRegistration = createClientRegistration(savedLinkedAccount.getProvider());
       when(providerOAuthClientCacheMock.getProviderClient(savedLinkedAccount.getProvider()))
-          .thenReturn(Optional.of(clientRegistration));
+          .thenReturn(clientRegistration);
 
       // mock the OAuth2Authorization response
       var oAuth2TokenResponse =
@@ -383,7 +381,7 @@ public class ProviderServiceTest extends BaseTest {
                   new Timestamp(Instant.now().plus(Duration.ofMinutes(60)).toEpochMilli()));
       // mock providerClientCache.getProviderClient to return an empty optional
       when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
-          .thenReturn(Optional.empty());
+          .thenThrow(new IllegalArgumentException());
       // check that ExternalCredsException is thrown
       assertThrows(
           ExternalCredsException.class,
@@ -391,8 +389,8 @@ public class ProviderServiceTest extends BaseTest {
     }
 
     private void mockProviderConfigs(Provider provider) {
-      when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(provider, TestUtils.createRandomProvider()));
+      when(externalCredsConfigMock.getProviderProperties(provider))
+          .thenReturn(TestUtils.createRandomProvider());
     }
   }
 
@@ -510,7 +508,8 @@ public class ProviderServiceTest extends BaseTest {
     @Test
     void testProviderPropertiesIsNull() {
       var visaVerificationDetails = TestUtils.createRandomVisaVerificationDetails();
-      when(externalCredsConfigMock.getProviders()).thenReturn(new HashMap<>());
+      when(externalCredsConfigMock.getProviderProperties(any()))
+          .thenThrow(new NotFoundException("Provider not found"));
 
       assertThrows(
           NotFoundException.class,
@@ -522,8 +521,8 @@ public class ProviderServiceTest extends BaseTest {
       var providerProperties = TestUtils.createRandomProvider();
       var visaVerificationDetails = TestUtils.createRandomVisaVerificationDetails();
 
-      when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(Provider.GITHUB, providerProperties));
+      when(externalCredsConfigMock.getProviderProperties(Provider.GITHUB))
+          .thenReturn(providerProperties);
 
       assertThrows(
           NotFoundException.class,
@@ -538,13 +537,11 @@ public class ProviderServiceTest extends BaseTest {
 
       var mockServer = ClientAndServer.startClientAndServer();
 
-      when(externalCredsConfigMock.getProviders())
+      when(externalCredsConfigMock.getProviderProperties(visaVerificationDetails.getProvider()))
           .thenReturn(
-              Map.of(
-                  visaVerificationDetails.getProvider(),
-                  TestUtils.createRandomProvider()
-                      .setValidationEndpoint(
-                          "http://localhost:" + mockServer.getPort() + validationEndpoint)));
+              TestUtils.createRandomProvider()
+                  .setValidationEndpoint(
+                      "http://localhost:" + mockServer.getPort() + validationEndpoint));
 
       //  Mock the server response with 400 response code for invalid passport format
       var expectedQueryStringParameters =
@@ -663,10 +660,10 @@ public class ProviderServiceTest extends BaseTest {
               .setAllowedRedirectUriPatterns(List.of(Pattern.compile(redirectUri)))
               .setScopes(scopes);
 
-      when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(linkedAccount.getProvider(), providerProperties));
+      when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+          .thenReturn(providerProperties);
       when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
-          .thenReturn(Optional.of(clientRegistration));
+          .thenReturn(clientRegistration);
 
       // this mock captures the `state` parameter and returns it
       // we do this because the state is randomly generated and this test tests that what is
@@ -682,10 +679,9 @@ public class ProviderServiceTest extends BaseTest {
       var result =
           providerService.getProviderAuthorizationUrl(
               linkedAccount.getUserId(), linkedAccount.getProvider(), redirectUri);
-      assertPresent(result);
+      assertNotNull(result);
       // the result here should be only the state because of the mock above
-      var savedState =
-          bio.terra.externalcreds.models.OAuth2State.decode(objectMapper, result.get());
+      var savedState = bio.terra.externalcreds.models.OAuth2State.decode(objectMapper, result);
       assertEquals(linkedAccount.getProvider(), savedState.getProvider());
 
       assertTrue(oAuth2StateDAO.deleteOidcStateIfExists(linkedAccount.getUserId(), savedState));
@@ -820,7 +816,7 @@ public class ProviderServiceTest extends BaseTest {
 
     @Test
     void testValidRedirectUri() {
-      assertPresent(testGetAuthorizationUrl(".+"));
+      assertNotNull(testGetAuthorizationUrl(".+"));
     }
 
     @Test
@@ -828,7 +824,7 @@ public class ProviderServiceTest extends BaseTest {
       assertThrows(BadRequestException.class, () -> testGetAuthorizationUrl("can't match this"));
     }
 
-    private Optional<String> testGetAuthorizationUrl(String uriPattern) {
+    private String testGetAuthorizationUrl(String uriPattern) {
       var linkedAccount = TestUtils.createRandomLinkedAccount();
       var clientRegistration = createClientRegistration(linkedAccount.getProvider());
       var providerProperties =
@@ -836,10 +832,10 @@ public class ProviderServiceTest extends BaseTest {
               .setAllowedRedirectUriPatterns(List.of(Pattern.compile(uriPattern)))
               .setScopes(scopes);
 
-      when(externalCredsConfigMock.getProviders())
-          .thenReturn(Map.of(linkedAccount.getProvider(), providerProperties));
+      when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+          .thenReturn(providerProperties);
       when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
-          .thenReturn(Optional.of(clientRegistration));
+          .thenReturn(clientRegistration);
 
       when(oAuth2ServiceMock.getAuthorizationRequestUri(
               eq(clientRegistration),

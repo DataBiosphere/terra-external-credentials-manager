@@ -63,7 +63,7 @@ public record OidcApiController(
     var authorizationUrl =
         providerService.getProviderAuthorizationUrl(samUser.getSubjectId(), provider, redirectUri);
 
-    return ResponseEntity.of(authorizationUrl.map(this::jsonString));
+    return ResponseEntity.ok(jsonString(authorizationUrl));
   }
 
   @Override
@@ -81,9 +81,8 @@ public record OidcApiController(
         var linkedAccountWithPassportAndVisas =
             passportProviderService.createLink(
                 provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
-        return ResponseEntity.of(
-            linkedAccountWithPassportAndVisas.map(
-                x -> OpenApiConverters.Output.convert(x.getLinkedAccount())));
+        return ResponseEntity.ok(
+            OpenApiConverters.Output.convert(linkedAccountWithPassportAndVisas.getLinkedAccount()));
       } else {
         throw new BadRequestException("Invalid providerName");
       }

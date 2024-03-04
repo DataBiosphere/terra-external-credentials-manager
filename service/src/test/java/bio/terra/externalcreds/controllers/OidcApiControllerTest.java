@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import bio.terra.common.exception.BadRequestException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.common.iam.BearerToken;
 import bio.terra.common.iam.SamUser;
@@ -89,7 +90,7 @@ class OidcApiControllerTest extends BaseTest {
       mockSamUser(userId, accessToken);
 
       when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri))
-          .thenReturn(Optional.of(result));
+          .thenReturn(result);
 
       var queryParams = new LinkedMultiValueMap<String, String>();
       queryParams.add("redirectUri", redirectUri);
@@ -101,7 +102,7 @@ class OidcApiControllerTest extends BaseTest {
     }
 
     @Test
-    void testGetAuthUrl404() throws Exception {
+    void testGetAuthUrlBadRequest() throws Exception {
       var userId = "fakeUser";
       var accessToken = "fakeAccessToken";
       var redirectUri = "fakeuri";
@@ -109,7 +110,7 @@ class OidcApiControllerTest extends BaseTest {
       mockSamUser(userId, accessToken);
 
       when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri))
-          .thenReturn(Optional.empty());
+          .thenThrow(new BadRequestException("Invalid redirectUri"));
 
       var queryParams = new LinkedMultiValueMap<String, String>();
       queryParams.add("redirectUri", redirectUri);
@@ -117,7 +118,7 @@ class OidcApiControllerTest extends BaseTest {
               get("/api/oidc/v1/{provider}/authorization-url", provider)
                   .header("authorization", "Bearer " + accessToken)
                   .queryParams(queryParams))
-          .andExpect(status().isNotFound());
+          .andExpect(status().isBadRequest());
     }
   }
 
@@ -200,7 +201,7 @@ class OidcApiControllerTest extends BaseTest {
               eq(oauthcode),
               eq(state),
               any(AuditLogEvent.Builder.class)))
-          .thenReturn(Optional.of(linkedAccountWithPassportAndVisas));
+          .thenReturn(linkedAccountWithPassportAndVisas);
 
       mvc.perform(
               post("/api/oidc/v1/{provider}/oauthcode", inputLinkedAccount.getProvider().toString())
