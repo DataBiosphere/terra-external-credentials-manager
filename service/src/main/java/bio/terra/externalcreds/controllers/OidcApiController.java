@@ -114,7 +114,7 @@ public record OidcApiController(
   @Override
   public ResponseEntity<String> getProviderPassport(PassportProvider passportProvider) {
     var samUser = samUserFactory.from(request);
-    var provider = Provider.fromValue(passportProvider.toString());
+    var provider = Provider.valueOf(passportProvider.name());
     var maybeLinkedAccount =
         linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
     var maybePassport = passportService.getPassport(samUser.getSubjectId(), provider);

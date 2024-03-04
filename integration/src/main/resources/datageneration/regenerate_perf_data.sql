@@ -12,7 +12,7 @@ LANGUAGE SQL
 AS $$
   -- Insert a linked account with the given values
   INSERT INTO linked_account
-  (id, user_id, provider_name, refresh_token, expires, external_user_id, is_authenticated)
+  (id, user_id, provider, refresh_token, expires, external_user_id, is_authenticated)
   VALUES (
     nextval('linked_account_id_seq'),
     user_id,

@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: "20240304_provider_name_to_provider"
+      author: tlangs
+      changes:
+        - sql:
+            sql: >
+              CREATE TYPE provider_enum AS ENUM ('GITHUB', 'RAS');
+              
+              update linked_account set provider_name = 'GITHUB' where provider_name = 'github';
+              update linked_account set provider_name = 'RAS' where provider_name = 'ras';
+              delete from linked_account where provider_name not in ('GITHUB', 'RAS');
+              alter table linked_account rename column provider_name to provider;
+              alter table linked_account alter column provider type provider_enum using provider::provider_enum;
+              
+              update oauth2_state set provider_name = 'GITHUB' where provider_name = 'github';
+              update oauth2_state set provider_name = 'RAS' where provider_name = 'ras';
+              delete from oauth2_state where provider_name not in ('GITHUB', 'RAS');
+              alter table oauth2_state rename column provider_name to provider;
+              alter table oauth2_state alter column provider type provider_enum using provider::provider_enum;
+
