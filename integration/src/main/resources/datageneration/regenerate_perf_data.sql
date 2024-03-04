@@ -16,7 +16,7 @@ AS $$
   VALUES (
     nextval('linked_account_id_seq'),
     user_id,
-    'ras',
+    'RAS'::provider,
     'testToken',
     current_timestamp + interval '3000 year',
     external_user_id,
