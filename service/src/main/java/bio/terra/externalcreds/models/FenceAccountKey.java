@@ -8,6 +8,8 @@ import org.immutables.value.Value;
 public interface FenceAccountKey extends WithFenceAccountKey {
   Integer getId();
 
+  Integer getLinkedAccountId();
+
   Optional<String> getKeyJson();
 
   Timestamp getExpiresAt();
