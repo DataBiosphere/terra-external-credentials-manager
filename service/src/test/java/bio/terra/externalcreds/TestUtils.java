@@ -2,6 +2,7 @@ package bio.terra.externalcreds;
 
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -53,6 +54,14 @@ public class TestUtils {
         .issuer(UUID.randomUUID().toString())
         .jwt(UUID.randomUUID().toString())
         .lastValidated(getRandomTimestamp())
+        .build();
+  }
+
+  public static FenceAccountKey createRandomFenceAccountKey() {
+    return new FenceAccountKey.Builder()
+        .linkedAccountId(1)
+        .keyJson(UUID.randomUUID().toString())
+        .expiresAt(getRandomTimestamp())
         .build();
   }
 
