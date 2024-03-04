@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.config;
 
+import bio.terra.externalcreds.generated.model.Provider;
 import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.time.Duration;
@@ -12,7 +13,7 @@ import org.immutables.value.Value;
 @Value.Modifiable
 @PropertiesInterfaceStyle
 public interface ExternalCredsConfigInterface {
-  Map<String, ProviderProperties> getProviders();
+  Map<Provider, ProviderProperties> getProviders();
 
   // Nullable to make the generated class play nicely with spring: spring likes to call the getter
   // before the setter and without Nullable the immutables generated code errors because the field

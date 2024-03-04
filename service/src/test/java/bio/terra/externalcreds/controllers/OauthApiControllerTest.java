@@ -55,7 +55,7 @@ class OauthApiControllerTest extends BaseTest {
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private AuditLogger auditLoggerMock;
 
-  private String providerName = Provider.RAS.toString();
+  private Provider provider = Provider.RAS;
 
   @Nested
   class GetProviderAccessToken {
@@ -72,7 +72,7 @@ class OauthApiControllerTest extends BaseTest {
           .thenReturn(Optional.of(githubAccessToken));
 
       mvc.perform(
-              get("/api/oidc/v1/{provider}/access-token", provider.toString())
+              get("/api/oidc/v1/{provider}/access-token", provider)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isOk())
           .andExpect(content().string(githubAccessToken));
@@ -89,7 +89,7 @@ class OauthApiControllerTest extends BaseTest {
           .thenReturn(Optional.empty());
 
       mvc.perform(
-              get("/api/oidc/v1/{provider}/access-token", provider.toString())
+              get("/api/oidc/v1/{provider}/access-token", provider)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isNotFound());
     }
@@ -107,13 +107,13 @@ class OauthApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, providerName, redirectUri))
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri))
           .thenReturn(Optional.of(result));
 
       var queryParams = new LinkedMultiValueMap<String, String>();
       queryParams.add("redirectUri", redirectUri);
       mvc.perform(
-              get("/api/oauth/v1/{provider}/authorization-url", providerName)
+              get("/api/oauth/v1/{provider}/authorization-url", provider)
                   .header("authorization", "Bearer " + accessToken)
                   .queryParams(queryParams))
           .andExpect(content().string(result));
@@ -127,13 +127,13 @@ class OauthApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, providerName, redirectUri))
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri))
           .thenReturn(Optional.empty());
 
       var queryParams = new LinkedMultiValueMap<String, String>();
       queryParams.add("redirectUri", redirectUri);
       mvc.perform(
-              get("/api/oauth/v1/{provider}/authorization-url", providerName)
+              get("/api/oauth/v1/{provider}/authorization-url", provider)
                   .header("authorization", "Bearer " + accessToken)
                   .queryParams(queryParams))
           .andExpect(status().isNotFound());
@@ -145,13 +145,13 @@ class OauthApiControllerTest extends BaseTest {
 
     @Test
     void testCreatesTokenProviderLinkSuccessfully() throws Exception {
-      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.GITHUB.toString());
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.GITHUB);
 
       var state = UUID.randomUUID().toString();
       var oauthcode = UUID.randomUUID().toString();
 
       when(tokenProviderServiceMock.createLink(
-              eq(inputLinkedAccount.getProviderName()),
+              eq(inputLinkedAccount.getProvider()),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
               eq(state),
@@ -162,7 +162,7 @@ class OauthApiControllerTest extends BaseTest {
 
     @Test
     void testCreatesPassportProviderLinkSuccessfully() throws Exception {
-      var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
+      var inputLinkedAccount = TestUtils.createRandomPassportLinkedAccount();
       var state = UUID.randomUUID().toString();
       var oauthcode = UUID.randomUUID().toString();
 
@@ -172,7 +172,7 @@ class OauthApiControllerTest extends BaseTest {
               .passport(TestUtils.createRandomPassport())
               .build();
       when(passportProviderServiceMock.createLink(
-              eq(inputLinkedAccount.getProviderName()),
+              eq(inputLinkedAccount.getProvider()),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
               eq(state),
@@ -194,7 +194,7 @@ class OauthApiControllerTest extends BaseTest {
 
       // check that an internal server error code is returned
       mvc.perform(
-              post("/api/oauth/v1/{provider}/oauthcode", providerName)
+              post("/api/oauth/v1/{provider}/oauthcode", provider)
                   .header("authorization", "Bearer " + accessToken)
                   .param("scopes", "foo")
                   .param("redirectUri", "redirectUri")
@@ -207,7 +207,7 @@ class OauthApiControllerTest extends BaseTest {
           .logEvent(
               new AuditLogEvent.Builder()
                   .auditLogEventType(AuditLogEventType.LinkCreationFailed)
-                  .providerName(providerName)
+                  .provider(provider)
                   .userId(userId)
                   .clientIP("127.0.0.1")
                   .build());
@@ -219,7 +219,7 @@ class OauthApiControllerTest extends BaseTest {
     var accessToken = "testToken";
     mockSamUser(inputLinkedAccount.getUserId(), accessToken);
     mvc.perform(
-            post("/api/oauth/v1/{provider}/oauthcode", inputLinkedAccount.getProviderName())
+            post("/api/oauth/v1/{provider}/oauthcode", inputLinkedAccount.getProvider())
                 .header("authorization", "Bearer " + accessToken)
                 .param("state", state)
                 .param("oauthcode", oauthcode))

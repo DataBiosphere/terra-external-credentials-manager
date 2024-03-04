@@ -32,22 +32,21 @@ public class TokenProviderServiceTest extends BaseTest {
   @MockBean private OAuth2Service oAuth2ServiceMock;
 
   private final Provider provider = Provider.GITHUB;
-  private final String providerName = provider.toString();
   private final String userId = UUID.randomUUID().toString();
   private final String clientIP = "127.0.0.1";
   private final AuditLogEvent.Builder auditLogEventBuilder =
-      new Builder().providerName(providerName).userId(userId).clientIP(clientIP);
+      new Builder().provider(provider).userId(userId).clientIP(clientIP);
 
   @Test
   void testLogLinkCreateSuccess() {
     Optional<LinkedAccount> linkedAccount =
-        Optional.ofNullable(TestUtils.createRandomLinkedAccount(providerName));
+        Optional.ofNullable(TestUtils.createRandomLinkedAccount(provider));
     tokenProviderService.logLinkCreation(linkedAccount, auditLogEventBuilder);
     verify(auditLoggerMock)
         .logEvent(
             new AuditLogEvent.Builder()
                 .auditLogEventType(AuditLogEventType.LinkCreated)
-                .providerName(providerName)
+                .provider(provider)
                 .userId(userId)
                 .externalUserId(linkedAccount.map(LinkedAccount::getExternalUserId))
                 .clientIP(clientIP)
@@ -61,7 +60,7 @@ public class TokenProviderServiceTest extends BaseTest {
         .logEvent(
             new AuditLogEvent.Builder()
                 .auditLogEventType(AuditLogEventType.LinkCreationFailed)
-                .providerName(providerName)
+                .provider(provider)
                 .userId(userId)
                 .externalUserId(Optional.empty())
                 .clientIP(clientIP)
@@ -70,12 +69,12 @@ public class TokenProviderServiceTest extends BaseTest {
 
   @Test
   void testGetProviderAccessTokenSuccess() {
-    var linkedAccount = TestUtils.createRandomLinkedAccount(providerName);
-    var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
+    var linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+    var clientRegistration = createClientRegistration(linkedAccount.getProvider());
 
-    when(linkedAccountService.getLinkedAccount(linkedAccount.getUserId(), provider.toString()))
+    when(linkedAccountService.getLinkedAccount(linkedAccount.getUserId(), provider))
         .thenReturn(Optional.of(linkedAccount));
-    when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+    when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
         .thenReturn(Optional.of(clientRegistration));
 
     var accessToken = "tokenValue";
@@ -94,10 +93,7 @@ public class TokenProviderServiceTest extends BaseTest {
         .thenReturn(updatedLinkedAccount);
 
     var auditLogEventBuilder =
-        new Builder()
-            .providerName(providerName)
-            .userId(linkedAccount.getUserId())
-            .clientIP(clientIP);
+        new Builder().provider(provider).userId(linkedAccount.getUserId()).clientIP(clientIP);
     Optional<String> response =
         tokenProviderService.getProviderAccessToken(
             linkedAccount.getUserId(), provider, auditLogEventBuilder);
@@ -106,7 +102,7 @@ public class TokenProviderServiceTest extends BaseTest {
         .logEvent(
             new AuditLogEvent.Builder()
                 .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
-                .providerName(providerName)
+                .provider(provider)
                 .userId(linkedAccount.getUserId())
                 .clientIP(clientIP)
                 .externalUserId(linkedAccount.getExternalUserId())
@@ -121,13 +117,12 @@ public class TokenProviderServiceTest extends BaseTest {
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
-            .providerName(providerName)
+            .provider(provider)
             .userId(userId)
             .externalUserId(Optional.empty())
             .clientIP(clientIP);
 
-    when(linkedAccountService.getLinkedAccount(userId, provider.toString()))
-        .thenReturn(Optional.empty());
+    when(linkedAccountService.getLinkedAccount(userId, provider)).thenReturn(Optional.empty());
 
     assertThrows(
         NotFoundException.class,
@@ -136,12 +131,12 @@ public class TokenProviderServiceTest extends BaseTest {
 
   @Test
   void testGetProviderAccessTokenUnauthorized() {
-    var linkedAccount = TestUtils.createRandomLinkedAccount(providerName);
-    var clientRegistration = createClientRegistration(linkedAccount.getProviderName());
+    var linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+    var clientRegistration = createClientRegistration(linkedAccount.getProvider());
 
-    when(linkedAccountService.getLinkedAccount(linkedAccount.getUserId(), provider.toString()))
+    when(linkedAccountService.getLinkedAccount(linkedAccount.getUserId(), provider))
         .thenReturn(Optional.of(linkedAccount));
-    when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+    when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
         .thenReturn(Optional.of(clientRegistration));
     when(oAuth2ServiceMock.authorizeWithRefreshToken(
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
@@ -155,8 +150,8 @@ public class TokenProviderServiceTest extends BaseTest {
                 linkedAccount.getUserId(), provider, auditLogEventBuilder));
   }
 
-  private ClientRegistration createClientRegistration(String providerName) {
-    return ClientRegistration.withRegistrationId(providerName)
+  private ClientRegistration createClientRegistration(Provider provider) {
+    return ClientRegistration.withRegistrationId(provider.toString())
         .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
         .build();
   }

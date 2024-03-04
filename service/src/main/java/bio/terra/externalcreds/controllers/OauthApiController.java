@@ -26,53 +26,48 @@ public record OauthApiController(
     implements OauthApi {
 
   @Override
-  public ResponseEntity<String> getAuthorizationUrl(Provider providerName, String redirectUri) {
+  public ResponseEntity<String> getAuthorizationUrl(Provider provider, String redirectUri) {
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(
-            samUser.getSubjectId(), providerName.toString(), redirectUri);
+        providerService.getProviderAuthorizationUrl(samUser.getSubjectId(), provider, redirectUri);
 
     return ResponseEntity.of(authorizationUrl);
   }
 
-  public ResponseEntity<String> getProviderAccessToken(Provider providerName) {
+  @Override
+  public ResponseEntity<String> getProviderAccessToken(Provider provider) {
     var samUser = samUserFactory.from(request);
 
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
-            .providerName(providerName.toString())
+            .provider(provider)
             .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr());
 
     var accessToken =
         tokenProviderService.getProviderAccessToken(
-            samUser.getSubjectId(), providerName, auditLogEventBuilder);
+            samUser.getSubjectId(), provider, auditLogEventBuilder);
     return ResponseEntity.of(accessToken);
   }
 
   @Override
-  public ResponseEntity<LinkInfo> createLink(
-      Provider providerName, String state, String oauthcode) {
+  public ResponseEntity<LinkInfo> createLink(Provider provider, String state, String oauthcode) {
     var samUser = samUserFactory.from(request);
 
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
-            .providerName(providerName.toString())
+            .provider(provider)
             .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr());
 
     Optional<LinkInfo> linkInfo = Optional.empty();
     try {
-      switch (providerName) {
+      switch (provider) {
         case RAS -> {
           var linkedAccountWithPassportAndVisas =
               passportProviderService.createLink(
-                  providerName.toString(),
-                  samUser.getSubjectId(),
-                  oauthcode,
-                  state,
-                  auditLogEventBuilder);
+                  provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
           linkInfo =
               linkedAccountWithPassportAndVisas.map(
                   x -> OpenApiConverters.Output.convert(x.getLinkedAccount()));
@@ -80,11 +75,7 @@ public record OauthApiController(
         case GITHUB -> {
           var linkedAccount =
               tokenProviderService.createLink(
-                  providerName.toString(),
-                  samUser.getSubjectId(),
-                  oauthcode,
-                  state,
-                  auditLogEventBuilder);
+                  provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
           linkInfo = linkedAccount.map(Output::convert);
         }
       }

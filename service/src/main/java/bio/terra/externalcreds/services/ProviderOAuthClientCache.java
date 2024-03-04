@@ -32,10 +32,10 @@ public class ProviderOAuthClientCache {
   }
 
   @Cacheable(cacheNames = "providerOAuthClients", sync = true)
-  public Optional<ClientRegistration> getProviderClient(String providerName) {
-    log.info("Loading ProviderOAuthClient {}", providerName);
-    return Optional.ofNullable(externalCredsConfig.getProviders().get(providerName))
-        .map(p -> buildClientRegistration(providerName, p));
+  public Optional<ClientRegistration> getProviderClient(Provider provider) {
+    log.info("Loading ProviderOAuthClient {}", provider);
+    return Optional.ofNullable(externalCredsConfig.getProviders().get(provider))
+        .map(p -> buildClientRegistration(provider, p));
   }
 
   @Scheduled(fixedRateString = "6", timeUnit = TimeUnit.HOURS)
@@ -45,8 +45,7 @@ public class ProviderOAuthClientCache {
   }
 
   public ClientRegistration buildClientRegistration(
-      String providerName, ProviderProperties providerInfo) {
-    Provider provider = Provider.fromValue(providerName);
+      Provider provider, ProviderProperties providerInfo) {
     ClientRegistration.Builder builder =
         switch (provider) {
           case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
@@ -59,7 +58,7 @@ public class ProviderOAuthClientCache {
                     .map(Pattern::toString)
                     .toList()
                     .get(0);
-            yield ClientRegistration.withRegistrationId(providerName)
+            yield ClientRegistration.withRegistrationId(provider.toString())
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .clientId(providerInfo.getClientId())
                 .clientSecret(providerInfo.getClientSecret())

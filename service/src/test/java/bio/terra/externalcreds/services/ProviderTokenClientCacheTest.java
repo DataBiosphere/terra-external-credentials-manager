@@ -25,17 +25,17 @@ class ProviderTokenClientCacheTest extends BaseTest {
         ExternalCredsConfig.create()
             .setProviders(
                 Map.of(
-                    Provider.GITHUB.toString(),
+                    Provider.GITHUB,
                     TestUtils.createRandomProvider(),
-                    Provider.RAS.toString(),
+                    Provider.RAS,
                     TestUtils.createRandomProvider()));
     providerTokenClientCache = new ProviderTokenClientCache(externalCredsConfig);
   }
 
   @Test
   void testGitHubBuildClientRegistration() {
-    String providerName = Provider.GITHUB.toString();
-    ProviderProperties providerInfo = externalCredsConfig.getProviders().get(providerName);
+    Provider provider = Provider.GITHUB;
+    ProviderProperties providerInfo = externalCredsConfig.getProviders().get(provider);
     String redirectUri =
         providerInfo.getAllowedRedirectUriPatterns().stream()
             .map(Pattern::toString)
@@ -43,7 +43,7 @@ class ProviderTokenClientCacheTest extends BaseTest {
             .get(0);
     ClientRegistration gitHubClient =
         providerTokenClientCache.buildClientRegistration(
-            providerName, externalCredsConfig.getProviders().get(providerName));
+            provider, externalCredsConfig.getProviders().get(provider));
 
     assertEquals(AuthorizationGrantType.REFRESH_TOKEN, gitHubClient.getAuthorizationGrantType());
     assertEquals(providerInfo.getClientId(), gitHubClient.getClientId());

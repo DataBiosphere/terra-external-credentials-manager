@@ -11,6 +11,7 @@ import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -77,7 +78,7 @@ class PassportServiceTest extends BaseTest {
           passportDAO.insertPassport(passport.withLinkedAccountId(savedLinkedAccount.getId()));
 
       var loadedPassport =
-          passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderName());
+          passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProvider());
 
       assertPresent(loadedPassport);
       assertEquals(passport.getJwt(), savedPassport.getJwt());
@@ -87,9 +88,9 @@ class PassportServiceTest extends BaseTest {
     @Test
     void testGetGA4GHPassportNoLinkedAccount() {
       var userId = "nonexistent_user_id";
-      var providerName = "fake_provider";
+      var provider = Provider.RAS;
 
-      assertEmpty(passportService.getPassport(userId, providerName));
+      assertEmpty(passportService.getPassport(userId, provider));
     }
 
     @Test
@@ -98,7 +99,7 @@ class PassportServiceTest extends BaseTest {
       linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
       assertEmpty(
-          passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProviderName()));
+          passportService.getPassport(linkedAccount.getUserId(), linkedAccount.getProvider()));
     }
   }
 
@@ -228,10 +229,9 @@ class PassportServiceTest extends BaseTest {
     private void runValidPassportTest(ValidPassportTestParams params) throws URISyntaxException {
       when(externalCredsConfigMock.getAllowedJwtAlgorithms()).thenReturn(List.of("RS256", "ES256"));
 
-      var linkedAccount = TestUtils.createRandomLinkedAccount(UUID.randomUUID().toString());
+      var linkedAccount = TestUtils.createRandomLinkedAccount();
       var otherLinkedAccount =
-          TestUtils.createRandomLinkedAccount(UUID.randomUUID().toString())
-              .withUserId(linkedAccount.getUserId());
+          TestUtils.createRandomPassportLinkedAccount().withUserId(linkedAccount.getUserId());
       mockProviderConfig(linkedAccount, otherLinkedAccount);
 
       var matchingPermission =
@@ -332,7 +332,7 @@ class PassportServiceTest extends BaseTest {
           Arrays.stream(linkedAccounts)
               .map(
                   linkedAccount ->
-                      Map.of(linkedAccount.getProviderName(), TestUtils.createRandomProvider()))
+                      Map.of(linkedAccount.getProvider(), TestUtils.createRandomProvider()))
               .reduce(
                   new HashMap<>(),
                   (a, b) -> {
@@ -351,11 +351,10 @@ class PassportServiceTest extends BaseTest {
           .forEach(
               linkedAccount -> {
                 var providerClient =
-                    ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
+                    ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
                         .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                         .build();
-                when(providerOAuthClientCacheMock.getProviderClient(
-                        linkedAccount.getProviderName()))
+                when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
                     .thenReturn(Optional.of(providerClient));
               });
     }

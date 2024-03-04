@@ -23,13 +23,17 @@ public class TestUtils {
   }
 
   public static LinkedAccount createRandomLinkedAccount() {
-    return createRandomLinkedAccount(Provider.RAS.toString());
+    return createRandomLinkedAccount(Provider.GITHUB);
   }
 
-  public static LinkedAccount createRandomLinkedAccount(String providerName) {
+  public static LinkedAccount createRandomPassportLinkedAccount() {
+    return createRandomLinkedAccount(Provider.RAS);
+  }
+
+  public static LinkedAccount createRandomLinkedAccount(Provider provider) {
     return new LinkedAccount.Builder()
         .expires(getRandomTimestamp())
-        .providerName(providerName)
+        .provider(provider)
         .refreshToken(UUID.randomUUID().toString())
         .userId(UUID.randomUUID().toString())
         .externalUserId(UUID.randomUUID().toString())
@@ -79,7 +83,7 @@ public class TestUtils {
     return new VisaVerificationDetails.Builder()
         .visaId(21)
         .linkedAccountId(42)
-        .providerName(UUID.randomUUID().toString())
+        .provider(Provider.RAS)
         .visaJwt(UUID.randomUUID().toString())
         .build();
   }

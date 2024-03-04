@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.OAuth2State;
 import java.security.SecureRandom;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ public class OAuth2StateDAOTest extends BaseTest {
 
   @Test
   void testCreateAndDelete() {
-    var provider = "provider name";
+    var provider = Provider.RAS;
     var userId = "user";
     var redirectUri = "https://foo";
     var firstState =

@@ -121,13 +121,13 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     var linkedAccount = createTestLinkedAccount();
     var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
     var providerClient =
-        ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
+        ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .build();
 
     var state =
         new OAuth2State.Builder()
-            .provider(linkedAccount.getProviderName())
+            .provider(linkedAccount.getProvider())
             .random(OAuth2State.generateRandomState(new SecureRandom()))
             .redirectUri(redirectUri)
             .build();
@@ -136,8 +136,8 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     String encodedState = state.encode(objectMapper);
 
     when(externalCredsConfigMock.getProviders())
-        .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
-    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+        .thenReturn(Map.of(linkedAccount.getProvider(), providerInfo));
+    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
         .thenReturn(Optional.of(providerClient));
     when(oAuth2ServiceMock.authorizationCodeExchange(
             providerClient,
@@ -153,7 +153,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             BadRequestException.class,
             () ->
                 passportProviderService.createLink(
-                    linkedAccount.getProviderName(),
+                    linkedAccount.getProvider(),
                     linkedAccount.getUserId(),
                     authorizationCode,
                     encodedState,
@@ -173,7 +173,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
       throws URISyntaxException {
     var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
     var providerClient =
-        ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
+        ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .build();
     var accessTokenResponse =
@@ -190,13 +190,13 @@ class AuthorizationCodeExchangeTest extends BaseTest {
         new DefaultOAuth2User(null, userAttributes, providerInfo.getExternalIdClaim());
 
     when(externalCredsConfigMock.getProviders())
-        .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
+        .thenReturn(Map.of(linkedAccount.getProvider(), providerInfo));
     when(externalCredsConfigMock.getAllowedJwtIssuers())
         .thenReturn(List.of(new URI(jwtSigningTestUtils.getIssuer())));
     when(externalCredsConfigMock.getAllowedJwksUris())
         .thenReturn(
             List.of(new URI(jwtSigningTestUtils.getIssuer() + JwtSigningTestUtils.JKU_PATH)));
-    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
+    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
         .thenReturn(Optional.of(providerClient));
     when(oAuth2ServiceMock.authorizationCodeExchange(
             providerClient,
@@ -218,7 +218,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
     var state =
         new OAuth2State.Builder()
-            .provider(expectedLinkedAccount.getProviderName())
+            .provider(expectedLinkedAccount.getProvider())
             .random(OAuth2State.generateRandomState(new SecureRandom()))
             .redirectUri(redirectUri)
             .build();
@@ -236,12 +236,12 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
-            .providerName(expectedLinkedAccount.getProviderName())
+            .provider(expectedLinkedAccount.getProvider())
             .userId(expectedLinkedAccount.getUserId())
             .clientIP("127.0.0.1");
     var linkedAccountWithPassportAndVisas =
         passportProviderService.createLink(
-            expectedLinkedAccount.getProviderName(),
+            expectedLinkedAccount.getProvider(),
             expectedLinkedAccount.getUserId(),
             authorizationCode,
             encodedState,

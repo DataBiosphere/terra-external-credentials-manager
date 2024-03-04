@@ -50,44 +50,37 @@ public record OidcApiController(
   }
 
   @Override
-  public ResponseEntity<LinkInfo> getLink(Provider providerName) {
+  public ResponseEntity<LinkInfo> getLink(Provider provider) {
     var samUser = samUserFactory.from(request);
-    var linkedAccount =
-        linkedAccountService.getLinkedAccount(samUser.getSubjectId(), providerName.toString());
+    var linkedAccount = linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
     return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
   }
 
   @Override
-  public ResponseEntity<String> getAuthUrl(Provider providerName, String redirectUri) {
+  public ResponseEntity<String> getAuthUrl(Provider provider, String redirectUri) {
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(
-            samUser.getSubjectId(), providerName.toString(), redirectUri);
+        providerService.getProviderAuthorizationUrl(samUser.getSubjectId(), provider, redirectUri);
 
     return ResponseEntity.of(authorizationUrl.map(this::jsonString));
   }
 
   @Override
-  public ResponseEntity<LinkInfo> createLink(
-      Provider providerName, String state, String oauthcode) {
+  public ResponseEntity<LinkInfo> createLink(Provider provider, String state, String oauthcode) {
     var samUser = samUserFactory.from(request);
 
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
-            .providerName(providerName.toString())
+            .provider(provider)
             .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr());
 
     try {
-      if (providerName.equals(Provider.RAS)) {
+      if (provider.equals(Provider.RAS)) {
         var linkedAccountWithPassportAndVisas =
             passportProviderService.createLink(
-                providerName.toString(),
-                samUser.getSubjectId(),
-                oauthcode,
-                state,
-                auditLogEventBuilder);
+                provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
         return ResponseEntity.of(
             linkedAccountWithPassportAndVisas.map(
                 x -> OpenApiConverters.Output.convert(x.getLinkedAccount())));
@@ -102,14 +95,14 @@ public record OidcApiController(
   }
 
   @Override
-  public ResponseEntity<Void> deleteLink(Provider providerName) {
+  public ResponseEntity<Void> deleteLink(Provider provider) {
     var samUser = samUserFactory.from(request);
-    var deletedLink = providerService.deleteLink(samUser.getSubjectId(), providerName.toString());
+    var deletedLink = providerService.deleteLink(samUser.getSubjectId(), provider);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.LinkDeleted)
-            .providerName(providerName.toString())
+            .provider(provider)
             .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr())
             .externalUserId(deletedLink.getExternalUserId())
@@ -119,17 +112,17 @@ public record OidcApiController(
   }
 
   @Override
-  public ResponseEntity<String> getProviderPassport(PassportProvider providerName) {
+  public ResponseEntity<String> getProviderPassport(PassportProvider passportProvider) {
     var samUser = samUserFactory.from(request);
+    var provider = Provider.fromValue(passportProvider.toString());
     var maybeLinkedAccount =
-        linkedAccountService.getLinkedAccount(samUser.getSubjectId(), providerName.toString());
-    var maybePassport =
-        passportService.getPassport(samUser.getSubjectId(), providerName.toString());
+        linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
+    var maybePassport = passportService.getPassport(samUser.getSubjectId(), provider);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.GetPassport)
-            .providerName(providerName.toString())
+            .provider(provider)
             .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr())
             .externalUserId(maybeLinkedAccount.map(LinkedAccount::getExternalUserId))

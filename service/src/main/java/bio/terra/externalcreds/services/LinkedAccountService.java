@@ -6,6 +6,7 @@ import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.AuthorizationChangeEvent;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -51,8 +52,8 @@ public class LinkedAccountService {
   }
 
   @ReadTransaction
-  public Optional<LinkedAccount> getLinkedAccount(String userId, String providerName) {
-    return linkedAccountDAO.getLinkedAccount(userId, providerName);
+  public Optional<LinkedAccount> getLinkedAccount(String userId, Provider provider) {
+    return linkedAccountDAO.getLinkedAccount(userId, provider);
   }
 
   @WriteTransaction
@@ -60,7 +61,7 @@ public class LinkedAccountService {
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
     var linkedAccount = linkedAccountWithPassportAndVisas.getLinkedAccount();
     var existingVisas =
-        ga4ghVisaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderName());
+        ga4ghVisaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProvider());
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     // clear out any passport and visas that may exist and save the new one
@@ -73,7 +74,7 @@ public class LinkedAccountService {
     if (authorizationsDiffer(existingVisas, savedLinkedAccountWithPassportAndVisas.getVisas())) {
       eventPublisher.publishAuthorizationChangeEvent(
           new AuthorizationChangeEvent.Builder()
-              .providerName(savedLinkedAccount.getProviderName())
+              .provider(savedLinkedAccount.getProvider())
               .userId(savedLinkedAccount.getUserId())
               .build());
     }
@@ -99,12 +100,12 @@ public class LinkedAccountService {
   }
 
   @WriteTransaction
-  public boolean deleteLinkedAccount(String userId, String providerName) {
-    var existingVisas = ga4ghVisaDAO.listVisas(userId, providerName);
-    var accountExisted = linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerName);
+  public boolean deleteLinkedAccount(String userId, Provider provider) {
+    var existingVisas = ga4ghVisaDAO.listVisas(userId, provider);
+    var accountExisted = linkedAccountDAO.deleteLinkedAccountIfExists(userId, provider);
     if (!existingVisas.isEmpty()) {
       eventPublisher.publishAuthorizationChangeEvent(
-          new AuthorizationChangeEvent.Builder().providerName(providerName).userId(userId).build());
+          new AuthorizationChangeEvent.Builder().provider(provider).userId(userId).build());
     }
     return accountExisted;
   }

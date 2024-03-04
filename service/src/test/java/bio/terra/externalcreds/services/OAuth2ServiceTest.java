@@ -2,6 +2,7 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
+import bio.terra.externalcreds.generated.model.Provider;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -32,12 +33,12 @@ public class OAuth2ServiceTest {
    * to the identity provider.
    */
   void test() {
-    String providerName = "ras-old";
-    var providerClient = providerOAuthClientCache.getProviderClient(providerName).orElseThrow();
+    Provider provider = Provider.RAS;
+    var providerClient = providerOAuthClientCache.getProviderClient(provider).orElseThrow();
 
     var redirectUri = "http://localhost:9000/fence-callback";
     String state = null;
-    ProviderProperties providerProperties = externalCredsConfig.getProviders().get(providerName);
+    ProviderProperties providerProperties = externalCredsConfig.getProviders().get(provider);
     var scopes = new HashSet<>(providerProperties.getScopes());
     var authorizationParameters = providerProperties.getAdditionalAuthorizationParameters();
 

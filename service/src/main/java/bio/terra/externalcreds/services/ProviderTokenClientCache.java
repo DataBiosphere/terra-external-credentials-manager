@@ -33,10 +33,10 @@ public class ProviderTokenClientCache {
   }
 
   @Cacheable(cacheNames = "providerTokenClients", sync = true)
-  public Optional<ClientRegistration> getProviderClient(String providerName) {
-    log.info("Loading ProviderTokenClient {}", providerName);
-    return Optional.ofNullable(externalCredsConfig.getProviders().get(providerName))
-        .map(p -> buildClientRegistration(providerName, p));
+  public Optional<ClientRegistration> getProviderClient(Provider provider) {
+    log.info("Loading ProviderTokenClient {}", provider);
+    return Optional.ofNullable(externalCredsConfig.getProviders().get(provider))
+        .map(p -> buildClientRegistration(provider, p));
   }
 
   @Scheduled(fixedRateString = "6", timeUnit = TimeUnit.HOURS)
@@ -46,8 +46,7 @@ public class ProviderTokenClientCache {
   }
 
   public ClientRegistration buildClientRegistration(
-      String providerName, ProviderProperties providerInfo) {
-    Provider provider = Provider.fromValue(providerName);
+      Provider provider, ProviderProperties providerInfo) {
     ClientRegistration.Builder builder =
         switch (provider) {
           case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
@@ -60,7 +59,7 @@ public class ProviderTokenClientCache {
                     .map(Pattern::toString)
                     .toList()
                     .get(0);
-            yield ClientRegistration.withRegistrationId(providerName)
+            yield ClientRegistration.withRegistrationId(provider.toString())
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .clientId(providerInfo.getClientId())
                 .clientSecret(providerInfo.getClientSecret())

@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.auditLogging;
 
+import bio.terra.externalcreds.generated.model.Provider;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -15,7 +16,12 @@ public interface AuditLogEvent extends WithAuditLogEvent {
   Optional<String> getClientIP();
 
   @JsonInclude(Include.NON_EMPTY)
-  Optional<String> getProviderName();
+  @Value.Derived
+  default Optional<String> getProviderName() {
+    return Optional.of(provider().toString());
+  }
+
+  Optional<Provider> provider();
 
   @JsonInclude(Include.NON_EMPTY)
   Optional<String> getExternalUserId();

@@ -27,7 +27,7 @@ public class OAuth2StateDAO {
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", userId)
-            .addValue("providerName", oAuth2State.getProvider())
+            .addValue("providerName", oAuth2State.getProvider().toString())
             .addValue("random", oAuth2State.getRandom());
 
     jdbcTemplate.update(query, namedParameters);
@@ -42,7 +42,7 @@ public class OAuth2StateDAO {
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", userId)
-            .addValue("providerName", oAuth2State.getProvider())
+            .addValue("providerName", oAuth2State.getProvider().toString())
             .addValue("random", oAuth2State.getRandom());
 
     return jdbcTemplate.update(query, namedParameters) > 0;
