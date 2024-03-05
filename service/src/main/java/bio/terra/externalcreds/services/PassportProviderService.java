@@ -7,6 +7,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -52,40 +53,36 @@ public class PassportProviderService extends ProviderService {
     this.jwtUtils = jwtUtils;
   }
 
-  public Optional<LinkedAccountWithPassportAndVisas> createLink(
-      String providerName,
+  public LinkedAccountWithPassportAndVisas createLink(
+      Provider provider,
       String userId,
       String authorizationCode,
       String encodedState,
       AuditLogEvent.Builder auditLogEventBuilder) {
 
-    var oAuth2State = validateOAuth2State(providerName, userId, encodedState);
-
-    Optional<LinkedAccountWithPassportAndVisas> linkedAccountWithPassportAndVisas =
-        providerOAuthClientCache
-            .getProviderClient(providerName)
-            .map(
-                providerClient -> {
-                  var providerInfo = externalCredsConfig.getProviders().get(providerName);
-                  try {
-                    var linkedAccount =
-                        createLinkedAccount(
-                            providerName,
-                            userId,
-                            authorizationCode,
-                            oAuth2State.getRedirectUri(),
-                            new HashSet<>(providerInfo.getScopes()),
-                            encodedState,
-                            providerClient);
-                    return linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-                        jwtUtils.enrichAccountWithPassportAndVisas(
-                            linkedAccount.getLeft(), linkedAccount.getRight()));
-                  } catch (OAuth2AuthorizationException oauthEx) {
-                    throw new BadRequestException(oauthEx);
-                  }
-                });
-    logLinkCreation(linkedAccountWithPassportAndVisas, auditLogEventBuilder);
-    return linkedAccountWithPassportAndVisas;
+    var oAuth2State = validateOAuth2State(provider, userId, encodedState);
+    var providerClient = providerOAuthClientCache.getProviderClient(provider);
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
+    try {
+      var linkedAccount =
+          createLinkedAccount(
+              provider,
+              userId,
+              authorizationCode,
+              oAuth2State.getRedirectUri(),
+              new HashSet<>(providerInfo.getScopes()),
+              encodedState,
+              providerClient);
+      var linkedAccountWithPassportAndVisas =
+          linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+              jwtUtils.enrichAccountWithPassportAndVisas(
+                  linkedAccount.getLeft(), linkedAccount.getRight()));
+      logLinkCreation(Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
+      return linkedAccountWithPassportAndVisas;
+    } catch (OAuth2AuthorizationException oauthEx) {
+      logLinkCreation(Optional.empty(), auditLogEventBuilder);
+      throw new BadRequestException(oauthEx);
+    }
   }
 
   private void logLinkCreation(
@@ -172,7 +169,7 @@ public class PassportProviderService extends ProviderService {
         auditLogger.logEvent(
             new AuditLogEvent.Builder()
                 .auditLogEventType(AuditLogEventType.LinkRefreshed)
-                .providerName(linkedAccount.getProviderName())
+                .provider(linkedAccount.getProvider())
                 .userId(linkedAccount.getUserId())
                 .externalUserId(linkedAccount.getExternalUserId())
                 .transactionClaim(transactionClaim)
@@ -180,8 +177,7 @@ public class PassportProviderService extends ProviderService {
 
       } catch (IllegalArgumentException iae) {
         throw new ExternalCredsException(
-            String.format(
-                "Could not contact issuer for provider %s", linkedAccount.getProviderName()),
+            String.format("Could not contact issuer for provider %s", linkedAccount.getProvider()),
             iae);
       } catch (OAuth2AuthorizationException oauthEx) {
         // if it looks like the refresh token will never work, delete the passport
@@ -206,14 +202,7 @@ public class PassportProviderService extends ProviderService {
   private LinkedAccountWithPassportAndVisas getRefreshedPassportsAndVisas(
       LinkedAccount linkedAccount) {
     var clientRegistration =
-        providerOAuthClientCache
-            .getProviderClient(linkedAccount.getProviderName())
-            .orElseThrow(
-                () ->
-                    new ExternalCredsException(
-                        String.format(
-                            "Unable to find configs for the provider: %s",
-                            linkedAccount.getProviderName())));
+        providerOAuthClientCache.getProviderClient(linkedAccount.getProvider());
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
             clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
@@ -235,10 +224,10 @@ public class PassportProviderService extends ProviderService {
 
   @VisibleForTesting
   boolean validateVisaWithProvider(VisaVerificationDetails visaDetails) {
-    var providerProperties = externalCredsConfig.getProviders().get(visaDetails.getProviderName());
+    var providerProperties = externalCredsConfig.getProviderProperties(visaDetails.getProvider());
     if (providerProperties == null) {
       throw new NotFoundException(
-          String.format("Provider %s not found", visaDetails.getProviderName()));
+          String.format("Provider %s not found", visaDetails.getProvider()));
     }
 
     var validationEndpoint =
@@ -249,7 +238,7 @@ public class PassportProviderService extends ProviderService {
                     new NotFoundException(
                         String.format(
                             "Validation endpoint for provider %s not found",
-                            visaDetails.getProviderName())));
+                            visaDetails.getProvider())));
 
     var response =
         WebClient.create(validationEndpoint)
@@ -266,7 +255,7 @@ public class PassportProviderService extends ProviderService {
         "Got visa validation response.",
         Map.of(
             "linkedAccountId", visaDetails.getLinkedAccountId(),
-            "providerName", visaDetails.getProviderName(),
+            "providerName", visaDetails.getProvider().toString(),
             "validationResponse", Objects.requireNonNullElse(responseBody, "[null]")));
 
     var visaValid = "valid".equalsIgnoreCase(responseBody);

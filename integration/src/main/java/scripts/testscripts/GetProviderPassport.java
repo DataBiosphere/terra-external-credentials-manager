@@ -14,7 +14,7 @@ import scripts.utils.ClientTestUtils;
 
 @Slf4j
 public class GetProviderPassport extends TestScript {
-  private String provider;
+  private PassportProvider provider;
   private OidcApi oidcApi;
 
   @Override
@@ -22,8 +22,7 @@ public class GetProviderPassport extends TestScript {
     // TODO: do we want to loop through this list in case we want multiple test users in the future?
     var apiClient = ClientTestUtils.getClientWithTestUserAuth(testUsers.get(0), server);
     oidcApi = new OidcApi(apiClient);
-    provider = oidcApi.listProviders().get(0);
-    if (provider == null) throw new Exception("No provider found.");
+    provider = PassportProvider.RAS;
   }
 
   @Override
@@ -32,8 +31,7 @@ public class GetProviderPassport extends TestScript {
 
     // TODO: update GetProviderPassport.json in perf to run 120 tests per second
     // check the response code
-    var passportResponse =
-        oidcApi.getProviderPassportWithHttpInfo(PassportProvider.fromValue(provider));
+    var passportResponse = oidcApi.getProviderPassportWithHttpInfo(provider);
     var httpCode = passportResponse.getStatusCode();
 
     assertEquals(HttpStatus.OK, httpCode);

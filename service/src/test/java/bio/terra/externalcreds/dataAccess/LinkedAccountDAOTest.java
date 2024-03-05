@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -28,7 +29,7 @@ class LinkedAccountDAOTest extends BaseTest {
 
   @Test
   void testGetMissingLinkedAccount() {
-    var shouldBeEmpty = linkedAccountDAO.getLinkedAccount("", "");
+    var shouldBeEmpty = linkedAccountDAO.getLinkedAccount("", Provider.GITHUB);
     assertEmpty(shouldBeEmpty);
   }
 
@@ -52,8 +53,7 @@ class LinkedAccountDAOTest extends BaseTest {
     assertEquals(linkedAccount.withId(savedLinkedAccount.getId()), savedLinkedAccount);
 
     var loadedLinkedAccount =
-        linkedAccountDAO.getLinkedAccount(
-            linkedAccount.getUserId(), linkedAccount.getProviderName());
+        linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProvider());
     assertEquals(Optional.of(savedLinkedAccount), loadedLinkedAccount);
   }
 
@@ -76,8 +76,7 @@ class LinkedAccountDAOTest extends BaseTest {
     assertNotEquals(createdLinkedAccount.getExpires(), updatedLinkedAccount.getExpires());
 
     var loadedLinkedAccount =
-        linkedAccountDAO.getLinkedAccount(
-            linkedAccount.getUserId(), linkedAccount.getProviderName());
+        linkedAccountDAO.getLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProvider());
     assertEquals(Optional.of(updatedLinkedAccount), loadedLinkedAccount);
   }
 
@@ -90,25 +89,25 @@ class LinkedAccountDAOTest extends BaseTest {
           linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
       var deletionSucceeded =
           linkedAccountDAO.deleteLinkedAccountIfExists(
-              createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderName());
+              createdLinkedAccount.getUserId(), createdLinkedAccount.getProvider());
       assertTrue(deletionSucceeded);
       assertEmpty(
           linkedAccountDAO.getLinkedAccount(
-              createdLinkedAccount.getUserId(), createdLinkedAccount.getProviderName()));
+              createdLinkedAccount.getUserId(), createdLinkedAccount.getProvider()));
     }
 
     @Test
     void testDeleteNonexistentLinkedAccount() {
       var userId = UUID.randomUUID().toString();
-      var deletionSucceeded = linkedAccountDAO.deleteLinkedAccountIfExists(userId, "fake_provider");
-      assertEmpty(linkedAccountDAO.getLinkedAccount(userId, "fake_provider"));
+      var deletionSucceeded = linkedAccountDAO.deleteLinkedAccountIfExists(userId, Provider.GITHUB);
+      assertEmpty(linkedAccountDAO.getLinkedAccount(userId, Provider.GITHUB));
       assertFalse(deletionSucceeded);
     }
 
     @Test
     void testAlsoDeletesPassport() {
       var savedLinkedAccount =
-          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomPassportLinkedAccount());
       assertPresent(savedLinkedAccount.getId());
       var passport =
           new GA4GHPassport.Builder()
@@ -119,10 +118,8 @@ class LinkedAccountDAOTest extends BaseTest {
               .build();
       passportDAO.insertPassport(passport);
       linkedAccountDAO.deleteLinkedAccountIfExists(
-          savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
-      assertEmpty(
-          passportDAO.getPassport(
-              savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName()));
+          savedLinkedAccount.getUserId(), savedLinkedAccount.getProvider());
+      assertEmpty(passportDAO.getPassport(savedLinkedAccount.getUserId(), Provider.RAS));
     }
   }
 
@@ -137,7 +134,7 @@ class LinkedAccountDAOTest extends BaseTest {
     @Test
     void testGetsOnlyExpiringLinkedAccounts() {
       // Create a linked account with a not-nearly-expired passport and visa
-      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var linkedAccount = TestUtils.createRandomPassportLinkedAccount();
       var passport = TestUtils.createRandomPassport().withExpires(nonExpiringTimestamp);
       var visa = TestUtils.createRandomVisa().withExpires(nonExpiringTimestamp);
 
@@ -166,7 +163,7 @@ class LinkedAccountDAOTest extends BaseTest {
     @Test
     void testGetsLinkedAccountWithNoVisas() {
       // Create a linked account with an expiring passport but no visas
-      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var linkedAccount = TestUtils.createRandomPassportLinkedAccount();
       var expiringPassport = TestUtils.createRandomPassport();
       var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
       passportDAO.insertPassport(expiringPassport.withLinkedAccountId(savedLinkedAccount.getId()));
@@ -180,7 +177,7 @@ class LinkedAccountDAOTest extends BaseTest {
     @Test
     void testGetsLinkedAccountWithNonExpiredPassportAndExpiredVisa() {
       // Create a linked account with a non-expired passport and an expired visa
-      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var linkedAccount = TestUtils.createRandomPassportLinkedAccount();
       var passport = TestUtils.createRandomPassport().withExpires(nonExpiringTimestamp);
       var expiringVisa = TestUtils.createRandomVisa();
 

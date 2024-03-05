@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.models;
 
+import bio.terra.externalcreds.generated.model.Provider;
 import java.sql.Timestamp;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -10,7 +11,7 @@ public interface LinkedAccount extends WithLinkedAccount {
 
   String getUserId();
 
-  String getProviderName();
+  Provider getProvider();
 
   String getRefreshToken();
 

@@ -8,6 +8,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.CannotDecodeOAuth2State;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
@@ -20,10 +21,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.http.HttpStatusCode;
@@ -79,37 +80,33 @@ public class ProviderService {
   }
 
   public Set<String> getProviderList() {
-    return Collections.unmodifiableSet(externalCredsConfig.getProviders().keySet());
+    return Set.of(Provider.values()).stream().map(Provider::toString).collect(Collectors.toSet());
   }
 
-  public Optional<String> getProviderAuthorizationUrl(
-      String userId, String providerName, String redirectUri) {
-    return providerOAuthClientCache
-        .getProviderClient(providerName)
-        .map(
-            providerClient -> {
-              var providerInfo = externalCredsConfig.getProviders().get(providerName);
+  public String getProviderAuthorizationUrl(String userId, Provider provider, String redirectUri) {
+    var providerClient = providerOAuthClientCache.getProviderClient(provider);
 
-              validateRedirectUri(redirectUri, providerInfo);
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
 
-              // oAuth2State is used to prevent CRSF attacks
-              // see https://auth0.com/docs/secure/attack-protection/state-parameters
-              // a random value is generated and stored here then validated in createLink below
-              var oAuth2State =
-                  new OAuth2State.Builder()
-                      .provider(providerName)
-                      .random(OAuth2State.generateRandomState(secureRandom))
-                      .redirectUri(redirectUri)
-                      .build();
-              linkedAccountService.upsertOAuth2State(userId, oAuth2State);
+    validateRedirectUri(redirectUri, providerInfo);
 
-              return oAuth2Service.getAuthorizationRequestUri(
-                  providerClient,
-                  redirectUri,
-                  new HashSet<>(providerInfo.getScopes()),
-                  oAuth2State.encode(objectMapper),
-                  providerInfo.getAdditionalAuthorizationParameters());
-            });
+    // oAuth2State is used to prevent CRSF attacks
+    // see https://auth0.com/docs/secure/attack-protection/state-parameters
+    // a random value is generated and stored here then validated in createLink below
+    var oAuth2State =
+        new OAuth2State.Builder()
+            .provider(provider)
+            .random(OAuth2State.generateRandomState(secureRandom))
+            .redirectUri(redirectUri)
+            .build();
+    linkedAccountService.upsertOAuth2State(userId, oAuth2State);
+
+    return oAuth2Service.getAuthorizationRequestUri(
+        providerClient,
+        redirectUri,
+        new HashSet<>(providerInfo.getScopes()),
+        oAuth2State.encode(objectMapper),
+        providerInfo.getAdditionalAuthorizationParameters());
   }
 
   private void validateRedirectUri(String redirectUri, ProviderProperties providerInfo) {
@@ -119,10 +116,10 @@ public class ProviderService {
     }
   }
 
-  public OAuth2State validateOAuth2State(String providerName, String userId, String encodedState) {
+  public OAuth2State validateOAuth2State(Provider provider, String userId, String encodedState) {
     try {
       OAuth2State oAuth2State = OAuth2State.decode(objectMapper, encodedState);
-      if (!providerName.equals(oAuth2State.getProvider())) {
+      if (!provider.equals(oAuth2State.getProvider())) {
         throw new InvalidOAuth2State();
       }
       linkedAccountService.validateAndDeleteOAuth2State(userId, oAuth2State);
@@ -133,14 +130,14 @@ public class ProviderService {
   }
 
   protected ImmutablePair<LinkedAccount, OAuth2User> createLinkedAccount(
-      String providerName,
+      Provider provider,
       String userId,
       String authorizationCode,
       String redirectUri,
       Set<String> scopes,
       String state,
       ClientRegistration providerClient) {
-    var providerInfo = externalCredsConfig.getProviders().get(providerName);
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
 
     var tokenResponse =
         oAuth2Service.authorizationCodeExchange(
@@ -166,11 +163,11 @@ public class ProviderService {
       throw new ExternalCredsException(
           String.format(
               "user info from provider %s did not contain external id claim %s",
-              providerName, providerInfo.getExternalIdClaim()));
+              provider, providerInfo.getExternalIdClaim()));
     }
     LinkedAccount linkedAccount =
         new LinkedAccount.Builder()
-            .providerName(providerName)
+            .provider(provider)
             .userId(userId)
             .expires(expires)
             .externalUserId(externalUserId)
@@ -203,21 +200,17 @@ public class ProviderService {
     return errorCode;
   }
 
-  public LinkedAccount deleteLink(String userId, String providerName) {
-    var providerInfo = externalCredsConfig.getProviders().get(providerName);
-
-    if (providerInfo == null) {
-      throw new NotFoundException(String.format("Provider %s not found", providerName));
-    }
+  public LinkedAccount deleteLink(String userId, Provider provider) {
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
 
     var linkedAccount =
         linkedAccountService
-            .getLinkedAccount(userId, providerName)
+            .getLinkedAccount(userId, provider)
             .orElseThrow(() -> new NotFoundException("Link not found for user"));
 
     revokeAccessToken(providerInfo, linkedAccount);
 
-    linkedAccountService.deleteLinkedAccount(userId, providerName);
+    linkedAccountService.deleteLinkedAccount(userId, provider);
 
     return linkedAccount;
   }
@@ -226,7 +219,7 @@ public class ProviderService {
     auditLogger.logEvent(
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.LinkExpired)
-            .providerName(linkedAccount.getProviderName())
+            .provider(linkedAccount.getProvider())
             .userId(linkedAccount.getUserId())
             .externalUserId(linkedAccount.getExternalUserId())
             .build());
@@ -264,7 +257,7 @@ public class ProviderService {
     log.info(
         "Token revocation request for user [{}], provider [{}] returned with the result: [{}]",
         linkedAccount.getUserId(),
-        linkedAccount.getProviderName(),
+        linkedAccount.getProvider().toString(),
         responseBody);
   }
 }

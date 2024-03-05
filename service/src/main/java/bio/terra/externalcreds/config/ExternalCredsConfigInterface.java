@@ -1,5 +1,7 @@
 package bio.terra.externalcreds.config;
 
+import bio.terra.common.exception.NotFoundException;
+import bio.terra.externalcreds.generated.model.Provider;
 import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.time.Duration;
@@ -12,7 +14,16 @@ import org.immutables.value.Value;
 @Value.Modifiable
 @PropertiesInterfaceStyle
 public interface ExternalCredsConfigInterface {
-  Map<String, ProviderProperties> getProviders();
+
+  Map<Provider, ProviderProperties> getProviders();
+
+  @Value.Derived
+  default ProviderProperties getProviderProperties(Provider provider) {
+    if (!getProviders().containsKey(provider)) {
+      throw new NotFoundException("Provider not found: " + provider);
+    }
+    return getProviders().get(provider);
+  }
 
   // Nullable to make the generated class play nicely with spring: spring likes to call the getter
   // before the setter and without Nullable the immutables generated code errors because the field

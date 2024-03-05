@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import java.sql.Timestamp;
@@ -67,7 +68,7 @@ class GA4GHVisaDAOTest extends BaseTest {
       // create linked account with passport and one visa that was NOT validated in the validation
       // window and one that was to make sure it still returns the account info
       var savedLinkedAccountUnvalidatedVisa2 =
-          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+          linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomPassportLinkedAccount());
       var savedPassportUnvalidatedVisa2 =
           passportDAO.insertPassport(
               TestUtils.createRandomPassport()
@@ -87,7 +88,7 @@ class GA4GHVisaDAOTest extends BaseTest {
       var passportWithUnvalidatedVisaDetails =
           new VisaVerificationDetails.Builder()
               .linkedAccountId(savedLinkedAccountUnvalidatedVisa.getId().get())
-              .providerName(savedLinkedAccountUnvalidatedVisa.getProviderName())
+              .provider(savedLinkedAccountUnvalidatedVisa.getProvider())
               .visaJwt(savedUnvalidatedVisa.getJwt())
               .visaId(savedUnvalidatedVisa.getId().get())
               .build();
@@ -95,7 +96,7 @@ class GA4GHVisaDAOTest extends BaseTest {
       var passportWithUnvalidatedVisaDetails2 =
           new VisaVerificationDetails.Builder()
               .linkedAccountId(savedLinkedAccountUnvalidatedVisa2.getId().get())
-              .providerName(savedLinkedAccountUnvalidatedVisa2.getProviderName())
+              .provider(savedLinkedAccountUnvalidatedVisa2.getProvider())
               .visaJwt(savedUnvalidatedVisa2.getJwt())
               .visaId(savedUnvalidatedVisa2.getId().get())
               .build();
@@ -141,7 +142,7 @@ class GA4GHVisaDAOTest extends BaseTest {
       var passportWithUnvalidatedVisaDetails =
           new VisaVerificationDetails.Builder()
               .linkedAccountId(savedLinkedAccountUnvalidatedVisa.getId().get())
-              .providerName(savedLinkedAccountUnvalidatedVisa.getProviderName())
+              .provider(savedLinkedAccountUnvalidatedVisa.getProvider())
               .visaJwt(savedUnvalidatedVisa.getJwt())
               .visaId(savedUnvalidatedVisa.getId().get())
               .build();
@@ -155,7 +156,7 @@ class GA4GHVisaDAOTest extends BaseTest {
   @Test
   void testInsertAndListVisa() {
     var savedLinkedAccount =
-        linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomLinkedAccount());
+        linkedAccountDAO.upsertLinkedAccount(TestUtils.createRandomPassportLinkedAccount());
     var savedPassport =
         passportDAO.insertPassport(
             TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
@@ -173,7 +174,7 @@ class GA4GHVisaDAOTest extends BaseTest {
     assertEquals(expectedVisa2, savedVisa2.withId(Optional.empty()));
 
     var loadedVisas =
-        visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
+        visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProvider());
     assertEquals(2, loadedVisas.size());
     assertEquals(Set.of(savedVisa1, savedVisa2), Set.copyOf(loadedVisas));
   }
@@ -186,7 +187,7 @@ class GA4GHVisaDAOTest extends BaseTest {
 
   @Test
   void testListNoVisas() {
-    var loadedVisas = visaDAO.listVisas("foo", "bar");
+    var loadedVisas = visaDAO.listVisas("foo", Provider.RAS);
     assertEquals(Collections.emptyList(), loadedVisas);
   }
 
@@ -203,8 +204,7 @@ class GA4GHVisaDAOTest extends BaseTest {
     Timestamp expectedLastValidated = new Timestamp(2363245);
     visaDAO.updateLastValidated(savedVisa.getId().get(), expectedLastValidated);
 
-    var visas =
-        visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProviderName());
+    var visas = visaDAO.listVisas(savedLinkedAccount.getUserId(), savedLinkedAccount.getProvider());
     assertEquals(1, visas.size());
     assertEquals(expectedLastValidated, visas.get(0).getLastValidated().get());
   }
