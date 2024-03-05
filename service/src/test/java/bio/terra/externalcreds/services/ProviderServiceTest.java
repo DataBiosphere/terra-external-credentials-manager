@@ -29,6 +29,7 @@ import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.CannotDecodeOAuth2State;
+import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
@@ -296,6 +297,44 @@ public class ProviderServiceTest extends BaseTest {
       assertThrows(
           ExternalCredsException.class,
           () -> passportProviderService.authAndRefreshPassport(savedLinkedAccount));
+    }
+
+    @Test
+    void testNestedOauthError() {
+
+      // save a non-expired linked account and nearly-expired passport and visa
+      var nonExpiredTimestamp =
+          new Timestamp(Instant.now().plus(Duration.ofMinutes(5)).toEpochMilli());
+      var savedLinkedAccount =
+          linkedAccountDAO.upsertLinkedAccount(
+              TestUtils.createRandomLinkedAccount().withExpires(nonExpiredTimestamp));
+      var savedPassport =
+          passportDAO.insertPassport(
+              TestUtils.createRandomPassport().withLinkedAccountId(savedLinkedAccount.getId()));
+      visaDAO.insertVisa(TestUtils.createRandomVisa().withPassportId(savedPassport.getId()));
+
+      mockProviderConfigs(savedLinkedAccount.getProvider());
+
+      // mock the ClientRegistration
+      var clientRegistration = createClientRegistration(savedLinkedAccount.getProvider());
+      when(providerOAuthClientCacheMock.getProviderClient(savedLinkedAccount.getProvider()))
+          .thenReturn(clientRegistration);
+
+      // mock the OAuth2AuthorizationException error thrown by the Oath2Service
+      when(oAuth2ServiceMock.authorizeWithRefreshToken(
+              clientRegistration,
+              new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
+          .thenThrow(
+              new OAuth2AuthorizationException(
+                  new OAuth2Error(OAuth2ErrorCodes.ACCESS_DENIED),
+                  new OAuth2AuthorizationException(
+                      new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT))));
+
+      passportProviderService.authAndRefreshPassport(savedLinkedAccount);
+      var updatedLinkedAccount =
+          linkedAccountDAO.getLinkedAccount(
+              savedLinkedAccount.getUserId(), savedLinkedAccount.getProvider());
+      assertFalse(updatedLinkedAccount.map(LinkedAccount::isAuthenticated).orElseThrow());
     }
 
     @Test

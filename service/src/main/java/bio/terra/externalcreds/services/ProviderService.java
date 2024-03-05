@@ -203,10 +203,6 @@ public class ProviderService {
   public LinkedAccount deleteLink(String userId, Provider provider) {
     var providerInfo = externalCredsConfig.getProviderProperties(provider);
 
-    if (providerInfo == null) {
-      throw new NotFoundException(String.format("Provider %s not found", provider));
-    }
-
     var linkedAccount =
         linkedAccountService
             .getLinkedAccount(userId, provider)
