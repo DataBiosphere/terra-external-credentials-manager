@@ -25,25 +25,23 @@ class ProviderOAuthClientCacheTest extends BaseTest {
         ExternalCredsConfig.create()
             .setProviders(
                 Map.of(
-                    Provider.GITHUB.toString(),
+                    Provider.GITHUB,
                     TestUtils.createRandomProvider(),
-                    Provider.RAS.toString(),
+                    Provider.RAS,
                     TestUtils.createRandomProvider()));
     providerOAuthClientCache = new ProviderOAuthClientCache(externalCredsConfig);
   }
 
   @Test
   void testGitHubBuildClientRegistration() {
-    String providerName = Provider.GITHUB.toString();
-    ProviderProperties providerInfo = externalCredsConfig.getProviders().get(providerName);
+    Provider provider = Provider.GITHUB;
+    ProviderProperties providerInfo = externalCredsConfig.getProviderProperties(provider);
     String redirectUri =
         providerInfo.getAllowedRedirectUriPatterns().stream()
             .map(Pattern::toString)
             .toList()
             .get(0);
-    ClientRegistration gitHubClient =
-        providerOAuthClientCache.buildClientRegistration(
-            providerName, externalCredsConfig.getProviders().get(providerName));
+    ClientRegistration gitHubClient = providerOAuthClientCache.getProviderClient(provider);
 
     assertEquals(
         AuthorizationGrantType.AUTHORIZATION_CODE, gitHubClient.getAuthorizationGrantType());

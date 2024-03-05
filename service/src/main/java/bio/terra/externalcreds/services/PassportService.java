@@ -8,6 +8,7 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.PassportWithVisas;
@@ -57,8 +58,8 @@ public class PassportService {
   }
 
   @ReadTransaction
-  public Optional<GA4GHPassport> getPassport(String userId, String providerName) {
-    return passportDAO.getPassport(userId, providerName);
+  public Optional<GA4GHPassport> getPassport(String userId, Provider provider) {
+    return passportDAO.getPassport(userId, provider);
   }
 
   @ReadTransaction

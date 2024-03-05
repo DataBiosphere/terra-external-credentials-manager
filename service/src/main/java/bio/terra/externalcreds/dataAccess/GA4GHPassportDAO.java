@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.sql.ResultSet;
@@ -60,14 +61,16 @@ public class GA4GHPassportDAO {
   }
 
   @WithSpan
-  public Optional<GA4GHPassport> getPassport(String userId, String providerName) {
+  public Optional<GA4GHPassport> getPassport(String userId, Provider provider) {
     var namedParameters =
-        new MapSqlParameterSource("userId", userId).addValue("providerName", providerName);
+        new MapSqlParameterSource()
+            .addValue("userId", userId)
+            .addValue("provider", provider.name());
     var query =
         "SELECT p.* FROM ga4gh_passport p"
             + " INNER JOIN linked_account la ON la.id = p.linked_account_id"
             + " WHERE la.user_id = :userId"
-            + " AND la.provider_name = :providerName";
+            + " AND la.provider = :provider::provider_enum";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, new GA4GHPassportRowMapper())));

@@ -3,14 +3,15 @@ package bio.terra.externalcreds.controllers;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
-import bio.terra.externalcreds.controllers.OpenApiConverters.Output;
 import bio.terra.externalcreds.generated.api.OauthApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.services.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -19,6 +20,7 @@ public record OauthApiController(
     AuditLogger auditLogger,
     HttpServletRequest request,
     ObjectMapper mapper,
+    LinkedAccountService linkedAccountService,
     ProviderService providerService,
     PassportProviderService passportProviderService,
     TokenProviderService tokenProviderService,
@@ -26,73 +28,95 @@ public record OauthApiController(
     implements OauthApi {
 
   @Override
-  public ResponseEntity<String> getAuthorizationUrl(Provider providerName, String redirectUri) {
+  public ResponseEntity<List<String>> listProviders() {
+    var providerNames = new ArrayList<>(providerService.getProviderList());
+    Collections.sort(providerNames);
+
+    return ResponseEntity.ok(providerNames);
+  }
+
+  @Override
+  public ResponseEntity<LinkInfo> getLink(Provider provider) {
+    var samUser = samUserFactory.from(request);
+    var linkedAccount = linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
+    return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
+  }
+
+  @Override
+  public ResponseEntity<String> getAuthorizationUrl(Provider provider, String redirectUri) {
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(
-            samUser.getSubjectId(), providerName.toString(), redirectUri);
+        providerService.getProviderAuthorizationUrl(samUser.getSubjectId(), provider, redirectUri);
 
-    return ResponseEntity.of(authorizationUrl);
+    return ResponseEntity.ok(authorizationUrl);
   }
 
-  public ResponseEntity<String> getProviderAccessToken(Provider providerName) {
+  @Override
+  public ResponseEntity<String> getProviderAccessToken(Provider provider) {
     var samUser = samUserFactory.from(request);
 
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
-            .providerName(providerName.toString())
+            .provider(provider)
             .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr());
 
     var accessToken =
         tokenProviderService.getProviderAccessToken(
-            samUser.getSubjectId(), providerName, auditLogEventBuilder);
+            samUser.getSubjectId(), provider, auditLogEventBuilder);
     return ResponseEntity.of(accessToken);
   }
 
   @Override
-  public ResponseEntity<LinkInfo> createLink(
-      Provider providerName, String state, String oauthcode) {
+  public ResponseEntity<LinkInfo> createLink(Provider provider, String state, String oauthcode) {
     var samUser = samUserFactory.from(request);
 
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
-            .providerName(providerName.toString())
+            .provider(provider)
             .userId(samUser.getSubjectId())
             .clientIP(request.getRemoteAddr());
 
-    Optional<LinkInfo> linkInfo = Optional.empty();
     try {
-      switch (providerName) {
-        case RAS -> {
-          var linkedAccountWithPassportAndVisas =
-              passportProviderService.createLink(
-                  providerName.toString(),
-                  samUser.getSubjectId(),
-                  oauthcode,
-                  state,
-                  auditLogEventBuilder);
-          linkInfo =
-              linkedAccountWithPassportAndVisas.map(
-                  x -> OpenApiConverters.Output.convert(x.getLinkedAccount()));
-        }
-        case GITHUB -> {
-          var linkedAccount =
-              tokenProviderService.createLink(
-                  providerName.toString(),
-                  samUser.getSubjectId(),
-                  oauthcode,
-                  state,
-                  auditLogEventBuilder);
-          linkInfo = linkedAccount.map(Output::convert);
-        }
-      }
-      return ResponseEntity.of(linkInfo);
+      LinkInfo linkInfo =
+          switch (provider) {
+            case RAS -> {
+              var linkedAccountWithPassportAndVisas =
+                  passportProviderService.createLink(
+                      provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
+              yield OpenApiConverters.Output.convert(
+                  linkedAccountWithPassportAndVisas.getLinkedAccount());
+            }
+            case GITHUB -> {
+              var linkedAccount =
+                  tokenProviderService.createLink(
+                      provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
+              yield OpenApiConverters.Output.convert(linkedAccount);
+            }
+          };
+      return ResponseEntity.ok(linkInfo);
     } catch (Exception e) {
       auditLogger.logEvent(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());
       throw e;
     }
+  }
+
+  @Override
+  public ResponseEntity<Void> deleteLink(Provider provider) {
+    var samUser = samUserFactory.from(request);
+    var deletedLink = providerService.deleteLink(samUser.getSubjectId(), provider);
+
+    auditLogger.logEvent(
+        new AuditLogEvent.Builder()
+            .auditLogEventType(AuditLogEventType.LinkDeleted)
+            .provider(provider)
+            .userId(samUser.getSubjectId())
+            .clientIP(request.getRemoteAddr())
+            .externalUserId(deletedLink.getExternalUserId())
+            .build());
+
+    return ResponseEntity.ok().build();
   }
 }

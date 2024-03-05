@@ -19,15 +19,15 @@ public class OAuth2StateDAO {
   @WithSpan
   public OAuth2State upsertOidcState(String userId, OAuth2State oAuth2State) {
     var query =
-        "INSERT INTO oauth2_state (user_id, provider_name, random)"
-            + " VALUES (:userId, :providerName, :random)"
-            + " ON CONFLICT (user_id, provider_name) DO UPDATE SET"
+        "INSERT INTO oauth2_state (user_id, provider, random)"
+            + " VALUES (:userId, :provider::provider_enum, :random)"
+            + " ON CONFLICT (user_id, provider) DO UPDATE SET"
             + " random = excluded.random";
 
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", userId)
-            .addValue("providerName", oAuth2State.getProvider())
+            .addValue("provider", oAuth2State.getProvider().name())
             .addValue("random", oAuth2State.getRandom());
 
     jdbcTemplate.update(query, namedParameters);
@@ -38,11 +38,11 @@ public class OAuth2StateDAO {
   @WithSpan
   public boolean deleteOidcStateIfExists(String userId, OAuth2State oAuth2State) {
     var query =
-        "DELETE FROM oauth2_state WHERE user_id = :userId and provider_name = :providerName and random = :random";
+        "DELETE FROM oauth2_state WHERE user_id = :userId and provider = :provider::provider_enum and random = :random";
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", userId)
-            .addValue("providerName", oAuth2State.getProvider())
+            .addValue("provider", oAuth2State.getProvider().name())
             .addValue("random", oAuth2State.getRandom());
 
     return jdbcTemplate.update(query, namedParameters) > 0;

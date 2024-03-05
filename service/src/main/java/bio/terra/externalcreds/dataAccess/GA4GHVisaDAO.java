@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
@@ -57,15 +58,17 @@ public class GA4GHVisaDAO {
   }
 
   @WithSpan
-  public List<GA4GHVisa> listVisas(String userId, String providerName) {
+  public List<GA4GHVisa> listVisas(String userId, Provider provider) {
     var namedParameters =
-        new MapSqlParameterSource("userId", userId).addValue("providerName", providerName);
+        new MapSqlParameterSource()
+            .addValue("userId", userId)
+            .addValue("provider", provider.name());
     var query =
         "SELECT v.* FROM ga4gh_visa v"
             + " INNER JOIN ga4gh_passport p ON p.id = v.passport_id"
             + " INNER JOIN linked_account la ON la.id = p.linked_account_id"
             + " WHERE la.user_id = :userId"
-            + " AND la.provider_name = :providerName";
+            + " AND la.provider = :provider::provider_enum";
     return jdbcTemplate.query(query, namedParameters, new GA4GHVisaRowMapper());
   }
 
@@ -76,7 +79,7 @@ public class GA4GHVisaDAO {
             .addValue("validationCutoff", validationCutoff);
 
     var query =
-        "SELECT DISTINCT la.id as linked_account_id, la.provider_name as provider_name, v.jwt as jwt, v.id as visa_id FROM linked_account la"
+        "SELECT DISTINCT la.id as linked_account_id, la.provider as provider, v.jwt as jwt, v.id as visa_id FROM linked_account la"
             + " JOIN ga4gh_passport p"
             + " ON p.linked_account_id = la.id"
             + " JOIN ga4gh_visa v"
@@ -121,7 +124,7 @@ public class GA4GHVisaDAO {
     public VisaVerificationDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
       return new VisaVerificationDetails.Builder()
           .linkedAccountId(rs.getInt("linked_account_id"))
-          .providerName(rs.getString("provider_name"))
+          .provider(Provider.valueOf(rs.getString("provider")))
           .visaJwt(rs.getString("jwt"))
           .visaId(rs.getInt("visa_id"))
           .build();

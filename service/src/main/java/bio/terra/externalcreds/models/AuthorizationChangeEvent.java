@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.models;
 
+import bio.terra.externalcreds.generated.model.Provider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
@@ -8,7 +9,12 @@ import org.immutables.value.Value;
 public interface AuthorizationChangeEvent extends WithAuthorizationChangeEvent {
   String getUserId();
 
-  String getProviderName();
+  @Value.Derived
+  default String getProviderName() {
+    return provider().toString();
+  }
+
+  Provider provider();
 
   class Builder extends ImmutableAuthorizationChangeEvent.Builder {}
 }
