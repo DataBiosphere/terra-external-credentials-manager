@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.common.exception.BadRequestException;
+import bio.terra.common.exception.NotFoundException;
 import bio.terra.common.iam.BearerToken;
 import bio.terra.common.iam.SamUser;
 import bio.terra.common.iam.SamUserFactory;
@@ -19,12 +20,15 @@ import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.TokenProviderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import java.sql.Timestamp;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,6 +44,8 @@ class OauthApiControllerTest extends BaseTest {
   @Autowired private ObjectMapper mapper;
 
   @Autowired private MockMvc mvc;
+
+  @MockBean private LinkedAccountService linkedAccountServiceMock;
 
   @MockBean
   @Qualifier("providerService")
@@ -58,86 +64,68 @@ class OauthApiControllerTest extends BaseTest {
 
   private Provider provider = Provider.RAS;
 
-  @Nested
-  class GetProviderAccessToken {
+  @Test
+  void testListProviders() throws Exception {
+    when(providerServiceMock.getProviderList())
+        .thenReturn(Set.of("fake-provider2", "fake-provider1"));
 
-    @Test
-    void testGetProviderAccessToken() throws Exception {
-      var userId = "fakeUser";
-      var accessToken = "fakeAccessToken";
-      var githubAccessToken = "fakeGithubAccessToken";
-      var provider = Provider.GITHUB;
-      mockSamUser(userId, accessToken);
-
-      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
-          .thenReturn(Optional.of(githubAccessToken));
-
-      mvc.perform(
-              get("/api/oidc/v1/{provider}/access-token", provider)
-                  .header("authorization", "Bearer " + accessToken))
-          .andExpect(status().isOk())
-          .andExpect(content().string(githubAccessToken));
-    }
-
-    @Test
-    void testGetProviderAccessToken404() throws Exception {
-      var userId = "fakeUser";
-      var accessToken = "fakeAccessToken";
-      var provider = Provider.GITHUB;
-      mockSamUser(userId, accessToken);
-
-      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
-          .thenReturn(Optional.empty());
-
-      mvc.perform(
-              get("/api/oidc/v1/{provider}/access-token", provider)
-                  .header("authorization", "Bearer " + accessToken))
-          .andExpect(status().isNotFound());
-    }
+    mvc.perform(get("/api/oidc/v1/providers"))
+        .andExpect(content().json("""
+            ["fake-provider1","fake-provider2"]"""));
   }
 
   @Nested
-  class GetAuthUrl {
+  class GetLink {
 
     @Test
-    void testGetAuthUrl() throws Exception {
-      var userId = "fakeUser";
-      var accessToken = "fakeAccessToken";
-      var result = "https://test/authorization/uri";
-      var redirectUri = "fakeuri";
+    void testGetLink() throws Exception {
+      var accessToken = "testToken";
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount();
 
-      mockSamUser(userId, accessToken);
+      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri))
-          .thenReturn(result);
+      when(linkedAccountServiceMock.getLinkedAccount(
+              inputLinkedAccount.getUserId(), inputLinkedAccount.getProvider()))
+          .thenReturn(Optional.of(inputLinkedAccount));
 
-      var queryParams = new LinkedMultiValueMap<String, String>();
-      queryParams.add("redirectUri", redirectUri);
       mvc.perform(
-              get("/api/oauth/v1/{provider}/authorization-url", provider)
-                  .header("authorization", "Bearer " + accessToken)
-                  .queryParams(queryParams))
-          .andExpect(content().string(result));
+              get("/api/oauth/v1/" + inputLinkedAccount.getProvider().toString())
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(
+              content()
+                  .json(
+                      mapper.writeValueAsString(
+                          OpenApiConverters.Output.convert(inputLinkedAccount))));
     }
 
     @Test
-    void testGetAuthUrlBadRequest() throws Exception {
-      var userId = "fakeUser";
-      var accessToken = "fakeAccessToken";
-      var redirectUri = "fakeuri";
+    void testEnforcesCaseSensitivity() throws Exception {
+      var accessToken = "testToken";
+      var inputLinkedAccount = TestUtils.createRandomPassportLinkedAccount();
+
+      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
+
+      when(linkedAccountServiceMock.getLinkedAccount(
+              inputLinkedAccount.getUserId(), inputLinkedAccount.getProvider()))
+          .thenReturn(Optional.of(inputLinkedAccount));
+
+      mvc.perform(get("/api/oauth/v1/" + "RaS").header("authorization", "Bearer " + accessToken))
+          .andExpect(
+              content()
+                  .json(
+                      mapper.writeValueAsString(
+                          OpenApiConverters.Output.convert(inputLinkedAccount))));
+    }
+
+    @Test
+    void testGetLink404() throws Exception {
+      var userId = "non-existent-user";
+      var accessToken = "testToken";
 
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri))
-          .thenThrow(new BadRequestException("Invalid redirectUri"));
-
-      var queryParams = new LinkedMultiValueMap<String, String>();
-      queryParams.add("redirectUri", redirectUri);
-      mvc.perform(
-              get("/api/oauth/v1/{provider}/authorization-url", provider)
-                  .header("authorization", "Bearer " + accessToken)
-                  .queryParams(queryParams))
-          .andExpect(status().isBadRequest());
+      mvc.perform(get("/api/oauth/v1/" + provider).header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isNotFound());
     }
   }
 
@@ -212,6 +200,146 @@ class OauthApiControllerTest extends BaseTest {
                   .userId(userId)
                   .clientIP("127.0.0.1")
                   .build());
+    }
+  }
+
+  @Nested
+  class DeleteLink {
+
+    @Test
+    void testDeleteLink() throws Exception {
+      var accessToken = "testToken";
+      var userId = UUID.randomUUID().toString();
+      var externalId = UUID.randomUUID().toString();
+      mockSamUser(userId, accessToken);
+
+      when(providerServiceMock.deleteLink(userId, provider))
+          .thenReturn(
+              new LinkedAccount.Builder()
+                  .provider(provider)
+                  .userId(userId)
+                  .externalUserId(externalId)
+                  .expires(new Timestamp(0))
+                  .isAuthenticated(true)
+                  .refreshToken("")
+                  .build());
+
+      mvc.perform(
+              delete("/api/oauth/v1/{provider}", provider)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isOk());
+
+      verify(providerServiceMock).deleteLink(userId, provider);
+
+      // check that a log was recorded
+      verify(auditLoggerMock)
+          .logEvent(
+              new AuditLogEvent.Builder()
+                  .auditLogEventType(AuditLogEventType.LinkDeleted)
+                  .provider(provider)
+                  .userId(userId)
+                  .clientIP("127.0.0.1")
+                  .externalUserId(externalId)
+                  .build());
+    }
+
+    @Test
+    void testDeleteLink404() throws Exception {
+      var accessToken = "testToken";
+      var userId = UUID.randomUUID().toString();
+      mockSamUser(userId, accessToken);
+
+      doThrow(new NotFoundException("not found"))
+          .when(providerServiceMock)
+          .deleteLink(userId, provider);
+
+      mvc.perform(
+              delete("/api/oauth/v1/{provider}", provider)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isNotFound());
+    }
+  }
+
+  @Nested
+  class GetAuthUrl {
+
+    @Test
+    void testGetAuthUrl() throws Exception {
+      var userId = "fakeUser";
+      var accessToken = "fakeAccessToken";
+      var result = "https://test/authorization/uri";
+      var redirectUri = "fakeuri";
+
+      mockSamUser(userId, accessToken);
+
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri))
+          .thenReturn(result);
+
+      var queryParams = new LinkedMultiValueMap<String, String>();
+      queryParams.add("redirectUri", redirectUri);
+      mvc.perform(
+              get("/api/oauth/v1/{provider}/authorization-url", provider)
+                  .header("authorization", "Bearer " + accessToken)
+                  .queryParams(queryParams))
+          .andExpect(content().string(result));
+    }
+
+    @Test
+    void testGetAuthUrlBadRequest() throws Exception {
+      var userId = "fakeUser";
+      var accessToken = "fakeAccessToken";
+      var redirectUri = "fakeuri";
+
+      mockSamUser(userId, accessToken);
+
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri))
+          .thenThrow(new BadRequestException("Invalid redirectUri"));
+
+      var queryParams = new LinkedMultiValueMap<String, String>();
+      queryParams.add("redirectUri", redirectUri);
+      mvc.perform(
+              get("/api/oauth/v1/{provider}/authorization-url", provider)
+                  .header("authorization", "Bearer " + accessToken)
+                  .queryParams(queryParams))
+          .andExpect(status().isBadRequest());
+    }
+  }
+
+  @Nested
+  class GetProviderAccessToken {
+
+    @Test
+    void testGetProviderAccessToken() throws Exception {
+      var userId = "fakeUser";
+      var accessToken = "fakeAccessToken";
+      var githubAccessToken = "fakeGithubAccessToken";
+      var provider = Provider.GITHUB;
+      mockSamUser(userId, accessToken);
+
+      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+          .thenReturn(Optional.of(githubAccessToken));
+
+      mvc.perform(
+              get("/api/oauth/v1/{provider}/access-token", provider)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isOk())
+          .andExpect(content().string(githubAccessToken));
+    }
+
+    @Test
+    void testGetProviderAccessToken404() throws Exception {
+      var userId = "fakeUser";
+      var accessToken = "fakeAccessToken";
+      var provider = Provider.GITHUB;
+      mockSamUser(userId, accessToken);
+
+      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+          .thenReturn(Optional.empty());
+
+      mvc.perform(
+              get("/api/oauth/v1/{provider}/access-token", provider)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isNotFound());
     }
   }
 

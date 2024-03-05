@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.controllers;
 
-import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
@@ -19,8 +18,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
@@ -33,6 +30,7 @@ public record OidcApiController(
     HttpServletRequest request,
     JwtUtils jwtUtils,
     LinkedAccountService linkedAccountService,
+    OauthApiController oauthApiController,
     ObjectMapper mapper,
     PassportService passportService,
     ProviderService providerService,
@@ -43,71 +41,28 @@ public record OidcApiController(
 
   @Override
   public ResponseEntity<List<String>> listProviders() {
-    var providerNames = new ArrayList<>(providerService.getProviderList());
-    Collections.sort(providerNames);
-
-    return ResponseEntity.ok(providerNames);
+    return oauthApiController.listProviders();
   }
 
   @Override
   public ResponseEntity<LinkInfo> getLink(Provider provider) {
-    var samUser = samUserFactory.from(request);
-    var linkedAccount = linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
-    return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
+    return oauthApiController.getLink(provider);
   }
 
   @Override
   public ResponseEntity<String> getAuthUrl(Provider provider, String redirectUri) {
-    var samUser = samUserFactory.from(request);
-
-    var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(samUser.getSubjectId(), provider, redirectUri);
-
-    return ResponseEntity.ok(jsonString(authorizationUrl));
+    return ResponseEntity.ok(
+        jsonString(oauthApiController.getAuthorizationUrl(provider, redirectUri).getBody()));
   }
 
   @Override
   public ResponseEntity<LinkInfo> createLink(Provider provider, String state, String oauthcode) {
-    var samUser = samUserFactory.from(request);
-
-    var auditLogEventBuilder =
-        new AuditLogEvent.Builder()
-            .provider(provider)
-            .userId(samUser.getSubjectId())
-            .clientIP(request.getRemoteAddr());
-
-    try {
-      if (provider.equals(Provider.RAS)) {
-        var linkedAccountWithPassportAndVisas =
-            passportProviderService.createLink(
-                provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
-        return ResponseEntity.ok(
-            OpenApiConverters.Output.convert(linkedAccountWithPassportAndVisas.getLinkedAccount()));
-      } else {
-        throw new BadRequestException("Invalid providerName");
-      }
-    } catch (Exception e) {
-      auditLogger.logEvent(
-          auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());
-      throw e;
-    }
+    return oauthApiController.createLink(provider, state, oauthcode);
   }
 
   @Override
   public ResponseEntity<Void> deleteLink(Provider provider) {
-    var samUser = samUserFactory.from(request);
-    var deletedLink = providerService.deleteLink(samUser.getSubjectId(), provider);
-
-    auditLogger.logEvent(
-        new AuditLogEvent.Builder()
-            .auditLogEventType(AuditLogEventType.LinkDeleted)
-            .provider(provider)
-            .userId(samUser.getSubjectId())
-            .clientIP(request.getRemoteAddr())
-            .externalUserId(deletedLink.getExternalUserId())
-            .build());
-
-    return ResponseEntity.ok().build();
+    return oauthApiController.deleteLink(provider);
   }
 
   @Override

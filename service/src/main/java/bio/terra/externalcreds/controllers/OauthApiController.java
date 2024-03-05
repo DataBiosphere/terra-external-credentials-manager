@@ -9,6 +9,9 @@ import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.services.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -17,11 +20,27 @@ public record OauthApiController(
     AuditLogger auditLogger,
     HttpServletRequest request,
     ObjectMapper mapper,
+    LinkedAccountService linkedAccountService,
     ProviderService providerService,
     PassportProviderService passportProviderService,
     TokenProviderService tokenProviderService,
     ExternalCredsSamUserFactory samUserFactory)
     implements OauthApi {
+
+  @Override
+  public ResponseEntity<List<String>> listProviders() {
+    var providerNames = new ArrayList<>(providerService.getProviderList());
+    Collections.sort(providerNames);
+
+    return ResponseEntity.ok(providerNames);
+  }
+
+  @Override
+  public ResponseEntity<LinkInfo> getLink(Provider provider) {
+    var samUser = samUserFactory.from(request);
+    var linkedAccount = linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
+    return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
+  }
 
   @Override
   public ResponseEntity<String> getAuthorizationUrl(Provider provider, String redirectUri) {
@@ -82,5 +101,22 @@ public record OauthApiController(
           auditLogEventBuilder.auditLogEventType(AuditLogEventType.LinkCreationFailed).build());
       throw e;
     }
+  }
+
+  @Override
+  public ResponseEntity<Void> deleteLink(Provider provider) {
+    var samUser = samUserFactory.from(request);
+    var deletedLink = providerService.deleteLink(samUser.getSubjectId(), provider);
+
+    auditLogger.logEvent(
+        new AuditLogEvent.Builder()
+            .auditLogEventType(AuditLogEventType.LinkDeleted)
+            .provider(provider)
+            .userId(samUser.getSubjectId())
+            .clientIP(request.getRemoteAddr())
+            .externalUserId(deletedLink.getExternalUserId())
+            .build());
+
+    return ResponseEntity.ok().build();
   }
 }
