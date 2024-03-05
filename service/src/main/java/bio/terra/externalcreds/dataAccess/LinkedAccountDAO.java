@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.sql.Timestamp;
@@ -26,7 +27,7 @@ public class LinkedAccountDAO {
           new LinkedAccount.Builder()
               .id(rs.getInt("id"))
               .userId(rs.getString("user_id"))
-              .providerName(rs.getString("provider_name"))
+              .provider(Provider.valueOf(rs.getString("provider")))
               .refreshToken(rs.getString("refresh_token"))
               .expires(rs.getTimestamp("expires"))
               .externalUserId(rs.getString("external_user_id"))
@@ -40,13 +41,13 @@ public class LinkedAccountDAO {
   }
 
   @WithSpan
-  public Optional<LinkedAccount> getLinkedAccount(String userId, String providerName) {
+  public Optional<LinkedAccount> getLinkedAccount(String userId, Provider provider) {
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", userId)
-            .addValue("providerName", providerName);
+            .addValue("provider", provider.name());
     var query =
-        "SELECT * FROM linked_account WHERE user_id = :userId and provider_name = :providerName";
+        "SELECT * FROM linked_account WHERE user_id = :userId and provider = :provider::provider_enum";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER)));
@@ -79,9 +80,9 @@ public class LinkedAccountDAO {
   @WithSpan
   public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
     var query =
-        "INSERT INTO linked_account (user_id, provider_name, refresh_token, expires, external_user_id, is_authenticated)"
-            + " VALUES (:userId, :providerName, :refreshToken, :expires, :externalUserId, :isAuthenticated)"
-            + " ON CONFLICT (user_id, provider_name) DO UPDATE SET"
+        "INSERT INTO linked_account (user_id, provider, refresh_token, expires, external_user_id, is_authenticated)"
+            + " VALUES (:userId, :provider::provider_enum, :refreshToken, :expires, :externalUserId, :isAuthenticated)"
+            + " ON CONFLICT (user_id, provider) DO UPDATE SET"
             + " refresh_token = excluded.refresh_token,"
             + " expires = excluded.expires,"
             + " external_user_id = excluded.external_user_id,"
@@ -91,7 +92,7 @@ public class LinkedAccountDAO {
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", linkedAccount.getUserId())
-            .addValue("providerName", linkedAccount.getProviderName())
+            .addValue("provider", linkedAccount.getProvider().name())
             .addValue("refreshToken", linkedAccount.getRefreshToken())
             .addValue("expires", linkedAccount.getExpires())
             .addValue("externalUserId", linkedAccount.getExternalUserId())
@@ -107,17 +108,17 @@ public class LinkedAccountDAO {
 
   /**
    * @param userId
-   * @param providerName
+   * @param provider
    * @return boolean whether or not an account was found and deleted
    */
   @WithSpan
-  public boolean deleteLinkedAccountIfExists(String userId, String providerName) {
+  public boolean deleteLinkedAccountIfExists(String userId, Provider provider) {
     var query =
-        "DELETE FROM linked_account WHERE user_id = :userId and provider_name = :providerName";
+        "DELETE FROM linked_account WHERE user_id = :userId and provider = :provider::provider_enum";
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("userId", userId)
-            .addValue("providerName", providerName);
+            .addValue("provider", provider.name());
 
     return jdbcTemplate.update(query, namedParameters) > 0;
   }

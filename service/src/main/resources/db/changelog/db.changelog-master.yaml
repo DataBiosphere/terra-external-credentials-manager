@@ -29,3 +29,7 @@ databaseChangeLog:
   - include:
       file: changesets/20220412_add_last_encrypt_timestamp_to_ssh_key_pair_table.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/20240304_provider_name_to_provider.yaml
+      relativeToChangelogFile: true
+

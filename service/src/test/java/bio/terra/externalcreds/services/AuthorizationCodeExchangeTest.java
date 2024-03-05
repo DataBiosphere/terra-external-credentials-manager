@@ -2,6 +2,7 @@ package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
@@ -24,7 +25,6 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -121,13 +121,13 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     var linkedAccount = createTestLinkedAccount();
     var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
     var providerClient =
-        ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
+        ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .build();
 
     var state =
         new OAuth2State.Builder()
-            .provider(linkedAccount.getProviderName())
+            .provider(linkedAccount.getProvider())
             .random(OAuth2State.generateRandomState(new SecureRandom()))
             .redirectUri(redirectUri)
             .build();
@@ -135,10 +135,10 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
     String encodedState = state.encode(objectMapper);
 
-    when(externalCredsConfigMock.getProviders())
-        .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
-    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
-        .thenReturn(Optional.of(providerClient));
+    when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+        .thenReturn(providerInfo);
+    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
+        .thenReturn(providerClient);
     when(oAuth2ServiceMock.authorizationCodeExchange(
             providerClient,
             authorizationCode,
@@ -153,11 +153,11 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             BadRequestException.class,
             () ->
                 passportProviderService.createLink(
-                    linkedAccount.getProviderName(),
+                    linkedAccount.getProvider(),
                     linkedAccount.getUserId(),
                     authorizationCode,
                     encodedState,
-                    new AuditLogEvent.Builder()));
+                    new AuditLogEvent.Builder().userId("userId")));
 
     // make sure the BadRequestException is for the right reason
     assertInstanceOf(OAuth2AuthorizationException.class, exception.getCause());
@@ -173,7 +173,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
       throws URISyntaxException {
     var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
     var providerClient =
-        ClientRegistration.withRegistrationId(linkedAccount.getProviderName())
+        ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .build();
     var accessTokenResponse =
@@ -189,15 +189,15 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     OAuth2User user =
         new DefaultOAuth2User(null, userAttributes, providerInfo.getExternalIdClaim());
 
-    when(externalCredsConfigMock.getProviders())
-        .thenReturn(Map.of(linkedAccount.getProviderName(), providerInfo));
+    when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+        .thenReturn(providerInfo);
     when(externalCredsConfigMock.getAllowedJwtIssuers())
         .thenReturn(List.of(new URI(jwtSigningTestUtils.getIssuer())));
     when(externalCredsConfigMock.getAllowedJwksUris())
         .thenReturn(
             List.of(new URI(jwtSigningTestUtils.getIssuer() + JwtSigningTestUtils.JKU_PATH)));
-    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProviderName()))
-        .thenReturn(Optional.of(providerClient));
+    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
+        .thenReturn(providerClient);
     when(oAuth2ServiceMock.authorizationCodeExchange(
             providerClient,
             authorizationCode,
@@ -218,7 +218,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
     var state =
         new OAuth2State.Builder()
-            .provider(expectedLinkedAccount.getProviderName())
+            .provider(expectedLinkedAccount.getProvider())
             .random(OAuth2State.generateRandomState(new SecureRandom()))
             .redirectUri(redirectUri)
             .build();
@@ -236,36 +236,34 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
     var auditLogEventBuilder =
         new AuditLogEvent.Builder()
-            .providerName(expectedLinkedAccount.getProviderName())
+            .provider(expectedLinkedAccount.getProvider())
             .userId(expectedLinkedAccount.getUserId())
             .clientIP("127.0.0.1");
     var linkedAccountWithPassportAndVisas =
         passportProviderService.createLink(
-            expectedLinkedAccount.getProviderName(),
+            expectedLinkedAccount.getProvider(),
             expectedLinkedAccount.getUserId(),
             authorizationCode,
             encodedState,
             auditLogEventBuilder);
 
-    assertPresent(linkedAccountWithPassportAndVisas);
+    assertNotNull(linkedAccountWithPassportAndVisas);
 
     assertEquals(
         expectedLinkedAccount,
         linkedAccountWithPassportAndVisas
-            .get()
             .getLinkedAccount()
             .withExpires(jwtSigningTestUtils.passportExpiresTime)
             .withId(Optional.empty()));
 
     var stablePassport =
         linkedAccountWithPassportAndVisas
-            .get()
             .getPassport()
             .map(p -> p.withId(Optional.empty()).withLinkedAccountId(Optional.empty()));
     assertEquals(Optional.ofNullable(expectedPassport), stablePassport);
 
     var stableVisas =
-        linkedAccountWithPassportAndVisas.get().getVisas().stream()
+        linkedAccountWithPassportAndVisas.getVisas().stream()
             .map(
                 visa ->
                     visa.withLastValidated(Optional.empty())

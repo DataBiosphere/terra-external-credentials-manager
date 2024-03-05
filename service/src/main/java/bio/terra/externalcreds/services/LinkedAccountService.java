@@ -56,12 +56,11 @@ public class LinkedAccountService {
   }
 
   @ReadTransaction
-  public Optional<LinkedAccount> getLinkedAccount(String userId, String providerName) {
-    var provider = Provider.valueOf(providerName);
+  public Optional<LinkedAccount> getLinkedAccount(String userId, Provider provider) {
     return switch (provider) {
-      case RAS, GITHUB -> linkedAccountDAO.getLinkedAccount(userId, provider.toString());
+      case RAS, GITHUB -> linkedAccountDAO.getLinkedAccount(userId, provider);
       case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> {
-        var ecmLinkedAccount = linkedAccountDAO.getLinkedAccount(userId, provider.toString());
+        var ecmLinkedAccount = linkedAccountDAO.getLinkedAccount(userId, provider);
         if (ecmLinkedAccount.isPresent()) {
           yield ecmLinkedAccount;
         }
@@ -75,7 +74,7 @@ public class LinkedAccountService {
       LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas) {
     var linkedAccount = linkedAccountWithPassportAndVisas.getLinkedAccount();
     var existingVisas =
-        ga4ghVisaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProviderName());
+        ga4ghVisaDAO.listVisas(linkedAccount.getUserId(), linkedAccount.getProvider());
     var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
 
     // clear out any passport and visas that may exist and save the new one
@@ -88,7 +87,7 @@ public class LinkedAccountService {
     if (authorizationsDiffer(existingVisas, savedLinkedAccountWithPassportAndVisas.getVisas())) {
       eventPublisher.publishAuthorizationChangeEvent(
           new AuthorizationChangeEvent.Builder()
-              .providerName(savedLinkedAccount.getProviderName())
+              .provider(savedLinkedAccount.getProvider())
               .userId(savedLinkedAccount.getUserId())
               .build());
     }
@@ -114,17 +113,16 @@ public class LinkedAccountService {
   }
 
   @WriteTransaction
-  public boolean deleteLinkedAccount(String userId, String providerName) {
-    var existingVisas = ga4ghVisaDAO.listVisas(userId, providerName);
-    var accountExisted = linkedAccountDAO.deleteLinkedAccountIfExists(userId, providerName);
-    var provider = Provider.valueOf(providerName);
+  public boolean deleteLinkedAccount(String userId, Provider provider) {
+    var existingVisas = ga4ghVisaDAO.listVisas(userId, provider);
+    var accountExisted = linkedAccountDAO.deleteLinkedAccountIfExists(userId, provider);
     switch (provider) {
       case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.deleteBondLinkedAccount(
           userId, provider);
     }
     if (!existingVisas.isEmpty()) {
       eventPublisher.publishAuthorizationChangeEvent(
-          new AuthorizationChangeEvent.Builder().providerName(providerName).userId(userId).build());
+          new AuthorizationChangeEvent.Builder().provider(provider).userId(userId).build());
     }
     return accountExisted;
   }

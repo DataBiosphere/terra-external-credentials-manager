@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.models;
 
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.generated.model.Provider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -12,7 +13,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonDeserialize(as = ImmutableOAuth2State.class)
 public interface OAuth2State extends WithOAuth2State {
-  String getProvider();
+  Provider getProvider();
 
   String getRandom();
 
