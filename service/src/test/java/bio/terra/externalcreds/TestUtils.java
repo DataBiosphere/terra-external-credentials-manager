@@ -65,7 +65,7 @@ public class TestUtils {
     return new FenceAccountKey.Builder()
         .linkedAccountId(1)
         .keyJson("{\"key\": \"value\"}")
-        .expiresAt(getRandomTimestamp())
+        .expiresAt(getRandomTimestamp().toInstant())
         .build();
   }
 

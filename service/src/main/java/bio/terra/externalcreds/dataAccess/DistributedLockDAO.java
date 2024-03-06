@@ -2,6 +2,7 @@ package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.models.DistributedLock;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import java.sql.Timestamp;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
@@ -19,7 +20,7 @@ public class DistributedLockDAO {
           new DistributedLock.Builder()
               .lockName(rs.getString("lock_name"))
               .userId(rs.getString("user_id"))
-              .expiresAt(rs.getTimestamp("expires_at"))
+              .expiresAt(rs.getTimestamp("expires_at").toInstant())
               .build());
 
   final NamedParameterJdbcTemplate jdbcTemplate;
@@ -59,7 +60,7 @@ public class DistributedLockDAO {
         new MapSqlParameterSource()
             .addValue("lockName", distributedLock.getLockName())
             .addValue("userId", distributedLock.getUserId())
-            .addValue("expiresAt", distributedLock.getExpiresAt());
+            .addValue("expiresAt", Timestamp.from(distributedLock.getExpiresAt()));
 
     jdbcTemplate.update(query, namedParameters);
     return distributedLock;

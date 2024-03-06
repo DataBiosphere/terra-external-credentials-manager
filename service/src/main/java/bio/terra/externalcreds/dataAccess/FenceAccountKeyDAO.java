@@ -3,6 +3,7 @@ package bio.terra.externalcreds.dataAccess;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.FenceAccountKey;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import java.sql.Timestamp;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
@@ -22,7 +23,7 @@ public class FenceAccountKeyDAO {
               .id(rs.getInt("id"))
               .linkedAccountId(rs.getInt("linked_account_id"))
               .keyJson(rs.getString("key_json"))
-              .expiresAt(rs.getTimestamp("expires_at"))
+              .expiresAt(rs.getTimestamp("expires_at").toInstant())
               .build());
 
   final NamedParameterJdbcTemplate jdbcTemplate;
@@ -58,7 +59,7 @@ public class FenceAccountKeyDAO {
         new MapSqlParameterSource()
             .addValue("linkedAccountId", fenceAccountKey.getLinkedAccountId())
             .addValue("keyJson", fenceAccountKey.getKeyJson())
-            .addValue("expiresAt", fenceAccountKey.getExpiresAt());
+            .addValue("expiresAt", Timestamp.from(fenceAccountKey.getExpiresAt()));
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
