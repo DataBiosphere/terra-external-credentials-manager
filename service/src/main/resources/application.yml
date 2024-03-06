@@ -30,7 +30,7 @@ externalcreds:
     github:
       clientId: "${GITHUB_CLIENT_ID}"
       clientSecret: "${GITHUB_CLIENT_SECRET}"
-      externalIdClaim: "login",
+      externalIdClaim: "login"
       issuer: "https://github.com"
       linkLifespan: "15d"
       scopes: ""
