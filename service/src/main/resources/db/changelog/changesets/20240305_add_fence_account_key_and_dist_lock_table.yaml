@@ -18,6 +18,7 @@ databaseChangeLog:
                   type: int
                   constraints:
                     nullable: false
+                    unique: true
                     references: linked_account(id)
                     foreignKeyName: fk_linked_account_id
                     deleteCascade: true

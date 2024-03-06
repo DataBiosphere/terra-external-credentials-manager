@@ -49,10 +49,14 @@ public class FenceAccountKeyDAO {
   }
 
   @WithSpan
-  public FenceAccountKey insertFenceAccountKey(FenceAccountKey fenceAccountKey) {
+  public FenceAccountKey upsertFenceAccountKey(FenceAccountKey fenceAccountKey) {
     var query =
         "INSERT INTO fence_account_key (linked_account_id, key_json, expires_at)"
             + " VALUES (:linkedAccountId, :keyJson::jsonb, :expiresAt)"
+            + " ON CONFLICT (linked_account_id) DO UPDATE SET"
+            + " linked_account_id = excluded.linked_account_id,"
+            + " key_json = excluded.key_json::jsonb,"
+            + " expires_at = excluded.expires_at"
             + " RETURNING id";
 
     var namedParameters =

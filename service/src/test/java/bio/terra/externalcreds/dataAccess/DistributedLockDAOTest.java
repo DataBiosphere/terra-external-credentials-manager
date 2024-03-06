@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 
 class DistributedLockDAOTest extends BaseTest {
 
@@ -38,6 +39,15 @@ class DistributedLockDAOTest extends BaseTest {
       var loadedDistributedLock =
           distributedLockDAO.getDistributedLock(savedLock.getLockName(), savedLock.getUserId());
       assertEquals(Optional.of(savedLock), loadedDistributedLock);
+    }
+
+    @Test
+    void testCreateDuplicateDistributedLockConflictError() {
+      DistributedLock savedLock = distributedLockDAO.insertDistributedLock(testDistributedLock);
+      assertEquals(testDistributedLock, savedLock);
+      assertThrows(
+          DuplicateKeyException.class,
+          () -> distributedLockDAO.insertDistributedLock(testDistributedLock));
     }
   }
 
