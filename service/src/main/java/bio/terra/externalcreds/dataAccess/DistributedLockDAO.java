@@ -38,7 +38,8 @@ public class DistributedLockDAO {
   public Optional<DistributedLock> getDistributedLock(String lockName, String userId) {
     var namedParameters =
         new MapSqlParameterSource().addValue("lockName", lockName).addValue("userId", userId);
-    var query = "SELECT * FROM distributed_lock WHERE lock_name = :lockName AND user_id = :userId";
+    var query =
+        "SELECT lock_name, user_id, expires_at FROM distributed_lock WHERE lock_name = :lockName AND user_id = :userId";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, DISTRIBUTED_LOCK_ROW_MAPPER)));
@@ -49,7 +50,7 @@ public class DistributedLockDAO {
    * @return distributedLock The DistributedLock that was inserted
    */
   @WithSpan
-  public DistributedLock upsertDistributedLock(DistributedLock distributedLock) {
+  public DistributedLock insertDistributedLock(DistributedLock distributedLock) {
     var query =
         "INSERT INTO distributed_lock (lock_name, user_id, expires_at)"
             + " VALUES (:lockName, :userId, :expiresAt)";

@@ -33,7 +33,7 @@ class DistributedLockDAOTest extends BaseTest {
 
     @Test
     void testCreateAndGetDistributedLock() {
-      DistributedLock savedLock = distributedLockDAO.upsertDistributedLock(testDistributedLock);
+      DistributedLock savedLock = distributedLockDAO.insertDistributedLock(testDistributedLock);
       assertEquals(testDistributedLock, savedLock);
       var loadedDistributedLock =
           distributedLockDAO.getDistributedLock(savedLock.getLockName(), savedLock.getUserId());
@@ -46,7 +46,7 @@ class DistributedLockDAOTest extends BaseTest {
 
     @Test
     void testDeleteDistributedLock() {
-      DistributedLock savedLock = distributedLockDAO.upsertDistributedLock(testDistributedLock);
+      DistributedLock savedLock = distributedLockDAO.insertDistributedLock(testDistributedLock);
       assertPresent(
           distributedLockDAO.getDistributedLock(savedLock.getLockName(), savedLock.getUserId()));
       assertTrue(

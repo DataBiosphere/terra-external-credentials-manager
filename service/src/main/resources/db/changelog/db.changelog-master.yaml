@@ -33,5 +33,5 @@ databaseChangeLog:
       file: changesets/20240304_provider_name_to_provider.yaml
       relativeToChangelogFile: true
   - include:
-      file: changesets/20240228_add_fence_account_key_and_dist_lock_table.yaml
+      file: changesets/20240305_add_fence_account_key_and_dist_lock_table.yaml
       relativeToChangelogFile: true

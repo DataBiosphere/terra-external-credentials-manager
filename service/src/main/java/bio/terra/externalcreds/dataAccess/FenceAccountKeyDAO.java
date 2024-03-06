@@ -2,7 +2,6 @@ package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.models.FenceAccountKey;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.support.DataAccessUtils;
@@ -21,7 +20,7 @@ public class FenceAccountKeyDAO {
           new FenceAccountKey.Builder()
               .id(rs.getInt("id"))
               .linkedAccountId(rs.getInt("linked_account_id"))
-              .keyJson(base64Decode(rs.getString("key_json")))
+              .keyJson(rs.getString("key_json"))
               .expiresAt(rs.getTimestamp("expires_at"))
               .build());
 
@@ -36,8 +35,8 @@ public class FenceAccountKeyDAO {
     var namedParameters =
         new MapSqlParameterSource("userId", userId).addValue("providerName", providerName);
     var query =
-        "SELECT p.* FROM fence_account_key p"
-            + " INNER JOIN linked_account la ON la.id = p.linked_account_id"
+        "SELECT fence.id, fence.linked_account_id, fence.key_json, fence.expires_at FROM fence_account_key fence"
+            + " INNER JOIN linked_account la ON la.id = fence.linked_account_id"
             + " WHERE la.user_id = :userId"
             + " AND la.provider_name = :providerName";
     return Optional.ofNullable(
@@ -55,7 +54,7 @@ public class FenceAccountKeyDAO {
     var namedParameters =
         new MapSqlParameterSource()
             .addValue("linkedAccountId", fenceAccountKey.getLinkedAccountId())
-            .addValue("keyJson", base64Encode(fenceAccountKey.getKeyJson()))
+            .addValue("keyJson", fenceAccountKey.getKeyJson())
             .addValue("expiresAt", fenceAccountKey.getExpiresAt());
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
@@ -77,11 +76,4 @@ public class FenceAccountKeyDAO {
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
 
-  private static String base64Encode(String keyJson) {
-    return Base64.getEncoder().encodeToString(keyJson.getBytes(StandardCharsets.UTF_8));
-  }
-
-  private static String base64Decode(String encodedKeyJson) {
-    return new String(Base64.getDecoder().decode(encodedKeyJson), StandardCharsets.UTF_8);
-  }
 }

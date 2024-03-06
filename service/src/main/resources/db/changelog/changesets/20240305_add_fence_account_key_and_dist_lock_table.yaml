@@ -20,9 +20,10 @@ databaseChangeLog:
                     nullable: false
                     references: linked_account(id)
                     foreignKeyName: fk_linked_account_id
+                    deleteCascade: true
               - column:
                   name: key_json
-                  type: text
+                  type: jsonb
                   constraints:
                     nullable: false
               - column:
