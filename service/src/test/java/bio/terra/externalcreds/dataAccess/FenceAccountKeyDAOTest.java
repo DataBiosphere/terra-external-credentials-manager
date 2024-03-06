@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.generated.model.Provider;
 import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,8 +17,7 @@ class FenceAccountKeyDAOTest extends BaseTest {
 
   @Test
   void testGetMissingFenceAccountKey() {
-    var shouldBeEmpty =
-        fenceAccountKeyDAO.getFenceAccountKey("nonexistent_user_id", "nonexistent_provider_name");
+    var shouldBeEmpty = fenceAccountKeyDAO.getFenceAccountKey("nonexistent_user_id", Provider.RAS);
     assertEmpty(shouldBeEmpty);
   }
 
@@ -45,7 +45,7 @@ class FenceAccountKeyDAOTest extends BaseTest {
 
       var loadedFenceAccountKey =
           fenceAccountKeyDAO.getFenceAccountKey(
-              savedAccount.getUserId(), savedAccount.getProviderName());
+              savedAccount.getUserId(), savedAccount.getProvider());
       assertEquals(Optional.of(savedFenceAccountKey), loadedFenceAccountKey);
     }
   }
@@ -63,11 +63,11 @@ class FenceAccountKeyDAOTest extends BaseTest {
 
       assertPresent(
           fenceAccountKeyDAO.getFenceAccountKey(
-              savedAccount.getUserId(), savedAccount.getProviderName()));
+              savedAccount.getUserId(), savedAccount.getProvider()));
       assertTrue(fenceAccountKeyDAO.deleteFenceAccountKey(savedAccount.getId().get()));
       assertEmpty(
           fenceAccountKeyDAO.getFenceAccountKey(
-              savedAccount.getUserId(), savedAccount.getProviderName()));
+              savedAccount.getUserId(), savedAccount.getProvider()));
     }
 
     @Test

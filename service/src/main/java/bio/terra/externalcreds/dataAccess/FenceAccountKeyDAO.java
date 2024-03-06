@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.dataAccess;
 
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.FenceAccountKey;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.util.*;
@@ -31,14 +32,16 @@ public class FenceAccountKeyDAO {
   }
 
   @WithSpan
-  public Optional<FenceAccountKey> getFenceAccountKey(String userId, String providerName) {
+  public Optional<FenceAccountKey> getFenceAccountKey(String userId, Provider provider) {
     var namedParameters =
-        new MapSqlParameterSource("userId", userId).addValue("providerName", providerName);
+        new MapSqlParameterSource()
+            .addValue("userId", userId)
+            .addValue("provider", provider.name());
     var query =
         "SELECT fence.id, fence.linked_account_id, fence.key_json, fence.expires_at FROM fence_account_key fence"
             + " INNER JOIN linked_account la ON la.id = fence.linked_account_id"
             + " WHERE la.user_id = :userId"
-            + " AND la.provider_name = :providerName";
+            + " AND la.provider = :provider::provider_enum";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, FENCE_ACCOUNT_KEY_ROW_MAPPER)));
@@ -75,5 +78,4 @@ public class FenceAccountKeyDAO {
     var query = "DELETE FROM fence_account_key WHERE linked_account_id = :linkedAccountId";
     return jdbcTemplate.update(query, namedParameters) > 0;
   }
-
 }
