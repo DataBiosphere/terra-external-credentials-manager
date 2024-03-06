@@ -59,8 +59,8 @@ public class LinkedAccountService {
   public Optional<LinkedAccount> getLinkedAccount(String userId, Provider provider) {
     return switch (provider) {
       case RAS, GITHUB -> linkedAccountDAO.getLinkedAccount(userId, provider);
-      case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL ->
-          fenceProviderService.getLinkedFenceAccount(userId, provider);
+      case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.getLinkedFenceAccount(
+          userId, provider);
     };
   }
 

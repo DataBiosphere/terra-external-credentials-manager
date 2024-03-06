@@ -6,21 +6,23 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.BondDatastoreDAO;
+import bio.terra.externalcreds.dataAccess.DistributedLockDAO;
+import bio.terra.externalcreds.dataAccess.FenceAccountKeyDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.BondFenceServiceAccountEntity;
+import bio.terra.externalcreds.models.DistributedLock;
+import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.LinkedAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.HashSet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -72,8 +74,7 @@ public class FenceProviderService extends ProviderService {
       if (ecmExpires.after(bondExpires) || ecmExpires.equals(bondExpires)) {
         // ECM is up to date
         return ecmLinkedAccount;
-      }
-      else  {
+      } else {
         // ECM is out of date. Update it with the Bond data and return the new ECM Linked Account
         return updateEcmWithBondInfo(bondLinkedAccount.get());
       }
@@ -84,12 +85,16 @@ public class FenceProviderService extends ProviderService {
 
   public Optional<FenceAccountKey> getLinkedFenceAccountKey(String userId, Provider provider) {
     var linkedAccount = getLinkedFenceAccount(userId, provider);
-    return linkedAccount.flatMap(FenceAccountKeyDAO::getFenceAccountKey).orElse(linkedAccount.flatMap(this::createFenceAccountKey));
+    return linkedAccount
+        .flatMap(fenceAccountKeyDAO::getFenceAccountKey)
+        .or(() -> linkedAccount.flatMap(this::createFenceAccountKey));
   }
 
   private Optional<FenceAccountKey> createFenceAccountKey(LinkedAccount linkedAccount) {
-    var lockName = String.format("%s-retrieveFenceAccountKey", linkedAccount.getProvider().toString());
-    Optional<DistributedLock> maybeLock = distributedLockDAO.getDistributedLock(lockName, linkedAccount.getUserId());
+    var lockName =
+        String.format("%s-retrieveFenceAccountKey", linkedAccount.getProvider().toString());
+    Optional<DistributedLock> maybeLock =
+        distributedLockDAO.getDistributedLock(lockName, linkedAccount.getUserId());
     if (maybeLock.isPresent()) {
       // If the lock is present, another thread/instance is getting retrieving a key.
       // Wait for it to finish and get the key from the DB.
@@ -101,21 +106,25 @@ public class FenceProviderService extends ProviderService {
         }
         maybeLock = distributedLockDAO.getDistributedLock(lockName, linkedAccount.getUserId());
       }
-      return fenceAccountKeyDAO.getFenceAccountKey(linkedAccount.getId());
+      return fenceAccountKeyDAO.getFenceAccountKey(linkedAccount);
     } else {
       // Lock is not present.
       // Create a lock and retrieve a key from the fence provider.
-      var newLock = new DistributedLock.Builder()
-          .lockName(lockName)
-          .userId(linkedAccount.getUserId())
-          .expiresAt(Instant.now().plus(1, ChronoUnit.MINUTES))
-          .build();
+      var newLock =
+          new DistributedLock.Builder()
+              .lockName(lockName)
+              .userId(linkedAccount.getUserId())
+              .expiresAt(Instant.now().plus(1, ChronoUnit.MINUTES))
+              .build();
       try {
         distributedLockDAO.insertDistributedLock(newLock);
-      } catch (SQLException e) {
-        log.warn(String.format("Failed to insert lock %s, another thread is doing the same thing.", lockName), e);
-        // Just recursively call this function. The lock from the other thread will get picked up and awaited on.
-        return retrieveFenceAccountKey(linkedAccount);
+      } catch (DataAccessException e) {
+        log.warn(
+            String.format(
+                "Failed to insert lock %s, another thread is doing the same thing.", lockName),
+            e);
+        // Just recursively call this function. Just return the key created by the other thread.
+        return getLinkedFenceAccountKey(linkedAccount.getUserId(), linkedAccount.getProvider());
       }
       var fenceAccountKey = retrieveFenceAccountKey(linkedAccount);
       fenceAccountKeyDAO.upsertFenceAccountKey(fenceAccountKey);
@@ -127,10 +136,12 @@ public class FenceProviderService extends ProviderService {
   private FenceAccountKey retrieveFenceAccountKey(LinkedAccount linkedAccount) {
     var providerClient = providerOAuthClientCache.getProviderClient(linkedAccount.getProvider());
     var providerProperties = externalCredsConfig.getProviderProperties(linkedAccount.getProvider());
-    var accessToken = oAuth2Service.authorizeWithRefreshToken(providerClient, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+    var accessToken =
+        oAuth2Service.authorizeWithRefreshToken(
+            providerClient, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
     var keyEndpoint = providerProperties.getKeyEndpoint();
     WebClient.ResponseSpec response =
-        WebClient.create(keyEndpoint)
+        WebClient.create(keyEndpoint.get())
             .post()
             .header("Authorization", "Bearer " + accessToken.getAccessToken().getTokenValue())
             .retrieve();
@@ -140,24 +151,28 @@ public class FenceProviderService extends ProviderService {
             .bodyToMono(String.class)
             .block(Duration.of(11, ChronoUnit.SECONDS));
     return new FenceAccountKey.Builder()
-        .linkedAccountId(linkedAccount.getId())
+        .linkedAccountId(linkedAccount.getId().get())
         .keyJson(responseBody)
-        .expires(Instant.now().plus(providerProperties.getLinkLifespan().toDays(), ChronoUnit.DAYS))
-        .build();;
+        .expiresAt(
+            Instant.now().plus(providerProperties.getLinkLifespan().toDays(), ChronoUnit.DAYS))
+        .build();
   }
 
   private Optional<LinkedAccount> updateEcmWithBondInfo(LinkedAccount bondLinkedAccount) {
     var linkedAccount = linkedAccountDAO.upsertLinkedAccount(bondLinkedAccount);
-    var bondFenceServiceAccountKey = bondDatastoreDAO.getFenceServiceAccountKey(bondLinkedAccount.getUserId(), bondLinkedAccount.getProvider());
-    var fenceAccountKey = bondFenceServiceAccountKey.map(bondKey ->
-        new FenceAccountKey.Builder()
-            .linkedAccountId(linkedAccount.getId())
-            .keyJson(bondKey.getKey())
-            .expires(bondKey.getExpiresAt())
-            .build());
+    var bondFenceServiceAccountKey =
+        bondDatastoreDAO.getFenceServiceAccountKey(
+            bondLinkedAccount.getUserId(), bondLinkedAccount.getProvider());
+    var fenceAccountKey =
+        bondFenceServiceAccountKey.map(
+            bondKey ->
+                new FenceAccountKey.Builder()
+                    .linkedAccountId(linkedAccount.getId().get())
+                    .keyJson(bondKey.getKeyJson())
+                    .expiresAt(bondKey.getExpiresAt())
+                    .build());
 
-    fenceAccountKey.ifPresent(
-        key -> fenceAccountKeyDAO.insertFenceAccountKey(linkedAccount.getId(), key));
+    fenceAccountKey.ifPresent(key -> fenceAccountKeyDAO.upsertFenceAccountKey(key));
     return Optional.of(linkedAccount);
   }
 
@@ -183,20 +198,26 @@ public class FenceProviderService extends ProviderService {
                     .build());
     return bondLinkedAccount.map(linkedAccountService::upsertLinkedAccount);
   }
-  public LinkedAccount createLink(Provider provider, String userId, String authorizationCode, String encodedState, AuditLogEvent.Builder auditLogEventBuilder) {
+
+  public LinkedAccount createLink(
+      Provider provider,
+      String userId,
+      String authorizationCode,
+      String encodedState,
+      AuditLogEvent.Builder auditLogEventBuilder) {
     var oAuth2State = validateOAuth2State(provider, userId, encodedState);
     var providerClient = providerOAuthClientCache.getProviderClient(provider);
     var providerInfo = externalCredsConfig.getProviderProperties(provider);
     try {
       var account =
           createLinkedAccount(
-              provider,
-              userId,
-              authorizationCode,
-              oAuth2State.getRedirectUri(),
-              new HashSet<>(providerInfo.getScopes()),
-              encodedState,
-              providerClient)
+                  provider,
+                  userId,
+                  authorizationCode,
+                  oAuth2State.getRedirectUri(),
+                  new HashSet<>(providerInfo.getScopes()),
+                  encodedState,
+                  providerClient)
               .getLeft();
       var linkedAccount = linkedAccountService.upsertLinkedAccount(account);
       logLinkCreation(Optional.of(linkedAccount), auditLogEventBuilder);
@@ -217,6 +238,7 @@ public class FenceProviderService extends ProviderService {
     bondDatastoreDAO.deleteRefreshToken(userId, provider);
     bondDatastoreDAO.deleteFenceServiceAccountKey(userId, provider);
   }
+
   public void logLinkCreation(
       Optional<LinkedAccount> linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
     auditLogger.logEvent(
