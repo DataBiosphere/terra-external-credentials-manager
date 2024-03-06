@@ -51,7 +51,7 @@ public class FenceAccountKeyDAO {
   public FenceAccountKey insertFenceAccountKey(FenceAccountKey fenceAccountKey) {
     var query =
         "INSERT INTO fence_account_key (linked_account_id, key_json, expires_at)"
-            + " VALUES (:linkedAccountId, :keyJson, :expiresAt)"
+            + " VALUES (:linkedAccountId, :keyJson::jsonb, :expiresAt)"
             + " RETURNING id";
 
     var namedParameters =
