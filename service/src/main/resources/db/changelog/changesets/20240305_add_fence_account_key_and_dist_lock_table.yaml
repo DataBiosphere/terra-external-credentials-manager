@@ -1,0 +1,54 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_fence_account_key_and_dist_lock_table"
+      author: sehsan
+      changes:
+        - createTable:
+            tableName: fence_account_key
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: linked_account_id
+                  type: int
+                  constraints:
+                    nullable: false
+                    unique: true
+                    references: linked_account(id)
+                    foreignKeyName: fk_linked_account_id
+                    deleteCascade: true
+              - column:
+                  name: key_json
+                  type: jsonb
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: distributed_lock
+            columns:
+              - column:
+                  name: lock_name
+                  type: text
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_dist_lock
+              - column:
+                  name: user_id
+                  type: text
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_dist_lock
+              - column:
+                  name: expires_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
