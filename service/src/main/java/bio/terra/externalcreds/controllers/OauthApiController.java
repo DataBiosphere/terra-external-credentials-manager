@@ -95,6 +95,12 @@ public record OauthApiController(
                       provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
               yield OpenApiConverters.Output.convert(linkedAccount);
             }
+            case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> {
+              var linkedAccount =
+                  fenceProviderService.createLink(
+                      provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
+              yield OpenApiConverters.Output.convert(linkedAccount);
+            }
           };
       return ResponseEntity.ok(linkInfo);
     } catch (Exception e) {
