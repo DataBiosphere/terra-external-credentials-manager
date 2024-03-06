@@ -228,11 +228,6 @@ public class FenceProviderService extends ProviderService {
     }
   }
 
-  public Optional<BondFenceServiceAccountEntity> getBondFenceServiceAccountKey(
-      String userId, Provider provider) {
-    return bondDatastoreDAO.getFenceServiceAccountKey(userId, provider);
-  }
-
   public void deleteBondLinkedAccount(String userId, Provider provider) {
     // TODO: We also need to revoke the refresh token
     bondDatastoreDAO.deleteRefreshToken(userId, provider);
