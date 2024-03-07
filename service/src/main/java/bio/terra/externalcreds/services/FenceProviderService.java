@@ -10,12 +10,10 @@ import bio.terra.externalcreds.dataAccess.DistributedLockDAO;
 import bio.terra.externalcreds.dataAccess.FenceAccountKeyDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.models.BondFenceServiceAccountEntity;
 import bio.terra.externalcreds.models.DistributedLock;
 import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.LinkedAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -65,26 +63,8 @@ public class FenceProviderService extends ProviderService {
     this.bondDatastoreDAO = bondDatastoreDAO;
   }
 
-  public Optional<LinkedAccount> getLinkedFenceAccount(String userId, Provider provider) {
-    var ecmLinkedAccount = linkedAccountDAO.getLinkedAccount(userId, provider);
-    var bondLinkedAccount = getBondLinkedAccount(userId, provider);
-    if (ecmLinkedAccount.isPresent() && bondLinkedAccount.isPresent()) {
-      var ecmExpires = ecmLinkedAccount.get().getExpires();
-      var bondExpires = bondLinkedAccount.get().getExpires();
-      if (ecmExpires.after(bondExpires) || ecmExpires.equals(bondExpires)) {
-        // ECM is up to date
-        return ecmLinkedAccount;
-      } else {
-        // ECM is out of date. Update it with the Bond data and return the new ECM Linked Account
-        return updateEcmWithBondInfo(bondLinkedAccount.get());
-      }
-    }
-    // ECM is out of date. Port the Bond data into the ECM and return the new ECM Linked Account
-    return bondLinkedAccount.map(this::updateEcmWithBondInfo).orElse(ecmLinkedAccount);
-  }
-
   public Optional<FenceAccountKey> getLinkedFenceAccountKey(String userId, Provider provider) {
-    var linkedAccount = getLinkedFenceAccount(userId, provider);
+    var linkedAccount = linkedAccountDAO.getLinkedAccount(userId, provider);
     return linkedAccount
         .flatMap(fenceAccountKeyDAO::getFenceAccountKey)
         .or(() -> linkedAccount.flatMap(this::createFenceAccountKey));
@@ -158,47 +138,6 @@ public class FenceProviderService extends ProviderService {
         .build();
   }
 
-  private Optional<LinkedAccount> updateEcmWithBondInfo(LinkedAccount bondLinkedAccount) {
-    var linkedAccount = linkedAccountDAO.upsertLinkedAccount(bondLinkedAccount);
-    var bondFenceServiceAccountKey =
-        bondDatastoreDAO.getFenceServiceAccountKey(
-            bondLinkedAccount.getUserId(), bondLinkedAccount.getProvider());
-    var fenceAccountKey =
-        bondFenceServiceAccountKey.map(
-            bondKey ->
-                new FenceAccountKey.Builder()
-                    .linkedAccountId(linkedAccount.getId().get())
-                    .keyJson(bondKey.getKeyJson())
-                    .expiresAt(bondKey.getExpiresAt())
-                    .build());
-
-    fenceAccountKey.ifPresent(key -> fenceAccountKeyDAO.upsertFenceAccountKey(key));
-    return Optional.of(linkedAccount);
-  }
-
-  public Optional<LinkedAccount> getBondLinkedAccount(String userId, Provider provider) {
-    var bondRefreshTokenEntity = bondDatastoreDAO.getRefreshToken(userId, provider);
-    var providerProperties = externalCredsConfig.getProviderProperties(provider);
-    var bondLinkedAccount =
-        bondRefreshTokenEntity.map(
-            refreshTokenEntity ->
-                new LinkedAccount.Builder()
-                    .provider(provider)
-                    .userId(userId)
-                    .expires(
-                        new Timestamp(
-                            refreshTokenEntity
-                                .getIssuedAt()
-                                .plus(
-                                    providerProperties.getLinkLifespan().toDays(), ChronoUnit.DAYS)
-                                .toEpochMilli()))
-                    .externalUserId(refreshTokenEntity.getUsername())
-                    .refreshToken(refreshTokenEntity.getToken())
-                    .isAuthenticated(true)
-                    .build());
-    return bondLinkedAccount.map(linkedAccountService::upsertLinkedAccount);
-  }
-
   public LinkedAccount createLink(
       Provider provider,
       String userId,
@@ -219,19 +158,13 @@ public class FenceProviderService extends ProviderService {
                   encodedState,
                   providerClient)
               .getLeft();
-      var linkedAccount = linkedAccountService.upsertLinkedAccount(account);
+      var linkedAccount = linkedAccountDAO.upsertLinkedAccount(account);
       logLinkCreation(Optional.of(linkedAccount), auditLogEventBuilder);
       return linkedAccount;
     } catch (OAuth2AuthorizationException oauthEx) {
       logLinkCreation(Optional.empty(), auditLogEventBuilder);
       throw new BadRequestException(oauthEx);
     }
-  }
-
-  public void deleteBondLinkedAccount(String userId, Provider provider) {
-    // TODO: We also need to revoke the refresh token
-    bondDatastoreDAO.deleteRefreshToken(userId, provider);
-    bondDatastoreDAO.deleteFenceServiceAccountKey(userId, provider);
   }
 
   public void logLinkCreation(

@@ -25,8 +25,6 @@ import org.springframework.stereotype.Service;
 public class LinkedAccountService {
 
   private final LinkedAccountDAO linkedAccountDAO;
-
-  private final FenceProviderService fenceProviderService;
   private final GA4GHPassportDAO ga4ghPassportDAO;
   private final GA4GHVisaDAO ga4ghVisaDAO;
   private final Collection<VisaComparator> visaComparators;
@@ -35,14 +33,12 @@ public class LinkedAccountService {
 
   public LinkedAccountService(
       LinkedAccountDAO linkedAccountDAO,
-      FenceProviderService fenceProviderService,
       GA4GHPassportDAO ga4ghPassportDAO,
       GA4GHVisaDAO ga4ghVisaDAO,
       Collection<VisaComparator> visaComparators,
       EventPublisher eventPublisher,
       OAuth2StateDAO oAuth2StateDAO) {
     this.linkedAccountDAO = linkedAccountDAO;
-    this.fenceProviderService = fenceProviderService;
     this.ga4ghPassportDAO = ga4ghPassportDAO;
     this.ga4ghVisaDAO = ga4ghVisaDAO;
     this.visaComparators = visaComparators;
@@ -57,11 +53,7 @@ public class LinkedAccountService {
 
   @ReadTransaction
   public Optional<LinkedAccount> getLinkedAccount(String userId, Provider provider) {
-    return switch (provider) {
-      case RAS, GITHUB -> linkedAccountDAO.getLinkedAccount(userId, provider);
-      case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.getLinkedFenceAccount(
-          userId, provider);
-    };
+    return linkedAccountDAO.getLinkedAccount(userId, provider);
   }
 
   @WriteTransaction
@@ -111,10 +103,6 @@ public class LinkedAccountService {
   public boolean deleteLinkedAccount(String userId, Provider provider) {
     var existingVisas = ga4ghVisaDAO.listVisas(userId, provider);
     var accountExisted = linkedAccountDAO.deleteLinkedAccountIfExists(userId, provider);
-    switch (provider) {
-      case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.deleteBondLinkedAccount(
-          userId, provider);
-    }
     if (!existingVisas.isEmpty()) {
       eventPublisher.publishAuthorizationChangeEvent(
           new AuthorizationChangeEvent.Builder().provider(provider).userId(userId).build());
