@@ -40,6 +40,15 @@ externalcreds:
       authorizationEndpoint: "${externalcreds.providers.github.issuer}/login/oauth/authorize"
       tokenEndpoint: "${externalcreds.providers.github.issuer}/login/oauth/access_token"
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/oauth_callback" ]
+    fence:
+      anvilClientId: "${ANVIL_CLIENT_ID}"
+      anvilClientSecret: "${ANVIL_CLIENT_SECRET}"
+      clientId: "${FENCE_CLIENT_ID}"
+      clientSecret: "${FENCE_CLIENT_SECRET}"
+      dcfClientId: "${DCF_CLIENT_ID}"
+      dcfClientSecret: "${DCF_CLIENT_SECRET}"
+      kidsFirstClientId: "${KIDS_FIRST_CLIENT_ID}"
+      kidsFirstClientSecret: "${KIDS_FIRST_CLIENT_SECRET}"
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
