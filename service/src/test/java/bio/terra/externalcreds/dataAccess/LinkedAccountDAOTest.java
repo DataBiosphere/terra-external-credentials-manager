@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
@@ -14,6 +15,7 @@ import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.models.BondFenceServiceAccountEntity;
 import bio.terra.externalcreds.models.BondRefreshTokenEntity;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import com.google.cloud.datastore.Key;
@@ -37,6 +39,7 @@ class LinkedAccountDAOTest extends BaseTest {
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
   @Autowired private GA4GHVisaDAO visaDAO;
+  @Autowired private FenceAccountKeyDAO fenceAccountKeyDAO;
   @MockBean private BondDatastoreDAO bondDatastoreDAO;
   @MockBean private ExternalCredsConfig externalCredsConfig;
 
@@ -269,6 +272,7 @@ class LinkedAccountDAOTest extends BaseTest {
       var token = "TestToken";
       var userId = UUID.randomUUID().toString();
       var userName = userId + "-name";
+      var keyJson = "{ \"name\": \"testKeyJson\"}";
       var provider = Provider.FENCE;
 
       when(bondDatastoreDAO.getRefreshToken(anyString(), any(Provider.class)))
@@ -281,12 +285,25 @@ class LinkedAccountDAOTest extends BaseTest {
                       .username(userName)
                       .build()));
 
+      when(bondDatastoreDAO.getFenceServiceAccountKey(anyString(), any(Provider.class)))
+          .thenReturn(
+              Optional.of(
+                  new BondFenceServiceAccountEntity.Builder()
+                      .key(mock(Key.class))
+                      .expiresAt(issuedAt.plus(Duration.ofDays(30)))
+                      .keyJson(keyJson)
+                      .updateLockTimeout("foobar")
+                      .build()));
+
       var linkedAccountFromBond = linkedAccountDAO.getLinkedAccount(userId, provider);
       var insertedLinkedAccount =
           linkedAccountFromBond.flatMap(
               l -> linkedAccountDAO.getEcmLinkedAccount(l.getUserId(), l.getProvider()));
 
+      var fenceKey = fenceAccountKeyDAO.getFenceAccountKey(userId, provider);
+
       assertPresent(insertedLinkedAccount);
+      assertPresent(fenceKey);
     }
 
     @Test
@@ -367,5 +384,42 @@ class LinkedAccountDAOTest extends BaseTest {
       assertEquals(expectedExpiresAt, linkedAccountFromBond.get().getExpires());
       assertEquals(expectedExpiresAt, linkedAccountInDb.get().getExpires());
     }
+  }
+
+  @Test
+  void testDeleteLinkedFenceAccount() {
+    var issuedAt = Instant.now();
+    var token = "TestToken";
+    var userId = UUID.randomUUID().toString();
+    var userName = userId + "-name";
+    var keyJson = "{ \"name\": \"testKeyJson\"}";
+    var provider = Provider.FENCE;
+
+    when(bondDatastoreDAO.getRefreshToken(anyString(), any(Provider.class)))
+        .thenReturn(
+            Optional.of(
+                new BondRefreshTokenEntity.Builder()
+                    .key(mock(Key.class))
+                    .issuedAt(issuedAt)
+                    .token(token)
+                    .username(userName)
+                    .build()));
+
+    when(bondDatastoreDAO.getFenceServiceAccountKey(anyString(), any(Provider.class)))
+        .thenReturn(
+            Optional.of(
+                new BondFenceServiceAccountEntity.Builder()
+                    .key(mock(Key.class))
+                    .expiresAt(issuedAt.plus(Duration.ofDays(30)))
+                    .keyJson(keyJson)
+                    .updateLockTimeout("foobar")
+                    .build()));
+
+    linkedAccountDAO.getLinkedAccount(userId, provider);
+
+    linkedAccountDAO.deleteLinkedAccountIfExists(userId, provider);
+
+    verify(bondDatastoreDAO).deleteRefreshToken(userId, provider);
+    verify(bondDatastoreDAO).deleteFenceServiceAccountKey(userId, provider);
   }
 }

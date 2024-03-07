@@ -111,11 +111,6 @@ public class LinkedAccountDAO {
     return Optional.of(linkedAccount);
   }
 
-  public void deleteBondLinkedAccount(String userId, Provider provider) {
-    bondDatastoreDAO.deleteRefreshToken(userId, provider);
-    bondDatastoreDAO.deleteFenceServiceAccountKey(userId, provider);
-  }
-
   @WithSpan
   public Optional<LinkedAccount> getLinkedAccount(String userId, Provider provider) {
     return switch (provider) {
@@ -208,6 +203,11 @@ public class LinkedAccountDAO {
             .addValue("provider", provider.name());
 
     return jdbcTemplate.update(query, namedParameters) > 0;
+  }
+
+  private void deleteBondLinkedAccount(String userId, Provider provider) {
+    bondDatastoreDAO.deleteRefreshToken(userId, provider);
+    bondDatastoreDAO.deleteFenceServiceAccountKey(userId, provider);
   }
 
   public Map<String, LinkedAccount> getLinkedAccountByPassportJwtIds(Set<String> jwtIds) {

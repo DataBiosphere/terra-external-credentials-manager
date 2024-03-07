@@ -5,7 +5,6 @@ import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.dataAccess.BondDatastoreDAO;
 import bio.terra.externalcreds.dataAccess.DistributedLockDAO;
 import bio.terra.externalcreds.dataAccess.FenceAccountKeyDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
@@ -35,7 +34,6 @@ public class FenceProviderService extends ProviderService {
   private final LinkedAccountDAO linkedAccountDAO;
   private final FenceAccountKeyDAO fenceAccountKeyDAO;
   private final DistributedLockDAO distributedLockDAO;
-  private final BondDatastoreDAO bondDatastoreDAO;
 
   public FenceProviderService(
       ExternalCredsConfig externalCredsConfig,
@@ -46,7 +44,6 @@ public class FenceProviderService extends ProviderService {
       LinkedAccountDAO linkedAccountDAO,
       FenceAccountKeyDAO fenceAccountKeyDAO,
       DistributedLockDAO distributedLockDAO,
-      BondDatastoreDAO bondDatastoreDAO,
       AuditLogger auditLogger,
       ObjectMapper objectMapper) {
     super(
@@ -60,7 +57,6 @@ public class FenceProviderService extends ProviderService {
     this.linkedAccountDAO = linkedAccountDAO;
     this.fenceAccountKeyDAO = fenceAccountKeyDAO;
     this.distributedLockDAO = distributedLockDAO;
-    this.bondDatastoreDAO = bondDatastoreDAO;
   }
 
   public Optional<FenceAccountKey> getLinkedFenceAccountKey(String userId, Provider provider) {
