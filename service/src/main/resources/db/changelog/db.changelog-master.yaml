@@ -35,3 +35,6 @@ databaseChangeLog:
   - include:
       file: changesets/20240305_add_fence_account_key_and_dist_lock_table.yaml
       relativeToChangelogFile: true
+  - include:
+        file: changesets/20240307_add_fence_providers_to_enum.yaml
+        relativeToChangelogFile: true

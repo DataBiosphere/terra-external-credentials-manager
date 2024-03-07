@@ -16,6 +16,7 @@ import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.Key;
 import com.google.cloud.datastore.KeyFactory;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
@@ -45,11 +46,11 @@ class BondDatastoreDAOTest extends BaseTest {
 
   @Test
   void getRefreshToken() {
-    var userId = "1234567890";
+    var userId = UUID.randomUUID().toString();
     var provider = Provider.FENCE;
     var issuedAt = Timestamp.now();
     var token = "TestToken";
-    var userName = "1234567890-name";
+    var userName = userId + "-name";
 
     when(bondDatastore.get(any(Key.class)))
         .thenAnswer(
@@ -72,7 +73,7 @@ class BondDatastoreDAOTest extends BaseTest {
 
   @Test
   void getFenceServiceAccountKey() {
-    var userId = "1234567890";
+    var userId = UUID.randomUUID().toString();
     var provider = Provider.FENCE;
     var expiresAt = Timestamp.now();
     var keyJson = "TestKeyJson";
@@ -99,7 +100,7 @@ class BondDatastoreDAOTest extends BaseTest {
 
   @Test
   void deleteRefreshToken() {
-    var userId = "1234567890";
+    var userId = UUID.randomUUID().toString();
     var provider = Provider.FENCE;
     bondDatastoreDAO.deleteRefreshToken(userId, provider);
 
@@ -108,7 +109,7 @@ class BondDatastoreDAOTest extends BaseTest {
 
   @Test
   void deleteFenceServiceAccountKey() {
-    var userId = "1234567890";
+    var userId = UUID.randomUUID().toString();
     var provider = Provider.FENCE;
     bondDatastoreDAO.deleteFenceServiceAccountKey(userId, provider);
 

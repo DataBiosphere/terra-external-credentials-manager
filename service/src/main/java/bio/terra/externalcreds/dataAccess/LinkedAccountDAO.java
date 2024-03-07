@@ -52,8 +52,8 @@ public class LinkedAccountDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  public Optional<LinkedAccount> getLinkedFenceAccount(String userId, Provider provider) {
-    var ecmLinkedAccount = getLinkedAccount(userId, provider);
+  private Optional<LinkedAccount> getLinkedFenceAccount(String userId, Provider provider) {
+    var ecmLinkedAccount = getEcmLinkedAccount(userId, provider);
     var bondLinkedAccount = getBondLinkedAccount(userId, provider);
     if (ecmLinkedAccount.isPresent() && bondLinkedAccount.isPresent()) {
       var ecmExpires = ecmLinkedAccount.get().getExpires();
@@ -70,7 +70,7 @@ public class LinkedAccountDAO {
     return bondLinkedAccount.map(this::updateEcmWithBondInfo).orElse(ecmLinkedAccount);
   }
 
-  public Optional<LinkedAccount> getBondLinkedAccount(String userId, Provider provider) {
+  private Optional<LinkedAccount> getBondLinkedAccount(String userId, Provider provider) {
     var bondRefreshTokenEntity = bondDatastoreDAO.getRefreshToken(userId, provider);
     var providerProperties = externalCredsConfig.getProviderProperties(provider);
     var bondLinkedAccount =
@@ -119,19 +119,22 @@ public class LinkedAccountDAO {
   @WithSpan
   public Optional<LinkedAccount> getLinkedAccount(String userId, Provider provider) {
     return switch (provider) {
-      case RAS, GITHUB -> {
-        var namedParameters =
-            new MapSqlParameterSource()
-                .addValue("userId", userId)
-                .addValue("provider", provider.name());
-        var query =
-            "SELECT * FROM linked_account WHERE user_id = :userId and provider = :provider::provider_enum";
-        yield Optional.ofNullable(
-            DataAccessUtils.singleResult(
-                jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER)));
-      }
+      case RAS, GITHUB -> getEcmLinkedAccount(userId, provider);
       case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> getLinkedFenceAccount(userId, provider);
     };
+  }
+
+  @WithSpan
+  protected Optional<LinkedAccount> getEcmLinkedAccount(String userId, Provider provider) {
+    var namedParameters =
+        new MapSqlParameterSource()
+            .addValue("userId", userId)
+            .addValue("provider", provider.name());
+    var query =
+        "SELECT * FROM linked_account WHERE user_id = :userId and provider = :provider::provider_enum";
+    return Optional.ofNullable(
+        DataAccessUtils.singleResult(
+            jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER)));
   }
 
   @WithSpan
