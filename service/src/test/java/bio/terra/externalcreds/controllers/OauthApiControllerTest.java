@@ -20,6 +20,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
+import bio.terra.externalcreds.services.FenceProviderService;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.ProviderService;
@@ -59,6 +60,10 @@ class OauthApiControllerTest extends BaseTest {
   @Qualifier("tokenProviderService")
   private TokenProviderService tokenProviderServiceMock;
 
+  @MockBean
+  @Qualifier("fenceProviderService")
+  private FenceProviderService fenceProviderServiceMock;
+
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private AuditLogger auditLoggerMock;
 
@@ -85,6 +90,27 @@ class OauthApiControllerTest extends BaseTest {
       mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
       when(linkedAccountServiceMock.getLinkedAccount(
+              inputLinkedAccount.getUserId(), inputLinkedAccount.getProvider()))
+          .thenReturn(Optional.of(inputLinkedAccount));
+
+      mvc.perform(
+              get("/api/oauth/v1/" + inputLinkedAccount.getProvider().toString())
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(
+              content()
+                  .json(
+                      mapper.writeValueAsString(
+                          OpenApiConverters.Output.convert(inputLinkedAccount))));
+    }
+
+    @Test
+    void testGetFenceLink() throws Exception {
+      var accessToken = "testToken";
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.FENCE);
+
+      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
+
+      when(fenceProviderServiceMock.getLinkedFenceAccount(
               inputLinkedAccount.getUserId(), inputLinkedAccount.getProvider()))
           .thenReturn(Optional.of(inputLinkedAccount));
 
@@ -257,6 +283,44 @@ class OauthApiControllerTest extends BaseTest {
               delete("/api/oauth/v1/{provider}", provider)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testDeleteLinkFence() throws Exception {
+      var accessToken = "testToken";
+      var userId = UUID.randomUUID().toString();
+      var externalId = UUID.randomUUID().toString();
+      mockSamUser(userId, accessToken);
+
+      when(providerServiceMock.deleteLink(userId, Provider.FENCE))
+          .thenReturn(
+              new LinkedAccount.Builder()
+                  .provider(Provider.FENCE)
+                  .userId(userId)
+                  .externalUserId(externalId)
+                  .expires(new Timestamp(0))
+                  .isAuthenticated(true)
+                  .refreshToken("")
+                  .build());
+
+      mvc.perform(
+              delete("/api/oauth/v1/{provider}", Provider.FENCE)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isOk());
+
+      verify(providerServiceMock).deleteLink(userId, Provider.FENCE);
+      verify(fenceProviderServiceMock).deleteFenceLink(userId, Provider.FENCE);
+
+      // check that a log was recorded
+      verify(auditLoggerMock)
+          .logEvent(
+              new AuditLogEvent.Builder()
+                  .auditLogEventType(AuditLogEventType.LinkDeleted)
+                  .provider(Provider.FENCE)
+                  .userId(userId)
+                  .clientIP("127.0.0.1")
+                  .externalUserId(externalId)
+                  .build());
     }
   }
 

@@ -7,6 +7,7 @@ import bio.terra.externalcreds.generated.api.OauthApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.services.*;
+import bio.terra.externalcreds.util.ProviderUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -122,9 +123,8 @@ public record OauthApiController(
     var deletedLink = providerService.deleteLink(samUser.getSubjectId(), provider);
 
     // This can be deleted once there's no longer a dependency on Bond's Datastore
-    switch (provider) {
-      case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.deleteLink(
-          provider, samUser.getSubjectId());
+    if (ProviderUtils.isFenceProvider(provider)) {
+      fenceProviderService.deleteFenceLink(samUser.getSubjectId(), provider);
     }
 
     auditLogger.logEvent(

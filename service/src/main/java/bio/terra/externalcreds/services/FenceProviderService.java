@@ -121,7 +121,7 @@ public class FenceProviderService extends ProviderService {
     }
   }
 
-  public void deleteLink(Provider provider, String userId) {
+  public void deleteFenceLink(String userId, Provider provider) {
     bondService.deleteBondLinkedAccount(userId, provider);
   }
 
