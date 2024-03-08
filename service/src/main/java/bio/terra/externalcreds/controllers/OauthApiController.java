@@ -39,7 +39,13 @@ public record OauthApiController(
   @Override
   public ResponseEntity<LinkInfo> getLink(Provider provider) {
     var samUser = samUserFactory.from(request);
-    var linkedAccount = linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
+    var linkedAccount =
+        switch (provider) {
+          case RAS, GITHUB -> linkedAccountService.getLinkedAccount(
+              samUser.getSubjectId(), provider);
+          case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.getLinkedFenceAccount(
+              samUser.getSubjectId(), provider);
+        };
     return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
   }
 
@@ -114,6 +120,12 @@ public record OauthApiController(
   public ResponseEntity<Void> deleteLink(Provider provider) {
     var samUser = samUserFactory.from(request);
     var deletedLink = providerService.deleteLink(samUser.getSubjectId(), provider);
+
+    // This can be deleted once there's no longer a dependency on Bond's Datastore
+    switch (provider) {
+      case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.deleteLink(
+          provider, samUser.getSubjectId());
+    }
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()

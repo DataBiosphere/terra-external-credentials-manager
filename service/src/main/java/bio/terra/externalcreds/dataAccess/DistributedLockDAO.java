@@ -1,5 +1,7 @@
 package bio.terra.externalcreds.dataAccess;
 
+import bio.terra.common.db.ReadTransaction;
+import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.models.DistributedLock;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.sql.Timestamp;
@@ -36,6 +38,7 @@ public class DistributedLockDAO {
    *     lockName and userId (or empty)
    */
   @WithSpan
+  @ReadTransaction
   public Optional<DistributedLock> getDistributedLock(String lockName, String userId) {
     var namedParameters =
         new MapSqlParameterSource().addValue("lockName", lockName).addValue("userId", userId);
@@ -51,6 +54,7 @@ public class DistributedLockDAO {
    * @return distributedLock The DistributedLock that was inserted
    */
   @WithSpan
+  @WriteTransaction
   public DistributedLock insertDistributedLock(DistributedLock distributedLock) {
     var query =
         "INSERT INTO distributed_lock (lock_name, user_id, expires_at)"
@@ -72,6 +76,7 @@ public class DistributedLockDAO {
    * @return boolean whether a distributed lock was found and deleted
    */
   @WithSpan
+  @WriteTransaction
   public boolean deleteDistributedLock(String lockName, String userId) {
     var query = "DELETE FROM distributed_lock WHERE lock_name = :lockName AND user_id = :userId";
     var namedParameters =

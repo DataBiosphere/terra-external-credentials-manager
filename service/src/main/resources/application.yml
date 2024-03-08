@@ -103,3 +103,8 @@ terra.common:
       enabled: ${CLOUD_TRACE_ENABLED:false}
   tracing:
     samplingRatio: ${SAMPLING_PROBABILITY:0}
+
+retry:
+  getFenceAccountKey:
+    maxAttempts: 6
+    delay: 10000

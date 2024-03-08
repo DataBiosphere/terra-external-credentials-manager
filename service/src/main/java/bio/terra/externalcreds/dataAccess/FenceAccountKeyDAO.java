@@ -34,7 +34,20 @@ public class FenceAccountKeyDAO {
   }
 
   public Optional<FenceAccountKey> getFenceAccountKey(LinkedAccount linkedAccount) {
-    return getFenceAccountKey(linkedAccount.getUserId(), linkedAccount.getProvider());
+    return linkedAccount
+        .getId()
+        .flatMap(
+            linkedAccountId -> {
+              var namedParameters =
+                  new MapSqlParameterSource().addValue("linkedAccountId", linkedAccountId);
+              var query =
+                  "SELECT fence.id, fence.linked_account_id, fence.key_json, fence.expires_at "
+                      + "  FROM fence_account_key fence"
+                      + "  WHERE fence.linked_account_id = :linkedAccountId";
+              return Optional.ofNullable(
+                  DataAccessUtils.singleResult(
+                      jdbcTemplate.query(query, namedParameters, FENCE_ACCOUNT_KEY_ROW_MAPPER)));
+            });
   }
 
   @WithSpan

@@ -4,10 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
@@ -15,14 +11,10 @@ import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.models.BondFenceServiceAccountEntity;
-import bio.terra.externalcreds.models.BondRefreshTokenEntity;
 import bio.terra.externalcreds.models.GA4GHPassport;
-import com.google.cloud.datastore.Key;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -261,165 +253,5 @@ class LinkedAccountDAOTest extends BaseTest {
           linkedAccountDAO.getLinkedAccountByPassportJwtIds(Set.of(UUID.randomUUID().toString()));
       assertTrue(loadedAccount.isEmpty());
     }
-  }
-
-  @Nested
-  class BondFenceAccounts {
-
-    @Test
-    void testGetLinkedFenceAccountExistsInBond() {
-      var issuedAt = Instant.now();
-      var token = "TestToken";
-      var userId = UUID.randomUUID().toString();
-      var userName = userId + "-name";
-      var keyJson = "{ \"name\": \"testKeyJson\"}";
-      var provider = Provider.FENCE;
-
-      when(bondDatastoreDAO.getRefreshToken(anyString(), any(Provider.class)))
-          .thenReturn(
-              Optional.of(
-                  new BondRefreshTokenEntity.Builder()
-                      .key(mock(Key.class))
-                      .issuedAt(issuedAt)
-                      .token(token)
-                      .username(userName)
-                      .build()));
-
-      when(bondDatastoreDAO.getFenceServiceAccountKey(anyString(), any(Provider.class)))
-          .thenReturn(
-              Optional.of(
-                  new BondFenceServiceAccountEntity.Builder()
-                      .key(mock(Key.class))
-                      .expiresAt(issuedAt.plus(Duration.ofDays(30)))
-                      .keyJson(keyJson)
-                      .updateLockTimeout("foobar")
-                      .build()));
-
-      var linkedAccountFromBond = linkedAccountDAO.getLinkedAccount(userId, provider);
-      var insertedLinkedAccount =
-          linkedAccountFromBond.flatMap(
-              l -> linkedAccountDAO.getEcmLinkedAccount(l.getUserId(), l.getProvider()));
-
-      var fenceKey = fenceAccountKeyDAO.getFenceAccountKey(userId, provider);
-
-      assertPresent(insertedLinkedAccount);
-      assertPresent(fenceKey);
-    }
-
-    @Test
-    void testGetLinkedFenceAccountDoesNotExistsInBond() {
-      var userId = UUID.randomUUID().toString();
-      var provider = Provider.FENCE;
-
-      when(bondDatastoreDAO.getRefreshToken(anyString(), any(Provider.class)))
-          .thenReturn(Optional.empty());
-
-      var linkedAccountFromBond = linkedAccountDAO.getLinkedAccount(userId, provider);
-      var insertedLinkedAccount =
-          linkedAccountFromBond.flatMap(
-              l -> linkedAccountDAO.getEcmLinkedAccount(l.getUserId(), l.getProvider()));
-
-      assertEmpty(insertedLinkedAccount);
-    }
-
-    @Test
-    void testGetLinkedFenceAccountExistsInBondAndEcmUpToDate() {
-      var issuedAt = Instant.now().minus(Duration.ofDays(90));
-      var token = "TestToken";
-      var provider = Provider.FENCE;
-
-      var expiration = new Timestamp(Instant.now().plus(Duration.ofDays(30)).toEpochMilli());
-
-      var ecmLinkedAccount =
-          TestUtils.createRandomLinkedAccount(Provider.FENCE).withExpires(expiration);
-      linkedAccountDAO.upsertLinkedAccount(ecmLinkedAccount);
-
-      when(bondDatastoreDAO.getRefreshToken(anyString(), any(Provider.class)))
-          .thenReturn(
-              Optional.of(
-                  new BondRefreshTokenEntity.Builder()
-                      .key(mock(Key.class))
-                      .issuedAt(issuedAt)
-                      .token(token)
-                      .username(ecmLinkedAccount.getExternalUserId())
-                      .build()));
-
-      var linkedAccountFromEcm =
-          linkedAccountDAO.getLinkedAccount(ecmLinkedAccount.getUserId(), provider);
-
-      assertPresent(linkedAccountFromEcm);
-      assertEquals(expiration, linkedAccountFromEcm.get().getExpires());
-    }
-
-    @Test
-    void testGetLinkedFenceAccountExistsInBondAndEcmOutOfDate() {
-      var issuedAt = Instant.now();
-      var token = "TestToken";
-      var provider = Provider.FENCE;
-
-      var expiration = new Timestamp(Instant.now().minus(Duration.ofDays(90)).toEpochMilli());
-
-      var ecmLinkedAccount =
-          TestUtils.createRandomLinkedAccount(Provider.FENCE).withExpires(expiration);
-      linkedAccountDAO.upsertLinkedAccount(ecmLinkedAccount);
-
-      when(bondDatastoreDAO.getRefreshToken(anyString(), any(Provider.class)))
-          .thenReturn(
-              Optional.of(
-                  new BondRefreshTokenEntity.Builder()
-                      .key(mock(Key.class))
-                      .issuedAt(issuedAt)
-                      .token(token)
-                      .username(ecmLinkedAccount.getExternalUserId())
-                      .build()));
-
-      var linkedAccountFromBond =
-          linkedAccountDAO.getLinkedAccount(ecmLinkedAccount.getUserId(), provider);
-      var linkedAccountInDb =
-          linkedAccountDAO.getEcmLinkedAccount(ecmLinkedAccount.getUserId(), provider);
-
-      var expectedExpiresAt = new Timestamp(issuedAt.plus(30, ChronoUnit.DAYS).toEpochMilli());
-      assertPresent(linkedAccountFromBond);
-      assertPresent(linkedAccountInDb);
-      assertEquals(expectedExpiresAt, linkedAccountFromBond.get().getExpires());
-      assertEquals(expectedExpiresAt, linkedAccountInDb.get().getExpires());
-    }
-  }
-
-  @Test
-  void testDeleteLinkedFenceAccount() {
-    var issuedAt = Instant.now();
-    var token = "TestToken";
-    var userId = UUID.randomUUID().toString();
-    var userName = userId + "-name";
-    var keyJson = "{ \"name\": \"testKeyJson\"}";
-    var provider = Provider.FENCE;
-
-    when(bondDatastoreDAO.getRefreshToken(anyString(), any(Provider.class)))
-        .thenReturn(
-            Optional.of(
-                new BondRefreshTokenEntity.Builder()
-                    .key(mock(Key.class))
-                    .issuedAt(issuedAt)
-                    .token(token)
-                    .username(userName)
-                    .build()));
-
-    when(bondDatastoreDAO.getFenceServiceAccountKey(anyString(), any(Provider.class)))
-        .thenReturn(
-            Optional.of(
-                new BondFenceServiceAccountEntity.Builder()
-                    .key(mock(Key.class))
-                    .expiresAt(issuedAt.plus(Duration.ofDays(30)))
-                    .keyJson(keyJson)
-                    .updateLockTimeout("foobar")
-                    .build()));
-
-    linkedAccountDAO.getLinkedAccount(userId, provider);
-
-    linkedAccountDAO.deleteLinkedAccountIfExists(userId, provider);
-
-    verify(bondDatastoreDAO).deleteRefreshToken(userId, provider);
-    verify(bondDatastoreDAO).deleteFenceServiceAccountKey(userId, provider);
   }
 }
