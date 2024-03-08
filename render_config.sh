@@ -25,8 +25,8 @@ fi
   echo export ANVIL_CLIENT_SECRET="$($VAULT_COMMAND -field=anvil-secret "$ECM_VAULT_PATH/fence")"
   echo export FENCE_CLIENT_ID="$($VAULT_COMMAND -field=client-id "$ECM_VAULT_PATH/fence")"
   echo export FENCE_CLIENT_SECRET="$($VAULT_COMMAND -field=client-secret "$ECM_VAULT_PATH/fence")"
-  echo export DCF_CLIENT_ID="$($VAULT_COMMAND -field=dcf-fence-client-id "$ECM_VAULT_PATH/fence")"
-  echo export DCF_CLIENT_SECRET="$($VAULT_COMMAND -field=dcf-fence-client-secret "$ECM_VAULT_PATH/fence")"
+  echo export DCF_FENCE_CLIENT_ID="$($VAULT_COMMAND -field=dcf-fence-client-id "$ECM_VAULT_PATH/fence")"
+  echo export DCF_FENCE_CLIENT_SECRET="$($VAULT_COMMAND -field=dcf-fence-client-secret "$ECM_VAULT_PATH/fence")"
   echo export KIDS_FIRST_CLIENT_ID="$($VAULT_COMMAND -field=kids-first-client-id "$ECM_VAULT_PATH/fence")"
   echo export KIDS_FIRST_CLIENT_SECRET="$($VAULT_COMMAND -field=kids-first-client-secret "$ECM_VAULT_PATH/fence")"
 
