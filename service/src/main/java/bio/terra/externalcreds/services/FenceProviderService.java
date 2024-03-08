@@ -1,6 +1,8 @@
 package bio.terra.externalcreds.services;
 
+import bio.terra.common.db.WriteTransaction;
 import bio.terra.common.exception.BadRequestException;
+import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
@@ -73,19 +75,19 @@ public class FenceProviderService extends ProviderService {
         distributedLockDAO.getDistributedLock(lockName, linkedAccount.getUserId());
     if (maybeLock.isPresent()) {
       // If the lock is present, another thread/instance is getting retrieving a key.
-      // Wait for it to finish and get the key from the DB.
-      while (maybeLock.isPresent()) {
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException e) {
-          log.error("Thread interrupted while waiting for lock", e);
-        }
-        maybeLock = distributedLockDAO.getDistributedLock(lockName, linkedAccount.getUserId());
-      }
-      return fenceAccountKeyDAO.getFenceAccountKey(linkedAccount);
+      log.error(
+          "Cannot get new Fence Account Key for user {} due to Lock {}",
+          linkedAccount.getUserId(),
+          lockName);
+      throw new ExternalCredsException(
+          "Failed to create a new Fence Account Key. Please contact Terra Support.");
     } else {
       // Lock is not present.
       // Create a lock and retrieve a key from the fence provider.
+      log.info(
+          "Getting new Fence Account Key for user {} with lock {}",
+          linkedAccount.getUserId(),
+          lockName);
       var newLock =
           new DistributedLock.Builder()
               .lockName(lockName)
@@ -97,10 +99,9 @@ public class FenceProviderService extends ProviderService {
       } catch (DataAccessException e) {
         log.warn(
             String.format(
-                "Failed to insert lock %s, another thread is doing the same thing.", lockName),
+                "Failed to insert lock %s for user %s, another thread is doing the same thing.",
+                lockName, linkedAccount.getUserId()),
             e);
-        // Just recursively call this function. Just return the key created by the other thread.
-        return getLinkedFenceAccountKey(linkedAccount.getUserId(), linkedAccount.getProvider());
       }
       var fenceAccountKey = retrieveFenceAccountKey(linkedAccount);
       fenceAccountKeyDAO.upsertFenceAccountKey(fenceAccountKey);
@@ -134,6 +135,7 @@ public class FenceProviderService extends ProviderService {
         .build();
   }
 
+  @WriteTransaction
   public LinkedAccount createLink(
       Provider provider,
       String userId,
