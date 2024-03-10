@@ -223,6 +223,25 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
 
+  /api/serviceaccount/v1/{provider}/key:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+    get:
+      summary: Returns a service account json key to use to access objects for the provider as the linked account.
+      tags: [ serviceAccount ]
+      operationId: getServiceAccount
+      responses:
+        '200':
+          description: A JSON service account key
+          content:
+            application/json:
+              schema:
+                type: string
+        '404':
+          description: Provider does not support service account keys
+        '500':
+          $ref: '#/components/responses/ServerError'
+
   /passport/v1/validate:
     post:
       summary: Given passports and criteria validate that at least one passport is valid and has a visa that matches at least one crition
