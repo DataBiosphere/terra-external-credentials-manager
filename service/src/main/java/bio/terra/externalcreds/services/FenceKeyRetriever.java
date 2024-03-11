@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.services;
 
+import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.DistributedLockDAO;
 import bio.terra.externalcreds.exception.DistributedLockException;
@@ -44,7 +45,7 @@ public class FenceKeyRetriever {
   }
 
   @Retryable(
-      value = {DistributedLockException.class},
+      retryFor = {DistributedLockException.class},
       maxAttemptsExpression = "${retry.getFenceAccountKey.maxAttempts}",
       backoff = @Backoff(delayExpression = "${retry.getFenceAccountKey.delay}"))
   public Optional<FenceAccountKey> createFenceAccountKey(LinkedAccount linkedAccount) {
@@ -94,12 +95,20 @@ public class FenceKeyRetriever {
   }
 
   private FenceAccountKey retrieveFenceAccountKey(LinkedAccount linkedAccount) {
+    if (linkedAccount.getId().isEmpty()) {
+      throw new IllegalArgumentException(
+          "Cannot retrieved Fence Account Key for an unsaved Linked Account");
+    }
     var providerClient = providerOAuthClientCache.getProviderClient(linkedAccount.getProvider());
     var providerProperties = externalCredsConfig.getProviderProperties(linkedAccount.getProvider());
     var accessToken =
         oAuth2Service.authorizeWithRefreshToken(
             providerClient, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
     var keyEndpoint = providerProperties.getKeyEndpoint();
+    if (keyEndpoint.isEmpty()) {
+      throw new IllegalArgumentException(
+          "Provider " + linkedAccount.getProvider() + " does not have a key endpoint");
+    }
     WebClient.ResponseSpec response =
         WebClient.create(keyEndpoint.get())
             .post()
@@ -110,6 +119,12 @@ public class FenceKeyRetriever {
             .onStatus(HttpStatusCode::isError, clientResponse -> Mono.empty())
             .bodyToMono(String.class)
             .block(Duration.of(11, ChronoUnit.SECONDS));
+    if (responseBody == null) {
+      throw new ExternalCredsException(
+          "Got a successful response from "
+              + linkedAccount.getProvider()
+              + ", but the body was empty.");
+    }
     return new FenceAccountKey.Builder()
         .linkedAccountId(linkedAccount.getId().get())
         .keyJson(responseBody)
