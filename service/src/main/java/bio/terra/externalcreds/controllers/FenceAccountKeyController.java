@@ -3,7 +3,7 @@ package bio.terra.externalcreds.controllers;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
-import bio.terra.externalcreds.generated.api.ServiceAccountApi;
+import bio.terra.externalcreds.generated.api.FenceAccountKeyApi;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.FenceAccountKeyService;
@@ -15,16 +15,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 @Controller
-public record ServiceAccountApiController(
+public record FenceAccountKeyController(
     AuditLogger auditLogger,
     ExternalCredsSamUserFactory samUserFactory,
     FenceAccountKeyService fenceAccountKeyService,
     HttpServletRequest request,
     LinkedAccountService linkedAccountService)
-    implements ServiceAccountApi {
+    implements FenceAccountKeyApi {
 
   @Override
-  public ResponseEntity<String> getServiceAccount(Provider provider) {
+  public ResponseEntity<String> getFenceAccountKey(Provider provider) {
     var samUser = samUserFactory.from(request);
     var maybeLinkedAccount =
         linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);

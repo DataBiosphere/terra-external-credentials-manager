@@ -223,13 +223,13 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
 
-  /api/serviceaccount/v1/{provider}/key:
+  /api/fenceAccountKey/v1/{provider}/key:
     parameters:
       - $ref: '#/components/parameters/providerParam'
     get:
-      summary: Returns a service account json key to use to access objects for the provider as the linked account.
-      tags: [ serviceAccount ]
-      operationId: getServiceAccount
+      summary: Returns a service account json key to use to access objects for the fence account provider as the linked account.
+      tags: [ fenceAccountKey ]
+      operationId: getFenceAccountKey
       responses:
         '200':
           description: A JSON service account key

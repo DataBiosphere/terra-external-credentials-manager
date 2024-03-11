@@ -30,7 +30,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
-class ServiceAccountApiControllerTest extends BaseTest {
+class FenceAccountKeyApiControllerTest extends BaseTest {
 
   @Autowired private MockMvc mvc;
 
@@ -70,7 +70,7 @@ class ServiceAccountApiControllerTest extends BaseTest {
           .thenReturn(Optional.of(fenceAccountKey));
 
       mvc.perform(
-              get("/api/serviceaccount/v1/{provider}/key", provider)
+              get("/api/fenceAccountKey/v1/{provider}/key", provider)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isOk())
           .andExpect(content().string(fenceAccountKey.getKeyJson()));
@@ -98,7 +98,7 @@ class ServiceAccountApiControllerTest extends BaseTest {
       when(fenceAccountKeyServiceMock.getFenceAccountKey(userId, provider))
           .thenReturn(Optional.of(fenceAccountKey));
       mvc.perform(
-              get("/api/serviceaccount/v1/{provider}/key", provider)
+              get("/api/fenceAccountKey/v1/{provider}/key", provider)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isNotFound());
     }
@@ -109,7 +109,7 @@ class ServiceAccountApiControllerTest extends BaseTest {
       var userId = UUID.randomUUID().toString();
       mockSamUser(userId, accessToken);
       mvc.perform(
-              get("/api/serviceaccount/v1/{provider}/key", provider)
+              get("/api/fenceAccountKey/v1/{provider}/key", provider)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isNotFound());
     }
