@@ -16,17 +16,6 @@ externalcreds:
     key-ring-location: ${kMS_KEY_LOCATION:us-central1}
     ssh-key-pair-refresh-duration: ${KMS_KEY_REFRESH_DURATION:90d}
   providers:
-    ras:
-      clientId: "${RAS_CLIENT_ID}"
-      clientSecret: "${RAS_CLIENT_SECRET}"
-      externalIdClaim: "preferred_username"
-      scopes: [ "openid","email","ga4gh_passport_v1","profile" ]
-      linkLifespan: "15d"
-      issuer: "https://stsstg.nih.gov"
-      revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
-      userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
-      validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback"]
     github:
       clientId: "${GITHUB_CLIENT_ID}"
       clientSecret: "${GITHUB_CLIENT_SECRET}"
@@ -110,6 +99,9 @@ spring:
 
   main.banner-mode: off
 
+  profiles.include:
+    - ${DEPLOY_ENV:dev}
+
   web:
     resources:
       cache:
@@ -125,3 +117,20 @@ terra.common:
       enabled: ${CLOUD_TRACE_ENABLED:false}
   tracing:
     samplingRatio: ${SAMPLING_PROBABILITY:0}
+
+---
+#non-prod environments
+spring.config.activate.on-profile: '!prod'
+externalcreds:
+  providers:
+    ras:
+      clientId: "${RAS_CLIENT_ID}"
+      clientSecret: "${RAS_CLIENT_SECRET}"
+      externalIdClaim: "preferred_username"
+      scopes: [ "openid","email","ga4gh_passport_v1","profile" ]
+      linkLifespan: "15d"
+      issuer: "https://stsstg.nih.gov"
+      revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
+      userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
+      validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
