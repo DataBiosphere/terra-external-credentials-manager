@@ -28,7 +28,7 @@ externalcreds:
       userInfoEndpoint: "https://api.github.com/user"
       authorizationEndpoint: "${externalcreds.providers.github.issuer}/login/oauth/authorize"
       tokenEndpoint: "${externalcreds.providers.github.issuer}/login/oauth/access_token"
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/oauth_callback" ]
+      allowedRedirectUriPatterns: [ "${GITHUB_ALLOWED_REDIRECT_URI}:https://bvdp-saturn-dev.appspot.com/oauth_callback" ]
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
@@ -133,4 +133,4 @@ externalcreds:
       revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
       userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
+      allowedRedirectUriPatterns: [ "${RAS_ALLOWED_REDIRECT_URI:https://bvdp-saturn-dev.appspot.com/ecm-callback}" ]
