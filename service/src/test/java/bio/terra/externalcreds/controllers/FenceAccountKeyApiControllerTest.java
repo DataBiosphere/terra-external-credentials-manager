@@ -70,7 +70,7 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
           .thenReturn(Optional.of(fenceAccountKey));
 
       mvc.perform(
-              get("/api/fenceAccountKey/v1/{provider}/key", provider)
+              get("/api/fenceAccountKey/v1/{provider}", provider)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isOk())
           .andExpect(content().string(fenceAccountKey.getKeyJson()));
@@ -98,7 +98,7 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
       when(fenceAccountKeyServiceMock.getFenceAccountKey(userId, provider))
           .thenReturn(Optional.of(fenceAccountKey));
       mvc.perform(
-              get("/api/fenceAccountKey/v1/{provider}/key", provider)
+              get("/api/fenceAccountKey/v1/{provider}", provider)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isNotFound());
     }
@@ -109,7 +109,7 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
       var userId = UUID.randomUUID().toString();
       mockSamUser(userId, accessToken);
       mvc.perform(
-              get("/api/fenceAccountKey/v1/{provider}/key", provider)
+              get("/api/fenceAccountKey/v1/{provider}", provider)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isNotFound());
     }

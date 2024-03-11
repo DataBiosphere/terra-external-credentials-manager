@@ -28,30 +28,30 @@ public record FenceAccountKeyController(
     var samUser = samUserFactory.from(request);
     var maybeLinkedAccount =
         linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
-    var maybeFenceAccountKey =
-        fenceAccountKeyService.getFenceAccountKey(samUser.getSubjectId(), provider);
-
-    auditLogger.logEvent(
-        new AuditLogEvent.Builder()
-            .auditLogEventType(AuditLogEventType.GetServiceAccountKey)
-            .provider(provider)
-            .userId(samUser.getSubjectId())
-            .clientIP(request.getRemoteAddr())
-            .externalUserId(maybeLinkedAccount.map(LinkedAccount::getExternalUserId))
-            .build());
-
     var response =
-        maybeFenceAccountKey.flatMap(
-            fenceAccountKey -> {
-              // service account key should not be expired but if it is (due to some failure in ECM)
-              // don't pass that failure on to the caller
-              if (fenceAccountKey.getExpiresAt().isBefore(Instant.now())) {
-                return Optional.empty();
-              } else {
-                return Optional.of(fenceAccountKey.getKeyJson());
-              }
-            });
-
+        maybeLinkedAccount.flatMap(
+            linkedAccount -> {
+              var maybeFenceAccountKey =
+                  fenceAccountKeyService.getFenceAccountKey(linkedAccount.getUserId(), linkedAccount.getProvider());
+              return maybeFenceAccountKey.flatMap(
+                  fenceAccountKey -> {
+                    // service account key should not be expired but if it is (due to some failure in ECM)
+                    // don't pass that failure on to the caller
+                    if (fenceAccountKey.getExpiresAt().isBefore(Instant.now())) {
+                      return Optional.empty();
+                    } else {
+                      auditLogger.logEvent(
+                          new AuditLogEvent.Builder()
+                              .auditLogEventType(AuditLogEventType.GetServiceAccountKey)
+                              .provider(linkedAccount.getProvider())
+                              .userId(linkedAccount.getUserId())
+                              .clientIP(request.getRemoteAddr())
+                              .externalUserId(linkedAccount.getExternalUserId())
+                              .build());
+                      return Optional.of(fenceAccountKey.getKeyJson());
+                    }
+                  });
+              });
     return ResponseEntity.of(response);
   }
 }

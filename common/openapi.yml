@@ -223,7 +223,7 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
 
-  /api/fenceAccountKey/v1/{provider}/key:
+  /api/fenceAccountKey/v1/{provider}:
     parameters:
       - $ref: '#/components/parameters/providerParam'
     get:
