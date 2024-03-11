@@ -50,48 +50,59 @@ public class FenceKeyRetriever {
       backoff = @Backoff(delayExpression = "${retry.getFenceAccountKey.delay}"))
   public Optional<FenceAccountKey> createFenceAccountKey(LinkedAccount linkedAccount) {
     var maybeKey = fenceAccountKeyService.getFenceAccountKey(linkedAccount);
-    return maybeKey.or(
-        () -> {
-          var newLock =
-              new DistributedLock.Builder()
-                  .lockName("createFenceKey-" + linkedAccount.getProvider())
-                  .userId(linkedAccount.getUserId())
-                  .expiresAt(Instant.now().plus(1, ChronoUnit.MINUTES))
-                  .build();
-          Optional<DistributedLock> maybeLock =
-              distributedLockDAO.getDistributedLock(
-                  newLock.getLockName(), linkedAccount.getUserId());
-          if (maybeLock.isPresent()) {
-            // If the lock is present, another thread/instance is getting retrieving a key.
-            // Wait for it to finish and get the key from the DB.
-            log.info("Lock {} is present, waiting for it to expire.", newLock.getLockName());
-            throw new DistributedLockException(
-                String.format(
-                    "Encountered lock %s for user %s",
-                    newLock.getLockName(), linkedAccount.getUserId()));
-          } else {
-            log.info("Lock {} is not present, creating a new lock.", newLock.getLockName());
-            // Lock is not present.
-            // Create a lock and retrieve a key from the fence provider.
-            try {
-              distributedLockDAO.insertDistributedLock(newLock);
-            } catch (DataAccessException e) {
-              log.warn(
-                  String.format(
-                      "Failed to insert lock %s, another thread is doing the same thing.",
-                      newLock.getLockName()));
-              throw new DistributedLockException(
-                  String.format(
-                      "Encountered lock %s for user %s",
-                      newLock.getLockName(), linkedAccount.getUserId()));
-            }
-            var fenceAccountKey = retrieveFenceAccountKey(linkedAccount);
-            fenceAccountKeyService.upsertFenceAccountKey(fenceAccountKey);
-            distributedLockDAO.deleteDistributedLock(
-                newLock.getLockName(), linkedAccount.getUserId());
-            return Optional.of(fenceAccountKey);
-          }
-        });
+    return maybeKey.or(() -> retrieveNewKeyFromFence(linkedAccount));
+  }
+
+  private Optional<FenceAccountKey> retrieveNewKeyFromFence(LinkedAccount linkedAccount) {
+    var newLock =
+        new DistributedLock.Builder()
+            .lockName("createFenceKey-" + linkedAccount.getProvider())
+            .userId(linkedAccount.getUserId())
+            .expiresAt(Instant.now().plus(1, ChronoUnit.MINUTES))
+            .build();
+    Optional<DistributedLock> existingLock =
+        distributedLockDAO.getDistributedLock(newLock.getLockName(), linkedAccount.getUserId());
+    if (existingLock.isPresent()) {
+      // If the lock is present, another thread/instance is getting retrieving a key.
+      // Tigger a retry
+      log.info("Lock {} is present, waiting for it to expire.", newLock.getLockName());
+      throw new DistributedLockException(
+          String.format(
+              "Encountered lock %s for user %s", newLock.getLockName(), linkedAccount.getUserId()));
+    } else {
+      log.info(
+          "Retrieving new {} Fence Account Key for user {}",
+          linkedAccount.getProvider(),
+          linkedAccount.getUserId());
+      return obtainLockAndGetNewKey(newLock, linkedAccount);
+    }
+  }
+
+  private Optional<FenceAccountKey> obtainLockAndGetNewKey(
+      DistributedLock lock, LinkedAccount linkedAccount) {
+    // Create a lock and retrieve a key from the fence provider.
+    obtainLock(lock, linkedAccount);
+    var fenceAccountKey = retrieveFenceAccountKey(linkedAccount);
+    fenceAccountKeyService.upsertFenceAccountKey(fenceAccountKey);
+    log.info("Removing lock {} for user {}", lock.getLockName(), linkedAccount.getUserId());
+    distributedLockDAO.deleteDistributedLock(lock.getLockName(), linkedAccount.getUserId());
+    return Optional.of(fenceAccountKey);
+  }
+
+  private void obtainLock(DistributedLock newLock, LinkedAccount linkedAccount)
+      throws DistributedLockException {
+    try {
+      log.info("Inserting lock {} for user {}", newLock.getLockName(), linkedAccount.getUserId());
+      distributedLockDAO.insertDistributedLock(newLock);
+    } catch (DataAccessException e) {
+      log.warn(
+          String.format(
+              "Failed to insert lock %s, another thread is doing the same thing.",
+              newLock.getLockName()));
+      throw new DistributedLockException(
+          String.format(
+              "Encountered lock %s for user %s", newLock.getLockName(), linkedAccount.getUserId()));
+    }
   }
 
   private FenceAccountKey retrieveFenceAccountKey(LinkedAccount linkedAccount) {

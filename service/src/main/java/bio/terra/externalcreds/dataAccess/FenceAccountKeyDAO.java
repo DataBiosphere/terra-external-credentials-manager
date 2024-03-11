@@ -33,6 +33,7 @@ public class FenceAccountKeyDAO {
     this.jdbcTemplate = jdbcTemplate;
   }
 
+  @WithSpan
   public Optional<FenceAccountKey> getFenceAccountKey(LinkedAccount linkedAccount) {
     return linkedAccount
         .getId()
