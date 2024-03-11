@@ -1,1 +1,4 @@
 comment: false
+parsers:
+  jacoco:
+    partials_as_hits: true
