@@ -198,6 +198,23 @@ class OauthApiControllerTest extends BaseTest {
     }
 
     @Test
+    void testCreateFenceLink() throws Exception {
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.FENCE);
+
+      var state = UUID.randomUUID().toString();
+      var oauthcode = UUID.randomUUID().toString();
+
+      when(fenceProviderServiceMock.createLink(
+              eq(inputLinkedAccount.getProvider()),
+              eq(inputLinkedAccount.getUserId()),
+              eq(oauthcode),
+              eq(state),
+              any(AuditLogEvent.Builder.class)))
+          .thenReturn(inputLinkedAccount);
+      testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode);
+    }
+
+    @Test
     void testExceptionIsLogged() throws Exception {
       var accessToken = "testToken";
 
