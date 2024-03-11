@@ -1,0 +1,71 @@
+package bio.terra.externalcreds;
+
+public class ProviderTestUtil {
+
+  public static String wellKnownResponse(String url) {
+    return "{\n"
+        + "  \"issuer\":\""
+        + url
+        + "\",\n"
+        + "  \"authorization_endpoint\":\""
+        + url
+        + "/oauth/auz/authorize\",\n"
+        + "  \"token_endpoint\":\""
+        + url
+        + "/oauth/oauth20/token\",\n"
+        + "  \"userinfo_endpoint\":\""
+        + url
+        + "/oauth/userinfo\",\n"
+        + "  \"jwks_uri\":\""
+        + url
+        + "/oauth/jwks\",\n"
+        + "  \"scopes_supported\":[\n"
+        + "    \"READ\"\n"
+        + "  ],\n"
+        + "  \"response_types_supported\":[\n"
+        + "    \"code\",\n"
+        + "    \"code id_token\",\n"
+        + "    \"code token\",\n"
+        + "    \"code id_token token\",\n"
+        + "    \"token\",\n"
+        + "    \"id_token\",\n"
+        + "    \"id_token token\"\n"
+        + "  ],\n"
+        + "  \"grant_types_supported\":[\n"
+        + "    \"authorization_code\",\n"
+        + "    \"implicit\",\n"
+        + "    \"password\",\n"
+        + "    \"client_credentials\",\n"
+        + "    \"urn:ietf:params:oauth:grant-type:jwt-bearer\"\n"
+        + "  ],\n"
+        + "  \"subject_types_supported\":[\n"
+        + "    \"public\"\n"
+        + "  ],\n"
+        + "  \"id_token_signing_alg_values_supported\":[\n"
+        + "    \"RS256\"\n"
+        + "  ],\n"
+        + "  \"id_token_encryption_alg_values_supported\":[\n"
+        + "    \"A128KW\",\n"
+        + "    \"A192KW\",\n"
+        + "    \"A256KW\"\n"
+        + "  ],\n"
+        + "  \"id_token_encryption_enc_values_supported\":[\n"
+        + "    \"A128GCM\",\n"
+        + "    \"A192GCM\",\n"
+        + "    \"A256GCM\"\n"
+        + "  ],\n"
+        + "  \"token_endpoint_auth_methods_supported\":[\n"
+        + "    \"client_secret_post\",\n"
+        + "    \"client_secret_basic\",\n"
+        + "    \"client_secret_jwt\",\n"
+        + "    \"private_key_jwt\"\n"
+        + "  ],\n"
+        + "  \"token_endpoint_auth_signing_alg_values_supported\":[\n"
+        + "    \"RS256\"\n"
+        + "  ],\n"
+        + "  \"claims_parameter_supported\":false,\n"
+        + "  \"request_parameter_supported\":false,\n"
+        + "  \"request_uri_parameter_supported\":false\n"
+        + "}";
+  }
+}
