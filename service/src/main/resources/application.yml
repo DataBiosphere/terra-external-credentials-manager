@@ -178,4 +178,28 @@ externalcreds:
       revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
       userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
-      allowedRedirectUriPatterns: [ "${RAS_ALLOWED_REDIRECT_URI:https://bvdp-saturn-dev.appspot.com/ecm-callback}" ]
+
+---
+spring.config.activate.on-profile: 'dev'
+externalcreds:
+  providers:
+    ras:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
+    github:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/oauth_callback" ]
+---
+spring.config.activate.on-profile: 'staging'
+externalcreds:
+  providers:
+    ras:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback" ]
+    github:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/oauth_callback" ]
+---
+spring.config.activate.on-profile: 'prod'
+externalcreds:
+  providers:
+    ras:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/ecm-callback" ]
+    github:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/oauth_callback" ]
