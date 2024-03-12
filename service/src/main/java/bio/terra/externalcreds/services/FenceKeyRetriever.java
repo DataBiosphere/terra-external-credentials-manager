@@ -80,13 +80,25 @@ public class FenceKeyRetriever {
 
   private Optional<FenceAccountKey> obtainLockAndGetNewKey(
       DistributedLock lock, LinkedAccount linkedAccount) {
-    // Create a lock and retrieve a key from the fence provider.
-    obtainLock(lock, linkedAccount);
-    var fenceAccountKey = retrieveFenceAccountKey(linkedAccount);
-    fenceAccountKeyService.upsertFenceAccountKey(fenceAccountKey);
-    log.info("Removing lock {} for user {}", lock.getLockName(), linkedAccount.getUserId());
-    distributedLockDAO.deleteDistributedLock(lock.getLockName(), linkedAccount.getUserId());
-    return Optional.of(fenceAccountKey);
+    try {
+      // Create a lock and retrieve a key from the fence provider.
+      obtainLock(lock, linkedAccount);
+      var fenceAccountKey = retrieveFenceAccountKey(linkedAccount);
+      fenceAccountKeyService.upsertFenceAccountKey(fenceAccountKey);
+      log.info("Removing lock {} for user {}", lock.getLockName(), linkedAccount.getUserId());
+      distributedLockDAO.deleteDistributedLock(lock.getLockName(), linkedAccount.getUserId());
+      return Optional.of(fenceAccountKey);
+    } catch (Exception e) {
+      log.error(
+          "Failed to retrieve a new Fence Account Key for user {} with error: {}",
+          linkedAccount.getUserId(),
+          e.getMessage());
+      distributedLockDAO.deleteDistributedLock(lock.getLockName(), linkedAccount.getUserId());
+      throw new ExternalCredsException(
+          "Failed to retrieve a new %s Fence Account Key for user %s"
+              .formatted(linkedAccount.getProvider(), linkedAccount.getUserId()),
+          e);
+    }
   }
 
   private void obtainLock(DistributedLock newLock, LinkedAccount linkedAccount)

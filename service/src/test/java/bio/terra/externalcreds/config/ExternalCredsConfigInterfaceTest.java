@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.generated.model.Provider;
+import java.util.EnumMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -15,11 +16,12 @@ class ExternalCredsConfigInterfaceTest {
     var externalCredsConfig =
         ExternalCredsConfig.create()
             .setProviders(
-                Map.of(
-                    Provider.GITHUB,
-                    TestUtils.createRandomProvider(),
-                    Provider.RAS,
-                    TestUtils.createRandomProvider()));
+                new EnumMap<>(
+                    Map.of(
+                        Provider.GITHUB,
+                        TestUtils.createRandomProvider(),
+                        Provider.RAS,
+                        TestUtils.createRandomProvider())));
 
     assertThrows(
         NotFoundException.class, () -> externalCredsConfig.getProviderProperties(Provider.FENCE));
@@ -30,7 +32,8 @@ class ExternalCredsConfigInterfaceTest {
     var providerInfo = TestUtils.createRandomProvider();
     var provider = Provider.GITHUB;
     var externalCredsConfig =
-        ExternalCredsConfig.create().setProviders(Map.of(Provider.GITHUB, providerInfo));
+        ExternalCredsConfig.create()
+            .setProviders(new EnumMap<>(Map.of(Provider.GITHUB, providerInfo)));
 
     var actualProviderInfo = externalCredsConfig.getProviderProperties(provider);
     assertEquals(providerInfo, actualProviderInfo);
