@@ -6,8 +6,8 @@ import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -15,7 +15,7 @@ import org.immutables.value.Value;
 @PropertiesInterfaceStyle
 public interface ExternalCredsConfigInterface {
 
-  Map<Provider, ProviderProperties> getProviders();
+  EnumMap<Provider, ProviderProperties> getProviders();
 
   @Value.Derived
   default ProviderProperties getProviderProperties(Provider provider) {

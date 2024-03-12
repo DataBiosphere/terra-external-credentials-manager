@@ -80,7 +80,9 @@ public class ProviderService {
   }
 
   public Set<String> getProviderList() {
-    return Set.of(Provider.values()).stream().map(Provider::toString).collect(Collectors.toSet());
+    return externalCredsConfig.getProviders().keySet().stream()
+        .map(Provider::toString)
+        .collect(Collectors.toSet());
   }
 
   public String getProviderAuthorizationUrl(String userId, Provider provider, String redirectUri) {

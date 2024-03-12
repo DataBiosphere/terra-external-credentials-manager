@@ -72,7 +72,7 @@ spring:
   application.name: externalcreds
   application.version: ${externalcreds.version.gitHash:unknown}
 
-  config.import: optional:classpath:rendered/providers.yaml;classpath:rendered/version.properties;optional:classpath:rendered/allowed_jwks.yaml;optional:classpath:rendered/allowed_jwt_issuers.yaml
+  config.import: classpath:rendered/providers.yaml,optional:classpath:rendered/version.properties,optional:classpath:rendered/allowed_jwks.yaml,optional:classpath:rendered/allowed_jwt_issuers.yaml
 
   datasource:
     hikari:
