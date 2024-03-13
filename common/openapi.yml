@@ -454,6 +454,10 @@ components:
       enum:
         - ras
         - github
+        - fence
+        - dcfFence
+        - anvil
+        - kidsFirst
     SshKeyPairType:
       description: Enum containing valid ssh key types.
       type: string
