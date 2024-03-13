@@ -1,0 +1,118 @@
+providers:
+  github:
+    clientId: "${GITHUB_CLIENT_ID}"
+    clientSecret: "${GITHUB_CLIENT_SECRET}"
+    externalIdClaim: "login"
+    issuer: "https://github.com"
+    linkLifespan: "15d"
+    scopes: ""
+    userNameAttributeName: "login"
+    revokeEndpoint: "https://api.github.com/installation/token"
+    userInfoEndpoint: "https://api.github.com/user"
+    authorizationEndpoint: "${externalcreds.providers.github.issuer}/login/oauth/authorize"
+    tokenEndpoint: "${externalcreds.providers.github.issuer}/login/oauth/access_token"
+  fence:
+    clientId: "${FENCE_CLIENT_ID}"
+    clientSecret: "${FENCE_CLIENT_SECRET}"
+    linkLifespan: "30d"
+    scopes: [ "openid","google_credentials" ]
+    issuer: "${FENCE_BASE_URL:https://staging.gen3.biodatacatalyst.nhlbi.nih.gov/user}"
+    revokeEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/revoke"
+    userInfoEndpoint: "${externalcreds.providers.fence.issuer}/user"
+    authorizationEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/authorize"
+    tokenEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/token"
+  dcf-fence:
+    clientId: "${DCF_FENCE_CLIENT_ID}"
+    clientSecret: "${DCF_FENCE_CLIENT_SECRET}"
+    linkLifespan: "15d"
+    scopes: [ "openid","google_credentials" ]
+    issuer: "${DCF_FENCE_BASE_URL:https://nci-crdc-staging.datacommons.io/user}"
+    revokeEndpoint: "${externalcreds.providers.dcf-fence.issuer}/oauth2/revoke"
+    userInfoEndpoint: "${externalcreds.providers.dcf-fence.issuer}/user"
+    authorizationEndpoint: "${externalcreds.providers.dcf-fence.issuer}/oauth2/authorize"
+    tokenEndpoint: "${externalcreds.providers.dcf-fence.issuer}/oauth2/token"
+  kids-first:
+    clientId: "${KIDS_FIRST_CLIENT_ID}"
+    clientSecret: "${KIDS_FIRST_CLIENT_SECRET}"
+    linkLifespan: "30d"
+    scopes: [ "openid","google_credentials" ]
+    issuer: "${KIDS_FIRST_BASE_URL:https://gen3staging.kidsfirstdrc.org/user}"
+    revokeEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/revoke"
+    userInfoEndpoint: "${externalcreds.providers.kids-first.issuer}/user"
+    authorizationEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/authorize"
+    tokenEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/token"
+  anvil:
+    clientId: "${ANVIL_CLIENT_ID}"
+    clientSecret: "${ANVIL_CLIENT_SECRET}"
+    linkLifespan: "30d"
+    scopes: [ "openid","google_credentials" ]
+    issuer: "${ANVIL_BASE_URL:https://staging.theanvil.io/user}"
+    revokeEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/revoke"
+    userInfoEndpoint: "${externalcreds.providers.anvil.issuer}/user"
+    authorizationEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/authorize"
+    tokenEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/token"
+
+---
+#non-prod environments
+spring.config.activate.on-profile: '!prod'
+externalcreds:
+  providers:
+    ras:
+      clientId: "${RAS_CLIENT_ID}"
+      clientSecret: "${RAS_CLIENT_SECRET}"
+      externalIdClaim: "preferred_username"
+      scopes: [ "openid","email","ga4gh_passport_v1","profile" ]
+      linkLifespan: "15d"
+      issuer: "https://stsstg.nih.gov"
+      revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
+      userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
+      validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
+
+---
+spring.config.activate.on-profile: 'dev'
+externalcreds:
+  providers:
+    ras:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
+    github:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/oauth_callback" ]
+    fence:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+    dcf-fence:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+    kids-first:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+    anvil:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+---
+spring.config.activate.on-profile: 'staging'
+externalcreds:
+  providers:
+    ras:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback" ]
+    github:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/oauth_callback" ]
+    fence:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
+    dcf-fence:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
+    kids-first:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
+    anvil:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
+---
+spring.config.activate.on-profile: 'prod'
+externalcreds:
+  providers:
+    ras:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/ecm-callback" ]
+    github:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/oauth_callback" ]
+    fence:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+    dcf-fence:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+    kids-first:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+    anvil:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
