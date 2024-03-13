@@ -15,6 +15,59 @@ externalcreds:
     key-id: ${KMS_KEY_ID:ecm-dev-kms-symmetric-key-for-ssh-key-encrypt-decrypt}
     key-ring-location: ${kMS_KEY_LOCATION:us-central1}
     ssh-key-pair-refresh-duration: ${KMS_KEY_REFRESH_DURATION:90d}
+  providers:
+    github:
+      clientId: "${GITHUB_CLIENT_ID}"
+      clientSecret: "${GITHUB_CLIENT_SECRET}"
+      externalIdClaim: "login"
+      issuer: "https://github.com"
+      linkLifespan: "15d"
+      scopes: ""
+      userNameAttributeName: "login"
+      revokeEndpoint: "https://api.github.com/installation/token"
+      userInfoEndpoint: "https://api.github.com/user"
+      authorizationEndpoint: "${externalcreds.providers.github.issuer}/login/oauth/authorize"
+      tokenEndpoint: "${externalcreds.providers.github.issuer}/login/oauth/access_token"
+    fence:
+      clientId: "${FENCE_CLIENT_ID}"
+      clientSecret: "${FENCE_CLIENT_SECRET}"
+      linkLifespan: "15d"
+      scopes: [ "openid","google_credentials" ]
+      issuer: "${FENCE_BASE_URL:https://staging.gen3.biodatacatalyst.nhlbi.nih.gov/user}"
+      revokeEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/revoke"
+      userInfoEndpoint: "${externalcreds.providers.fence.issuer}/user"
+      authorizationEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/authorize"
+      tokenEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/token"
+    dcfFence:
+      clientId: "${DCF_FENCE_CLIENT_ID}"
+      clientSecret: "${DCF_FENCE_CLIENT_SECRET}"
+      linkLifespan: "15d"
+      scopes: [ "openid","google_credentials" ]
+      issuer: "${DCF_FENCE_BASE_URL:https://nci-crdc-staging.datacommons.io/user}"
+      revokeEndpoint: "${externalcreds.providers.dcfFence.issuer}/oauth2/revoke"
+      userInfoEndpoint: "${externalcreds.providers.dcfFence.issuer}/user"
+      authorizationEndpoint: "${externalcreds.providers.dcfFence.issuer}/oauth2/authorize"
+      tokenEndpoint: "${externalcreds.providers.dcfFence.issuer}/oauth2/token"
+    anvil:
+      clientId: "${ANVIL_CLIENT_ID}"
+      clientSecret: "${ANVIL_CLIENT_SECRET}"
+      linkLifespan: "15d"
+      scopes: [ "openid","google_credentials" ]
+      issuer: "${ANVIL_BASE_URL:https://staging.theanvil.io/user}"
+      revokeEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/revoke"
+      userInfoEndpoint: "${externalcreds.providers.anvil.issuer}/user"
+      authorizationEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/authorize"
+      tokenEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/token"
+    kidsFirst:
+      clientId: "${KIDS_FIRST_CLIENT_ID}"
+      clientSecret: "${KIDS_FIRST_CLIENT_SECRET}"
+      linkLifespan: "15d"
+      scopes: [ "openid","google_credentials" ]
+      issuer: "${KIDS_FIRST_BASE_URL:https://gen3staging.kidsfirstdrc.org/user}"
+      revokeEndpoint: "${externalcreds.providers.kidsFirst.issuer}/oauth2/revoke"
+      userInfoEndpoint: "${externalcreds.providers.kidsFirst.issuer}/user"
+      authorizationEndpoint: "${externalcreds.providers.kidsFirst.issuer}/oauth2/authorize"
+      tokenEndpoint: "${externalcreds.providers.kidsFirst.issuer}/oauth2/token"
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
@@ -69,7 +122,7 @@ spring:
   application.name: externalcreds
   application.version: ${externalcreds.version.gitHash:unknown}
 
-  config.import: optional:classpath:rendered/providers.yaml;classpath:rendered/version.properties;optional:classpath:rendered/allowed_jwks.yaml;optional:classpath:rendered/allowed_jwt_issuers.yaml
+  config.import: optional:classpath:rendered/version.properties;optional:classpath:rendered/allowed_jwks.yaml;optional:classpath:rendered/allowed_jwt_issuers.yaml
 
   datasource:
     hikari:
@@ -84,6 +137,9 @@ spring:
     default-property-inclusion: non_null # this prevents a problem serializing VisaCriterion in openapi where `type` is included a second time with null value
 
   main.banner-mode: off
+
+  profiles.include:
+    - ${DEPLOY_ENV:dev}
 
   web:
     resources:
@@ -100,3 +156,68 @@ terra.common:
       enabled: ${CLOUD_TRACE_ENABLED:false}
   tracing:
     samplingRatio: ${SAMPLING_PROBABILITY:0}
+
+---
+#non-prod environments
+spring.config.activate.on-profile: '!prod'
+externalcreds:
+  providers:
+    ras:
+      clientId: "${RAS_CLIENT_ID}"
+      clientSecret: "${RAS_CLIENT_SECRET}"
+      externalIdClaim: "preferred_username"
+      scopes: [ "openid","email","ga4gh_passport_v1","profile" ]
+      linkLifespan: "15d"
+      issuer: "https://stsstg.nih.gov"
+      revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
+      userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
+      validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
+
+---
+spring.config.activate.on-profile: 'dev'
+externalcreds:
+  providers:
+    ras:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
+    github:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/oauth_callback" ]
+    fence:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+    dcfFence:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+    anvil:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+    kidsFirst:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+---
+spring.config.activate.on-profile: 'staging'
+externalcreds:
+  providers:
+    ras:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback" ]
+    github:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/oauth_callback" ]
+    fence:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
+    dcfFence:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
+    anvil:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
+    kidsFirst:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
+---
+spring.config.activate.on-profile: 'prod'
+externalcreds:
+  providers:
+    ras:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/ecm-callback" ]
+    github:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/oauth_callback" ]
+    fence:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+    dcfFence:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+    anvil:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+    kidsFirst:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]

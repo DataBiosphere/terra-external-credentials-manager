@@ -8,13 +8,28 @@ COMMON_VAULT_PATH="secret/dsde/terra/kernel/$ENV/common"
 VAULT_COMMAND="vault read"
 
 SERVICE_OUTPUT_LOCATION="$(dirname "$0")/service/src/main/resources/rendered"
+SECRET_ENV_VARS_LOCATION="${SERVICE_OUTPUT_LOCATION}/secrets.env"
 INTEGRATION_OUTPUT_LOCATION="$(dirname "$0")/integration/src/main/resources/rendered"
 
 if ! [ -x "$(command -v vault)" ]; then
   VAULT_COMMAND="docker run --rm -e VAULT_TOKEN=$VAULT_TOKEN -e VAULT_ADDR=$VAULT_ADDR vault:1.7.3 $VAULT_COMMAND"
 fi
 
-$VAULT_COMMAND -field=providers "$ECM_VAULT_PATH/providers" >"$SERVICE_OUTPUT_LOCATION/providers.yaml"
+{
+  echo export RAS_CLIENT_ID="$($VAULT_COMMAND -field=ras_client_id "$ECM_VAULT_PATH/providers")"
+  echo export RAS_CLIENT_SECRET="$($VAULT_COMMAND -field=ras_client_secret "$ECM_VAULT_PATH/providers")"
+  echo export GITHUB_CLIENT_ID="$($VAULT_COMMAND -field=github_client_id "$ECM_VAULT_PATH/providers")"
+  echo export GITHUB_CLIENT_SECRET="$($VAULT_COMMAND -field=github_client_secret "$ECM_VAULT_PATH/providers")"
+  echo export ANVIL_CLIENT_ID="$($VAULT_COMMAND -field=anvil-client-id "$ECM_VAULT_PATH/fence")"
+  echo export ANVIL_CLIENT_SECRET="$($VAULT_COMMAND -field=anvil-secret "$ECM_VAULT_PATH/fence")"
+  echo export FENCE_CLIENT_ID="$($VAULT_COMMAND -field=client-id "$ECM_VAULT_PATH/fence")"
+  echo export FENCE_CLIENT_SECRET="$($VAULT_COMMAND -field=client-secret "$ECM_VAULT_PATH/fence")"
+  echo export DCF_FENCE_CLIENT_ID="$($VAULT_COMMAND -field=dcf-fence-client-id "$ECM_VAULT_PATH/fence")"
+  echo export DCF_FENCE_CLIENT_SECRET="$($VAULT_COMMAND -field=dcf-fence-client-secret "$ECM_VAULT_PATH/fence")"
+  echo export KIDS_FIRST_CLIENT_ID="$($VAULT_COMMAND -field=kids-first-client-id "$ECM_VAULT_PATH/fence")"
+  echo export KIDS_FIRST_CLIENT_SECRET="$($VAULT_COMMAND -field=kids-first-client-secret "$ECM_VAULT_PATH/fence")"
+} >> "${SECRET_ENV_VARS_LOCATION}"
+
 $VAULT_COMMAND -field=swagger-client-id "$ECM_VAULT_PATH/swagger-client-id" >"$SERVICE_OUTPUT_LOCATION/swagger-client-id"
 
 $VAULT_COMMAND -field=data -format=json "secret/dsde/firecloud/$ENV/common/firecloud-account.json" >"$INTEGRATION_OUTPUT_LOCATION/user-delegated-sa.json"

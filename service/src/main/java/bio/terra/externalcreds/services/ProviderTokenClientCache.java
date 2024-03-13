@@ -57,6 +57,11 @@ public class ProviderTokenClientCache {
                 .redirectUri(redirectUri)
                 .userNameAttributeName(providerInfo.getUserNameAttributeName());
           }
+          case FENCE, DCFFENCE, ANVIL, KIDSFIRST -> ClientRegistrations.fromOidcIssuerLocation(
+                  providerInfo.getIssuer())
+              .clientId(providerInfo.getClientId())
+              .clientSecret(providerInfo.getClientSecret())
+              .issuerUri(providerInfo.getIssuer());
         };
 
     // set optional overrides
