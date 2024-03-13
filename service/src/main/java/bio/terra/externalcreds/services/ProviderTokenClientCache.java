@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.services;
 
-import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.Provider;
 import java.util.concurrent.TimeUnit;
@@ -58,8 +57,11 @@ public class ProviderTokenClientCache {
                 .redirectUri(redirectUri)
                 .userNameAttributeName(providerInfo.getUserNameAttributeName());
           }
-          case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> throw new ExternalCredsException(
-              "Not implemented yet");
+          case FENCE, DCF_FENCE, ANVIL, KIDS_FIRST -> ClientRegistrations.fromOidcIssuerLocation(
+                  providerInfo.getIssuer())
+              .clientId(providerInfo.getClientId())
+              .clientSecret(providerInfo.getClientSecret())
+              .issuerUri(providerInfo.getIssuer());
         };
 
     // set optional overrides
