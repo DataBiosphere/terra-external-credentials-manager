@@ -7,7 +7,6 @@ import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ProviderTestUtil;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
@@ -64,7 +63,7 @@ class ProviderTokenClientCacheTest extends BaseTest {
                   .withContentType(MediaType.APPLICATION_JSON)
                   .withBody(ProviderTestUtil.wellKnownResponse(url)));
 
-      ProviderProperties providerInfo = externalCredsConfig.getProviderProperties(provider);
+      var providerInfo = externalCredsConfig.getProviderProperties(provider);
 
       ClientRegistration rasClient = providerTokenClientCache.getProviderClient(provider);
 

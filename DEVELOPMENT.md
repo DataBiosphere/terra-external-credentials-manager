@@ -74,6 +74,7 @@ Run in IntelliJ (recommended) or use the command line:
 
 ```sh
 ./render_config.sh # only when building ECM for the first time
+source ${PWD}/service/src/main/resources/rendered/secrets.env
 cd service
 ../gradlew bootRun
 ```
