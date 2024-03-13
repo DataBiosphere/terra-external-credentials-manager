@@ -71,5 +71,4 @@ public interface ExternalCredsConfigInterface {
   default DistributedLockConfiguration getDistributedLockConfiguration() {
     return DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30));
   }
-  ;
 }
