@@ -41,6 +41,7 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -78,6 +79,14 @@ public class ProviderServiceTest extends BaseTest {
 
     @MockBean private LinkedAccountService linkedAccountServiceMock;
     @MockBean private ExternalCredsConfig externalCredsConfigMock;
+
+    @Test
+    void testGetProviders() {
+      when(externalCredsConfigMock.getProviders())
+          .thenReturn(new EnumMap<>(Map.of(Provider.GITHUB, TestUtils.createRandomProvider())));
+      var providers = providerService.getProviderList();
+      assertEquals(Set.of(Provider.GITHUB.toString()), providers);
+    }
 
     @Test
     void testDeleteLinkedAccountAndRevokeToken() {
