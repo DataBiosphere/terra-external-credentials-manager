@@ -17,14 +17,13 @@ class FenceAccountKeyServiceTest extends BaseTest {
   @Nested
   @TestComponent
   class GetFenceAccountKey {
-    // TODO: Change tests to use a fence provider
     @Autowired FenceAccountKeyService fenceAccountKeyService;
     @Autowired FenceAccountKeyDAO fenceAccountKeyDAO;
     @Autowired LinkedAccountDAO linkedAccountDAO;
 
     @Test
     void testGetFenceAccountKey() {
-      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var linkedAccount = TestUtils.createRandomLinkedAccount(Provider.FENCE);
       var fenceAccountKey = TestUtils.createRandomFenceAccountKey();
 
       var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
@@ -44,13 +43,13 @@ class FenceAccountKeyServiceTest extends BaseTest {
     @Test
     void testGetFenceAccountKeyNoLinkedAccount() {
       var userId = "nonexistent_user_id";
-      var provider = Provider.RAS;
+      var provider = Provider.FENCE;
       assertEmpty(fenceAccountKeyService.getFenceAccountKey(userId, provider));
     }
 
     @Test
     void testGetFenceAccountKeyLinkedAccountNoFenceAccount() {
-      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var linkedAccount = TestUtils.createRandomLinkedAccount(Provider.FENCE);
       linkedAccountDAO.upsertLinkedAccount(linkedAccount);
       assertEmpty(
           fenceAccountKeyService.getFenceAccountKey(

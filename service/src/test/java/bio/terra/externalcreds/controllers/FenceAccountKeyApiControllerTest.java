@@ -39,7 +39,7 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private FenceAccountKeyService fenceAccountKeyServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
-  private Provider provider = Provider.RAS; // TO-Do: Change to fence token provider
+  private Provider provider = Provider.FENCE;
 
   @Nested
   class GetServiceAccountKey {
