@@ -49,6 +49,9 @@ public class BondDatastoreDAO {
             .addAncestor(PathElement.of("User", userId))
             .newKey(provider.toString());
     var entity = datastore.get(key);
+    if (entity == null) {
+      return Optional.empty();
+    }
     var bondFenceServiceAccountEntity =
         new BondFenceServiceAccountEntity.Builder()
             .key(key)

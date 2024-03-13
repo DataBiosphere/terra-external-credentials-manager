@@ -20,12 +20,15 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class TokenProviderService extends ProviderService {
 
+  private final FenceProviderService fenceProviderService;
+
   public TokenProviderService(
       ExternalCredsConfig externalCredsConfig,
       ProviderOAuthClientCache providerOAuthClientCache,
       ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
+      FenceProviderService fenceProviderService,
       AuditLogger auditLogger,
       ObjectMapper objectMapper) {
     super(
@@ -36,6 +39,7 @@ public class TokenProviderService extends ProviderService {
         linkedAccountService,
         auditLogger,
         objectMapper);
+    this.fenceProviderService = fenceProviderService;
   }
 
   public LinkedAccount createLink(
@@ -94,8 +98,11 @@ public class TokenProviderService extends ProviderService {
       String userId, Provider provider, AuditLogEvent.Builder auditLogEventBuilder) {
     // get linked account
     var linkedAccount =
-        linkedAccountService
-            .getLinkedAccount(userId, provider)
+        (switch (provider) {
+              case RAS, GITHUB -> linkedAccountService.getLinkedAccount(userId, provider);
+              case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService
+                  .getLinkedFenceAccount(userId, provider);
+            })
             .orElseThrow(
                 () ->
                     new NotFoundException(
