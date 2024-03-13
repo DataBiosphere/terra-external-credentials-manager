@@ -66,4 +66,10 @@ public interface ExternalCredsConfigInterface {
 
   @Nullable
   BondDatastoreConfiguration getBondDatastoreConfiguration();
+
+  @Value.Default
+  default DistributedLockConfiguration getDistributedLockConfiguration() {
+    return DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30));
+  }
+  ;
 }

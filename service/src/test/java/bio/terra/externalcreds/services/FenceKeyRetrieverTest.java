@@ -12,11 +12,13 @@ import static org.mockito.Mockito.when;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.config.DistributedLockConfiguration;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.DistributedLockDAO;
 import bio.terra.externalcreds.exception.DistributedLockException;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.DistributedLock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -81,6 +83,9 @@ class FenceKeyRetrieverTest extends BaseTest {
 
         when(externalCredsConfig.getProviderProperties(linkedAccount.getProvider()))
             .thenReturn(providerInfo);
+        when(externalCredsConfig.getDistributedLockConfiguration())
+            .thenReturn(
+                DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30)));
 
         //  Mock the server response
         mockServer
@@ -114,6 +119,8 @@ class FenceKeyRetrieverTest extends BaseTest {
       when(bondService.getFenceServiceAccountKey(
               linkedAccount.getUserId(), linkedAccount.getProvider(), linkedAccount.getId().get()))
           .thenReturn(Optional.empty());
+      when(externalCredsConfig.getDistributedLockConfiguration())
+          .thenReturn(DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30)));
 
       assertThrows(
           DistributedLockException.class,
@@ -140,6 +147,8 @@ class FenceKeyRetrieverTest extends BaseTest {
       when(oAuth2Service.authorizeWithRefreshToken(
               clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
           .thenThrow(new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR));
+      when(externalCredsConfig.getDistributedLockConfiguration())
+          .thenReturn(DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30)));
 
       assertThrows(
           ExternalCredsException.class,

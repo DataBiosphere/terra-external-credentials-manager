@@ -18,6 +18,8 @@ externalcreds:
   bond-datastore-configuration:
     datastore-google-project: ${BOND_DATASTORE_GOOGLE_PROJECT:broad-bond-dev}
     datastore-database-id: ${BOND_DATASTORE_DATABASE_ID:}
+  distributed-lock-configuration:
+    lock-timeout: 30s
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}

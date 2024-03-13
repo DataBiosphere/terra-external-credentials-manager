@@ -58,7 +58,9 @@ public class FenceKeyRetriever {
         new DistributedLock.Builder()
             .lockName("createFenceKey-" + linkedAccount.getProvider())
             .userId(linkedAccount.getUserId())
-            .expiresAt(Instant.now().plus(1, ChronoUnit.MINUTES))
+            .expiresAt(
+                Instant.now()
+                    .plus(externalCredsConfig.getDistributedLockConfiguration().getLockTimeout()))
             .build();
     Optional<DistributedLock> existingLock =
         distributedLockDAO.getDistributedLock(newLock.getLockName(), linkedAccount.getUserId());
