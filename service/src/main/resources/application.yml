@@ -31,6 +31,14 @@ externalcreds:
       userInfoEndpoint: "https://api.github.com/user"
       authorizationEndpoint: "${externalcreds.providers.github.issuer}/login/oauth/authorize"
       tokenEndpoint: "${externalcreds.providers.github.issuer}/login/oauth/access_token"
+    "fence":
+      "linkLifespan": "30d"
+    "dcf-fence":
+      "linkLifespan": "15d"
+    "kids-first":
+      "linkLifespan": "30d"
+    "anvil":
+      "linkLifespan": "30d"
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
