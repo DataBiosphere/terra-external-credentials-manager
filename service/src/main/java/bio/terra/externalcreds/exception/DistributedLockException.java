@@ -7,8 +7,4 @@ public class DistributedLockException extends ErrorReportException {
   public DistributedLockException(String message) {
     super(message);
   }
-
-  public DistributedLockException(String message, Throwable cause) {
-    super(message, cause);
-  }
 }

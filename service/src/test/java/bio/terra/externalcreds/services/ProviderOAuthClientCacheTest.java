@@ -74,4 +74,35 @@ class ProviderOAuthClientCacheTest extends BaseTest {
       assertEquals(providerInfo.getClientSecret(), rasClient.getClientSecret());
     }
   }
+
+  @Test
+  void testFenceBuildClientRegistration() {
+    try (var mockServer = ClientAndServer.startClientAndServer()) {
+      var issuerPath = "/does/not/exist";
+      var url = "http://localhost:" + mockServer.getPort() + issuerPath;
+      Provider provider = Provider.FENCE;
+      when(externalCredsConfig.getProviderProperties(provider))
+          .thenReturn(TestUtils.createRandomProvider().setIssuer(url));
+
+      //  Mock the server response
+      mockServer
+          .when(
+              HttpRequest.request(issuerPath + "/.well-known/openid-configuration")
+                  .withMethod("GET"))
+          .respond(
+              HttpResponse.response()
+                  .withStatusCode(200)
+                  .withContentType(MediaType.APPLICATION_JSON)
+                  .withBody(ProviderTestUtil.wellKnownResponse(url)));
+
+      var providerInfo = externalCredsConfig.getProviderProperties(provider);
+
+      ClientRegistration fenceClient = providerOAuthClientCache.getProviderClient(provider);
+
+      assertEquals(
+          AuthorizationGrantType.AUTHORIZATION_CODE, fenceClient.getAuthorizationGrantType());
+      assertEquals(providerInfo.getClientId(), fenceClient.getClientId());
+      assertEquals(providerInfo.getClientSecret(), fenceClient.getClientSecret());
+    }
+  }
 }

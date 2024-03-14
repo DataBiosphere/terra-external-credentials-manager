@@ -34,9 +34,7 @@ public class ProviderTokenClientCache {
   public ClientRegistration getProviderClient(Provider provider) {
     log.info("Loading ProviderTokenClient {}", provider);
     var providerInfo = externalCredsConfig.getProviderProperties(provider);
-    if (providerInfo == null) {
-      throw new IllegalArgumentException("Provider not found: " + provider);
-    }
+
     ClientRegistration.Builder builder =
         switch (provider) {
           case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())

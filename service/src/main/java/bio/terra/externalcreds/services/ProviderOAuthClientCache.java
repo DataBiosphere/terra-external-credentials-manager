@@ -33,9 +33,7 @@ public class ProviderOAuthClientCache {
   public ClientRegistration getProviderClient(Provider provider) {
     log.info("Loading ProviderOAuthClient {}", provider);
     var providerInfo = externalCredsConfig.getProviderProperties(provider);
-    if (providerInfo == null) {
-      throw new IllegalArgumentException("Provider not found: " + provider);
-    }
+
     ClientRegistration.Builder builder =
         switch (provider) {
           case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
