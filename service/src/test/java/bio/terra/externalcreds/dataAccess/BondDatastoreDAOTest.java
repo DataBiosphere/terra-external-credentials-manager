@@ -45,7 +45,7 @@ class BondDatastoreDAOTest extends BaseTest {
   }
 
   @Test
-  void getRefreshToken() {
+  void testGetRefreshToken() {
     var userId = UUID.randomUUID().toString();
     var provider = Provider.FENCE;
     var issuedAt = Timestamp.now();
@@ -72,7 +72,19 @@ class BondDatastoreDAOTest extends BaseTest {
   }
 
   @Test
-  void getFenceServiceAccountKey() {
+  void testGetRefreshTokenDoesNotExist() {
+    var userId = UUID.randomUUID().toString();
+    var provider = Provider.FENCE;
+
+    when(bondDatastore.get(any(Key.class))).thenReturn(null);
+
+    var shouldBeEmpty = bondDatastoreDAO.getRefreshToken(userId, provider);
+
+    assertEmpty(shouldBeEmpty);
+  }
+
+  @Test
+  void testGFenceServiceAccountKey() {
     var userId = UUID.randomUUID().toString();
     var provider = Provider.FENCE;
     var expiresAt = Timestamp.now();
@@ -99,7 +111,19 @@ class BondDatastoreDAOTest extends BaseTest {
   }
 
   @Test
-  void deleteRefreshToken() {
+  void testGetServiceAccountKeyDoesNotExist() {
+    var userId = UUID.randomUUID().toString();
+    var provider = Provider.FENCE;
+
+    when(bondDatastore.get(any(Key.class))).thenReturn(null);
+
+    var shouldBeEmpty = bondDatastoreDAO.getFenceServiceAccountKey(userId, provider);
+
+    assertEmpty(shouldBeEmpty);
+  }
+
+  @Test
+  void testDeleteRefreshToken() {
     var userId = UUID.randomUUID().toString();
     var provider = Provider.FENCE;
     bondDatastoreDAO.deleteRefreshToken(userId, provider);
@@ -108,7 +132,7 @@ class BondDatastoreDAOTest extends BaseTest {
   }
 
   @Test
-  void deleteFenceServiceAccountKey() {
+  void testDeleteFenceServiceAccountKey() {
     var userId = UUID.randomUUID().toString();
     var provider = Provider.FENCE;
     bondDatastoreDAO.deleteFenceServiceAccountKey(userId, provider);
