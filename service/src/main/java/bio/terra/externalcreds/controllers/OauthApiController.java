@@ -7,6 +7,7 @@ import bio.terra.externalcreds.generated.api.OauthApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.services.*;
+import bio.terra.externalcreds.util.ProviderUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ public record OauthApiController(
     ProviderService providerService,
     PassportProviderService passportProviderService,
     TokenProviderService tokenProviderService,
+    FenceProviderService fenceProviderService,
     ExternalCredsSamUserFactory samUserFactory)
     implements OauthApi {
 
@@ -38,7 +40,13 @@ public record OauthApiController(
   @Override
   public ResponseEntity<LinkInfo> getLink(Provider provider) {
     var samUser = samUserFactory.from(request);
-    var linkedAccount = linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
+    var linkedAccount =
+        switch (provider) {
+          case RAS, GITHUB -> linkedAccountService.getLinkedAccount(
+              samUser.getSubjectId(), provider);
+          case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService.getLinkedFenceAccount(
+              samUser.getSubjectId(), provider);
+        };
     return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
   }
 
@@ -94,11 +102,11 @@ public record OauthApiController(
                       provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
               yield OpenApiConverters.Output.convert(linkedAccount);
             }
-            case FENCE, DCFFENCE, ANVIL, KIDSFIRST -> {
+            case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> {
               var linkedAccount =
-                  passportProviderService.createLink(
+                  fenceProviderService.createLink(
                       provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
-              yield OpenApiConverters.Output.convert(linkedAccount.getLinkedAccount());
+              yield OpenApiConverters.Output.convert(linkedAccount);
             }
           };
       return ResponseEntity.ok(linkInfo);
@@ -113,6 +121,11 @@ public record OauthApiController(
   public ResponseEntity<Void> deleteLink(Provider provider) {
     var samUser = samUserFactory.from(request);
     var deletedLink = providerService.deleteLink(samUser.getSubjectId(), provider);
+
+    // This can be deleted once there's no longer a dependency on Bond's Datastore
+    if (ProviderUtils.isFenceProvider(provider)) {
+      fenceProviderService.deleteFenceLink(samUser.getSubjectId(), provider);
+    }
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()

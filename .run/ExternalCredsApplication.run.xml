@@ -9,20 +9,21 @@
       </param>
     </additionalParameters>
     <envs>
-      <env name="GOOGLE_APPLICATION_CREDENTIALS" value="service/src/main/resources/rendered/ecm-sa.json" />
       <env name="ECM_LOG_APPENDER" value="Console-Standard" />
+      <env name="GOOGLE_APPLICATION_CREDENTIALS" value="service/src/main/resources/rendered/ecm-sa.json" />
     </envs>
     <option name="HIDE_BANNER" value="true" />
     <module name="externalcreds.service.main" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="bio.terra.externalcreds.ExternalCredsWebApplication" />
     <extension name="net.ashald.envfile">
-      <option name="IS_ENABLED" value="false" />
+      <option name="IS_ENABLED" value="true" />
       <option name="IS_SUBST" value="false" />
       <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
       <option name="IS_IGNORE_MISSING_FILES" value="false" />
       <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
       <ENTRIES>
         <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
+        <ENTRY IS_ENABLED="true" PARSER="env" IS_EXECUTABLE="false" PATH="service/src/main/resources/rendered/secrets.env" />
       </ENTRIES>
     </extension>
     <method v="2">

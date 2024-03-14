@@ -63,4 +63,12 @@ public interface ExternalCredsConfigInterface {
 
   @Nullable
   KmsConfiguration getKmsConfiguration();
+
+  @Nullable
+  BondDatastoreConfiguration getBondDatastoreConfiguration();
+
+  @Value.Default
+  default DistributedLockConfiguration getDistributedLockConfiguration() {
+    return DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30));
+  }
 }

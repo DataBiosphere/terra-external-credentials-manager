@@ -7,10 +7,12 @@ spring:
   datasource:
     hikari:
       connection-timeout: 5000
-      # max pool size for the test is 2 less from the application pool size as we see tests failing
-      # due to postgres is rejecting new connection as there are already too many. So we reduce the
-      # pool size for test.
-      maximum-pool-size: 6
+      maximum-pool-size: 8
     password: ${DATABASE_USER_PASSWORD:ecmpwd}
     url: jdbc:postgresql://${DATABASE_HOSTNAME:localhost}:5432/${DATABASE_NAME:ecm}
     username: ${DATABASE_USER:ecmuser}
+
+retry:
+  getFenceAccountKey:
+    maxAttempts: 3
+    delay: 100

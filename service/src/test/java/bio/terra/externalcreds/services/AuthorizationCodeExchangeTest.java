@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.BaseTest;
+import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.JwtSigningTestUtils;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
@@ -25,6 +27,7 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -161,6 +164,101 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
     // make sure the BadRequestException is for the right reason
     assertInstanceOf(OAuth2AuthorizationException.class, exception.getCause());
+  }
+
+  @Test
+  void testNoRefreshTokenReturned() {
+    var linkedAccount = createTestLinkedAccount();
+    var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
+    var providerClient =
+        ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+            .build();
+
+    var state =
+        new OAuth2State.Builder()
+            .provider(linkedAccount.getProvider())
+            .random(OAuth2State.generateRandomState(new SecureRandom()))
+            .redirectUri(redirectUri)
+            .build();
+    linkedAccountService.upsertOAuth2State(linkedAccount.getUserId(), state);
+
+    String encodedState = state.encode(objectMapper);
+
+    when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+        .thenReturn(providerInfo);
+    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
+        .thenReturn(providerClient);
+    var tokenResponse = mock(OAuth2AccessTokenResponse.class);
+    when(tokenResponse.getRefreshToken()).thenReturn(null);
+    when(oAuth2ServiceMock.authorizationCodeExchange(
+            providerClient,
+            authorizationCode,
+            redirectUri,
+            scopes,
+            encodedState,
+            providerInfo.getAdditionalAuthorizationParameters()))
+        .thenReturn(tokenResponse);
+
+    assertThrows(
+        ExternalCredsException.class,
+        () ->
+            passportProviderService.createLink(
+                linkedAccount.getProvider(),
+                linkedAccount.getUserId(),
+                authorizationCode,
+                encodedState,
+                new AuditLogEvent.Builder().userId("userId")));
+  }
+
+  @Test
+  void testNoExternalUserIdReturned() {
+    var linkedAccount = createTestLinkedAccount();
+    var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
+    var providerClient =
+        ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+            .build();
+
+    var state =
+        new OAuth2State.Builder()
+            .provider(linkedAccount.getProvider())
+            .random(OAuth2State.generateRandomState(new SecureRandom()))
+            .redirectUri(redirectUri)
+            .build();
+    linkedAccountService.upsertOAuth2State(linkedAccount.getUserId(), state);
+
+    String encodedState = state.encode(objectMapper);
+
+    when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+        .thenReturn(providerInfo);
+    when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
+        .thenReturn(providerClient);
+    var tokenResponse =
+        OAuth2AccessTokenResponse.withToken(UUID.randomUUID().toString())
+            .refreshToken(linkedAccount.getRefreshToken())
+            .tokenType(TokenType.BEARER)
+            .build();
+    when(oAuth2ServiceMock.authorizationCodeExchange(
+            providerClient,
+            authorizationCode,
+            redirectUri,
+            scopes,
+            encodedState,
+            providerInfo.getAdditionalAuthorizationParameters()))
+        .thenReturn(tokenResponse);
+    when(oAuth2ServiceMock.getUserInfo(providerClient, tokenResponse.getAccessToken()))
+        .thenReturn(new DefaultOAuth2User(null, Map.of("foo", "bar"), "foo"));
+
+    assertThrows(
+        ExternalCredsException.class,
+        () ->
+            passportProviderService.createLink(
+                linkedAccount.getProvider(),
+                linkedAccount.getUserId(),
+                authorizationCode,
+                encodedState,
+                new AuditLogEvent.Builder().userId("userId")));
   }
 
   private void setupMocks(

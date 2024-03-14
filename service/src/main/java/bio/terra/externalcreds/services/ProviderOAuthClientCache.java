@@ -1,10 +1,5 @@
 package bio.terra.externalcreds.services;
 
-import static bio.terra.externalcreds.generated.model.Provider.ANVIL;
-import static bio.terra.externalcreds.generated.model.Provider.DCFFENCE;
-import static bio.terra.externalcreds.generated.model.Provider.FENCE;
-import static bio.terra.externalcreds.generated.model.Provider.KIDSFIRST;
-
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.Provider;
 import java.util.concurrent.TimeUnit;
@@ -38,9 +33,7 @@ public class ProviderOAuthClientCache {
   public ClientRegistration getProviderClient(Provider provider) {
     log.info("Loading ProviderOAuthClient {}", provider);
     var providerInfo = externalCredsConfig.getProviderProperties(provider);
-    if (providerInfo == null) {
-      throw new IllegalArgumentException("Provider not found: " + provider);
-    }
+
     ClientRegistration.Builder builder =
         switch (provider) {
           case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
@@ -61,7 +54,7 @@ public class ProviderOAuthClientCache {
                 .redirectUri(redirectUri)
                 .userNameAttributeName(providerInfo.getUserNameAttributeName());
           }
-          case FENCE, DCFFENCE, ANVIL, KIDSFIRST -> ClientRegistrations.fromOidcIssuerLocation(
+          case FENCE, DCF_FENCE, ANVIL, KIDS_FIRST -> ClientRegistrations.fromOidcIssuerLocation(
                   providerInfo.getIssuer())
               .clientId(providerInfo.getClientId())
               .clientSecret(providerInfo.getClientSecret())
