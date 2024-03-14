@@ -29,14 +29,16 @@ public class BondDatastoreDAO {
             .setKind(REFRESH_TOKEN_KIND)
             .addAncestor(PathElement.of("User", userId))
             .newKey(provider.toString());
-    var entity = datastore.get(key);
-    var bondRefreshTokenEntity =
-        new BondRefreshTokenEntity.Builder()
-            .key(key)
-            .issuedAt(entity.getTimestamp(BondRefreshTokenEntity.issuedAtName).toDate().toInstant())
-            .token(entity.getString(BondRefreshTokenEntity.tokenName))
-            .username(entity.getString(BondRefreshTokenEntity.userNameName));
-    return Optional.ofNullable(bondRefreshTokenEntity.build());
+    var datastoreEntity = Optional.ofNullable(datastore.get(key));
+    return datastoreEntity.map(
+        entity ->
+            new BondRefreshTokenEntity.Builder()
+                .key(key)
+                .issuedAt(
+                    entity.getTimestamp(BondRefreshTokenEntity.issuedAtName).toDate().toInstant())
+                .token(entity.getString(BondRefreshTokenEntity.tokenName))
+                .username(entity.getString(BondRefreshTokenEntity.userNameName))
+                .build());
   }
 
   public Optional<BondFenceServiceAccountEntity> getFenceServiceAccountKey(
@@ -48,23 +50,20 @@ public class BondDatastoreDAO {
             .setKind(FENCE_SERVICE_ACCOUNT_KIND)
             .addAncestor(PathElement.of("User", userId))
             .newKey(provider.toString());
-    var entity = datastore.get(key);
-    if (entity == null) {
-      return Optional.empty();
-    }
-    var bondFenceServiceAccountEntity =
-        new BondFenceServiceAccountEntity.Builder()
-            .key(key)
-            .expiresAt(
-                entity
-                    .getTimestamp(BondFenceServiceAccountEntity.expiresAtName)
-                    .toDate()
-                    .toInstant())
-            .keyJson(entity.getString(BondFenceServiceAccountEntity.keyJsonName))
-            .updateLockTimeout(
-                entity.getString(BondFenceServiceAccountEntity.updateLockTimeoutName));
-
-    return Optional.ofNullable(bondFenceServiceAccountEntity.build());
+    var datastoreEntity = Optional.ofNullable(datastore.get(key));
+    return datastoreEntity.map(
+        entity ->
+            new BondFenceServiceAccountEntity.Builder()
+                .key(key)
+                .expiresAt(
+                    entity
+                        .getTimestamp(BondFenceServiceAccountEntity.expiresAtName)
+                        .toDate()
+                        .toInstant())
+                .keyJson(entity.getString(BondFenceServiceAccountEntity.keyJsonName))
+                .updateLockTimeout(
+                    entity.getString(BondFenceServiceAccountEntity.updateLockTimeoutName))
+                .build());
   }
 
   public void deleteRefreshToken(String userId, Provider provider) {
