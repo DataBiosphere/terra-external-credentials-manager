@@ -122,7 +122,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   @Test
   void testInvalidAuthorizationCode() {
     var linkedAccount = createTestLinkedAccount();
-    var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
+    var providerInfo = TestUtils.createRandomProvider().setAuthorizationScopes(scopes);
     var providerClient =
         ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
@@ -169,7 +169,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   @Test
   void testNoRefreshTokenReturned() {
     var linkedAccount = createTestLinkedAccount();
-    var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
+    var providerInfo = TestUtils.createRandomProvider().setAuthorizationScopes(scopes);
     var providerClient =
         ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
@@ -214,7 +214,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   @Test
   void testNoExternalUserIdReturned() {
     var linkedAccount = createTestLinkedAccount();
-    var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
+    var providerInfo = TestUtils.createRandomProvider().setAuthorizationScopes(scopes);
     var providerClient =
         ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
@@ -269,7 +269,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
       Set<String> scopes,
       String state)
       throws URISyntaxException {
-    var providerInfo = TestUtils.createRandomProvider().setScopes(scopes);
+    var providerInfo = TestUtils.createRandomProvider().setAuthorizationScopes(scopes);
     var providerClient =
         ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)

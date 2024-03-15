@@ -39,7 +39,7 @@ public class OAuth2ServiceTest {
     var redirectUri = "http://localhost:9000/fence-callback";
     String state = null;
     ProviderProperties providerProperties = externalCredsConfig.getProviderProperties(provider);
-    var scopes = new HashSet<>(providerProperties.getScopes());
+    var scopes = new HashSet<>(providerProperties.getAuthorizationScopes());
     var authorizationParameters = providerProperties.getAdditionalAuthorizationParameters();
 
     // 1) test getAuthorizationRequestUri

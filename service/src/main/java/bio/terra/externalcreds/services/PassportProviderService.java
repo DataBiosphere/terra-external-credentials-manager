@@ -70,7 +70,7 @@ public class PassportProviderService extends ProviderService {
               userId,
               authorizationCode,
               oAuth2State.getRedirectUri(),
-              new HashSet<>(providerInfo.getScopes()),
+              new HashSet<>(providerInfo.getAuthorizationScopes()),
               encodedState,
               providerClient);
       var linkedAccountWithPassportAndVisas =

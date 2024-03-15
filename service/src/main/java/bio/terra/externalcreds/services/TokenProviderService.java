@@ -59,7 +59,7 @@ public class TokenProviderService extends ProviderService {
                   userId,
                   authorizationCode,
                   oAuth2State.getRedirectUri(),
-                  new HashSet<>(providerInfo.getScopes()),
+                  new HashSet<>(providerInfo.getAuthorizationScopes()),
                   encodedState,
                   providerClient)
               .getLeft();
@@ -114,11 +114,14 @@ public class TokenProviderService extends ProviderService {
 
     // get client registration from provider client cache
     var clientRegistration = providerTokenClientCache.getProviderClient(provider);
+    var providerInfo = externalCredsConfig.getProviderProperties(provider);
 
     // exchange refresh token for access token
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+            clientRegistration,
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+            new HashSet<>(providerInfo.getTokenScopes()));
 
     // save the linked account with the new refresh token to replace the old one
     var refreshToken = accessTokenResponse.getRefreshToken();

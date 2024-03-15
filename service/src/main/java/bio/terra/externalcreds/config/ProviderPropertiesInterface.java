@@ -24,7 +24,9 @@ public interface ProviderPropertiesInterface {
 
   Collection<Pattern> getAllowedRedirectUriPatterns();
 
-  Collection<String> getScopes();
+  Collection<String> getAuthorizationScopes();
+
+  Collection<String> getTokenScopes();
 
   String getExternalIdClaim();
 

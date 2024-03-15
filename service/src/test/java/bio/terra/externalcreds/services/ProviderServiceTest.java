@@ -706,7 +706,7 @@ public class ProviderServiceTest extends BaseTest {
       var providerProperties =
           ProviderProperties.create()
               .setAllowedRedirectUriPatterns(List.of(Pattern.compile(redirectUri)))
-              .setScopes(scopes);
+              .setAuthorizationScopes(scopes);
 
       when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
           .thenReturn(providerProperties);
@@ -878,7 +878,7 @@ public class ProviderServiceTest extends BaseTest {
       var providerProperties =
           ProviderProperties.create()
               .setAllowedRedirectUriPatterns(List.of(Pattern.compile(uriPattern)))
-              .setScopes(scopes);
+              .setAuthorizationScopes(scopes);
 
       when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
           .thenReturn(providerProperties);

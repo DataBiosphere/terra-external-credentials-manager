@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.services;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
@@ -108,16 +109,24 @@ public class OAuth2Service {
     return tokenResponseClient.getTokenResponse(codeGrantRequest);
   }
 
+  public OAuth2AccessTokenResponse authorizeWithRefreshToken(
+      ClientRegistration providerClient, OAuth2RefreshToken refreshToken) {
+    return authorizeWithRefreshToken(providerClient, refreshToken, null);
+  }
+
   /**
    * Given a refresh token, get an access token
    *
    * @param providerClient identity provider client, see {@link ProviderOAuthClientCache}
    * @param refreshToken
+   * @param scopes scopes requested for the refresh token
    * @return token response containing access and refresh tokens, note that if there is a refresh
    *     token in this response it should replace the original refresh token which is likely invalid
    */
   public OAuth2AccessTokenResponse authorizeWithRefreshToken(
-      ClientRegistration providerClient, OAuth2RefreshToken refreshToken) {
+      ClientRegistration providerClient,
+      OAuth2RefreshToken refreshToken,
+      @Nullable Set<String> scopes) {
     // the OAuth2RefreshTokenGrantRequest requires an access token to be specified but
     // it does not have to be a valid one so create a dummy
     var dummyAccessToken =
@@ -125,7 +134,7 @@ public class OAuth2Service {
             OAuth2AccessToken.TokenType.BEARER, "dummy", Instant.EPOCH, Instant.now());
 
     var refreshTokenGrantRequest =
-        new OAuth2RefreshTokenGrantRequest(providerClient, dummyAccessToken, refreshToken);
+        new OAuth2RefreshTokenGrantRequest(providerClient, dummyAccessToken, refreshToken, scopes);
 
     var refreshTokenTokenResponseClient = new DefaultRefreshTokenTokenResponseClient();
 

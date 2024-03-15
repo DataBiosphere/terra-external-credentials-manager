@@ -15,6 +15,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ public class TokenProviderServiceTest extends BaseTest {
   @MockBean private OAuth2Service oAuth2ServiceMock;
 
   private final Provider provider = Provider.GITHUB;
+  private final Set<String> tokenScopes = Set.of("repo");
   private final String userId = UUID.randomUUID().toString();
   private final String clientIP = "127.0.0.1";
   private final AuditLogEvent.Builder auditLogEventBuilder =
@@ -86,7 +88,9 @@ public class TokenProviderServiceTest extends BaseTest {
             .tokenType(OAuth2AccessToken.TokenType.BEARER)
             .build();
     when(oAuth2ServiceMock.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+            clientRegistration,
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+            tokenScopes))
         .thenReturn(oAuth2TokenResponse);
     var updatedLinkedAccount =
         linkedAccount.withRefreshToken(oAuth2TokenResponse.getRefreshToken().getTokenValue());
@@ -129,7 +133,9 @@ public class TokenProviderServiceTest extends BaseTest {
             .tokenType(OAuth2AccessToken.TokenType.BEARER)
             .build();
     when(oAuth2ServiceMock.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+            clientRegistration,
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+            Set.of()))
         .thenReturn(oAuth2TokenResponse);
     var updatedLinkedAccount =
         linkedAccount.withRefreshToken(oAuth2TokenResponse.getRefreshToken().getTokenValue());
@@ -183,7 +189,9 @@ public class TokenProviderServiceTest extends BaseTest {
     when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
         .thenReturn(clientRegistration);
     when(oAuth2ServiceMock.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+            clientRegistration,
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+            tokenScopes))
         .thenThrow(
             new OAuth2AuthorizationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_TOKEN)));
 

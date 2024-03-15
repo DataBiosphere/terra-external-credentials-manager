@@ -106,7 +106,7 @@ public class ProviderService {
     return oAuth2Service.getAuthorizationRequestUri(
         providerClient,
         redirectUri,
-        new HashSet<>(providerInfo.getScopes()),
+        new HashSet<>(providerInfo.getAuthorizationScopes()),
         oAuth2State.encode(objectMapper),
         providerInfo.getAdditionalAuthorizationParameters());
   }
