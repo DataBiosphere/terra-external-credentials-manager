@@ -16,7 +16,8 @@ externalcreds:
       clientId: "${FENCE_CLIENT_ID}"
       clientSecret: "${FENCE_CLIENT_SECRET}"
       linkLifespan: "30d"
-      scopes: [ "openid","google_credentials" ]
+      scopes: [ "openid", "user" ]
+      externalIdClaim: "username"
       issuer: "${FENCE_BASE_URL:https://staging.gen3.biodatacatalyst.nhlbi.nih.gov/user}"
       revokeEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/revoke"
       userInfoEndpoint: "${externalcreds.providers.fence.issuer}/user"
@@ -26,7 +27,8 @@ externalcreds:
       clientId: "${DCF_FENCE_CLIENT_ID}"
       clientSecret: "${DCF_FENCE_CLIENT_SECRET}"
       linkLifespan: "15d"
-      scopes: [ "openid","google_credentials" ]
+      scopes: [ "openid", "user" ]
+      externalIdClaim: "username"
       issuer: "${DCF_FENCE_BASE_URL:https://nci-crdc-staging.datacommons.io/user}"
       revokeEndpoint: "${externalcreds.providers.dcf-fence.issuer}/oauth2/revoke"
       userInfoEndpoint: "${externalcreds.providers.dcf-fence.issuer}/user"
@@ -36,7 +38,8 @@ externalcreds:
       clientId: "${KIDS_FIRST_CLIENT_ID}"
       clientSecret: "${KIDS_FIRST_CLIENT_SECRET}"
       linkLifespan: "30d"
-      scopes: [ "openid","google_credentials" ]
+      scopes: [ "openid", "user" ]
+      externalIdClaim: "username"
       issuer: "${KIDS_FIRST_BASE_URL:https://gen3staging.kidsfirstdrc.org/user}"
       revokeEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/revoke"
       userInfoEndpoint: "${externalcreds.providers.kids-first.issuer}/user"
@@ -46,7 +49,8 @@ externalcreds:
       clientId: "${ANVIL_CLIENT_ID}"
       clientSecret: "${ANVIL_CLIENT_SECRET}"
       linkLifespan: "30d"
-      scopes: [ "openid","google_credentials" ]
+      scopes: [ "openid", "user" ]
+      externalIdClaim: "username"
       issuer: "${ANVIL_BASE_URL:https://staging.theanvil.io/user}"
       revokeEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/revoke"
       userInfoEndpoint: "${externalcreds.providers.anvil.issuer}/user"
