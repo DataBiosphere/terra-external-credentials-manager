@@ -100,7 +100,7 @@ class ProviderOAuthClientCacheTest extends BaseTest {
       ClientRegistration fenceClient = providerOAuthClientCache.getProviderClient(provider);
 
       assertEquals(
-          AuthorizationGrantType.AUTHORIZATION_CODE, fenceClient.getAuthorizationGrantType());
+          AuthorizationGrantType.CLIENT_CREDENTIALS, fenceClient.getAuthorizationGrantType());
       assertEquals(providerInfo.getClientId(), fenceClient.getClientId());
       assertEquals(providerInfo.getClientSecret(), fenceClient.getClientSecret());
     }
