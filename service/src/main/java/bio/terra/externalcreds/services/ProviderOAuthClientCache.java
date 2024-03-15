@@ -58,7 +58,8 @@ public class ProviderOAuthClientCache {
                   providerInfo.getIssuer())
               .clientId(providerInfo.getClientId())
               .clientSecret(providerInfo.getClientSecret())
-              .issuerUri(providerInfo.getIssuer());
+              .issuerUri(providerInfo.getIssuer())
+              .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS);
         };
 
     // set optional overrides
