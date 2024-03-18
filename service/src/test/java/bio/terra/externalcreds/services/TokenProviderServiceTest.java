@@ -28,6 +28,7 @@ public class TokenProviderServiceTest extends BaseTest {
   @Autowired private TokenProviderService tokenProviderService;
   @MockBean private AuditLogger auditLoggerMock;
   @MockBean private LinkedAccountService linkedAccountService;
+  @MockBean private FenceProviderService fenceProviderService;
   @MockBean private ProviderTokenClientCache providerTokenClientCacheMock;
   @MockBean private OAuth2Service oAuth2ServiceMock;
 
@@ -73,6 +74,49 @@ public class TokenProviderServiceTest extends BaseTest {
     var clientRegistration = createClientRegistration(linkedAccount.getProvider());
 
     when(linkedAccountService.getLinkedAccount(linkedAccount.getUserId(), provider))
+        .thenReturn(Optional.of(linkedAccount));
+    when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
+        .thenReturn(clientRegistration);
+
+    var accessToken = "tokenValue";
+    var updatedRefreshToken = "newRefreshToken";
+    var oAuth2TokenResponse =
+        OAuth2AccessTokenResponse.withToken(accessToken)
+            .refreshToken(updatedRefreshToken)
+            .tokenType(OAuth2AccessToken.TokenType.BEARER)
+            .build();
+    when(oAuth2ServiceMock.authorizeWithRefreshToken(
+            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+        .thenReturn(oAuth2TokenResponse);
+    var updatedLinkedAccount =
+        linkedAccount.withRefreshToken(oAuth2TokenResponse.getRefreshToken().getTokenValue());
+    when(linkedAccountService.upsertLinkedAccount(updatedLinkedAccount))
+        .thenReturn(updatedLinkedAccount);
+
+    var auditLogEventBuilder =
+        new Builder().provider(provider).userId(linkedAccount.getUserId()).clientIP(clientIP);
+    Optional<String> response =
+        tokenProviderService.getProviderAccessToken(
+            linkedAccount.getUserId(), provider, auditLogEventBuilder);
+    assertEquals(response.get(), accessToken);
+    verify(auditLoggerMock)
+        .logEvent(
+            new AuditLogEvent.Builder()
+                .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
+                .provider(provider)
+                .userId(linkedAccount.getUserId())
+                .clientIP(clientIP)
+                .externalUserId(linkedAccount.getExternalUserId())
+                .build());
+  }
+
+  @Test
+  void testGetFenceProviderAccessTokenSuccess() {
+    var provider = Provider.FENCE;
+    var linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+    var clientRegistration = createClientRegistration(linkedAccount.getProvider());
+
+    when(fenceProviderService.getLinkedFenceAccount(linkedAccount.getUserId(), provider))
         .thenReturn(Optional.of(linkedAccount));
     when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
         .thenReturn(clientRegistration);

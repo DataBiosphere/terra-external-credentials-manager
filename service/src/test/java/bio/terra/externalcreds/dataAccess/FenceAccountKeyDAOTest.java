@@ -47,6 +47,9 @@ class FenceAccountKeyDAOTest extends BaseTest {
           fenceAccountKeyDAO.getFenceAccountKey(
               savedAccount.getUserId(), savedAccount.getProvider());
       assertEquals(Optional.of(savedFenceAccountKey), loadedFenceAccountKey);
+
+      var loadedByLinkedAccount = fenceAccountKeyDAO.getFenceAccountKey(savedAccount);
+      assertEquals(Optional.of(savedFenceAccountKey), loadedByLinkedAccount);
     }
 
     @Test

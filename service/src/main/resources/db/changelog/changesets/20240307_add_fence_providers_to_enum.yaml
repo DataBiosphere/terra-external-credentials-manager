@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: "20240307_add_fence_providers_to_enum.yaml"
+      author: tlangs
+      changes:
+        - sql:
+            sql: >
+              ALTER TYPE provider_enum ADD VALUE 'FENCE';
+              ALTER TYPE provider_enum ADD VALUE 'DCF_FENCE';
+              ALTER TYPE provider_enum ADD VALUE 'KIDS_FIRST';
+              ALTER TYPE provider_enum ADD VALUE 'ANVIL';
+
+

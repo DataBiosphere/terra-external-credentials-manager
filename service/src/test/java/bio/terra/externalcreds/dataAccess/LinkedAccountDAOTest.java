@@ -4,9 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import java.sql.Timestamp;
@@ -17,15 +20,26 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 class LinkedAccountDAOTest extends BaseTest {
 
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
   @Autowired private GA4GHVisaDAO visaDAO;
+  @Autowired private FenceAccountKeyDAO fenceAccountKeyDAO;
+  @MockBean private BondDatastoreDAO bondDatastoreDAO;
+  @MockBean private ExternalCredsConfig externalCredsConfig;
+
+  @BeforeEach
+  void setUp() {
+    when(externalCredsConfig.getProviderProperties(Provider.FENCE))
+        .thenReturn(ProviderProperties.create().setLinkLifespan(Duration.ofDays(30)));
+  }
 
   @Test
   void testGetMissingLinkedAccount() {

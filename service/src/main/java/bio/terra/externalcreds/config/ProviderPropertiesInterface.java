@@ -37,6 +37,8 @@ public interface ProviderPropertiesInterface {
 
   Optional<String> getTokenEndpoint();
 
+  Optional<String> getKeyEndpoint();
+
   Optional<String> getJwksUri();
 
   Optional<String> getValidationEndpoint();

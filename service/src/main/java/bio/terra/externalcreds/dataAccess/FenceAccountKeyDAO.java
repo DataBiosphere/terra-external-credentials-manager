@@ -2,6 +2,7 @@ package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.FenceAccountKey;
+import bio.terra.externalcreds.models.LinkedAccount;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.sql.Timestamp;
 import java.util.*;
@@ -30,6 +31,24 @@ public class FenceAccountKeyDAO {
 
   public FenceAccountKeyDAO(NamedParameterJdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
+  }
+
+  @WithSpan
+  public Optional<FenceAccountKey> getFenceAccountKey(LinkedAccount linkedAccount) {
+    return linkedAccount
+        .getId()
+        .flatMap(
+            linkedAccountId -> {
+              var namedParameters =
+                  new MapSqlParameterSource().addValue("linkedAccountId", linkedAccountId);
+              var query =
+                  "SELECT fence.id, fence.linked_account_id, fence.key_json, fence.expires_at "
+                      + "  FROM fence_account_key fence"
+                      + "  WHERE fence.linked_account_id = :linkedAccountId";
+              return Optional.ofNullable(
+                  DataAccessUtils.singleResult(
+                      jdbcTemplate.query(query, namedParameters, FENCE_ACCOUNT_KEY_ROW_MAPPER)));
+            });
   }
 
   @WithSpan

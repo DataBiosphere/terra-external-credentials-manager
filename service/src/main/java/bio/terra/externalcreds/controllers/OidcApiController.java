@@ -12,7 +12,6 @@ import bio.terra.externalcreds.services.JwtUtils;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.PassportService;
-import bio.terra.externalcreds.services.ProviderService;
 import bio.terra.externalcreds.services.TokenProviderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +32,6 @@ public record OidcApiController(
     OauthApiController oauthApiController,
     ObjectMapper mapper,
     PassportService passportService,
-    ProviderService providerService,
     TokenProviderService tokenProviderService,
     PassportProviderService passportProviderService,
     ExternalCredsSamUserFactory samUserFactory)

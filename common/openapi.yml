@@ -6,7 +6,7 @@ info:
 paths:
   /api/oauth/v1/providers:
     get:
-      summary: Lists the available OIDC providers.
+      summary: Lists the available OAuth providers.
       tags: [ oauth ]
       operationId: listProviders
       responses:
@@ -87,7 +87,6 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
-
   /api/oauth/v1/{provider}/access-token:
     parameters:
       - $ref: '#/components/parameters/providerParam'
@@ -474,9 +473,9 @@ components:
         - ras
         - github
         - fence
-        - dcfFence
+        - dcf-fence
+        - kids-first
         - anvil
-        - kidsFirst
     SshKeyPairType:
       description: Enum containing valid ssh key types.
       type: string
