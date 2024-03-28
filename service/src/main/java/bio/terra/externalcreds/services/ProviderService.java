@@ -67,6 +67,8 @@ public class ProviderService {
           OAuth2ErrorCodes.UNSUPPORTED_RESPONSE_TYPE,
           OAuth2ErrorCodes.UNSUPPORTED_TOKEN_TYPE);
 
+  private static final String PRIVATE_KEY_ID_FIELD = "private_key_id";
+
   public ProviderService(
       ExternalCredsConfig externalCredsConfig,
       ProviderOAuthClientCache providerOAuthClientCache,
@@ -289,7 +291,7 @@ public class ProviderService {
         fenceAccountKey -> {
           try {
             var privateKeyJson = objectMapper.readTree(fenceAccountKey.getKeyJson());
-            var privateKeyId = privateKeyJson.get("private_key_id").asText();
+            var privateKeyId = privateKeyJson.get(PRIVATE_KEY_ID_FIELD).asText();
             WebClient.ResponseSpec response =
                 WebClient.create(keyEndpoint.get() + "/" + privateKeyId)
                     .delete()

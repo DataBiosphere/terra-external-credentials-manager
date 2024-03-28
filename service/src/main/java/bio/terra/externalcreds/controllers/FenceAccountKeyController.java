@@ -24,7 +24,7 @@ public record FenceAccountKeyController(
   @Override
   public ResponseEntity<String> getFenceAccountKey(Provider provider) {
     var samUser = samUserFactory.from(request);
-    var auditLogEvenBuilder =
+    var auditLogEventBuilder =
         new AuditLogEvent.Builder()
             .auditLogEventType(AuditLogEventType.GetServiceAccountKey)
             .clientIP(request.getRemoteAddr());
@@ -33,7 +33,7 @@ public record FenceAccountKeyController(
     Optional<FenceAccountKey> maybeFenceAccountKey =
         maybeLinkedAccount.flatMap(
             linkedAccount -> {
-              auditLogEvenBuilder
+              auditLogEventBuilder
                   .provider(linkedAccount.getProvider())
                   .userId(linkedAccount.getUserId())
                   .externalUserId(linkedAccount.getExternalUserId());
@@ -48,7 +48,7 @@ public record FenceAccountKeyController(
               if (fenceAccountKey.getExpiresAt().isBefore(Instant.now())) {
                 return Optional.empty();
               } else {
-                auditLogger.logEvent(auditLogEvenBuilder.build());
+                auditLogger.logEvent(auditLogEventBuilder.build());
                 return Optional.of(fenceAccountKey.getKeyJson());
               }
             });
