@@ -28,9 +28,6 @@ fi
   echo export DCF_FENCE_CLIENT_SECRET="$($VAULT_COMMAND -field=dcf-fence-client-secret "$ECM_VAULT_PATH/fence")"
   echo export KIDS_FIRST_CLIENT_ID="$($VAULT_COMMAND -field=kids-first-client-id "$ECM_VAULT_PATH/fence")"
   echo export KIDS_FIRST_CLIENT_SECRET="$($VAULT_COMMAND -field=kids-first-client-secret "$ECM_VAULT_PATH/fence")"
-  echo export DATABASE_USER_PASSWORD="$($VAULT_COMMAND -field=password "$ECM_VAULT_PATH/postgres/db-creds")"
-  echo export DATABASE_NAME="$($VAULT_COMMAND -field=db "$ECM_VAULT_PATH/postgres/db-creds")"
-  echo export DATABASE_USER="$($VAULT_COMMAND -field=username "$ECM_VAULT_PATH/postgres/db-creds")"
 } >> "${SECRET_ENV_VARS_LOCATION}"
 
 $VAULT_COMMAND -field=swagger-client-id "$ECM_VAULT_PATH/swagger-client-id" >"$SERVICE_OUTPUT_LOCATION/swagger-client-id"
