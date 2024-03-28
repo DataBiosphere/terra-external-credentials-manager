@@ -23,6 +23,7 @@ externalcreds:
       userInfoEndpoint: "${externalcreds.providers.fence.issuer}/user"
       authorizationEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/authorize"
       tokenEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/token"
+      keyEndpoint: "${externalcreds.providers.fence.issuer}/credentials/google"
     dcf-fence:
       clientId: "${DCF_FENCE_CLIENT_ID}"
       clientSecret: "${DCF_FENCE_CLIENT_SECRET}"
@@ -34,6 +35,7 @@ externalcreds:
       userInfoEndpoint: "${externalcreds.providers.dcf-fence.issuer}/user"
       authorizationEndpoint: "${externalcreds.providers.dcf-fence.issuer}/oauth2/authorize"
       tokenEndpoint: "${externalcreds.providers.dcf-fence.issuer}/oauth2/token"
+      keyEndpoint: "${externalcreds.providers.dcf-fence.issuer}/credentials/google"
     kids-first:
       clientId: "${KIDS_FIRST_CLIENT_ID}"
       clientSecret: "${KIDS_FIRST_CLIENT_SECRET}"
@@ -45,6 +47,7 @@ externalcreds:
       userInfoEndpoint: "${externalcreds.providers.kids-first.issuer}/user"
       authorizationEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/authorize"
       tokenEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/token"
+      keyEndpoint: "${externalcreds.providers.kids-first.issuer}/credentials/google"
     anvil:
       clientId: "${ANVIL_CLIENT_ID}"
       clientSecret: "${ANVIL_CLIENT_SECRET}"
@@ -56,6 +59,7 @@ externalcreds:
       userInfoEndpoint: "${externalcreds.providers.anvil.issuer}/user"
       authorizationEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/authorize"
       tokenEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/token"
+      keyEndpoint: "${externalcreds.providers.anvil.issuer}/credentials/google"
 
 ---
 #non-prod environments
@@ -80,7 +84,7 @@ externalcreds:
     ras:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
     github:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/oauth_callback" ]
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/oauth_callback", "http://localhost:3000/oauth_callback" ]
     fence:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
     dcf-fence:

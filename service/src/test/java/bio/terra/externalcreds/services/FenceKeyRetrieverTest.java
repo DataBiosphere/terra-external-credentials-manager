@@ -95,7 +95,7 @@ class FenceKeyRetrieverTest extends BaseTest {
                     .withHeader("Authorization", "Bearer accessToken"))
             .respond(HttpResponse.response().withStatusCode(200).withBody(keyJson));
 
-        var key = fenceKeyRetriever.createFenceAccountKey(linkedAccount);
+        var key = fenceKeyRetriever.getOrCreateFenceAccountKey(linkedAccount);
         assertPresent(key);
         assertEquals(keyJson, key.get().getKeyJson());
       }
@@ -124,7 +124,7 @@ class FenceKeyRetrieverTest extends BaseTest {
 
       assertThrows(
           DistributedLockException.class,
-          () -> fenceKeyRetriever.createFenceAccountKey(linkedAccount));
+          () -> fenceKeyRetriever.getOrCreateFenceAccountKey(linkedAccount));
 
       // Test config is set to 3 retries
       verify(fenceAccountKeyService, times(3)).getFenceAccountKey(linkedAccount);
@@ -152,7 +152,7 @@ class FenceKeyRetrieverTest extends BaseTest {
 
       assertThrows(
           ExternalCredsException.class,
-          () -> fenceKeyRetriever.createFenceAccountKey(linkedAccount));
+          () -> fenceKeyRetriever.getOrCreateFenceAccountKey(linkedAccount));
 
       verify(distributedLockDAO)
           .insertDistributedLock(argThat(lock -> lock.getLockName().equals(lockName)));

@@ -66,7 +66,7 @@ class FenceProviderServiceTest extends BaseTest {
     when(fenceAccountKeyService.getFenceAccountKey(linkedAccount))
         .thenReturn(Optional.of(fenceAccountKey));
 
-    var actualFenceAccountKey = fenceProviderService.getFenceAccountKey(userId, provider);
+    var actualFenceAccountKey = fenceProviderService.getFenceAccountKey(linkedAccount);
 
     assertPresent(actualFenceAccountKey);
   }
@@ -121,7 +121,7 @@ class FenceProviderServiceTest extends BaseTest {
       when(fenceAccountKeyService.getFenceAccountKey(ecmLinkedAccount))
           .thenReturn(Optional.of(key));
 
-      var fenceKey = fenceProviderService.getFenceAccountKey(userId, provider);
+      var fenceKey = fenceProviderService.getFenceAccountKey(linkedAccount.get());
 
       assertPresent(fenceKey);
     }

@@ -29,6 +29,7 @@ public class TokenProviderService extends ProviderService {
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
       FenceProviderService fenceProviderService,
+      FenceAccountKeyService fenceAccountKeyService,
       AuditLogger auditLogger,
       ObjectMapper objectMapper) {
     super(
@@ -37,6 +38,7 @@ public class TokenProviderService extends ProviderService {
         providerTokenClientCache,
         oAuth2Service,
         linkedAccountService,
+        fenceAccountKeyService,
         auditLogger,
         objectMapper);
     this.fenceProviderService = fenceProviderService;

@@ -41,6 +41,7 @@ public class FenceProviderService extends ProviderService {
         providerTokenClientCache,
         oAuth2Service,
         linkedAccountService,
+        fenceAccountKeyService,
         auditLogger,
         objectMapper);
     this.bondService = bondService;
@@ -81,11 +82,8 @@ public class FenceProviderService extends ProviderService {
     return Optional.of(linkedAccount);
   }
 
-  public Optional<FenceAccountKey> getFenceAccountKey(String userId, Provider provider) {
-    var linkedAccount = getLinkedFenceAccount(userId, provider);
-    return linkedAccount
-        .flatMap(fenceAccountKeyService::getFenceAccountKey)
-        .or(() -> linkedAccount.flatMap(fenceKeyRetriever::createFenceAccountKey));
+  public Optional<FenceAccountKey> getFenceAccountKey(LinkedAccount linkedAccount) {
+    return fenceKeyRetriever.getOrCreateFenceAccountKey(linkedAccount);
   }
 
   public LinkedAccount createLink(
@@ -117,7 +115,7 @@ public class FenceProviderService extends ProviderService {
     }
   }
 
-  public void deleteFenceLink(String userId, Provider provider) {
+  public void deleteBondFenceLink(String userId, Provider provider) {
     bondService.deleteBondLinkedAccount(userId, provider);
   }
 
