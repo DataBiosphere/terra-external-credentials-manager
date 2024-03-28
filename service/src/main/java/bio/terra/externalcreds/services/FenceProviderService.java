@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 public class FenceProviderService extends ProviderService {
 
   private final BondService bondService;
-  private final FenceAccountKeyService fenceAccountKeyService;
   private final FenceKeyRetriever fenceKeyRetriever;
 
   public FenceProviderService(
@@ -45,7 +44,6 @@ public class FenceProviderService extends ProviderService {
         auditLogger,
         objectMapper);
     this.bondService = bondService;
-    this.fenceAccountKeyService = fenceAccountKeyService;
     this.fenceKeyRetriever = fenceKeyRetriever;
   }
 
