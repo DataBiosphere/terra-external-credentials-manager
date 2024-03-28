@@ -1,9 +1,9 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.common.db.ReadTransaction;
+import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.dataAccess.FenceAccountKeyDAO;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.common.db.WriteTransaction;
 import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.LinkedAccount;
 import java.util.Optional;
@@ -34,5 +34,4 @@ public class FenceAccountKeyService {
   public FenceAccountKey upsertFenceAccountKey(FenceAccountKey fenceAccountKey) {
     return fenceAccountKeyDAO.upsertFenceAccountKey(fenceAccountKey);
   }
-
 }

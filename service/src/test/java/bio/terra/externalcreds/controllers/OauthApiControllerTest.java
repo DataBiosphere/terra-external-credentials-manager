@@ -326,7 +326,7 @@ class OauthApiControllerTest extends BaseTest {
           .andExpect(status().isOk());
 
       verify(providerServiceMock).deleteLink(userId, Provider.FENCE);
-      verify(fenceProviderServiceMock).deleteFenceLink(userId, Provider.FENCE);
+      verify(fenceProviderServiceMock).deleteBondFenceLink(userId, Provider.FENCE);
 
       // check that a log was recorded
       verify(auditLoggerMock)

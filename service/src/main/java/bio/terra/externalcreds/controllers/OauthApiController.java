@@ -124,7 +124,7 @@ public record OauthApiController(
 
     // This can be deleted once there's no longer a dependency on Bond's Datastore
     if (ProviderUtils.isFenceProvider(provider)) {
-      fenceProviderService.deleteFenceLink(samUser.getSubjectId(), provider);
+      fenceProviderService.deleteBondFenceLink(samUser.getSubjectId(), provider);
     }
 
     auditLogger.logEvent(

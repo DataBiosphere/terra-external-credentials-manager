@@ -48,7 +48,7 @@ public class FenceKeyRetriever {
       retryFor = {DistributedLockException.class},
       maxAttemptsExpression = "${retry.getFenceAccountKey.maxAttempts}",
       backoff = @Backoff(delayExpression = "${retry.getFenceAccountKey.delay}"))
-  public Optional<FenceAccountKey> createFenceAccountKey(LinkedAccount linkedAccount) {
+  public Optional<FenceAccountKey> getOrCreateFenceAccountKey(LinkedAccount linkedAccount) {
     var maybeKey = fenceAccountKeyService.getFenceAccountKey(linkedAccount);
     return maybeKey.or(() -> retrieveNewKeyFromFence(linkedAccount));
   }

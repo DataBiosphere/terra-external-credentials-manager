@@ -37,6 +37,7 @@ public class PassportProviderService extends ProviderService {
       ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
+      FenceAccountKeyService fenceAccountKeyService,
       PassportService passportService,
       JwtUtils jwtUtils,
       AuditLogger auditLogger,
@@ -47,6 +48,7 @@ public class PassportProviderService extends ProviderService {
         providerTokenClientCache,
         oAuth2Service,
         linkedAccountService,
+        fenceAccountKeyService,
         auditLogger,
         objectMapper);
     this.passportService = passportService;

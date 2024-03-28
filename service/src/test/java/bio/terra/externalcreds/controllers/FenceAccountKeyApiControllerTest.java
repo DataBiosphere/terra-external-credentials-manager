@@ -15,9 +15,8 @@ import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.models.LinkedAccount.Builder;
 import bio.terra.externalcreds.services.FenceAccountKeyService;
-import bio.terra.externalcreds.services.LinkedAccountService;
+import bio.terra.externalcreds.services.FenceProviderService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
 import java.util.Optional;
@@ -34,7 +33,7 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
 
   @Autowired private MockMvc mvc;
 
-  @MockBean private LinkedAccountService linkedAccountServiceMock;
+  @MockBean private FenceProviderService fenceProviderServiceMock;
 
   @MockBean private SamUserFactory samUserFactoryMock;
   @MockBean private FenceAccountKeyService fenceAccountKeyServiceMock;
@@ -55,18 +54,14 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(linkedAccountServiceMock.getLinkedAccount(userId, provider))
-          .thenReturn(
-              Optional.of(
-                  new Builder()
-                      .provider(provider)
-                      .userId(userId)
-                      .externalUserId(externalUserId)
-                      .refreshToken("")
-                      .expires(new Timestamp(0))
-                      .isAuthenticated(true)
-                      .build()));
-      when(fenceAccountKeyServiceMock.getFenceAccountKey(userId, provider))
+      var linkedAccount =
+          TestUtils.createRandomLinkedAccount(provider)
+              .withExternalUserId(externalUserId)
+              .withUserId(userId);
+
+      when(fenceProviderServiceMock.getLinkedFenceAccount(userId, provider))
+          .thenReturn(Optional.of(linkedAccount));
+      when(fenceProviderServiceMock.getFenceAccountKey(linkedAccount))
           .thenReturn(Optional.of(fenceAccountKey));
 
       mvc.perform(
