@@ -114,7 +114,11 @@ public class FenceProviderService extends ProviderService {
   }
 
   public void deleteBondFenceLink(String userId, Provider provider) {
-    bondService.deleteBondLinkedAccount(userId, provider);
+    try {
+      bondService.deleteBondLinkedAccount(userId, provider);
+    } catch (Exception ex) {
+      log.warn("Failed to delete Bond linked account", ex);
+    }
   }
 
   public void logLinkCreation(

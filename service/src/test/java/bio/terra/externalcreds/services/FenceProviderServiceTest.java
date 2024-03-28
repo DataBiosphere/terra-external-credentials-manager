@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import bio.terra.common.exception.BadRequestException;
@@ -343,6 +344,14 @@ class FenceProviderServiceTest extends BaseTest {
       var userId = UUID.randomUUID().toString();
       var provider = Provider.FENCE;
       doNothing().when(bondService).deleteBondLinkedAccount(userId, provider);
+      fenceProviderService.deleteBondFenceLink(userId, provider);
+    }
+
+    @Test
+    void testDeleteBondFenceLinkFailsGracefully() {
+      var userId = UUID.randomUUID().toString();
+      var provider = Provider.FENCE;
+      doThrow(new RuntimeException()).when(bondService).deleteBondLinkedAccount(userId, provider);
       fenceProviderService.deleteBondFenceLink(userId, provider);
     }
   }
