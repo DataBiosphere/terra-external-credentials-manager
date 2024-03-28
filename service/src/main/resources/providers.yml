@@ -84,7 +84,7 @@ externalcreds:
     ras:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
     github:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/oauth_callback", "http://localhost:3000/oauth_callback" ]
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/oauth_callback" ]
     fence:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
     dcf-fence:
