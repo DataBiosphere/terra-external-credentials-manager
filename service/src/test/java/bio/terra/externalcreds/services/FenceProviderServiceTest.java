@@ -99,6 +99,39 @@ class FenceProviderServiceTest extends BaseTest {
     when(linkedAccountService.upsertLinkedAccount(any()))
         .thenReturn(linkedAccount.withId(linkedAccountId));
     var auditLogEventBuilder = new AuditLogEvent.Builder().userId(linkedAccount.getUserId());
+    var oauth2State = setupMocksforCreateLink(linkedAccount);
+
+    var actualLinkedAccount =
+        fenceProviderService.createLink(
+            linkedAccount.getProvider(),
+            linkedAccount.getUserId(),
+            "code",
+            oauth2State.encode(objectMapper),
+            auditLogEventBuilder);
+    assertEquals(linkedAccount.withId(linkedAccountId), actualLinkedAccount);
+  }
+
+  @Test
+  void testCreateLinkFails() {
+    var linkedAccount = TestUtils.createRandomLinkedAccount(Provider.FENCE);
+    var auditLogEventBuilder = new AuditLogEvent.Builder().userId(linkedAccount.getUserId());
+
+    var oAuth2State = setupMocksforCreateLink(linkedAccount);
+    when(oAuth2Service.authorizationCodeExchange(any(), any(), any(), any(), any(), any()))
+        .thenThrow(new OAuth2AuthorizationException(new OAuth2Error("error")));
+
+    assertThrows(
+        BadRequestException.class,
+        () ->
+            fenceProviderService.createLink(
+                linkedAccount.getProvider(),
+                linkedAccount.getUserId(),
+                "code",
+                oAuth2State.encode(objectMapper),
+                auditLogEventBuilder));
+  }
+
+  private OAuth2State setupMocksforCreateLink(LinkedAccount linkedAccount) {
     var oauth2State =
         new OAuth2State.Builder()
             .provider(Provider.FENCE)
@@ -106,7 +139,6 @@ class FenceProviderServiceTest extends BaseTest {
             .redirectUri("http://localhost:8080/oauth2/callback")
             .build();
     var encodedState = oauth2State.encode(objectMapper);
-
     var providerClient =
         ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
@@ -130,7 +162,7 @@ class FenceProviderServiceTest extends BaseTest {
             "code",
             "http://localhost:8080/oauth2/callback",
             Set.copyOf(provider.getScopes()),
-            encodedState,
+            oauth2State.encode(objectMapper),
             Map.of()))
         .thenReturn(accessTokenResponse);
 
@@ -140,58 +172,7 @@ class FenceProviderServiceTest extends BaseTest {
                 null,
                 Map.of("foo", "bar", provider.getExternalIdClaim(), "barName"),
                 provider.getExternalIdClaim()));
-
-    fenceProviderService.createLink(
-        linkedAccount.getProvider(),
-        linkedAccount.getUserId(),
-        "code",
-        encodedState,
-        auditLogEventBuilder);
-  }
-
-  @Test
-  void testCreateLinkFails() {
-    var linkedAccount = TestUtils.createRandomLinkedAccount(Provider.FENCE);
-    var auditLogEventBuilder = new AuditLogEvent.Builder().userId(linkedAccount.getUserId());
-    var oauth2State =
-        new OAuth2State.Builder()
-            .provider(Provider.FENCE)
-            .random("abcde")
-            .redirectUri("http://localhost:8080/oauth2/callback")
-            .build();
-    var encodedState = oauth2State.encode(objectMapper);
-
-    var providerClient =
-        ClientRegistration.withRegistrationId(linkedAccount.getProvider().toString())
-            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .build();
-    when(providerOAuthClientCache.getProviderClient(linkedAccount.getProvider()))
-        .thenReturn(providerClient);
-    doNothing()
-        .when(linkedAccountService)
-        .validateAndDeleteOAuth2State(linkedAccount.getUserId(), oauth2State);
-
-    var provider = TestUtils.createRandomProvider().setScopes(Set.of("scope"));
-    when(externalCredsConfig.getProviderProperties(linkedAccount.getProvider()))
-        .thenReturn(provider);
-    when(oAuth2Service.authorizationCodeExchange(
-            providerClient,
-            "code",
-            "http://localhost:8080/oauth2/callback",
-            Set.copyOf(provider.getScopes()),
-            encodedState,
-            Map.of()))
-        .thenThrow(new OAuth2AuthorizationException(new OAuth2Error("error")));
-
-    assertThrows(
-        BadRequestException.class,
-        () ->
-            fenceProviderService.createLink(
-                linkedAccount.getProvider(),
-                linkedAccount.getUserId(),
-                "code",
-                encodedState,
-                auditLogEventBuilder));
+    return oauth2State;
   }
 
   @Nested
