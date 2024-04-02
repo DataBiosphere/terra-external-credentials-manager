@@ -122,7 +122,7 @@ public class TokenProviderService extends ProviderService {
                 tokenEntry -> {
                   if (tokenEntry
                       .getExpiresAt()
-                      .isBefore(Instant.now().plus(1, ChronoUnit.MINUTES))) {
+                      .isAfter(Instant.now().plus(1, ChronoUnit.MINUTES))) {
                     logGetProviderAccessToken(userId, provider, auditLogEventBuilder);
                     return Optional.of(tokenEntry.getAccessToken());
                   }

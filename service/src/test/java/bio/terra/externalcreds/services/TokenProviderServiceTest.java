@@ -2,6 +2,8 @@ package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,8 +15,12 @@ import bio.terra.externalcreds.auditLogging.AuditLogEvent.Builder;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.LinkedAccount;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,12 +37,15 @@ public class TokenProviderServiceTest extends BaseTest {
   @MockBean private FenceProviderService fenceProviderService;
   @MockBean private ProviderTokenClientCache providerTokenClientCacheMock;
   @MockBean private OAuth2Service oAuth2ServiceMock;
+  @MockBean private AccessTokenCacheService accessTokenCacheService;
 
   private final Provider provider = Provider.GITHUB;
   private final String userId = UUID.randomUUID().toString();
   private final String clientIP = "127.0.0.1";
   private final AuditLogEvent.Builder auditLogEventBuilder =
       new Builder().provider(provider).userId(userId).clientIP(clientIP);
+
+  private Random random = new Random();
 
   @Test
   void testLogLinkCreateSuccess() {
@@ -70,11 +79,16 @@ public class TokenProviderServiceTest extends BaseTest {
 
   @Test
   void testGetProviderAccessTokenSuccess() {
-    var linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+    var linkedAccount = TestUtils.createRandomLinkedAccount(provider).withId(random.nextInt());
     var clientRegistration = createClientRegistration(linkedAccount.getProvider());
 
     when(linkedAccountService.getLinkedAccount(linkedAccount.getUserId(), provider))
         .thenReturn(Optional.of(linkedAccount));
+    when(accessTokenCacheService.getAccessTokenCacheEntry(
+            linkedAccount.getUserId(), linkedAccount.getProvider()))
+        .thenReturn(Optional.empty());
+    when(accessTokenCacheService.upsertAccessTokenCacheEntry(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0, AccessTokenCacheEntry.class));
     when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
         .thenReturn(clientRegistration);
 
@@ -113,15 +127,117 @@ public class TokenProviderServiceTest extends BaseTest {
   @Test
   void testGetFenceProviderAccessTokenSuccess() {
     var provider = Provider.FENCE;
-    var linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+    var linkedAccount = TestUtils.createRandomLinkedAccount(provider).withId(random.nextInt());
     var clientRegistration = createClientRegistration(linkedAccount.getProvider());
 
     when(fenceProviderService.getLinkedFenceAccount(linkedAccount.getUserId(), provider))
         .thenReturn(Optional.of(linkedAccount));
     when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
         .thenReturn(clientRegistration);
+    when(accessTokenCacheService.getAccessTokenCacheEntry(
+            linkedAccount.getUserId(), linkedAccount.getProvider()))
+        .thenReturn(Optional.empty());
+    when(accessTokenCacheService.upsertAccessTokenCacheEntry(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0, AccessTokenCacheEntry.class));
 
     var accessToken = "tokenValue";
+    var updatedRefreshToken = "newRefreshToken";
+    var oAuth2TokenResponse =
+        OAuth2AccessTokenResponse.withToken(accessToken)
+            .refreshToken(updatedRefreshToken)
+            .tokenType(OAuth2AccessToken.TokenType.BEARER)
+            .build();
+    when(oAuth2ServiceMock.authorizeWithRefreshToken(
+            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+        .thenReturn(oAuth2TokenResponse);
+    var updatedLinkedAccount =
+        linkedAccount.withRefreshToken(oAuth2TokenResponse.getRefreshToken().getTokenValue());
+    when(linkedAccountService.upsertLinkedAccount(updatedLinkedAccount))
+        .thenReturn(updatedLinkedAccount);
+
+    var auditLogEventBuilder =
+        new Builder().provider(provider).userId(linkedAccount.getUserId()).clientIP(clientIP);
+    Optional<String> response =
+        tokenProviderService.getProviderAccessToken(
+            linkedAccount.getUserId(), provider, auditLogEventBuilder);
+    assertEquals(response.get(), accessToken);
+    verify(oAuth2ServiceMock, never())
+        .authorizationCodeExchange(any(), any(), any(), any(), any(), any());
+    verify(auditLoggerMock)
+        .logEvent(
+            new AuditLogEvent.Builder()
+                .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
+                .provider(provider)
+                .userId(linkedAccount.getUserId())
+                .clientIP(clientIP)
+                .externalUserId(linkedAccount.getExternalUserId())
+                .build());
+  }
+
+  @Test
+  void testGetFenceProviderAccessTokenCacheSuccess() {
+    var provider = Provider.FENCE;
+    var linkedAccount = TestUtils.createRandomLinkedAccount(provider).withId(random.nextInt());
+    var clientRegistration = createClientRegistration(linkedAccount.getProvider());
+    var accessToken = UUID.randomUUID().toString();
+    var tokenExpiresAt = Instant.now().plus(1, ChronoUnit.HOURS);
+
+    when(fenceProviderService.getLinkedFenceAccount(linkedAccount.getUserId(), provider))
+        .thenReturn(Optional.of(linkedAccount));
+    when(accessTokenCacheService.getAccessTokenCacheEntry(
+            linkedAccount.getUserId(), linkedAccount.getProvider()))
+        .thenReturn(
+            Optional.of(
+                new AccessTokenCacheEntry.Builder()
+                    .linkedAccountId(linkedAccount.getId().get())
+                    .accessToken(accessToken)
+                    .expiresAt(tokenExpiresAt)
+                    .build()));
+    when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
+        .thenReturn(clientRegistration);
+    when(accessTokenCacheService.upsertAccessTokenCacheEntry(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0, AccessTokenCacheEntry.class));
+
+    var auditLogEventBuilder =
+        new Builder().provider(provider).userId(linkedAccount.getUserId()).clientIP(clientIP);
+    Optional<String> response =
+        tokenProviderService.getProviderAccessToken(
+            linkedAccount.getUserId(), provider, auditLogEventBuilder);
+    assertEquals(response.get(), accessToken);
+    verify(auditLoggerMock)
+        .logEvent(
+            new AuditLogEvent.Builder()
+                .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
+                .provider(provider)
+                .userId(linkedAccount.getUserId())
+                .clientIP(clientIP)
+                .build());
+  }
+
+  @Test
+  void testGetFenceProviderAccessTokenCacheExpired() {
+    var provider = Provider.FENCE;
+    var linkedAccount = TestUtils.createRandomLinkedAccount(provider).withId(random.nextInt());
+    var clientRegistration = createClientRegistration(linkedAccount.getProvider());
+    var accessToken = UUID.randomUUID().toString();
+    var tokenExpiresAt = Instant.now().minus(1, ChronoUnit.HOURS);
+
+    when(fenceProviderService.getLinkedFenceAccount(linkedAccount.getUserId(), provider))
+        .thenReturn(Optional.of(linkedAccount));
+    when(accessTokenCacheService.getAccessTokenCacheEntry(
+            linkedAccount.getUserId(), linkedAccount.getProvider()))
+        .thenReturn(
+            Optional.of(
+                new AccessTokenCacheEntry.Builder()
+                    .linkedAccountId(linkedAccount.getId().get())
+                    .accessToken(accessToken)
+                    .expiresAt(tokenExpiresAt)
+                    .build()));
+    when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
+        .thenReturn(clientRegistration);
+    when(accessTokenCacheService.upsertAccessTokenCacheEntry(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0, AccessTokenCacheEntry.class));
+
     var updatedRefreshToken = "newRefreshToken";
     var oAuth2TokenResponse =
         OAuth2AccessTokenResponse.withToken(accessToken)
