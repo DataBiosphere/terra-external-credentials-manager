@@ -8,6 +8,8 @@ env:
 jobs:
   publish-branch-image-job:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -51,6 +53,17 @@ jobs:
         run: |
           ./gradlew --build-cache :service:jibDockerBuild \
           -Djib.from.image=docker://externalcreds:local \
+          --image=${{ steps.image-name.outputs.name }} \
           -Djib.console=plain
       - name: Push GCR image
         run: 'docker push ${{ steps.image-name.outputs.name }}'
+    report-to-sherlock:
+      # Report new ECM version to Broad DevOps
+      uses: broadinstitute/sherlock/.github/workflows/client-report-app-version.yaml@main
+      needs: publish-branch-image-job
+      with:
+        new-version: ${{ needs.publish-branch-image-job.outputs.tag }}
+        chart-name: 'externalcreds'
+      permissions:
+        contents: 'read'
+        id-token: 'write'
