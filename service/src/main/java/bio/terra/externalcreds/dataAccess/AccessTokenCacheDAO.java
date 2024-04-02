@@ -43,7 +43,7 @@ public class AccessTokenCacheDAO {
               var query =
                   "SELECT token.linked_account_id, token.access_token, token.expires_at "
                       + "  FROM access_token_cache token"
-                      + "  WHERE fence.linked_account_id = :linkedAccountId";
+                      + "  WHERE token.linked_account_id = :linkedAccountId";
               return Optional.ofNullable(
                   DataAccessUtils.singleResult(
                       jdbcTemplate.query(query, namedParameters, ACCESS_TOKEN_CACHE_ROW_MAPPER)));
@@ -76,9 +76,8 @@ public class AccessTokenCacheDAO {
             + " VALUES (:linkedAccountId, :accessToken, :expiresAt)"
             + " ON CONFLICT (linked_account_id) DO UPDATE SET"
             + " linked_account_id = excluded.linked_account_id,"
-            + " key_json = excluded.key_json::jsonb,"
-            + " expires_at = excluded.expires_at"
-            + " RETURNING id";
+            + " access_token = excluded.access_token,"
+            + " expires_at = excluded.expires_at";
 
     var namedParameters =
         new MapSqlParameterSource()
@@ -99,7 +98,7 @@ public class AccessTokenCacheDAO {
 
   /**
    * @param linkedAccountId id of the linked account
-   * @return boolean whether a fence account key was deleted
+   * @return boolean whether a access token cache entry was deleted
    */
   @WithSpan
   public boolean deleteAccessTokenCacheEntry(int linkedAccountId) {

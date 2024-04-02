@@ -2,6 +2,7 @@ package bio.terra.externalcreds;
 
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
@@ -65,6 +66,14 @@ public class TestUtils {
     return new FenceAccountKey.Builder()
         .linkedAccountId(1)
         .keyJson("{\"key\": \"value\", \"private_key_id\": \"12345\"}")
+        .expiresAt(getRandomTimestamp().toInstant())
+        .build();
+  }
+
+  public static AccessTokenCacheEntry createRandomAccessTokenCacheEntry() {
+    return new AccessTokenCacheEntry.Builder()
+        .linkedAccountId(1)
+        .accessToken(UUID.randomUUID().toString())
         .expiresAt(getRandomTimestamp().toInstant())
         .build();
   }
