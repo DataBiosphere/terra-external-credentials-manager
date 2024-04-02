@@ -44,7 +44,13 @@ jobs:
       - name: Construct docker image name and tag
         id: image-name
         run: echo name=gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }} >> $GITHUB_OUTPUT
+      - name: Add Google Cloud Profiler to Docker Image
+        run: docker build ./service -t externalcreds:local
       - name: Build image locally with jib
-        run: './gradlew :service:jibDockerBuild --image=${{ steps.image-name.outputs.name }} -Djib.console=plain'
+        # build the docker image to make sure it does not error
+        run: |
+          ./gradlew --build-cache :service:jibDockerBuild \
+          -Djib.from.image=docker://externalcreds:local \
+          -Djib.console=plain
       - name: Push GCR image
         run: 'docker push ${{ steps.image-name.outputs.name }}'
