@@ -20,6 +20,7 @@ externalcreds:
     datastore-database-id: ${BOND_DATASTORE_DATABASE_ID:}
   distributed-lock-configuration:
     lock-timeout: 30s
+  access-token-expiration-buffer: 5m
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}

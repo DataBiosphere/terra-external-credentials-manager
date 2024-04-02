@@ -39,6 +39,8 @@ public interface ExternalCredsConfigInterface {
 
   Duration getVisaAndPassportRefreshDuration();
 
+  Duration getAccessTokenExpirationBuffer();
+
   /** List of algorithms that are allowable in JWT headers */
   @Value.Default
   default Collection<String> getAllowedJwtAlgorithms() {

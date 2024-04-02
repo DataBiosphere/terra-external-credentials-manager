@@ -11,7 +11,6 @@ import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.LinkedAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -122,7 +121,9 @@ public class TokenProviderService extends ProviderService {
                 tokenEntry -> {
                   if (tokenEntry
                       .getExpiresAt()
-                      .isAfter(Instant.now().plus(1, ChronoUnit.MINUTES))) {
+                      .isAfter(
+                          Instant.now()
+                              .plus(externalCredsConfig.getAccessTokenExpirationBuffer()))) {
                     logGetProviderAccessToken(userId, provider, auditLogEventBuilder);
                     return Optional.of(tokenEntry.getAccessToken());
                   }
