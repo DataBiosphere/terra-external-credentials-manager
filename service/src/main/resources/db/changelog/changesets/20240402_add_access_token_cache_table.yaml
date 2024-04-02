@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_access_token_cache_table"
+      author: tlangs
+      changes:
+        - createTable:
+            tableName: access_token_cache
+            columns:
+              - column:
+                  name: linked_account_id
+                  type: int
+                  constraints:
+                    nullable: false
+                    unique: true
+                    references: linked_account(id)
+                    foreignKeyName: fk_linked_account_id
+                    deleteCascade: true
+              - column:
+                  name: access_token
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: timestamp
+                  constraints:
+                    nullable: false

@@ -10,6 +10,10 @@ import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.LinkedAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +67,22 @@ public class FenceProviderService extends ProviderService {
     }
     // ECM is out of date. Port the Bond data into the ECM and return the new ECM Linked Account
     return bondLinkedAccount.map(this::updateEcmWithBondInfo).orElse(ecmLinkedAccount);
+  }
+
+  public Optional<String> getLinkedFenceAccountToken(String userId, Provider provider) {
+    var linkedAccount = getLinkedFenceAccount(userId, provider);
+    var fenceAccountKey = linkedAccount.flatMap(this::getFenceAccountKey);
+    var fenceAccountKeyJson = fenceAccountKey.map(FenceAccountKey::getKeyJson);
+    var creds =
+        fenceAccountKeyJson.map(
+            (json) -> {
+              try {
+                return GoogleCredentials.fromStream(new ByteArrayInputStream(json.getBytes()));
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            });
+    return creds.map(GoogleCredentials::getAccessToken).map(AccessToken::getTokenValue);
   }
 
   private Optional<LinkedAccount> updateEcmWithBondInfo(LinkedAccount bondLinkedAccount) {
