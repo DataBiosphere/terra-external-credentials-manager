@@ -1,6 +1,5 @@
 package bio.terra.externalcreds.dataAccess;
 
-import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.LinkedAccount;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -51,24 +50,6 @@ public class AccessTokenCacheDAO {
   }
 
   @WithSpan
-  public Optional<AccessTokenCacheEntry> getAccessTokenCacheEntry(
-      String userId, Provider provider) {
-    var namedParameters =
-        new MapSqlParameterSource()
-            .addValue("userId", userId)
-            .addValue("provider", provider.name());
-    var query =
-        "SELECT token.linked_account_id, token.access_token, token.expires_at"
-            + " FROM access_token_cache token"
-            + " INNER JOIN linked_account la ON la.id = token.linked_account_id"
-            + " WHERE la.user_id = :userId"
-            + " AND la.provider = :provider::provider_enum";
-    return Optional.ofNullable(
-        DataAccessUtils.singleResult(
-            jdbcTemplate.query(query, namedParameters, ACCESS_TOKEN_CACHE_ROW_MAPPER)));
-  }
-
-  @WithSpan
   public AccessTokenCacheEntry upsertAccessTokenCacheEntry(
       AccessTokenCacheEntry accessTokenCacheEntry) {
     var query =
@@ -92,7 +73,10 @@ public class AccessTokenCacheDAO {
     if (numUpdated == 1) {
       return accessTokenCacheEntry;
     } else {
-      throw new RuntimeException("Failed to upsert access token cache entry");
+      throw new RuntimeException(
+          "Failed to upsert access token cache entry, 'numUpdated' was "
+              + numUpdated
+              + " instead of 1.");
     }
   }
 

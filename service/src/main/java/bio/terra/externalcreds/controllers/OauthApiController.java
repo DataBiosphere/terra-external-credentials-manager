@@ -73,7 +73,7 @@ public record OauthApiController(
     var accessToken =
         tokenProviderService.getProviderAccessToken(
             samUser.getSubjectId(), provider, auditLogEventBuilder);
-    return ResponseEntity.of(accessToken);
+    return ResponseEntity.ok(accessToken);
   }
 
   @Override

@@ -7,15 +7,12 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.LinkedAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
-import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -91,52 +88,8 @@ public class TokenProviderService extends ProviderService {
             .build());
   }
 
-  public void logGetProviderAccessToken(
-      LinkedAccount linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
-    auditLogger.logEvent(
-        auditLogEventBuilder
-            .externalUserId(linkedAccount.getExternalUserId())
-            .userId(linkedAccount.getUserId())
-            .provider(linkedAccount.getProvider())
-            .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
-            .build());
-  }
-
-  public void logGetProviderAccessToken(
+  public String getProviderAccessToken(
       String userId, Provider provider, AuditLogEvent.Builder auditLogEventBuilder) {
-    auditLogger.logEvent(
-        auditLogEventBuilder
-            .userId(userId)
-            .provider(provider)
-            .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
-            .build());
-  }
-
-  public Optional<String> getProviderAccessToken(
-      String userId, Provider provider, AuditLogEvent.Builder auditLogEventBuilder) {
-    var tokenCacheEntry =
-        accessTokenCacheService
-            .getAccessTokenCacheEntry(userId, provider)
-            .flatMap(
-                tokenEntry -> {
-                  if (tokenEntry
-                      .getExpiresAt()
-                      .isAfter(
-                          Instant.now()
-                              .plus(externalCredsConfig.getAccessTokenExpirationBuffer()))) {
-                    logGetProviderAccessToken(userId, provider, auditLogEventBuilder);
-                    return Optional.of(tokenEntry.getAccessToken());
-                  }
-                  return Optional.empty();
-                });
-
-    return tokenCacheEntry.or(
-        () -> getNewProviderAccessToken(userId, provider, auditLogEventBuilder));
-  }
-
-  private Optional<String> getNewProviderAccessToken(
-      String userId, Provider provider, AuditLogEvent.Builder auditLogEventBuilder) {
-    // get linked account
     var linkedAccount =
         (switch (provider) {
               case RAS, GITHUB -> linkedAccountService.getLinkedAccount(userId, provider);
@@ -151,30 +104,6 @@ public class TokenProviderService extends ProviderService {
                                 + "Please go to the Terra Profile page External Identities tab "
                                 + "to link your account for this provider.",
                             userId, provider)));
-    // get client registration from provider client cache
-    var clientRegistration = providerTokenClientCache.getProviderClient(provider);
-
-    // exchange refresh token for access token
-    var accessTokenResponse =
-        oAuth2Service.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
-
-    // save the linked account with the new refresh token to replace the old one
-    var refreshToken = accessTokenResponse.getRefreshToken();
-    if (refreshToken != null) {
-      linkedAccountService.upsertLinkedAccount(
-          linkedAccount.withRefreshToken(refreshToken.getTokenValue()));
-    }
-    logGetProviderAccessToken(linkedAccount, auditLogEventBuilder);
-
-    return Optional.of(
-        accessTokenCacheService
-            .upsertAccessTokenCacheEntry(
-                new AccessTokenCacheEntry.Builder()
-                    .linkedAccountId(linkedAccount.getId().orElseThrow())
-                    .accessToken(accessTokenResponse.getAccessToken().getTokenValue())
-                    .expiresAt(accessTokenResponse.getAccessToken().getExpiresAt())
-                    .build())
-            .getAccessToken());
+    return accessTokenCacheService.getLinkedAccountAccessToken(linkedAccount, auditLogEventBuilder);
   }
 }

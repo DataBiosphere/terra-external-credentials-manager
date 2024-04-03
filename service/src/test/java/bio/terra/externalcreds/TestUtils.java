@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 public class TestUtils {
 
@@ -114,5 +116,11 @@ public class TestUtils {
       rootCause = rootCause.getCause();
     }
     return rootCause;
+  }
+
+  public static ClientRegistration createClientRegistration(Provider provider) {
+    return ClientRegistration.withRegistrationId(provider.toString())
+        .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+        .build();
   }
 }

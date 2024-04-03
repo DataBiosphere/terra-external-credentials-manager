@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -18,6 +19,7 @@ import bio.terra.externalcreds.dataAccess.DistributedLockDAO;
 import bio.terra.externalcreds.exception.DistributedLockException;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.DistributedLock;
+import bio.terra.externalcreds.models.LinkedAccount;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -49,6 +51,7 @@ class FenceKeyRetrieverTest extends BaseTest {
   @MockBean private ProviderOAuthClientCache providerOAuthClientCache;
   @MockBean private OAuth2Service oAuth2Service;
   @MockBean private BondService bondService;
+  @MockBean private AccessTokenCacheService accessTokenCacheService;
 
   @Nested
   class FenceAccountKeyLocking {
@@ -56,24 +59,12 @@ class FenceKeyRetrieverTest extends BaseTest {
     @Test
     void testCreateKeyNoExistingLock() {
       var provider = Provider.FENCE;
-      var keyJson = "{ \"name\": \"testKeyJson\"}";
+      var keyJson = "{ \"name\": \"testKeyJson\", \"client_email\": \"foo@bar.com\"}";
 
       var linkedAccount =
           linkedAccountService.upsertLinkedAccount(TestUtils.createRandomLinkedAccount(provider));
 
-      when(bondService.getFenceServiceAccountKey(
-              linkedAccount.getUserId(), linkedAccount.getProvider(), linkedAccount.getId().get()))
-          .thenReturn(Optional.empty());
-
-      var clientRegistration = mock(ClientRegistration.class);
-      when(providerOAuthClientCache.getProviderClient(any())).thenReturn(clientRegistration);
-      var oauth2AccessTokenResponse = mock(OAuth2AccessTokenResponse.class);
-      when(oAuth2Service.authorizeWithRefreshToken(
-              clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
-          .thenReturn(oauth2AccessTokenResponse);
-      when(oauth2AccessTokenResponse.getAccessToken())
-          .thenReturn(
-              new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "accessToken", null, null));
+      setupOAuthMocks(linkedAccount);
 
       try (var mockServer = ClientAndServer.startClientAndServer()) {
         var credentialsPath = "/test/credentials/";
@@ -99,6 +90,96 @@ class FenceKeyRetrieverTest extends BaseTest {
         assertPresent(key);
         assertEquals(keyJson, key.get().getKeyJson());
       }
+    }
+
+    @Test
+    void testCreateKeyFailsValidation() {
+      var provider = Provider.FENCE;
+      var keyJson = "{ \"name\": \"testKeyJson\"}";
+
+      var linkedAccount =
+          linkedAccountService.upsertLinkedAccount(TestUtils.createRandomLinkedAccount(provider));
+
+      setupOAuthMocks(linkedAccount);
+
+      try (var mockServer = ClientAndServer.startClientAndServer()) {
+        var credentialsPath = "/test/credentials/";
+        var providerInfo =
+            TestUtils.createRandomProvider()
+                .setKeyEndpoint("http://localhost:" + mockServer.getPort() + credentialsPath);
+
+        when(externalCredsConfig.getProviderProperties(linkedAccount.getProvider()))
+            .thenReturn(providerInfo);
+        when(externalCredsConfig.getDistributedLockConfiguration())
+            .thenReturn(
+                DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30)));
+
+        //  Mock the server response
+        mockServer
+            .when(
+                HttpRequest.request(credentialsPath)
+                    .withMethod("POST")
+                    .withHeader("Authorization", "Bearer accessToken"))
+            .respond(HttpResponse.response().withStatusCode(200).withBody(keyJson));
+
+        assertThrows(
+            ExternalCredsException.class,
+            () -> fenceKeyRetriever.getOrCreateFenceAccountKey(linkedAccount));
+      }
+    }
+
+    @Test
+    void testCreateKeyFailsIfNotJson() {
+      var provider = Provider.FENCE;
+      var keyJson = "notJson";
+
+      var linkedAccount =
+          linkedAccountService.upsertLinkedAccount(TestUtils.createRandomLinkedAccount(provider));
+
+      setupOAuthMocks(linkedAccount);
+
+      try (var mockServer = ClientAndServer.startClientAndServer()) {
+        var credentialsPath = "/test/credentials/";
+        var providerInfo =
+            TestUtils.createRandomProvider()
+                .setKeyEndpoint("http://localhost:" + mockServer.getPort() + credentialsPath);
+
+        when(externalCredsConfig.getProviderProperties(linkedAccount.getProvider()))
+            .thenReturn(providerInfo);
+        when(externalCredsConfig.getDistributedLockConfiguration())
+            .thenReturn(
+                DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30)));
+
+        //  Mock the server response
+        mockServer
+            .when(
+                HttpRequest.request(credentialsPath)
+                    .withMethod("POST")
+                    .withHeader("Authorization", "Bearer accessToken"))
+            .respond(HttpResponse.response().withStatusCode(200).withBody(keyJson));
+
+        assertThrows(
+            ExternalCredsException.class,
+            () -> fenceKeyRetriever.getOrCreateFenceAccountKey(linkedAccount));
+      }
+    }
+
+    private void setupOAuthMocks(LinkedAccount linkedAccount) {
+      when(bondService.getFenceServiceAccountKey(
+              linkedAccount.getUserId(), linkedAccount.getProvider(), linkedAccount.getId().get()))
+          .thenReturn(Optional.empty());
+      when(accessTokenCacheService.getLinkedAccountAccessToken(eq(linkedAccount), any()))
+          .thenReturn("accessToken");
+
+      var clientRegistration = mock(ClientRegistration.class);
+      when(providerOAuthClientCache.getProviderClient(any())).thenReturn(clientRegistration);
+      var oauth2AccessTokenResponse = mock(OAuth2AccessTokenResponse.class);
+      when(oAuth2Service.authorizeWithRefreshToken(
+              clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+          .thenReturn(oauth2AccessTokenResponse);
+      when(oauth2AccessTokenResponse.getAccessToken())
+          .thenReturn(
+              new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "accessToken", null, null));
     }
 
     @Test

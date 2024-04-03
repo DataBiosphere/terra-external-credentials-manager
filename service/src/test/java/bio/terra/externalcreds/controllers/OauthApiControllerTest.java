@@ -397,7 +397,7 @@ class OauthApiControllerTest extends BaseTest {
       mockSamUser(userId, accessToken);
 
       when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
-          .thenReturn(Optional.of(githubAccessToken));
+          .thenReturn(githubAccessToken);
 
       mvc.perform(
               get("/api/oauth/v1/{provider}/access-token", provider)
@@ -414,7 +414,7 @@ class OauthApiControllerTest extends BaseTest {
       mockSamUser(userId, accessToken);
 
       when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
-          .thenReturn(Optional.empty());
+          .thenThrow(new NotFoundException("not found"));
 
       mvc.perform(
               get("/api/oauth/v1/{provider}/access-token", provider)

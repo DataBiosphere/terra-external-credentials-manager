@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
-import bio.terra.externalcreds.generated.model.Provider;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -21,7 +20,7 @@ class AccessTokenCacheDAOTest extends BaseTest {
   @Test
   void testGetMissingAccessTokenCacheEntry() {
     var shouldBeEmpty =
-        accessTokenCacheDAO.getAccessTokenCacheEntry("nonexistent_user_id", Provider.RAS);
+        accessTokenCacheDAO.getAccessTokenCacheEntry(TestUtils.createRandomLinkedAccount());
     assertEmpty(shouldBeEmpty);
   }
 
@@ -42,9 +41,7 @@ class AccessTokenCacheDAOTest extends BaseTest {
 
       assertEquals(accessTokenCacheEntry, savedAccessTokenCacheEntry);
 
-      var loadedAccessTokenCacheEntry =
-          accessTokenCacheDAO.getAccessTokenCacheEntry(
-              savedAccount.getUserId(), savedAccount.getProvider());
+      var loadedAccessTokenCacheEntry = accessTokenCacheDAO.getAccessTokenCacheEntry(savedAccount);
       assertEquals(Optional.of(savedAccessTokenCacheEntry), loadedAccessTokenCacheEntry);
 
       var loadedByLinkedAccount = accessTokenCacheDAO.getAccessTokenCacheEntry(savedAccount);
@@ -91,13 +88,9 @@ class AccessTokenCacheDAOTest extends BaseTest {
           TestUtils.createRandomAccessTokenCacheEntry()
               .withLinkedAccountId(savedAccount.getId().get()));
 
-      assertPresent(
-          accessTokenCacheDAO.getAccessTokenCacheEntry(
-              savedAccount.getUserId(), savedAccount.getProvider()));
+      assertPresent(accessTokenCacheDAO.getAccessTokenCacheEntry(savedAccount));
       assertTrue(accessTokenCacheDAO.deleteAccessTokenCacheEntry(savedAccount.getId().get()));
-      assertEmpty(
-          accessTokenCacheDAO.getAccessTokenCacheEntry(
-              savedAccount.getUserId(), savedAccount.getProvider()));
+      assertEmpty(accessTokenCacheDAO.getAccessTokenCacheEntry(savedAccount));
     }
 
     @Test
