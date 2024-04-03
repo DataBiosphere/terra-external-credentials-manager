@@ -15,7 +15,6 @@ import bio.terra.common.exception.BadRequestException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.common.iam.BearerToken;
 import bio.terra.common.iam.SamUser;
-import bio.terra.common.iam.SamUserFactory;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.TestUtils;
@@ -62,7 +61,7 @@ class OidcApiControllerTest extends BaseTest {
   @Qualifier("passportProviderService")
   private PassportProviderService passportProviderServiceMock;
 
-  @MockBean private SamUserFactory samUserFactoryMock;
+  @MockBean private ExternalCredsSamUserFactory samUserFactoryMock;
   @MockBean private PassportService passportServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
   private Provider provider = Provider.RAS;
@@ -383,7 +382,7 @@ class OidcApiControllerTest extends BaseTest {
   }
 
   private void mockSamUser(String userId, String accessToken) {
-    when(samUserFactoryMock.from(any(HttpServletRequest.class), any(String.class)))
+    when(samUserFactoryMock.from(any(HttpServletRequest.class)))
         .thenReturn(new SamUser("email", userId, new BearerToken(accessToken)));
   }
 }
