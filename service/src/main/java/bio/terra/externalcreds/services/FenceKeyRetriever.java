@@ -1,12 +1,15 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.DistributedLockDAO;
 import bio.terra.externalcreds.exception.DistributedLockException;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.DistributedLock;
 import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.LinkedAccount;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -16,7 +19,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
-import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -27,21 +29,21 @@ public class FenceKeyRetriever {
 
   private final FenceAccountKeyService fenceAccountKeyService;
   private final DistributedLockDAO distributedLockDAO;
-  private final ProviderOAuthClientCache providerOAuthClientCache;
-  private final OAuth2Service oAuth2Service;
+  private final AccessTokenCacheService accessTokenCacheService;
   private final ExternalCredsConfig externalCredsConfig;
+  private final ObjectMapper objectMapper;
 
   public FenceKeyRetriever(
       FenceAccountKeyService fenceAccountKeyService,
       DistributedLockDAO distributedLockDAO,
-      ProviderOAuthClientCache providerOAuthClientCache,
-      OAuth2Service oAuth2Service,
-      ExternalCredsConfig externalCredsConfig) {
+      AccessTokenCacheService accessTokenCacheService,
+      ExternalCredsConfig externalCredsConfig,
+      ObjectMapper objectMapper) {
     this.fenceAccountKeyService = fenceAccountKeyService;
     this.distributedLockDAO = distributedLockDAO;
-    this.providerOAuthClientCache = providerOAuthClientCache;
-    this.oAuth2Service = oAuth2Service;
+    this.accessTokenCacheService = accessTokenCacheService;
     this.externalCredsConfig = externalCredsConfig;
+    this.objectMapper = objectMapper;
   }
 
   @Retryable(
@@ -124,11 +126,10 @@ public class FenceKeyRetriever {
       throw new IllegalArgumentException(
           "Cannot retrieved Fence Account Key for an unsaved Linked Account");
     }
-    var providerClient = providerOAuthClientCache.getProviderClient(linkedAccount.getProvider());
     var providerProperties = externalCredsConfig.getProviderProperties(linkedAccount.getProvider());
     var accessToken =
-        oAuth2Service.authorizeWithRefreshToken(
-            providerClient, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+        accessTokenCacheService.getLinkedAccountAccessToken(
+            linkedAccount, new AuditLogEvent.Builder());
     var keyEndpoint = providerProperties.getKeyEndpoint();
     if (keyEndpoint.isEmpty()) {
       throw new IllegalArgumentException(
@@ -137,24 +138,38 @@ public class FenceKeyRetriever {
     WebClient.ResponseSpec response =
         WebClient.create(keyEndpoint.get())
             .post()
-            .header("Authorization", "Bearer " + accessToken.getAccessToken().getTokenValue())
+            .header("Authorization", "Bearer " + accessToken)
             .retrieve();
     String responseBody =
         response
             .onStatus(HttpStatusCode::isError, clientResponse -> Mono.empty())
             .bodyToMono(String.class)
-            .block(Duration.of(11, ChronoUnit.SECONDS));
-    if (responseBody == null) {
-      throw new ExternalCredsException(
-          "Got a successful response from "
-              + linkedAccount.getProvider()
-              + ", but the body was empty.");
-    }
+            .block(Duration.of(30, ChronoUnit.SECONDS));
+    validateResponse(responseBody, linkedAccount.getProvider());
     return new FenceAccountKey.Builder()
         .linkedAccountId(linkedAccount.getId().get())
         .keyJson(responseBody)
         .expiresAt(
             Instant.now().plus(providerProperties.getLinkLifespan().toDays(), ChronoUnit.DAYS))
         .build();
+  }
+
+  private void validateResponse(String responseBody, Provider provider) {
+    if (responseBody == null) {
+      throw new ExternalCredsException(
+          "Got a successful response from " + provider + ", but the body was empty.");
+    }
+    try {
+      var jsonObject = objectMapper.readTree(responseBody);
+      if (!jsonObject.has("client_email")) {
+        log.error("Invalid Service Account JSON: {}", responseBody);
+        throw new ExternalCredsException(
+            "Failed to retrieve a new Fence Account Key from "
+                + provider
+                + ". Does not contain 'client_email' field!");
+      }
+    } catch (Exception e) {
+      throw new ExternalCredsException("Failed to parse the JSON response from " + provider, e);
+    }
   }
 }

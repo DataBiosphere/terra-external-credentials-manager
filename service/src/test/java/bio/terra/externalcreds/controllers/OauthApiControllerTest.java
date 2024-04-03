@@ -10,7 +10,6 @@ import bio.terra.common.exception.BadRequestException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.common.iam.BearerToken;
 import bio.terra.common.iam.SamUser;
-import bio.terra.common.iam.SamUserFactory;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.TestUtils;
@@ -64,7 +63,7 @@ class OauthApiControllerTest extends BaseTest {
   @Qualifier("fenceProviderService")
   private FenceProviderService fenceProviderServiceMock;
 
-  @MockBean private SamUserFactory samUserFactoryMock;
+  @MockBean private ExternalCredsSamUserFactory samUserFactoryMock;
   @MockBean private AuditLogger auditLoggerMock;
 
   private Provider provider = Provider.RAS;
@@ -398,7 +397,7 @@ class OauthApiControllerTest extends BaseTest {
       mockSamUser(userId, accessToken);
 
       when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
-          .thenReturn(Optional.of(githubAccessToken));
+          .thenReturn(githubAccessToken);
 
       mvc.perform(
               get("/api/oauth/v1/{provider}/access-token", provider)
@@ -415,7 +414,7 @@ class OauthApiControllerTest extends BaseTest {
       mockSamUser(userId, accessToken);
 
       when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
-          .thenReturn(Optional.empty());
+          .thenThrow(new NotFoundException("not found"));
 
       mvc.perform(
               get("/api/oauth/v1/{provider}/access-token", provider)
@@ -442,7 +441,7 @@ class OauthApiControllerTest extends BaseTest {
   }
 
   private void mockSamUser(String userId, String accessToken) {
-    when(samUserFactoryMock.from(any(HttpServletRequest.class), any(String.class)))
+    when(samUserFactoryMock.from(any(HttpServletRequest.class)))
         .thenReturn(new SamUser("email", userId, new BearerToken(accessToken)));
   }
 }

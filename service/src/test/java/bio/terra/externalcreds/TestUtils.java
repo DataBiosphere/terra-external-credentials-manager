@@ -2,6 +2,7 @@ package bio.terra.externalcreds;
 
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
@@ -16,6 +17,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 public class TestUtils {
 
@@ -69,6 +72,14 @@ public class TestUtils {
         .build();
   }
 
+  public static AccessTokenCacheEntry createRandomAccessTokenCacheEntry() {
+    return new AccessTokenCacheEntry.Builder()
+        .linkedAccountId(1)
+        .accessToken(UUID.randomUUID().toString())
+        .expiresAt(getRandomTimestamp().toInstant())
+        .build();
+  }
+
   public static ProviderProperties createRandomProvider() {
     try {
       return ProviderProperties.create()
@@ -105,5 +116,11 @@ public class TestUtils {
       rootCause = rootCause.getCause();
     }
     return rootCause;
+  }
+
+  public static ClientRegistration createClientRegistration(Provider provider) {
+    return ClientRegistration.withRegistrationId(provider.toString())
+        .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+        .build();
   }
 }

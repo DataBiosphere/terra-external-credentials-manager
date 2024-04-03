@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
-import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,6 +20,7 @@ import org.springframework.stereotype.Service;
 public class TokenProviderService extends ProviderService {
 
   private final FenceProviderService fenceProviderService;
+  private final AccessTokenCacheService accessTokenCacheService;
 
   public TokenProviderService(
       ExternalCredsConfig externalCredsConfig,
@@ -31,7 +31,8 @@ public class TokenProviderService extends ProviderService {
       FenceProviderService fenceProviderService,
       FenceAccountKeyService fenceAccountKeyService,
       AuditLogger auditLogger,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      AccessTokenCacheService accessTokenCacheService) {
     super(
         externalCredsConfig,
         providerOAuthClientCache,
@@ -42,6 +43,7 @@ public class TokenProviderService extends ProviderService {
         auditLogger,
         objectMapper);
     this.fenceProviderService = fenceProviderService;
+    this.accessTokenCacheService = accessTokenCacheService;
   }
 
   public LinkedAccount createLink(
@@ -86,19 +88,8 @@ public class TokenProviderService extends ProviderService {
             .build());
   }
 
-  public void logGetProviderAccessToken(
-      LinkedAccount linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
-    auditLogger.logEvent(
-        auditLogEventBuilder
-            .externalUserId(linkedAccount.getExternalUserId())
-            .provider(linkedAccount.getProvider())
-            .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
-            .build());
-  }
-
-  public Optional<String> getProviderAccessToken(
+  public String getProviderAccessToken(
       String userId, Provider provider, AuditLogEvent.Builder auditLogEventBuilder) {
-    // get linked account
     var linkedAccount =
         (switch (provider) {
               case RAS, GITHUB -> linkedAccountService.getLinkedAccount(userId, provider);
@@ -113,24 +104,6 @@ public class TokenProviderService extends ProviderService {
                                 + "Please go to the Terra Profile page External Identities tab "
                                 + "to link your account for this provider.",
                             userId, provider)));
-
-    // get client registration from provider client cache
-    var clientRegistration = providerTokenClientCache.getProviderClient(provider);
-
-    // exchange refresh token for access token
-    var accessTokenResponse =
-        oAuth2Service.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
-
-    // save the linked account with the new refresh token to replace the old one
-    var refreshToken = accessTokenResponse.getRefreshToken();
-    if (refreshToken != null) {
-      linkedAccountService.upsertLinkedAccount(
-          linkedAccount.withRefreshToken(refreshToken.getTokenValue()));
-    }
-
-    logGetProviderAccessToken(linkedAccount, auditLogEventBuilder);
-
-    return Optional.of(accessTokenResponse.getAccessToken().getTokenValue());
+    return accessTokenCacheService.getLinkedAccountAccessToken(linkedAccount, auditLogEventBuilder);
   }
 }

@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import bio.terra.common.iam.BearerToken;
 import bio.terra.common.iam.SamUser;
-import bio.terra.common.iam.SamUserFactory;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
@@ -35,7 +34,7 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
 
   @MockBean private FenceProviderService fenceProviderServiceMock;
 
-  @MockBean private SamUserFactory samUserFactoryMock;
+  @MockBean private ExternalCredsSamUserFactory samUserFactoryMock;
   @MockBean private FenceAccountKeyService fenceAccountKeyServiceMock;
   @MockBean private AuditLogger auditLoggerMock;
   private Provider provider = Provider.FENCE;
@@ -111,7 +110,7 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
   }
 
   private void mockSamUser(String userId, String accessToken) {
-    when(samUserFactoryMock.from(any(HttpServletRequest.class), any(String.class)))
+    when(samUserFactoryMock.from(any(HttpServletRequest.class)))
         .thenReturn(new SamUser("email", userId, new BearerToken(accessToken)));
   }
 }

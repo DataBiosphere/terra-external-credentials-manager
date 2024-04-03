@@ -38,3 +38,6 @@ databaseChangeLog:
   - include:
         file: changesets/20240307_add_fence_providers_to_enum.yaml
         relativeToChangelogFile: true
+  - include:
+        file: changesets/20240402_add_access_token_cache_table.yaml
+        relativeToChangelogFile: true
