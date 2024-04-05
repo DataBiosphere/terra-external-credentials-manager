@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
@@ -165,17 +166,24 @@ class FenceKeyRetrieverTest extends BaseTest {
     }
 
     private void setupOAuthMocks(LinkedAccount linkedAccount) {
+      var scopes = Set.of("scope1", "scope2");
       when(bondService.getFenceServiceAccountKey(
               linkedAccount.getUserId(), linkedAccount.getProvider(), linkedAccount.getId().get()))
           .thenReturn(Optional.empty());
-      when(accessTokenCacheService.getLinkedAccountAccessToken(eq(linkedAccount), any()))
+      when(accessTokenCacheService.getLinkedAccountAccessToken(
+              eq(linkedAccount), eq(scopes), any()))
           .thenReturn("accessToken");
+
+      when(externalCredsConfig.getProviderProperties(linkedAccount.getProvider()))
+          .thenReturn(TestUtils.createRandomProvider());
 
       var clientRegistration = mock(ClientRegistration.class);
       when(providerOAuthClientCache.getProviderClient(any())).thenReturn(clientRegistration);
       var oauth2AccessTokenResponse = mock(OAuth2AccessTokenResponse.class);
       when(oAuth2Service.authorizeWithRefreshToken(
-              clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+              clientRegistration,
+              new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+              scopes))
           .thenReturn(oauth2AccessTokenResponse);
       when(oauth2AccessTokenResponse.getAccessToken())
           .thenReturn(
@@ -217,6 +225,7 @@ class FenceKeyRetrieverTest extends BaseTest {
       var linkedAccount =
           linkedAccountService.upsertLinkedAccount(TestUtils.createRandomLinkedAccount(provider));
 
+      var scopes = Set.of("scope1", "scope2");
       var lockName = "createFenceKey-" + linkedAccount.getProvider();
 
       when(bondService.getFenceServiceAccountKey(
@@ -226,7 +235,9 @@ class FenceKeyRetrieverTest extends BaseTest {
       var clientRegistration = mock(ClientRegistration.class);
       when(providerOAuthClientCache.getProviderClient(any())).thenReturn(clientRegistration);
       when(oAuth2Service.authorizeWithRefreshToken(
-              clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+              clientRegistration,
+              new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+              scopes))
           .thenThrow(new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR));
       when(externalCredsConfig.getDistributedLockConfiguration())
           .thenReturn(DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30)));

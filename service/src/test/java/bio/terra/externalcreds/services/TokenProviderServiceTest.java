@@ -1,6 +1,8 @@
 package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +17,7 @@ import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,7 +100,9 @@ public class TokenProviderServiceTest extends BaseTest {
     when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
         .thenReturn(clientRegistration);
     when(oAuth2ServiceMock.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+            eq(clientRegistration),
+            eq(new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)),
+            any(Set.class)))
         .thenThrow(
             new OAuth2AuthorizationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_TOKEN)));
 

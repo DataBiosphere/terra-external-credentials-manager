@@ -168,7 +168,7 @@ public class ProviderServiceTest extends BaseTest {
             .thenReturn(createClientRegistration(linkedAccount.getProvider()));
 
         when(oAuth2ServiceMock.authorizeWithRefreshToken(
-                any(ClientRegistration.class), any(OAuth2RefreshToken.class)))
+                any(ClientRegistration.class), any(OAuth2RefreshToken.class), any(Set.class)))
             .thenReturn(
                 OAuth2AccessTokenResponse.withToken("token").tokenType(TokenType.BEARER).build());
         when(fenceAccountKeyServiceMock.getFenceAccountKey(linkedAccount))
@@ -233,7 +233,7 @@ public class ProviderServiceTest extends BaseTest {
             .thenReturn(createClientRegistration(linkedAccount.getProvider()));
 
         when(oAuth2ServiceMock.authorizeWithRefreshToken(
-                any(ClientRegistration.class), any(OAuth2RefreshToken.class)))
+                any(ClientRegistration.class), any(OAuth2RefreshToken.class), any(Set.class)))
             .thenReturn(
                 OAuth2AccessTokenResponse.withToken("token").tokenType(TokenType.BEARER).build());
         when(fenceAccountKeyServiceMock.getFenceAccountKey(linkedAccount))
@@ -394,8 +394,9 @@ public class ProviderServiceTest extends BaseTest {
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
       when(oAuth2ServiceMock.authorizeWithRefreshToken(
-              clientRegistration,
-              new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
+              eq(clientRegistration),
+              eq(new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)),
+              any(Set.class)))
           .thenThrow(
               new OAuth2AuthorizationException(
                   new OAuth2Error(OAuth2ErrorCodes.INSUFFICIENT_SCOPE)));
@@ -436,8 +437,9 @@ public class ProviderServiceTest extends BaseTest {
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
       when(oAuth2ServiceMock.authorizeWithRefreshToken(
-              clientRegistration,
-              new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
+              eq(clientRegistration),
+              eq(new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)),
+              any(Set.class)))
           .thenThrow(
               new OAuth2AuthorizationException(new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR)));
 
@@ -470,8 +472,9 @@ public class ProviderServiceTest extends BaseTest {
 
       // mock the OAuth2AuthorizationException error thrown by the Oath2Service
       when(oAuth2ServiceMock.authorizeWithRefreshToken(
-              clientRegistration,
-              new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
+              eq(clientRegistration),
+              eq(new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)),
+              any(Set.class)))
           .thenThrow(
               new OAuth2AuthorizationException(
                   new OAuth2Error(OAuth2ErrorCodes.ACCESS_DENIED),
@@ -514,8 +517,9 @@ public class ProviderServiceTest extends BaseTest {
               .tokenType(TokenType.BEARER)
               .build();
       when(oAuth2ServiceMock.authorizeWithRefreshToken(
-              clientRegistration,
-              new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)))
+              eq(clientRegistration),
+              eq(new OAuth2RefreshToken(savedLinkedAccount.getRefreshToken(), null)),
+              any(Set.class)))
           .thenReturn(oAuth2TokenResponse);
 
       // returning null here because it's passed to another mocked function and isn't worth mocking

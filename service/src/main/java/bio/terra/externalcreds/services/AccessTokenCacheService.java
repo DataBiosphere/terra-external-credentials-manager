@@ -10,6 +10,7 @@ import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.LinkedAccount;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Service;
@@ -42,7 +43,7 @@ public class AccessTokenCacheService {
 
   @WriteTransaction
   public String getLinkedAccountAccessToken(
-      LinkedAccount linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
+      LinkedAccount linkedAccount, Set<String> scopes, AuditLogEvent.Builder auditLogEventBuilder) {
     var tokenCacheEntry =
         getAccessTokenCacheEntry(linkedAccount)
             .flatMap(
@@ -58,11 +59,11 @@ public class AccessTokenCacheService {
                 });
 
     return tokenCacheEntry.orElseGet(
-        () -> getNewProviderAccessToken(linkedAccount, auditLogEventBuilder));
+        () -> getNewProviderAccessToken(linkedAccount, scopes, auditLogEventBuilder));
   }
 
   private String getNewProviderAccessToken(
-      LinkedAccount linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
+      LinkedAccount linkedAccount, Set<String> scopes, AuditLogEvent.Builder auditLogEventBuilder) {
     // get client registration from provider client cache
     var clientRegistration =
         providerTokenClientCache.getProviderClient(linkedAccount.getProvider());
@@ -70,7 +71,9 @@ public class AccessTokenCacheService {
     // exchange refresh token for access token
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+            clientRegistration,
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+            scopes);
 
     // save the linked account with the new refresh token to replace the old one
     var refreshToken = accessTokenResponse.getRefreshToken();

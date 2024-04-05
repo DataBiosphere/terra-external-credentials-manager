@@ -207,7 +207,9 @@ public class PassportProviderService extends ProviderService {
         providerOAuthClientCache.getProviderClient(linkedAccount.getProvider());
     var accessTokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+            clientRegistration,
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+            Collections.emptySet());
 
     // save the linked account with the new refresh token and extracted passport
     var linkedAccountWithRefreshToken =
