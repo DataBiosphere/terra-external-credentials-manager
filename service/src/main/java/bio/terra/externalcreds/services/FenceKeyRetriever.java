@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -129,7 +130,9 @@ public class FenceKeyRetriever {
     var providerProperties = externalCredsConfig.getProviderProperties(linkedAccount.getProvider());
     var accessToken =
         accessTokenCacheService.getLinkedAccountAccessToken(
-            linkedAccount, new AuditLogEvent.Builder());
+            linkedAccount,
+            new HashSet<>(providerProperties.getScopes()),
+            new AuditLogEvent.Builder());
     var keyEndpoint = providerProperties.getKeyEndpoint();
     if (keyEndpoint.isEmpty()) {
       throw new IllegalArgumentException(

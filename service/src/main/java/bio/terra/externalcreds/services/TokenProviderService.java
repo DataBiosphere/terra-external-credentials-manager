@@ -104,6 +104,8 @@ public class TokenProviderService extends ProviderService {
                                 + "Please go to the Terra Profile page External Identities tab "
                                 + "to link your account for this provider.",
                             userId, provider)));
-    return accessTokenCacheService.getLinkedAccountAccessToken(linkedAccount, auditLogEventBuilder);
+    var providerProperties = externalCredsConfig.getProviderProperties(provider);
+    return accessTokenCacheService.getLinkedAccountAccessToken(
+        linkedAccount, new HashSet<>(providerProperties.getScopes()), auditLogEventBuilder);
   }
 }

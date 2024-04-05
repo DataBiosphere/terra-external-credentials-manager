@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -280,7 +281,9 @@ public class ProviderService {
     var providerClient = providerOAuthClientCache.getProviderClient(linkedAccount.getProvider());
     var accessToken =
         oAuth2Service.authorizeWithRefreshToken(
-            providerClient, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null));
+            providerClient,
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+            Collections.emptySet());
     var keyEndpoint = providerProperties.getKeyEndpoint();
     if (keyEndpoint.isEmpty()) {
       throw new IllegalArgumentException(

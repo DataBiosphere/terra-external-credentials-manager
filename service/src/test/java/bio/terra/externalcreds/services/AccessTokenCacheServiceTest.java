@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,7 @@ class AccessTokenCacheServiceTest extends BaseTest {
     when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
         .thenReturn(clientRegistration);
 
+    var scopes = Set.of("scope1", "scope2");
     var accessToken = "tokenValue";
     var updatedRefreshToken = "newRefreshToken";
     var oAuth2TokenResponse =
@@ -61,7 +63,9 @@ class AccessTokenCacheServiceTest extends BaseTest {
             .tokenType(OAuth2AccessToken.TokenType.BEARER)
             .build();
     when(oAuth2ServiceMock.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+            clientRegistration,
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+            scopes))
         .thenReturn(oAuth2TokenResponse);
     var updatedLinkedAccount =
         linkedAccount.withRefreshToken(oAuth2TokenResponse.getRefreshToken().getTokenValue());
@@ -74,7 +78,8 @@ class AccessTokenCacheServiceTest extends BaseTest {
             .userId(linkedAccount.getUserId())
             .clientIP(clientIP);
     String response =
-        accessTokenCacheService.getLinkedAccountAccessToken(linkedAccount, auditLogEventBuilder);
+        accessTokenCacheService.getLinkedAccountAccessToken(
+            linkedAccount, scopes, auditLogEventBuilder);
     assertEquals(response, accessToken);
     verify(auditLoggerMock)
         .logEvent(
@@ -99,6 +104,7 @@ class AccessTokenCacheServiceTest extends BaseTest {
     when(accessTokenCacheDAO.upsertAccessTokenCacheEntry(any()))
         .thenAnswer(invocation -> invocation.getArgument(0, AccessTokenCacheEntry.class));
 
+    var scopes = Set.of("scope1", "scope2");
     var accessToken = "tokenValue";
     var updatedRefreshToken = "newRefreshToken";
     var oAuth2TokenResponse =
@@ -107,7 +113,9 @@ class AccessTokenCacheServiceTest extends BaseTest {
             .tokenType(OAuth2AccessToken.TokenType.BEARER)
             .build();
     when(oAuth2ServiceMock.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+            clientRegistration,
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+            scopes))
         .thenReturn(oAuth2TokenResponse);
     var updatedLinkedAccount =
         linkedAccount.withRefreshToken(oAuth2TokenResponse.getRefreshToken().getTokenValue());
@@ -120,7 +128,8 @@ class AccessTokenCacheServiceTest extends BaseTest {
             .userId(linkedAccount.getUserId())
             .clientIP(clientIP);
     String response =
-        accessTokenCacheService.getLinkedAccountAccessToken(linkedAccount, auditLogEventBuilder);
+        accessTokenCacheService.getLinkedAccountAccessToken(
+            linkedAccount, scopes, auditLogEventBuilder);
     assertEquals(response, accessToken);
     verify(oAuth2ServiceMock, never())
         .authorizationCodeExchange(any(), any(), any(), any(), any(), any());
@@ -142,6 +151,7 @@ class AccessTokenCacheServiceTest extends BaseTest {
     var clientRegistration = TestUtils.createClientRegistration(linkedAccount.getProvider());
     var accessToken = UUID.randomUUID().toString();
     var tokenExpiresAt = Instant.now().plus(1, ChronoUnit.HOURS);
+    var scopes = Set.of("scope1", "scope2");
 
     when(accessTokenCacheDAO.getAccessTokenCacheEntry(linkedAccount))
         .thenReturn(
@@ -162,7 +172,8 @@ class AccessTokenCacheServiceTest extends BaseTest {
             .userId(linkedAccount.getUserId())
             .clientIP(clientIP);
     String response =
-        accessTokenCacheService.getLinkedAccountAccessToken(linkedAccount, auditLogEventBuilder);
+        accessTokenCacheService.getLinkedAccountAccessToken(
+            linkedAccount, scopes, auditLogEventBuilder);
     assertEquals(response, accessToken);
     verify(auditLoggerMock, never()).logEvent(any());
   }
@@ -188,6 +199,7 @@ class AccessTokenCacheServiceTest extends BaseTest {
     when(accessTokenCacheDAO.upsertAccessTokenCacheEntry(any()))
         .thenAnswer(invocation -> invocation.getArgument(0, AccessTokenCacheEntry.class));
 
+    var scopes = Set.of("scope1", "scope2");
     var updatedRefreshToken = "newRefreshToken";
     var oAuth2TokenResponse =
         OAuth2AccessTokenResponse.withToken(accessToken)
@@ -195,7 +207,9 @@ class AccessTokenCacheServiceTest extends BaseTest {
             .tokenType(OAuth2AccessToken.TokenType.BEARER)
             .build();
     when(oAuth2ServiceMock.authorizeWithRefreshToken(
-            clientRegistration, new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)))
+            clientRegistration,
+            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
+            scopes))
         .thenReturn(oAuth2TokenResponse);
     var updatedLinkedAccount =
         linkedAccount.withRefreshToken(oAuth2TokenResponse.getRefreshToken().getTokenValue());
@@ -208,7 +222,8 @@ class AccessTokenCacheServiceTest extends BaseTest {
             .userId(linkedAccount.getUserId())
             .clientIP(clientIP);
     String response =
-        accessTokenCacheService.getLinkedAccountAccessToken(linkedAccount, auditLogEventBuilder);
+        accessTokenCacheService.getLinkedAccountAccessToken(
+            linkedAccount, scopes, auditLogEventBuilder);
     assertEquals(response, accessToken);
     verify(auditLoggerMock)
         .logEvent(

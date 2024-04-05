@@ -93,7 +93,8 @@ public class TestUtils {
           .setTokenEndpoint("http://token")
           .setExternalIdClaim("preferred_username")
           .setUserNameAttributeName("username")
-          .setUserInfoEndpoint("http://userinfo");
+          .setUserInfoEndpoint("http://userinfo")
+          .setScopes(List.of("scope1", "scope2"));
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }

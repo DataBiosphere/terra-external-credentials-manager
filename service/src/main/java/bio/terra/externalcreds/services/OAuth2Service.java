@@ -117,7 +117,7 @@ public class OAuth2Service {
    *     token in this response it should replace the original refresh token which is likely invalid
    */
   public OAuth2AccessTokenResponse authorizeWithRefreshToken(
-      ClientRegistration providerClient, OAuth2RefreshToken refreshToken) {
+      ClientRegistration providerClient, OAuth2RefreshToken refreshToken, Set<String> scopes) {
     // the OAuth2RefreshTokenGrantRequest requires an access token to be specified but
     // it does not have to be a valid one so create a dummy
     var dummyAccessToken =
@@ -125,7 +125,7 @@ public class OAuth2Service {
             OAuth2AccessToken.TokenType.BEARER, "dummy", Instant.EPOCH, Instant.now());
 
     var refreshTokenGrantRequest =
-        new OAuth2RefreshTokenGrantRequest(providerClient, dummyAccessToken, refreshToken);
+        new OAuth2RefreshTokenGrantRequest(providerClient, dummyAccessToken, refreshToken, scopes);
 
     var refreshTokenTokenResponseClient = new DefaultRefreshTokenTokenResponseClient();
 

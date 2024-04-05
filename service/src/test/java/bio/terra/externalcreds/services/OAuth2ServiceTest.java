@@ -4,6 +4,7 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Scanner;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +63,7 @@ public class OAuth2ServiceTest {
     // note that oAuth2AccessTokenResponse already has an access token but get another for testing
     var tokenResponse =
         oAuth2Service.authorizeWithRefreshToken(
-            providerClient, oAuth2AccessTokenResponse.getRefreshToken());
+            providerClient, oAuth2AccessTokenResponse.getRefreshToken(), Collections.emptySet());
 
     System.out.println(
         "refresh token:__________" + tokenResponse.getRefreshToken().getTokenValue());
