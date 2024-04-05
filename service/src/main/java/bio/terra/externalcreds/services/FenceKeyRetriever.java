@@ -172,6 +172,7 @@ public class FenceKeyRetriever {
                 + ". Does not contain 'client_email' field!");
       }
     } catch (Exception e) {
+      log.error("Response from {} was not valid: {}", provider, responseBody);
       throw new ExternalCredsException("Failed to parse the JSON response from " + provider, e);
     }
   }
