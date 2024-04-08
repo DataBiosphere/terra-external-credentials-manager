@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.models.BondFenceServiceAccountEntity;
 import bio.terra.externalcreds.models.BondRefreshTokenEntity;
 import com.google.cloud.Timestamp;
 import com.google.cloud.datastore.Datastore;
@@ -43,34 +42,7 @@ class BondDatastoreDAOTest extends BaseTest {
 
     when(bondDatastore.newKeyFactory()).thenReturn(keyFactory);
   }
-
-  @Test
-  void testGetRefreshToken() {
-    var userId = UUID.randomUUID().toString();
-    var provider = Provider.FENCE;
-    var issuedAt = Timestamp.now();
-    var token = "TestToken";
-    var userName = userId + "-name";
-
-    when(bondDatastore.get(any(Key.class)))
-        .thenAnswer(
-            (Answer<Entity>)
-                invocation -> {
-                  var key = (Key) invocation.getArgument(0, Key.class);
-                  return Entity.newBuilder(key)
-                      .set(BondRefreshTokenEntity.issuedAtName, issuedAt)
-                      .set(BondRefreshTokenEntity.tokenName, token)
-                      .set(BondRefreshTokenEntity.userNameName, userName)
-                      .build();
-                });
-
-    var actualEntity = bondDatastoreDAO.getRefreshToken(userId, provider);
-
-    assertEquals(issuedAt.toDate().toInstant(), actualEntity.get().getIssuedAt());
-    assertEquals(token, actualEntity.get().getToken());
-    assertEquals(userName, actualEntity.get().getUsername());
-  }
-
+  
   @Test
   void testGetRefreshTokenDoesNotExist() {
     var userId = UUID.randomUUID().toString();
@@ -88,26 +60,12 @@ class BondDatastoreDAOTest extends BaseTest {
     var userId = UUID.randomUUID().toString();
     var provider = Provider.FENCE;
     var expiresAt = Timestamp.now();
-    var keyJson = "TestKeyJson";
-    var updateLockTimeout = "TestUpdateLockTimeout";
 
-    when(bondDatastore.get(any(Key.class)))
-        .thenAnswer(
-            (Answer<Entity>)
-                invocation -> {
-                  var key = (Key) invocation.getArgument(0, Key.class);
-                  return Entity.newBuilder(key)
-                      .set(BondFenceServiceAccountEntity.expiresAtName, expiresAt)
-                      .set(BondFenceServiceAccountEntity.keyJsonName, keyJson)
-                      .set(BondFenceServiceAccountEntity.updateLockTimeoutName, updateLockTimeout)
-                      .build();
-                });
+    when(bondDatastore.get(any(Key.class))).thenReturn(null);
 
     var actualEntity = bondDatastoreDAO.getFenceServiceAccountKey(userId, provider);
 
-    assertEquals(expiresAt.toDate().toInstant(), actualEntity.get().getExpiresAt());
-    assertEquals(keyJson, actualEntity.get().getKeyJson());
-    assertEquals(updateLockTimeout, actualEntity.get().getUpdateLockTimeout());
+    assertTrue(actualEntity.isEmpty());
   }
 
   @Test

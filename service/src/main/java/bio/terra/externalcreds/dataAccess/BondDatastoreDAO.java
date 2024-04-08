@@ -22,48 +22,57 @@ public class BondDatastoreDAO {
   }
 
   public Optional<BondRefreshTokenEntity> getRefreshToken(String userId, Provider provider) {
-    var datastore = bondDatastoreProvider.get();
-    var key =
-        datastore
-            .newKeyFactory()
-            .setKind(REFRESH_TOKEN_KIND)
-            .addAncestor(PathElement.of("User", userId))
-            .newKey(provider.toString());
-    var datastoreEntity = Optional.ofNullable(datastore.get(key));
-    return datastoreEntity.map(
-        entity ->
-            new BondRefreshTokenEntity.Builder()
-                .key(key)
-                .issuedAt(
-                    entity.getTimestamp(BondRefreshTokenEntity.issuedAtName).toDate().toInstant())
-                .token(entity.getString(BondRefreshTokenEntity.tokenName))
-                .username(entity.getString(BondRefreshTokenEntity.userNameName))
-                .build());
+    // note: returning a fake empty response from bond
+    // since there seems to be an issue where ECM cannot get info from the datastore correctly
+
+    //    var datastore = bondDatastoreProvider.get();
+    //    var key =
+    //        datastore
+    //            .newKeyFactory()
+    //            .setKind(REFRESH_TOKEN_KIND)
+    //            .addAncestor(PathElement.of("User", userId))
+    //            .newKey(provider.toString());
+    //    var datastoreEntity = Optional.ofNullable(datastore.get(key));
+    //    return datastoreEntity.map(
+    //        entity ->
+    //            new BondRefreshTokenEntity.Builder()
+    //                .key(key)
+    //                .issuedAt(
+    //
+    // entity.getTimestamp(BondRefreshTokenEntity.issuedAtName).toDate().toInstant())
+    //                .token(entity.getString(BondRefreshTokenEntity.tokenName))
+    //                .username(entity.getString(BondRefreshTokenEntity.userNameName))
+    //                .build());
+    return Optional.empty();
   }
 
   public Optional<BondFenceServiceAccountEntity> getFenceServiceAccountKey(
       String userId, Provider provider) {
-    var datastore = bondDatastoreProvider.get();
-    var key =
-        datastore
-            .newKeyFactory()
-            .setKind(FENCE_SERVICE_ACCOUNT_KIND)
-            .addAncestor(PathElement.of("User", userId))
-            .newKey(provider.toString());
-    var datastoreEntity = Optional.ofNullable(datastore.get(key));
-    return datastoreEntity.map(
-        entity ->
-            new BondFenceServiceAccountEntity.Builder()
-                .key(key)
-                .expiresAt(
-                    entity
-                        .getTimestamp(BondFenceServiceAccountEntity.expiresAtName)
-                        .toDate()
-                        .toInstant())
-                .keyJson(entity.getString(BondFenceServiceAccountEntity.keyJsonName))
-                .updateLockTimeout(
-                    entity.getString(BondFenceServiceAccountEntity.updateLockTimeoutName))
-                .build());
+    // note: returning a fake empty response from bond
+    // since there seems to be an issue where ECM cannot get info from the datastore correctly
+
+    //    var datastore = bondDatastoreProvider.get();
+    //    var key =
+    //        datastore
+    //            .newKeyFactory()
+    //            .setKind(FENCE_SERVICE_ACCOUNT_KIND)
+    //            .addAncestor(PathElement.of("User", userId))
+    //            .newKey(provider.toString());
+    //    var datastoreEntity = Optional.ofNullable(datastore.get(key));
+    //    return datastoreEntity.map(
+    //        entity ->
+    //            new BondFenceServiceAccountEntity.Builder()
+    //                .key(key)
+    //                .expiresAt(
+    //                    entity
+    //                        .getTimestamp(BondFenceServiceAccountEntity.expiresAtName)
+    //                        .toDate()
+    //                        .toInstant())
+    //                .keyJson(entity.getString(BondFenceServiceAccountEntity.keyJsonName))
+    //                .updateLockTimeout(
+    //                    entity.getString(BondFenceServiceAccountEntity.updateLockTimeoutName))
+    //                .build());
+    return Optional.empty();
   }
 
   public void deleteRefreshToken(String userId, Provider provider) {
