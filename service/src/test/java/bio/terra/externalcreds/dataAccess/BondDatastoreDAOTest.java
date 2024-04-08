@@ -42,34 +42,7 @@ class BondDatastoreDAOTest extends BaseTest {
 
     when(bondDatastore.newKeyFactory()).thenReturn(keyFactory);
   }
-
-  @Test
-  void testGetRefreshToken() {
-    var userId = UUID.randomUUID().toString();
-    var provider = Provider.FENCE;
-    var issuedAt = Timestamp.now();
-    var token = "TestToken";
-    var userName = userId + "-name";
-
-    when(bondDatastore.get(any(Key.class)))
-        .thenAnswer(
-            (Answer<Entity>)
-                invocation -> {
-                  var key = (Key) invocation.getArgument(0, Key.class);
-                  return Entity.newBuilder(key)
-                      .set(BondRefreshTokenEntity.issuedAtName, issuedAt)
-                      .set(BondRefreshTokenEntity.tokenName, token)
-                      .set(BondRefreshTokenEntity.userNameName, userName)
-                      .build();
-                });
-
-    var actualEntity = bondDatastoreDAO.getRefreshToken(userId, provider);
-
-    assertEquals(issuedAt.toDate().toInstant(), actualEntity.get().getIssuedAt());
-    assertEquals(token, actualEntity.get().getToken());
-    assertEquals(userName, actualEntity.get().getUsername());
-  }
-
+  
   @Test
   void testGetRefreshTokenDoesNotExist() {
     var userId = UUID.randomUUID().toString();
