@@ -13,7 +13,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -23,10 +22,10 @@ public record OauthApiController(
     HttpServletRequest request,
     ObjectMapper mapper,
     LinkedAccountService linkedAccountService,
-    @Qualifier("providerService") ProviderService providerService,
-    @Qualifier("passportProviderService") PassportProviderService passportProviderService,
-    @Qualifier("tokenProviderService") TokenProviderService tokenProviderService,
-    @Qualifier("fenceProviderService") FenceProviderService fenceProviderService,
+    ProviderService providerService,
+    PassportProviderService passportProviderService,
+    TokenProviderService tokenProviderService,
+    FenceProviderService fenceProviderService,
     ExternalCredsSamUserFactory samUserFactory)
     implements OauthApi {
 

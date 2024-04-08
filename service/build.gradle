@@ -49,8 +49,6 @@ dependencies {
 
 	testImplementation("au.com.dius.pact.provider:junit5:4.3.19")
 	testImplementation('au.com.dius.pact.provider:junit5spring:4.3.19')
-	// testImplementation("au.com.dius.pact.consumer:junit:4.3.19")
-
 
 	// OpenTelemetry
 	var openTelemetryVersion = '1.32.0'

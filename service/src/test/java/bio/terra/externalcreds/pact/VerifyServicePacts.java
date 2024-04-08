@@ -16,6 +16,7 @@ import bio.terra.common.iam.SamUser;
 import bio.terra.common.iam.SamUserFactory;
 import bio.terra.externalcreds.ExternalCredsWebApplication;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
+import bio.terra.externalcreds.dataAccess.AccessTokenCacheDAO;
 import bio.terra.externalcreds.dataAccess.BondDatastoreDAO;
 import bio.terra.externalcreds.dataAccess.DistributedLockDAO;
 import bio.terra.externalcreds.dataAccess.FenceAccountKeyDAO;
@@ -25,6 +26,7 @@ import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
 import bio.terra.externalcreds.dataAccess.StatusDAO;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.EventPublisher;
@@ -67,6 +69,7 @@ public class VerifyServicePacts {
   @MockBean DistributedLockDAO distributedLockDAO;
   @MockBean EventPublisher eventPublisher;
   @MockBean FenceAccountKeyDAO fenceAccountKeyDAO;
+  @MockBean AccessTokenCacheDAO accessTokenCacheDAO;
   @MockBean SamUserFactory samUserFactory;
 
   @MockBean OAuth2Service oAuth2Service;
@@ -118,13 +121,23 @@ public class VerifyServicePacts {
             .isAuthenticated(true)
             .build();
 
+    AccessTokenCacheEntry accessTokenCacheEntry =
+        new AccessTokenCacheEntry.Builder()
+            .linkedAccountId(0)
+            .accessToken(testAccessToken.getTokenValue())
+            .expiresAt(Instant.now())
+            .build();
+
     when(linkedAccountDAO.getLinkedAccount(eq(testSubjectId), eq(Provider.GITHUB)))
         .thenReturn(Optional.of(testAccount));
+
+    when(accessTokenCacheDAO.upsertAccessTokenCacheEntry(isA(AccessTokenCacheEntry.class)))
+        .thenReturn(accessTokenCacheEntry);
 
     when(mockAccessTokenResponse.getRefreshToken()).thenReturn(testRefreshToken);
     when(mockAccessTokenResponse.getAccessToken()).thenReturn(testAccessToken);
 
-    when(oAuth2Service.authorizeWithRefreshToken(isA(ClientRegistration.class), any()))
+    when(oAuth2Service.authorizeWithRefreshToken(isA(ClientRegistration.class), any(), any()))
         .thenReturn(mockAccessTokenResponse);
   }
 }
