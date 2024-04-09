@@ -15,21 +15,13 @@ import bio.terra.common.iam.BearerToken;
 import bio.terra.common.iam.SamUser;
 import bio.terra.common.iam.SamUserFactory;
 import bio.terra.externalcreds.ExternalCredsWebApplication;
-import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.dataAccess.AccessTokenCacheDAO;
-import bio.terra.externalcreds.dataAccess.BondDatastoreDAO;
-import bio.terra.externalcreds.dataAccess.DistributedLockDAO;
-import bio.terra.externalcreds.dataAccess.FenceAccountKeyDAO;
-import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
-import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
-import bio.terra.externalcreds.dataAccess.OAuth2StateDAO;
 import bio.terra.externalcreds.dataAccess.StatusDAO;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount;
-import bio.terra.externalcreds.services.EventPublisher;
 import bio.terra.externalcreds.services.OAuth2Service;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
@@ -58,20 +50,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @au.com.dius.pact.provider.junitsupport.Provider("ecm")
 @PactBroker
 public class VerifyServicePacts {
-
-  @MockBean private AuditLogger auditLogger;
   @MockBean StatusDAO statusDAO;
   @MockBean LinkedAccountDAO linkedAccountDAO;
-  @MockBean GA4GHPassportDAO ga4GHPassportDAO;
-  @MockBean GA4GHVisaDAO gA4GHVisaDAO;
-  @MockBean OAuth2StateDAO oAuth2StateDAO;
-  @MockBean BondDatastoreDAO bondDatastoreDAO;
-  @MockBean DistributedLockDAO distributedLockDAO;
-  @MockBean EventPublisher eventPublisher;
-  @MockBean FenceAccountKeyDAO fenceAccountKeyDAO;
   @MockBean AccessTokenCacheDAO accessTokenCacheDAO;
   @MockBean SamUserFactory samUserFactory;
-
   @MockBean OAuth2Service oAuth2Service;
   @Mock private OAuth2AccessTokenResponse mockAccessTokenResponse;
 
