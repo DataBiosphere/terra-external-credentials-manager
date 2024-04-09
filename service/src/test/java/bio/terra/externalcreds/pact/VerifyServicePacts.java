@@ -70,16 +70,11 @@ public class VerifyServicePacts {
 
   @State({ProviderStates.ECM_IS_OK})
   public void ecmIsOk() {
-    System.out.println(
-        "State change method %s is being invoked now".formatted(ProviderStates.ECM_IS_OK));
     when(statusDAO.isPostgresOk()).thenReturn(true);
   }
 
   @State({ProviderStates.USER_IS_REGISTERED})
   public void userIsRegistered() {
-    System.out.println(
-        "State change method %s is being invoked now".formatted(ProviderStates.USER_IS_REGISTERED));
-
     String testUserEmail = "test_user@test.com";
     String testSubjectId = "testSubjectId";
     BearerToken testBearerToken = new BearerToken("dummy_bearer_token");
