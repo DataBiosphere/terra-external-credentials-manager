@@ -100,8 +100,8 @@ public class FenceKeyRetriever {
           e.getMessage());
       distributedLockDAO.deleteDistributedLock(lock.getLockName(), linkedAccount.getUserId());
       throw new ExternalCredsException(
-          "Failed to retrieve a new %s Fence Account Key for user %s"
-              .formatted(linkedAccount.getProvider(), linkedAccount.getUserId()),
+          "Failed to retrieve a new %s Fence Account Key for user %s with error %s"
+              .formatted(linkedAccount.getProvider(), linkedAccount.getUserId(), e.getMessage()),
           e);
     }
   }
@@ -113,9 +113,8 @@ public class FenceKeyRetriever {
       distributedLockDAO.insertDistributedLock(newLock);
     } catch (DataAccessException e) {
       log.warn(
-          String.format(
-              "Failed to insert lock %s, another thread is doing the same thing.",
-              newLock.getLockName()));
+          "Failed to insert lock %s, another thread is doing the same thing."
+              .formatted(newLock.getLockName()));
       throw new DistributedLockException(
           String.format(
               "Encountered lock %s for user %s", newLock.getLockName(), linkedAccount.getUserId()));
@@ -164,12 +163,17 @@ public class FenceKeyRetriever {
     }
     try {
       var jsonObject = objectMapper.readTree(responseBody);
+      if (jsonObject.has("error")) {
+        throw new ExternalCredsException(
+            "Failed to retrieve a new Fence Account Key from %s. Error: %s"
+                .formatted(provider, responseBody));
+      }
+      // We specifically check for a 'client_email' field, since Rawls expects it to be in the key.
       if (!jsonObject.has("client_email")) {
         log.error("Invalid Service Account JSON: {}", responseBody);
         throw new ExternalCredsException(
-            "Failed to retrieve a new Fence Account Key from "
-                + provider
-                + ". Does not contain 'client_email' field!");
+            "Failed to retrieve a new Fence Account Key from %s. Does not contain 'client_email' field!"
+                .formatted(provider));
       }
     } catch (Exception e) {
       log.error("Response from {} was not valid: {}", provider, responseBody);

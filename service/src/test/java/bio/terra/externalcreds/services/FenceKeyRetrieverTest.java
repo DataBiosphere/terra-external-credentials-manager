@@ -23,7 +23,6 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -51,7 +50,6 @@ class FenceKeyRetrieverTest extends BaseTest {
   @MockBean private ExternalCredsConfig externalCredsConfig;
   @MockBean private ProviderOAuthClientCache providerOAuthClientCache;
   @MockBean private OAuth2Service oAuth2Service;
-  @MockBean private BondService bondService;
   @MockBean private AccessTokenCacheService accessTokenCacheService;
 
   @Nested
@@ -167,9 +165,6 @@ class FenceKeyRetrieverTest extends BaseTest {
 
     private void setupOAuthMocks(LinkedAccount linkedAccount) {
       var scopes = Set.of("scope1", "scope2");
-      when(bondService.getFenceServiceAccountKey(
-              linkedAccount.getUserId(), linkedAccount.getProvider(), linkedAccount.getId().get()))
-          .thenReturn(Optional.empty());
       when(accessTokenCacheService.getLinkedAccountAccessToken(
               eq(linkedAccount), eq(scopes), any()))
           .thenReturn("accessToken");
@@ -205,9 +200,6 @@ class FenceKeyRetrieverTest extends BaseTest {
 
       distributedLockDAO.insertDistributedLock(newLock);
 
-      when(bondService.getFenceServiceAccountKey(
-              linkedAccount.getUserId(), linkedAccount.getProvider(), linkedAccount.getId().get()))
-          .thenReturn(Optional.empty());
       when(externalCredsConfig.getDistributedLockConfiguration())
           .thenReturn(DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30)));
 
@@ -227,10 +219,6 @@ class FenceKeyRetrieverTest extends BaseTest {
 
       var scopes = Set.of("scope1", "scope2");
       var lockName = "createFenceKey-" + linkedAccount.getProvider();
-
-      when(bondService.getFenceServiceAccountKey(
-              linkedAccount.getUserId(), linkedAccount.getProvider(), linkedAccount.getId().get()))
-          .thenReturn(Optional.empty());
 
       var clientRegistration = mock(ClientRegistration.class);
       when(providerOAuthClientCache.getProviderClient(any())).thenReturn(clientRegistration);

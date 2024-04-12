@@ -7,6 +7,7 @@ import bio.terra.externalcreds.generated.api.FenceAccountKeyApi;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.services.FenceProviderService;
+import bio.terra.externalcreds.services.LinkedAccountService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.Optional;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Controller;
 public record FenceAccountKeyController(
     AuditLogger auditLogger,
     ExternalCredsSamUserFactory samUserFactory,
+    LinkedAccountService linkedAccountService,
     FenceProviderService fenceProviderService,
     HttpServletRequest request)
     implements FenceAccountKeyApi {
@@ -29,7 +31,7 @@ public record FenceAccountKeyController(
             .auditLogEventType(AuditLogEventType.GetServiceAccountKey)
             .clientIP(request.getRemoteAddr());
     var maybeLinkedAccount =
-        fenceProviderService.getLinkedFenceAccount(samUser.getSubjectId(), provider);
+        linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
     Optional<FenceAccountKey> maybeFenceAccountKey =
         maybeLinkedAccount.flatMap(
             linkedAccount -> {

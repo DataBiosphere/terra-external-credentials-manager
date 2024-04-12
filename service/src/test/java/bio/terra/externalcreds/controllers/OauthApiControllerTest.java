@@ -109,7 +109,7 @@ class OauthApiControllerTest extends BaseTest {
 
       mockSamUser(inputLinkedAccount.getUserId(), accessToken);
 
-      when(fenceProviderServiceMock.getLinkedFenceAccount(
+      when(linkedAccountServiceMock.getLinkedAccount(
               inputLinkedAccount.getUserId(), inputLinkedAccount.getProvider()))
           .thenReturn(Optional.of(inputLinkedAccount));
 
@@ -325,7 +325,6 @@ class OauthApiControllerTest extends BaseTest {
           .andExpect(status().isOk());
 
       verify(providerServiceMock).deleteLink(userId, Provider.FENCE);
-      verify(fenceProviderServiceMock).deleteBondFenceLink(userId, Provider.FENCE);
 
       // check that a log was recorded
       verify(auditLoggerMock)

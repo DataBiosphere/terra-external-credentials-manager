@@ -31,8 +31,6 @@ class LinkedAccountDAOTest extends BaseTest {
   @Autowired private LinkedAccountDAO linkedAccountDAO;
   @Autowired private GA4GHPassportDAO passportDAO;
   @Autowired private GA4GHVisaDAO visaDAO;
-  @Autowired private FenceAccountKeyDAO fenceAccountKeyDAO;
-  @MockBean private BondDatastoreDAO bondDatastoreDAO;
   @MockBean private ExternalCredsConfig externalCredsConfig;
 
   @BeforeEach

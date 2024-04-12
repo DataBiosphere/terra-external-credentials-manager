@@ -91,11 +91,8 @@ public class TokenProviderService extends ProviderService {
   public String getProviderAccessToken(
       String userId, Provider provider, AuditLogEvent.Builder auditLogEventBuilder) {
     var linkedAccount =
-        (switch (provider) {
-              case RAS, GITHUB -> linkedAccountService.getLinkedAccount(userId, provider);
-              case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService
-                  .getLinkedFenceAccount(userId, provider);
-            })
+        linkedAccountService
+            .getLinkedAccount(userId, provider)
             .orElseThrow(
                 () ->
                     new NotFoundException(

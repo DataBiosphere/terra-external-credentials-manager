@@ -16,6 +16,7 @@ import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.services.FenceAccountKeyService;
 import bio.terra.externalcreds.services.FenceProviderService;
+import bio.terra.externalcreds.services.LinkedAccountService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
 import java.util.Optional;
@@ -32,6 +33,7 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
 
   @Autowired private MockMvc mvc;
 
+  @MockBean private LinkedAccountService linkedAccountServiceMock;
   @MockBean private FenceProviderService fenceProviderServiceMock;
 
   @MockBean private ExternalCredsSamUserFactory samUserFactoryMock;
@@ -58,7 +60,7 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
               .withExternalUserId(externalUserId)
               .withUserId(userId);
 
-      when(fenceProviderServiceMock.getLinkedFenceAccount(userId, provider))
+      when(linkedAccountServiceMock.getLinkedAccount(userId, provider))
           .thenReturn(Optional.of(linkedAccount));
       when(fenceProviderServiceMock.getFenceAccountKey(linkedAccount))
           .thenReturn(Optional.of(fenceAccountKey));
