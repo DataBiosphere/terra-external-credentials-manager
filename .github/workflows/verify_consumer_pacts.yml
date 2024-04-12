@@ -15,7 +15,7 @@ name: Verify consumer pacts
 # - PACT_BROKER_PASSWORD - the Pact Broker password
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ dev ]
     paths-ignore: [ '**.md' ]
   push:
     branches: [ dev ]
