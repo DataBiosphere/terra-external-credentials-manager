@@ -26,6 +26,7 @@ import bio.terra.externalcreds.services.OAuth2Service;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -70,27 +71,23 @@ public class VerifyServicePacts {
 
   @State({ProviderStates.ECM_IS_OK})
   public void ecmIsOk() {
-    System.out.println(
-        "State change method %s is being invoked now".formatted(ProviderStates.ECM_IS_OK));
     when(statusDAO.isPostgresOk()).thenReturn(true);
   }
 
   @State({ProviderStates.USER_IS_REGISTERED})
-  public void userIsRegistered() {
-    System.out.println(
-        "State change method %s is being invoked now".formatted(ProviderStates.USER_IS_REGISTERED));
-
+  public Map<String, String> userIsRegistered() {
     String testUserEmail = "test_user@test.com";
     String testSubjectId = "testSubjectId";
-    BearerToken testBearerToken = new BearerToken("dummy_bearer_token");
+    String testBearerToken = "testBearerToken";
+
     OAuth2RefreshToken testRefreshToken =
         new OAuth2RefreshToken("dummy_refresh_token", Instant.now());
     OAuth2AccessToken testAccessToken =
         new OAuth2AccessToken(
-            TokenType.BEARER, "dummy_access_token", Instant.now(), Instant.now().plusSeconds(360));
+            TokenType.BEARER, testBearerToken, Instant.now(), Instant.now().plusSeconds(360));
 
     when(samUserFactory.from(isA(HttpServletRequest.class), anyString()))
-        .thenReturn(new SamUser(testUserEmail, testSubjectId, testBearerToken));
+        .thenReturn(new SamUser(testUserEmail, testSubjectId, new BearerToken(testBearerToken)));
 
     ImmutableLinkedAccount testAccount =
         new LinkedAccount.Builder()
@@ -121,5 +118,10 @@ public class VerifyServicePacts {
 
     when(oAuth2Service.authorizeWithRefreshToken(isA(ClientRegistration.class), any(), any()))
         .thenReturn(mockAccessTokenResponse);
+
+    // These values are returned so that they can be injected into variables in the Pact(s)
+    return Map.of(
+        "userEmail", testUserEmail,
+        "bearerToken", testBearerToken);
   }
 }
