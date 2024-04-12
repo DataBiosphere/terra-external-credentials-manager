@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class TokenProviderService extends ProviderService {
 
-  private final FenceProviderService fenceProviderService;
   private final AccessTokenCacheService accessTokenCacheService;
 
   public TokenProviderService(
@@ -42,7 +41,6 @@ public class TokenProviderService extends ProviderService {
         fenceAccountKeyService,
         auditLogger,
         objectMapper);
-    this.fenceProviderService = fenceProviderService;
     this.accessTokenCacheService = accessTokenCacheService;
   }
 
