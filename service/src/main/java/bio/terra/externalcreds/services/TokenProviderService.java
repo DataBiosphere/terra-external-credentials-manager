@@ -27,7 +27,6 @@ public class TokenProviderService extends ProviderService {
       ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
-      FenceProviderService fenceProviderService,
       FenceAccountKeyService fenceAccountKeyService,
       AuditLogger auditLogger,
       ObjectMapper objectMapper,
