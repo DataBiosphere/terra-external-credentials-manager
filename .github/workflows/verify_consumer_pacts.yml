@@ -18,7 +18,7 @@ on:
     branches: [ main ]
     paths-ignore: [ '**.md' ]
   push:
-    branches: [ main ]
+    branches: [ dev ]
     paths-ignore: [ '**.md' ]
   workflow_dispatch:
     inputs:
