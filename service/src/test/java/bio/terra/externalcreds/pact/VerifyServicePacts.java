@@ -11,6 +11,8 @@ import au.com.dius.pact.provider.junit5.PactVerificationContext;
 import au.com.dius.pact.provider.junit5.PactVerificationInvocationContextProvider;
 import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.loader.PactBroker;
+import au.com.dius.pact.provider.junitsupport.loader.PactBrokerConsumerVersionSelectors;
+import au.com.dius.pact.provider.junitsupport.loader.SelectorBuilder;
 import bio.terra.common.iam.BearerToken;
 import bio.terra.common.iam.SamUser;
 import bio.terra.common.iam.SamUserFactory;
@@ -31,6 +33,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.platform.commons.util.StringUtils;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -48,9 +51,24 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
     properties = {"server.port=8080"},
     classes = ExternalCredsWebApplication.class)
 @ActiveProfiles({"test", "human-readable-logging"})
-@au.com.dius.pact.provider.junitsupport.Provider("ecm")
+@au.com.dius.pact.provider.junitsupport.Provider("externalcreds")
 @PactBroker
 public class VerifyServicePacts {
+  private static final String CONSUMER_BRANCH = System.getenv("CONSUMER_BRANCH");
+  @PactBrokerConsumerVersionSelectors
+  public static SelectorBuilder consumerVersionSelectors() {
+    // The following match condition basically says
+    // If verification is triggered by Pact Broker webhook due to consumer pact change, verify only
+    // the changed pact.
+    // Otherwise, this is a PR, verify all consumer pacts in Pact Broker marked with a deployment
+    // tag (e.g. dev, alpha).
+    if (StringUtils.isBlank(CONSUMER_BRANCH)) {
+      return new SelectorBuilder().mainBranch().deployedOrReleased();
+    } else {
+      return new SelectorBuilder().branch(CONSUMER_BRANCH);
+    }
+  }
+
   @MockBean StatusDAO statusDAO;
   @MockBean LinkedAccountDAO linkedAccountDAO;
   @MockBean AccessTokenCacheDAO accessTokenCacheDAO;

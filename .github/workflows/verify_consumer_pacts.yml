@@ -65,7 +65,7 @@ on:
 
 env:
   CAN_I_DEPLOY_RUN_NAME: 'can-i-deploy-${{ github.event.repository.name }}-${{ github.run_id }}-${{ github.run_attempt }}'
-  PACT_BROKER_URL: pact-broker.dsp-eng-tools.broadinstitute.org
+  PACT_BROKER_URL: 'https://pact-broker.dsp-eng-tools.broadinstitute.org'
 
 jobs:
 
@@ -204,7 +204,7 @@ jobs:
       - name: Verify consumer pacts and publish verification status to Pact Broker
         id: verification-test
         env:
-          PACT_BROKER_URL: pact-broker.dsp-eng-tools.broadinstitute.org
+          PACT_BROKER_URL: 'https://pact-broker.dsp-eng-tools.broadinstitute.org'
           PACT_PROVIDER_VERSION: ${{ env.PROVIDER_VERSION }}
           PACT_PROVIDER_BRANCH: ${{ env.PROVIDER_BRANCH }}
           PACT_PUBLISH_RESULTS: true
@@ -234,6 +234,6 @@ jobs:
           token: ${{ secrets.BROADBOT_TOKEN }} # github token for access to kick off a job in the private repo
           inputs: '{
             "run-name": "${{ env.CAN_I_DEPLOY_RUN_NAME }}",
-            "pacticipant": "ecm",
+            "pacticipant": "externalcreds",
             "version": "${{ needs.verify-consumer-pact.outputs.provider-version }}"
           }'
