@@ -524,9 +524,23 @@ components:
           type: boolean
           description: whether any system(s) need attention
         systems:
-          type: object
-          additionalProperties:
-            type: boolean
+          type: array
+          items:
+            $ref: '#/components/schemas/SubsystemStatus'
+
+    SubsystemStatus:
+      required: [ name, ok ]
+      type: object
+      properties:
+        name:
+          type: string
+        ok:
+          type: boolean
+          description: whether the system is healthy
+        messages:
+          type: array
+          items:
+            type: string
 
     VersionProperties:
       type: object

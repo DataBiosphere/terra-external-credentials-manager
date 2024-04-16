@@ -48,18 +48,6 @@ externalcreds:
       authorizationEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/authorize"
       tokenEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/token"
       keyEndpoint: "${externalcreds.providers.kids-first.issuer}/credentials/google"
-    anvil:
-      clientId: "${ANVIL_CLIENT_ID}"
-      clientSecret: "${ANVIL_CLIENT_SECRET}"
-      linkLifespan: "30d"
-      scopes: [ "openid", "user", "google_credentials" ]
-      externalIdClaim: "username"
-      issuer: "${ANVIL_BASE_URL:https://staging.theanvil.io/user}"
-      revokeEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/revoke"
-      userInfoEndpoint: "${externalcreds.providers.anvil.issuer}/user"
-      authorizationEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/authorize"
-      tokenEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/token"
-      keyEndpoint: "${externalcreds.providers.anvil.issuer}/credentials/google"
 
 ---
 #non-prod environments
@@ -78,6 +66,28 @@ externalcreds:
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
 
 ---
+
+#prod environment
+spring.config.activate.on-profile: 'prod'
+externalcreds:
+  providers:
+    anvil:
+      clientId: "${ANVIL_CLIENT_ID}"
+      clientSecret: "${ANVIL_CLIENT_SECRET}"
+      linkLifespan: "30d"
+      scopes: [ "openid", "user", "google_credentials" ]
+      externalIdClaim: "username"
+      issuer: "${ANVIL_BASE_URL:https://staging.theanvil.io/user}"
+      revokeEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/revoke"
+      userInfoEndpoint: "${externalcreds.providers.anvil.issuer}/user"
+      authorizationEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/authorize"
+      tokenEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/token"
+      keyEndpoint: "${externalcreds.providers.anvil.issuer}/credentials/google"
+
+---
+
+# environment specific callback urls
+
 spring.config.activate.on-profile: 'dev'
 externalcreds:
   providers:
@@ -90,8 +100,6 @@ externalcreds:
     dcf-fence:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
     kids-first:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
-    anvil:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
 ---
 spring.config.activate.on-profile: 'staging'
@@ -106,8 +114,6 @@ externalcreds:
     dcf-fence:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
     kids-first:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
-    anvil:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
 ---
 spring.config.activate.on-profile: 'prod'

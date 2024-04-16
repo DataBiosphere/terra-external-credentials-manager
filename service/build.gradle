@@ -26,6 +26,8 @@ apply from: 'tooling.gradle'
 apply from: 'analysis.gradle'
 
 dependencies {
+	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.208'
+
 	// google
 	implementation platform('com.google.cloud:libraries-bom:26.28.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
