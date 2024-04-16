@@ -11,6 +11,7 @@ plugins {
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
 	id 'org.sonarqube'
+	id "io.sentry.jvm.gradle" version "4.2.0"
 }
 
 repositories {
