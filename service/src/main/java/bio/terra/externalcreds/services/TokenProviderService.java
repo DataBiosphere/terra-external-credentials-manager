@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class TokenProviderService extends ProviderService {
 
-  private final FenceProviderService fenceProviderService;
   private final AccessTokenCacheService accessTokenCacheService;
 
   public TokenProviderService(
@@ -28,7 +27,6 @@ public class TokenProviderService extends ProviderService {
       ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
-      FenceProviderService fenceProviderService,
       FenceAccountKeyService fenceAccountKeyService,
       AuditLogger auditLogger,
       ObjectMapper objectMapper,
@@ -42,7 +40,6 @@ public class TokenProviderService extends ProviderService {
         fenceAccountKeyService,
         auditLogger,
         objectMapper);
-    this.fenceProviderService = fenceProviderService;
     this.accessTokenCacheService = accessTokenCacheService;
   }
 
@@ -91,11 +88,8 @@ public class TokenProviderService extends ProviderService {
   public String getProviderAccessToken(
       String userId, Provider provider, AuditLogEvent.Builder auditLogEventBuilder) {
     var linkedAccount =
-        (switch (provider) {
-              case RAS, GITHUB -> linkedAccountService.getLinkedAccount(userId, provider);
-              case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> fenceProviderService
-                  .getLinkedFenceAccount(userId, provider);
-            })
+        linkedAccountService
+            .getLinkedAccount(userId, provider)
             .orElseThrow(
                 () ->
                     new NotFoundException(
