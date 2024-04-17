@@ -200,15 +200,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Configure pact
-        env:
-          PACTBROKER_APPLICATION_YAML_B64: ${{ secrets.PACTBROKER_APPLICATION_YAML_B64 }}
-        run: |
-          mkdir -p ./service/src/test/resources
-          echo $PACTBROKER_APPLICATION_YAML_B64 | base64 --decode >> ./service/src/test/resources/application.yml
-          PACT_PROVIDER_BRANCH=$GITHUB_REF_NAME
-          echo "PACT_PROVIDER_BRANCH=${PACT_PROVIDER_BRANCH}" >> $GITHUB_ENV
-
       - name: Make sure Postgres is ready and init
         env:
           PGPASSWORD: postgres
