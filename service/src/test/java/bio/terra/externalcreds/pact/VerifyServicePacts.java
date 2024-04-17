@@ -82,6 +82,7 @@ public class VerifyServicePacts {
   // causes bio.terra.externalcreds.ExternalCredsException at KmsEncryptDecryptHelper.java:40.
   @MockBean
   KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
+
   @BeforeEach
   void setupTestTarget(PactVerificationContext context) {
     context.setTarget(new HttpTestTarget("localhost", 8080, "/"));
