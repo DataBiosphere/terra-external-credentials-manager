@@ -111,8 +111,3 @@ retry:
   getFenceAccountKey:
     maxAttempts: 6
     delay: 10000
-
-sentry:
-  dsn: ${SENTRY_DSN}
-  environment: ${SENTRY_ENVIRONMENT}
-  logging.minimum-breadcrumb-level: info

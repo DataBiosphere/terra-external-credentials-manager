@@ -125,3 +125,8 @@ externalcreds:
       allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
     anvil:
       allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+
+sentry:
+  dsn: "https://7faae828388bc09ba384f7b290dbcbf3@o54426.ingest.us.sentry.io/4507097154322432'"
+  environment: production
+  logging.minimum-breadcrumb-level: info
