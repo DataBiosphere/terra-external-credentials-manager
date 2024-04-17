@@ -9,6 +9,7 @@ import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.DistributedLock;
 import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.LinkedAccount;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.Instant;
@@ -175,7 +176,7 @@ public class FenceKeyRetriever {
             "Failed to retrieve a new Fence Account Key from %s. Does not contain 'client_email' field!"
                 .formatted(provider));
       }
-    } catch (Exception e) {
+    } catch (JsonProcessingException e) {
       log.error("Response from {} was not valid: {}", provider, responseBody);
       throw new ExternalCredsException("Failed to parse the JSON response from " + provider, e);
     }
