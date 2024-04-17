@@ -100,6 +100,14 @@ jobs:
     needs: [ bump-check, regulated-tag-job ]
     if: ${{ needs.bump-check.outputs.is-bump == 'no' }}
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: [ "5432:5432" ]
+
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -200,6 +208,13 @@ jobs:
           echo $PACTBROKER_APPLICATION_YAML_B64 | base64 --decode >> ./service/src/test/resources/application.yml
           PACT_PROVIDER_BRANCH=$GITHUB_REF_NAME
           echo "PACT_PROVIDER_BRANCH=${PACT_PROVIDER_BRANCH}" >> $GITHUB_ENV
+
+      - name: Make sure Postgres is ready and init
+        env:
+          PGPASSWORD: postgres
+        run: |
+          pg_isready -h localhost -t 10
+          psql -h localhost -U postgres -f ./common/postgres-init.sql
 
       - name: Verify consumer pacts and publish verification status to Pact Broker
         id: verification-test
