@@ -76,10 +76,12 @@ public class VerifyServicePacts {
   @MockBean AccessTokenCacheDAO accessTokenCacheDAO;
   @MockBean SamUserFactory samUserFactory;
   @MockBean OAuth2Service oAuth2Service;
-  @MockBean
-  KmsEncryptDecryptHelper kmsEncryptDecryptHelper;  // why do I need to mock this?
   @Mock private OAuth2AccessTokenResponse mockAccessTokenResponse;
 
+  // KmsEncryptDecryptHelper is being mocked out of convenience, because leaving it unmocked
+  // causes bio.terra.externalcreds.ExternalCredsException at KmsEncryptDecryptHelper.java:40.
+  @MockBean
+  KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
   @BeforeEach
   void setupTestTarget(PactVerificationContext context) {
     context.setTarget(new HttpTestTarget("localhost", 8080, "/"));
