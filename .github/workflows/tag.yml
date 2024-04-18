@@ -1,17 +1,44 @@
 name: Tag
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: "The branch, tag or SHA to checkout"
+        default: ''
+        required: false
+        type: string
+      dry-run:
+        description: "Determine the next version without tagging the branch. The workflow can use the outputs new_tag and tag in subsequent steps. Possible values are true and false (default)"
+        default: false
+        required: false
+        type: string
+    outputs:
+      tag:
+        description: "The value of the latest tag after running this action"
+        value: ${{ jobs.tag-job.outputs.tag }}
+      new-tag:
+        description: "The value of the newly created tag"
+        value: ${{ jobs.tag-job.outputs.new-tag }}
+    secrets:
+      BROADBOT_TOKEN:
+        required: true
 
 jobs:
   tag-job:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      new-tag: ${{ steps.tag.outputs.new_tag }}
     steps:
       - name: Checkout current code
         uses: actions/checkout@v3
         with:
+          ref: ${{ inputs.ref || '' }}
           token: ${{ secrets.BROADBOT_TOKEN }} # this allows the push to succeed later
       - name: Bump the tag to a new version
         # https://github.com/DataBiosphere/github-actions/tree/master/actions/bumper
-        uses: databiosphere/github-actions/actions/bumper@bumper-0.1.0
+        uses: databiosphere/github-actions/actions/bumper@bumper-0.3.0
         id: tag
         env:
           GITHUB_TOKEN: ${{ secrets.BROADBOT_TOKEN }}
@@ -20,3 +47,4 @@ jobs:
           VERSION_FILE_PATH: build.gradle
           VERSION_LINE_MATCH: "^\\s*version\\s*=\\s*'.*'"
           VERSION_SUFFIX: SNAPSHOT
+          DRY_RUN: ${{ inputs.dry-run || false }}
