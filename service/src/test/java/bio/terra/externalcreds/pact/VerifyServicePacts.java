@@ -80,8 +80,7 @@ public class VerifyServicePacts {
 
   // KmsEncryptDecryptHelper is being mocked out of convenience, because leaving it unmocked
   // causes bio.terra.externalcreds.ExternalCredsException at KmsEncryptDecryptHelper.java:40.
-  @MockBean
-  KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
+  @MockBean KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
 
   @BeforeEach
   void setupTestTarget(PactVerificationContext context) {
