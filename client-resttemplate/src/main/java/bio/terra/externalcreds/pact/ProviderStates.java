@@ -1,8 +1,8 @@
 /*
-The purpose of this "enum" is to provide a stable dictionary of "provider states"
+The purpose of this class is to provide a stable dictionary of provider states
 for contract testing purposes.
 ("Provider" in this context shouldn't be confused with the ECM concept of an "external provider";
-here it refers to the "consumer-provider pair" in the Pact contract testing framework.)
+here it refers to the consumer-provider pair in the Pact contract testing framework.)
 
 This "enum" is implemented as a normal class, so that its values can be referenced
 in Java annotations which are often used in contract testing code.
