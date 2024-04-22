@@ -25,14 +25,10 @@
         </encoder>
     </appender>
 
-    <if condition='isDefined("SENTRY_DSN")'>
-      <then>
-        <appender name="Sentry" class="io.sentry.logback.SentryAppender"/>
-        <root level="INFO">
-          <appender-ref ref="Sentry"/>
-        </root>
-      </then>
-    </if>
+    <appender name="Sentry" class="io.sentry.logback.SentryAppender"/>
+    <root level="INFO">
+      <appender-ref ref="Sentry"/>
+    </root>
 
     <logger name="bio.terra.common.logging.RequestLoggingFilter" level="off" />
 
