@@ -7,6 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.VersionProperties;
+import bio.terra.externalcreds.generated.model.SubsystemStatus;
+import bio.terra.externalcreds.generated.model.SystemStatus;
+import bio.terra.externalcreds.services.StatusService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -19,12 +22,30 @@ public class PublicApiControllerTest extends BaseTest {
   @Autowired private MockMvc mvc;
 
   @MockBean private ExternalCredsConfig externalCredsConfig;
+  @MockBean private StatusService statusService;
 
   @Test
   void testGetStatus() throws Exception {
+    when(statusService.getSystemStatus())
+        .thenReturn(
+            new SystemStatus()
+                .ok(true)
+                .addSystemsItem(new SubsystemStatus().name("postgres").ok(true))
+                .addSystemsItem(new SubsystemStatus().name("sam").ok(true))
+                .addSystemsItem(new SubsystemStatus().name("github").ok(true)));
     mvc.perform(get("/status"))
-        .andExpect(content().json("""
-            {"ok": true,"systems": { "postgres": true }}"""));
+        .andExpect(
+            content()
+                .json(
+                    """
+            {
+              "ok": true,
+              "systems": [
+                { "name": "postgres", "ok": true},
+                { "name": "sam", "ok": true},
+                { "name": "github", "ok": true}
+               ]
+            }"""));
   }
 
   @Test
