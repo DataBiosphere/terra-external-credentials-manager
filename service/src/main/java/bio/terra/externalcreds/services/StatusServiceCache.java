@@ -1,12 +1,10 @@
 package bio.terra.externalcreds.services;
 
-import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.SamStatusDAO;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.generated.model.SubsystemStatus;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
-import org.broadinstitute.dsde.workbench.client.sam.api.StatusApi;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,14 +21,12 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class StatusServiceCache {
   private final ProviderOAuthClientCache providerOAuthClientCache;
-  private final ExternalCredsConfig externalCredsConfig;
-  private final StatusApi samStatusApi;
+  private final SamStatusDAO samStatusDAO;
 
   public StatusServiceCache(
-      ProviderOAuthClientCache providerOAuthClientCache, ExternalCredsConfig externalCredsConfig) {
+      ProviderOAuthClientCache providerOAuthClientCache, SamStatusDAO samStatusDAO) {
     this.providerOAuthClientCache = providerOAuthClientCache;
-    this.externalCredsConfig = externalCredsConfig;
-    this.samStatusApi = createSamStatusApi();
+    this.samStatusDAO = samStatusDAO;
   }
 
   // Cache the status of each provider.
@@ -61,7 +57,7 @@ public class StatusServiceCache {
     var status = new SubsystemStatus();
     status.name("sam");
     try {
-      var samStatus = samStatusApi.getSystemStatus();
+      var samStatus = samStatusDAO.getSamStatus();
       status.ok(samStatus.getOk());
     } catch (Exception e) {
       log.warn("Error checking Sam status", e);
@@ -81,14 +77,5 @@ public class StatusServiceCache {
   @CacheEvict(allEntries = true, cacheNames = "samStatus")
   public void resetSamStatusCache() {
     log.debug("SamStatusCache reset");
-  }
-
-  private StatusApi createSamStatusApi() {
-    var apiClientBuilder = new ApiClient().getHttpClient().newBuilder();
-    var httpClient = apiClientBuilder.build();
-    ApiClient samApiClient = new ApiClient();
-    samApiClient.setHttpClient(httpClient);
-    samApiClient.setBasePath(externalCredsConfig.getSamBasePath());
-    return new StatusApi(samApiClient);
   }
 }
