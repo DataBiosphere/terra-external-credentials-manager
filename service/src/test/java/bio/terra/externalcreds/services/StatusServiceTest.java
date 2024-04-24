@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.dataAccess.StatusDAO;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.generated.model.SubsystemStatus;
+import bio.terra.externalcreds.generated.model.SubsystemStatusDetail;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -19,12 +19,12 @@ class StatusServiceTest extends BaseTest {
   @MockBean private StatusDAO statusDAO;
 
   @Test
-  void testGetSystemStatus() {
+  void testgetSystemStatusDetail() {
     // Arrange
     setupStatuses(true, true, true);
 
     // Act
-    var systemStatus = statusService.getSystemStatus();
+    var systemStatus = statusService.getSystemStatusDetail();
 
     // Assert
     assertTrue(systemStatus.isOk());
@@ -36,7 +36,7 @@ class StatusServiceTest extends BaseTest {
     setupStatuses(true, true, false);
 
     // Act
-    var systemStatus = statusService.getSystemStatus();
+    var systemStatus = statusService.getSystemStatusDetail();
 
     // Assert
     assertTrue(systemStatus.isOk());
@@ -48,7 +48,7 @@ class StatusServiceTest extends BaseTest {
     setupStatuses(true, false, true);
 
     // Act
-    var systemStatus = statusService.getSystemStatus();
+    var systemStatus = statusService.getSystemStatusDetail();
 
     // Assert
     assertFalse(systemStatus.isOk());
@@ -60,7 +60,7 @@ class StatusServiceTest extends BaseTest {
     setupStatuses(false, true, true);
 
     // Act
-    var systemStatus = statusService.getSystemStatus();
+    var systemStatus = statusService.getSystemStatusDetail();
 
     // Assert
     assertFalse(systemStatus.isOk());
@@ -73,7 +73,7 @@ class StatusServiceTest extends BaseTest {
     when(statusDAO.isPostgresOk()).thenThrow(new RuntimeException("testMessage"));
 
     // Act
-    var systemStatus = statusService.getSystemStatus();
+    var systemStatus = statusService.getSystemStatusDetail();
 
     // Assert
     assertFalse(systemStatus.isOk());
@@ -87,8 +87,8 @@ class StatusServiceTest extends BaseTest {
 
   void setupStatuses(boolean postgresOk, boolean samOk, boolean providerOk) {
     when(statusServiceCache.getProviderStatus(any(Provider.class)))
-        .thenReturn(new SubsystemStatus().ok(providerOk));
-    when(statusServiceCache.getSamStatus()).thenReturn(new SubsystemStatus().ok(samOk));
+        .thenReturn(new SubsystemStatusDetail().ok(providerOk));
+    when(statusServiceCache.getSamStatus()).thenReturn(new SubsystemStatusDetail().ok(samOk));
     when(statusDAO.isPostgresOk()).thenReturn(postgresOk);
   }
 }

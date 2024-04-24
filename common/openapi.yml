@@ -260,6 +260,19 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
 
+  /api/status/v1:
+    get:
+      summary: Check status of the service.
+      tags: [ public ]
+      operationId: getStatusDetail
+      security: [ ]
+      responses:
+        '200':
+          $ref: '#/components/responses/SystemStatusDetailResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/SystemStatusDetailResponse'
   /status:
     get:
       summary: Check status of the service.
@@ -427,6 +440,13 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/SystemStatus'
+
+    SystemStatusDetailResponse:
+      description: A JSON description of the subsystems and their statuses.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SystemStatusDetail'
     SshKeyPairResponse:
       description: A JSON object of the ssh key.
       content:
@@ -524,11 +544,23 @@ components:
           type: boolean
           description: whether any system(s) need attention
         systems:
+          type: object
+          additionalProperties:
+            type: boolean
+
+    SystemStatusDetail:
+      required: [ ok, systems ]
+      type: object
+      properties:
+        ok:
+          type: boolean
+          description: whether any system(s) need attention
+        systems:
           type: array
           items:
-            $ref: '#/components/schemas/SubsystemStatus'
+            $ref: '#/components/schemas/SubsystemStatusDetail'
 
-    SubsystemStatus:
+    SubsystemStatusDetail:
       required: [ name, ok ]
       type: object
       properties:

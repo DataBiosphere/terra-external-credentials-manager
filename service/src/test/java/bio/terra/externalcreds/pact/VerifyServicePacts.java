@@ -19,7 +19,6 @@ import bio.terra.externalcreds.dataAccess.AccessTokenCacheDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
 import bio.terra.externalcreds.dataAccess.StatusDAO;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.generated.model.SubsystemStatus;
 import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount;
@@ -75,9 +74,6 @@ public class VerifyServicePacts {
   @State({ProviderStates.ECM_IS_OK})
   public void ecmIsOk() {
     when(statusDAO.isPostgresOk()).thenReturn(true);
-    when(statusServiceCache.getProviderStatus(any(Provider.class)))
-        .thenReturn(new SubsystemStatus().ok(true));
-    when(statusServiceCache.getSamStatus()).thenReturn(new SubsystemStatus().ok(true));
   }
 
   @State({ProviderStates.USER_IS_REGISTERED})

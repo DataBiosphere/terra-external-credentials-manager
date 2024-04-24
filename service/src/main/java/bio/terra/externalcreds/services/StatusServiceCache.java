@@ -2,7 +2,7 @@ package bio.terra.externalcreds.services;
 
 import bio.terra.externalcreds.SamStatusDAO;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.generated.model.SubsystemStatus;
+import bio.terra.externalcreds.generated.model.SubsystemStatusDetail;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -33,8 +33,8 @@ public class StatusServiceCache {
   // This needs to happen so that if a providerClient fails to get created, we don't hammer the
   // provider with requests to our own status endpoint.
   @Cacheable(cacheNames = "providerStatus", sync = true)
-  public SubsystemStatus getProviderStatus(Provider provider) {
-    var status = new SubsystemStatus();
+  public SubsystemStatusDetail getProviderStatus(Provider provider) {
+    var status = new SubsystemStatusDetail();
     status.name(provider.toString());
     try {
       // When provider OAuth clients are created, they reach out to the provider to validate the
@@ -53,8 +53,8 @@ public class StatusServiceCache {
 
   // Same thing for Sam.
   @Cacheable(cacheNames = "samStatus", sync = true)
-  public SubsystemStatus getSamStatus() {
-    var status = new SubsystemStatus();
+  public SubsystemStatusDetail getSamStatus() {
+    var status = new SubsystemStatusDetail();
     status.name("sam");
     try {
       var samStatus = samStatusDAO.getSamStatus();
