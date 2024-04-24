@@ -50,7 +50,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
     properties = {"server.port=8080"},
     classes = ExternalCredsWebApplication.class)
 @ActiveProfiles({"test", "human-readable-logging"})
-@au.com.dius.pact.provider.junitsupport.Provider("ecm")
+@au.com.dius.pact.provider.junitsupport.Provider("externalcreds")
 @PactBroker
 public class VerifyServicePacts {
   @MockBean StatusDAO statusDAO;
