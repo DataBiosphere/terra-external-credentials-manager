@@ -275,6 +275,7 @@ paths:
           $ref: '#/components/responses/SystemStatusDetailResponse'
   /status:
     get:
+      deprecated: true
       summary: Check status of the service.
       tags: [ public ]
       operationId: getStatus
