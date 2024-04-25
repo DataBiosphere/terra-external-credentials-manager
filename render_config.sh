@@ -55,7 +55,6 @@ fi
   echo export KIDS_FIRST_CLIENT_SECRET="$(kubectl -n terra-$ENV get secret externalcreds-fence -o 'go-template={{index .data "kids-first-client-secret"}}' | base64 -d)"
 
   echo export DEPLOY_ENV=$ENV
-  echo export BOND_DATASTORE_GOOGLE_PROJECT=broad-bond-$ENV
   echo export SAM_ADDRESS=https://sam.dsde-${ENV}.broadinstitute.org
 } >> "${SECRET_ENV_VARS_LOCATION}"
 

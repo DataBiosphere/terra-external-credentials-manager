@@ -25,6 +25,11 @@
         </encoder>
     </appender>
 
+    <appender name="Sentry" class="io.sentry.logback.SentryAppender"/>
+    <root level="INFO">
+      <appender-ref ref="Sentry"/>
+    </root>
+
     <logger name="bio.terra.common.logging.RequestLoggingFilter" level="off" />
 
     <root level="INFO">

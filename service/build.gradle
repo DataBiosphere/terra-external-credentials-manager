@@ -11,6 +11,7 @@ plugins {
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
 	id 'org.sonarqube'
+	id "io.sentry.jvm.gradle" version "4.2.0"
 }
 
 repositories {
@@ -51,6 +52,7 @@ dependencies {
 
 	testImplementation("au.com.dius.pact.provider:junit5:4.3.19")
 	testImplementation('au.com.dius.pact.provider:junit5spring:4.3.19')
+	testImplementation project(':client-resttemplate')
 
 	// OpenTelemetry
 	var openTelemetryVersion = '1.32.0'
@@ -98,10 +100,9 @@ task verifyPacts( type: Test ) {
 	systemProperty 'pact.provider.version', System.getenv('PACT_PROVIDER_VERSION')
 	systemProperty 'pact.provider.branch',  System.getenv('PACT_PROVIDER_BRANCH')
 	systemProperty 'pact.verifier.publishResults', System.getenv('PACT_PUBLISH_RESULTS')
-	systemProperty 'pactbroker.host', System.getenv('PACT_BROKER_URL')
 	systemProperty 'pactbroker.auth.username', System.getenv('PACT_BROKER_USERNAME')
 	systemProperty 'pactbroker.auth.password', System.getenv('PACT_BROKER_PASSWORD')
-	systemProperty 'pactbroker.scheme', 'https'
+	systemProperty 'pactbroker.url', System.getenv('PACT_BROKER_URL')
 	filter {
 		includeTestsMatching "VerifyServicePacts*"
 	}

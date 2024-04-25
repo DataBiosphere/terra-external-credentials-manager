@@ -82,17 +82,41 @@ spring.config.activate.on-profile: 'dev'
 externalcreds:
   providers:
     ras:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/ecm-callback",
+                                    "http://localhost:3000/ecm-callback",
+                                    "https://dev.ukbiobank.terra.bio/ecm-callback",
+                                    "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/ecm-callback",
+                                    "https://terra.dsde-dev.broadinstitute.org/ecm-callback" ]
     github:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/oauth_callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/oauth_callback",
+                                    "http://localhost:3000/oauth_callback",
+                                    "https://dev.ukbiobank.terra.bio/oauth_callback",
+                                    "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/oauth_callback",
+                                    "https://terra.dsde-dev.broadinstitute.org/oauth_callback" ]
     fence:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/#fence-callback",
+                                    "http://localhost:3000/#fence-callback",
+                                    "https://dev.ukbiobank.terra.bio/#fence-callback",
+                                    "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback",
+                                    "https://terra.dsde-dev.broadinstitute.org/#fence-callback" ]
     dcf-fence:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/#fence-callback",
+                                    "http://localhost:3000/#fence-callback",
+                                    "https://dev.ukbiobank.terra.bio/#fence-callback",
+                                    "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback",
+                                    "https://terra.dsde-dev.broadinstitute.org/#fence-callback" ]
     kids-first:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/#fence-callback",
+                                    "http://localhost:3000/#fence-callback",
+                                    "https://dev.ukbiobank.terra.bio/#fence-callback",
+                                    "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback",
+                                    "https://terra.dsde-dev.broadinstitute.org/#fence-callback" ]
     anvil:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/#fence-callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/#fence-callback",
+                                    "http://localhost:3000/#fence-callback",
+                                    "https://dev.ukbiobank.terra.bio/#fence-callback",
+                                    "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback",
+                                    "https://terra.dsde-dev.broadinstitute.org/#fence-callback" ]
 ---
 spring.config.activate.on-profile: 'staging'
 externalcreds:
@@ -114,14 +138,24 @@ spring.config.activate.on-profile: 'prod'
 externalcreds:
   providers:
     ras:
-      allowedRedirectUriPatterns: [ "https://app.terra.bio/ecm-callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/ecm-callback",
+                                    "https://terra.biodatacatalyst.nhlbi.nih.gov/ecm-callback" ]
     github:
-      allowedRedirectUriPatterns: [ "https://app.terra.bio/oauth_callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/oauth_callback",
+                                    "https://terra.biodatacatalyst.nhlbi.nih.gov/oauth_callback" ]
     fence:
-      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
+                                    "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
     dcf-fence:
-      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
+                                    "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
     kids-first:
-      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
+                                    "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
     anvil:
-      allowedRedirectUriPatterns: [ "https://app.terra.bio/#fence-callback" ]
+      allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
+                                    "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
+sentry:
+  dsn: "https://7faae828388bc09ba384f7b290dbcbf3@o54426.ingest.us.sentry.io/4507097154322432"
+  environment: production
+  logging.minimum-breadcrumb-level: info
