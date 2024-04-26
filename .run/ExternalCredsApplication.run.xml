@@ -12,7 +12,6 @@
       <env name="ECM_LOG_APPENDER" value="Console-Standard" />
       <env name="GOOGLE_APPLICATION_CREDENTIALS" value="service/src/main/resources/rendered/ecm-sa.json" />
     </envs>
-    <option name="HIDE_BANNER" value="true" />
     <module name="externalcreds.service.main" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="bio.terra.externalcreds.ExternalCredsWebApplication" />
     <extension name="net.ashald.envfile">
