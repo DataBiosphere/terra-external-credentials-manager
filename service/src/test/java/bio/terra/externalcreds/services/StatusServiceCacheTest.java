@@ -8,7 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.SamStatusDAO;
+import bio.terra.externalcreds.dataAccess.SamStatusDAO;
 import bio.terra.externalcreds.generated.model.Provider;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.broadinstitute.dsde.workbench.client.sam.model.SystemStatus;
@@ -27,7 +27,6 @@ class StatusServiceCacheTest extends BaseTest {
 
   @BeforeEach
   void setUp() {
-    statusServiceCache.resetProviderStatusCache();
     statusServiceCache.resetSamStatusCache();
   }
 
@@ -60,22 +59,7 @@ class StatusServiceCacheTest extends BaseTest {
   }
 
   @Test
-  void testCachesProviderStatuses() {
-    // Arrange
-    when(providerOAuthClientCache.getProviderClient(any(Provider.class)))
-        .thenReturn(mock(ClientRegistration.class));
-
-    // Act
-    var status1 = statusServiceCache.getProviderStatus(Provider.GITHUB);
-    var status2 = statusServiceCache.getProviderStatus(Provider.GITHUB);
-
-    // Assert
-    assertEquals(status1, status2);
-    verify(providerOAuthClientCache, times(1)).getProviderClient(Provider.GITHUB);
-  }
-
-  @Test
-  void getGetsSuccessfulSamStatus() throws ApiException {
+  void testGetsSuccessfulSamStatus() throws ApiException {
     // Arrange
     var mockStatus = mock(SystemStatus.class);
     when(mockStatus.getOk()).thenReturn(true);
@@ -117,7 +101,7 @@ class StatusServiceCacheTest extends BaseTest {
   }
 
   @Test
-  void testCachesSamStatus() throws ApiException {
+  void testCachesSamSuccessfulStatus() throws ApiException {
     // Arrange
     var mockStatus = mock(SystemStatus.class);
     when(mockStatus.getOk()).thenReturn(true);
@@ -130,5 +114,21 @@ class StatusServiceCacheTest extends BaseTest {
     // Assert
     assertEquals(status1, status2);
     verify(samStatusDAO, times(1)).getSamStatus();
+  }
+
+  @Test
+  void testDoesNotCacheSamFailureStatus() throws ApiException {
+    // Arrange
+    var mockStatus = mock(SystemStatus.class);
+    when(mockStatus.getOk()).thenReturn(false);
+    when(samStatusDAO.getSamStatus()).thenReturn(mockStatus);
+
+    // Act
+    var status1 = statusServiceCache.getSamStatus();
+    var status2 = statusServiceCache.getSamStatus();
+
+    // Assert
+    assertEquals(status1, status2);
+    verify(samStatusDAO, times(2)).getSamStatus();
   }
 }

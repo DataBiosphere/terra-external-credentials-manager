@@ -1,4 +1,4 @@
-package bio.terra.externalcreds;
+package bio.terra.externalcreds.dataAccess;
 
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import lombok.extern.slf4j.Slf4j;

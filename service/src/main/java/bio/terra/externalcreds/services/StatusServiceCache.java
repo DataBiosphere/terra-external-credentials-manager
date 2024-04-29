@@ -1,6 +1,6 @@
 package bio.terra.externalcreds.services;
 
-import bio.terra.externalcreds.SamStatusDAO;
+import bio.terra.externalcreds.dataAccess.SamStatusDAO;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.generated.model.SubsystemStatusDetail;
 import java.util.concurrent.TimeUnit;
@@ -11,11 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Creating a provider client requires an api call to [provider
- * issuer]/.well-known/openid-configuration. That information almost never changes and we don't want
- * to hammer that api. Therefore this cache.
- *
- * <p>The cache is reset every 6 hours to detect infrequent changes.
+ * Caches for the status service so that status calls from k8s don't hammer the providers or Sam.
  */
 @Component
 @Slf4j
@@ -32,7 +28,6 @@ public class StatusServiceCache {
   // Cache the status of each provider.
   // This needs to happen so that if a providerClient fails to get created, we don't hammer the
   // provider with requests to our own status endpoint.
-  @Cacheable(cacheNames = "providerStatus", sync = true)
   public SubsystemStatusDetail getProviderStatus(Provider provider) {
     var status = new SubsystemStatusDetail();
     status.name(provider.toString());
@@ -52,7 +47,7 @@ public class StatusServiceCache {
   }
 
   // Same thing for Sam.
-  @Cacheable(cacheNames = "samStatus", sync = true)
+  @Cacheable(cacheNames = "samStatus", unless = "#result.isOk() == false")
   public SubsystemStatusDetail getSamStatus() {
     var status = new SubsystemStatusDetail();
     status.name("sam");
@@ -68,12 +63,6 @@ public class StatusServiceCache {
   }
 
   @Scheduled(fixedRateString = "5", timeUnit = TimeUnit.MINUTES)
-  @CacheEvict(allEntries = true, cacheNames = "providerStatus")
-  public void resetProviderStatusCache() {
-    log.debug("ProviderStatusCache reset");
-  }
-
-  @Scheduled(fixedRateString = "1", timeUnit = TimeUnit.MINUTES)
   @CacheEvict(allEntries = true, cacheNames = "samStatus")
   public void resetSamStatusCache() {
     log.debug("SamStatusCache reset");
