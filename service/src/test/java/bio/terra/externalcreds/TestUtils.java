@@ -13,7 +13,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -24,7 +23,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 public class TestUtils {
 
   public static Timestamp getFutureTimestamp() {
-    return Timestamp.from(Instant.now().plusSeconds(60 * 5));
+    return new Timestamp(System.currentTimeMillis() + 60 * 1000);
   }
 
   public static LinkedAccount createRandomLinkedAccount() {
