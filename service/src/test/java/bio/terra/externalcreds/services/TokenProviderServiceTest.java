@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import bio.terra.common.exception.ForbiddenException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
@@ -15,6 +16,8 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -87,6 +90,30 @@ public class TokenProviderServiceTest extends BaseTest {
 
     assertThrows(
         NotFoundException.class,
+        () -> tokenProviderService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
+  }
+
+  @Test
+  void testGetProviderAccessTokenExpiredLinkedAccount() {
+    var userId = "fakeUserId";
+    var provider = Provider.GITHUB;
+
+    var auditLogEventBuilder =
+        new AuditLogEvent.Builder()
+            .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
+            .provider(provider)
+            .userId(userId)
+            .externalUserId(Optional.empty())
+            .clientIP(clientIP);
+
+    var expiredLinkedAccount =
+        TestUtils.createRandomLinkedAccount(provider)
+            .withExpires(Timestamp.from(Instant.now().minusSeconds(60)));
+    when(linkedAccountService.getLinkedAccount(userId, provider))
+        .thenReturn(Optional.of(expiredLinkedAccount));
+
+    assertThrows(
+        ForbiddenException.class,
         () -> tokenProviderService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
   }
 

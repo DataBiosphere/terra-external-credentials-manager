@@ -20,7 +20,7 @@ class DistributedLockDAOTest extends BaseTest {
       new DistributedLock.Builder()
           .lockName(testLockName)
           .userId(UUID.randomUUID().toString())
-          .expiresAt(TestUtils.getRandomTimestamp().toInstant())
+          .expiresAt(TestUtils.getFutureTimestamp().toInstant())
           .build();
 
   @Test

@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.common.exception.BadRequestException;
+import bio.terra.common.exception.ForbiddenException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
@@ -9,6 +10,8 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -98,6 +101,14 @@ public class TokenProviderService extends ProviderService {
                                 + "Please go to the Terra Profile page External Identities tab "
                                 + "to link your account for this provider.",
                             userId, provider)));
+    if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
+      throw new ForbiddenException(
+          String.format(
+              "The linked account found for user ID: %s and provider: %s has expired. "
+                  + "Please go to the Terra Profile page External Identities tab "
+                  + "to re-link your account for this provider.",
+              userId, provider));
+    }
     var providerProperties = externalCredsConfig.getProviderProperties(provider);
     return accessTokenCacheService.getLinkedAccountAccessToken(
         linkedAccount, new HashSet<>(providerProperties.getScopes()), auditLogEventBuilder);

@@ -22,8 +22,8 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 public class TestUtils {
 
-  public static Timestamp getRandomTimestamp() {
-    return new Timestamp(System.currentTimeMillis());
+  public static Timestamp getFutureTimestamp() {
+    return new Timestamp(System.currentTimeMillis() + 60 * 1000);
   }
 
   public static LinkedAccount createRandomLinkedAccount() {
@@ -36,7 +36,7 @@ public class TestUtils {
 
   public static LinkedAccount createRandomLinkedAccount(Provider provider) {
     return new LinkedAccount.Builder()
-        .expires(getRandomTimestamp())
+        .expires(getFutureTimestamp())
         .provider(provider)
         .refreshToken(UUID.randomUUID().toString())
         .userId(UUID.randomUUID().toString())
@@ -48,7 +48,7 @@ public class TestUtils {
   public static GA4GHPassport createRandomPassport() {
     return new GA4GHPassport.Builder()
         .jwt(UUID.randomUUID().toString())
-        .expires(getRandomTimestamp())
+        .expires(getFutureTimestamp())
         .jwtId(UUID.randomUUID().toString())
         .build();
   }
@@ -57,10 +57,10 @@ public class TestUtils {
     return new GA4GHVisa.Builder()
         .visaType(UUID.randomUUID().toString())
         .tokenType(TokenTypeEnum.access_token)
-        .expires(getRandomTimestamp())
+        .expires(getFutureTimestamp())
         .issuer(UUID.randomUUID().toString())
         .jwt(UUID.randomUUID().toString())
-        .lastValidated(getRandomTimestamp())
+        .lastValidated(getFutureTimestamp())
         .build();
   }
 
@@ -68,7 +68,7 @@ public class TestUtils {
     return new FenceAccountKey.Builder()
         .linkedAccountId(1)
         .keyJson("{\"key\": \"value\", \"private_key_id\": \"12345\"}")
-        .expiresAt(getRandomTimestamp().toInstant())
+        .expiresAt(getFutureTimestamp().toInstant())
         .build();
   }
 
@@ -76,7 +76,7 @@ public class TestUtils {
     return new AccessTokenCacheEntry.Builder()
         .linkedAccountId(1)
         .accessToken(UUID.randomUUID().toString())
-        .expiresAt(getRandomTimestamp().toInstant())
+        .expiresAt(getFutureTimestamp().toInstant())
         .build();
   }
 
