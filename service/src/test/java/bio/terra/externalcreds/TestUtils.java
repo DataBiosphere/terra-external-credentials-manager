@@ -24,7 +24,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 public class TestUtils {
 
   public static Timestamp getFutureTimestamp() {
-    return Timestamp.from(Instant.now().plusSeconds(60));
+    return Timestamp.from(Instant.now().plusSeconds(60 * 5));
   }
 
   public static LinkedAccount createRandomLinkedAccount() {
