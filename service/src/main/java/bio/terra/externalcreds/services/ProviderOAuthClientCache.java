@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  * issuer]/.well-known/openid-configuration. That information almost never changes and we don't want
  * to hammer that api. Therefore this cache.
  *
- * <p>The cache is reset every 6 hours to detect infrequent changes.
+ * <p>The cache is reset every 30 minutes to detect infrequent changes and service outages.
  */
 @Component
 @Slf4j
@@ -71,7 +71,7 @@ public class ProviderOAuthClientCache {
     return builder.build();
   }
 
-  @Scheduled(fixedRateString = "6", timeUnit = TimeUnit.HOURS)
+  @Scheduled(fixedRateString = "30", timeUnit = TimeUnit.MINUTES)
   @CacheEvict(allEntries = true, cacheNames = "providerOAuthClients")
   public void resetCache() {
     log.info("ProviderOAuthClientCache reset");

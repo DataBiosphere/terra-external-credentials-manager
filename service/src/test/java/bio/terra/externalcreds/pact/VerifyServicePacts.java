@@ -26,6 +26,7 @@ import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.KmsEncryptDecryptHelper;
 import bio.terra.externalcreds.services.OAuth2Service;
+import bio.terra.externalcreds.services.StatusServiceCache;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -76,6 +77,7 @@ public class VerifyServicePacts {
   @MockBean AccessTokenCacheDAO accessTokenCacheDAO;
   @MockBean SamUserFactory samUserFactory;
   @MockBean OAuth2Service oAuth2Service;
+  @MockBean StatusServiceCache statusServiceCache;
   @Mock private OAuth2AccessTokenResponse mockAccessTokenResponse;
 
   // KmsEncryptDecryptHelper is being mocked out of convenience, because leaving it unmocked
