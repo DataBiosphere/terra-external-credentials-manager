@@ -1,7 +1,6 @@
 package bio.terra.externalcreds;
 
 import bio.terra.externalcreds.config.ExternalCredsConfig;
-import bio.terra.externalcreds.models.StringToSshKeyPairTypeConverter;
 import javax.sql.DataSource;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -9,7 +8,6 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.format.FormatterRegistry;
 import org.springframework.jdbc.support.JdbcTransactionManager;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -43,11 +41,6 @@ public class ExternalCredsSpringConfig implements WebMvcConfigurer {
   @ConfigurationProperties(value = "externalcreds", ignoreUnknownFields = false)
   public ExternalCredsConfig getExternalCredsSpringConfig() {
     return ExternalCredsConfig.create();
-  }
-
-  @Override
-  public void addFormatters(FormatterRegistry registry) {
-    registry.addConverter(new StringToSshKeyPairTypeConverter());
   }
 
   @Bean

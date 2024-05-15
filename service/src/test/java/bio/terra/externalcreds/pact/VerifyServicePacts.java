@@ -24,7 +24,6 @@ import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.AccessTokenCacheEntry;
 import bio.terra.externalcreds.models.ImmutableLinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount;
-import bio.terra.externalcreds.services.KmsEncryptDecryptHelper;
 import bio.terra.externalcreds.services.OAuth2Service;
 import bio.terra.externalcreds.services.StatusServiceCache;
 import jakarta.servlet.http.HttpServletRequest;
@@ -79,10 +78,6 @@ public class VerifyServicePacts {
   @MockBean OAuth2Service oAuth2Service;
   @MockBean StatusServiceCache statusServiceCache;
   @Mock private OAuth2AccessTokenResponse mockAccessTokenResponse;
-
-  // KmsEncryptDecryptHelper is being mocked out of convenience, because leaving it unmocked
-  // causes bio.terra.externalcreds.ExternalCredsException at KmsEncryptDecryptHelper.java:40.
-  @MockBean KmsEncryptDecryptHelper kmsEncryptDecryptHelper;
 
   @BeforeEach
   void setupTestTarget(PactVerificationContext context) {

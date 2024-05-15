@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: "remove_ssk_key_pair_table"
+      author: tlangs
+      changes:
+        - dropTable:
+            tableName: ssh_key_pair

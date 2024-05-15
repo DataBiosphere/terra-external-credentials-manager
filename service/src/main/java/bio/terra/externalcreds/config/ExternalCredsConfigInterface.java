@@ -63,9 +63,6 @@ public interface ExternalCredsConfigInterface {
 
   Optional<String> getAuthorizationChangeEventTopicName();
 
-  @Nullable
-  KmsConfiguration getKmsConfiguration();
-
   @Value.Default
   default DistributedLockConfiguration getDistributedLockConfiguration() {
     return DistributedLockConfiguration.create().setLockTimeout(Duration.ofSeconds(30));
