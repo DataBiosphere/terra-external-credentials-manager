@@ -1,7 +1,7 @@
 databaseChangeLog:
   - changeSet:
-      id: "add_access_token_cache_table"
+      id: "remove_ssk_key_pair_table"
       author: tlangs
       changes:
         - dropTable:
-            tableName: access_token_cache
+            tableName: ssh_key_pair
