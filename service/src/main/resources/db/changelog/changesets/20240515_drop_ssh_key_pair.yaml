@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add_access_token_cache_table"
+      author: tlangs
+      changes:
+        - dropTable:
+            tableName: access_token_cache
