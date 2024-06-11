@@ -196,6 +196,65 @@ public class ProviderServiceTest extends BaseTest {
     }
 
     @Test
+    void testDeleteExpiredFenceLink() {
+      try (var mockServer = ClientAndServer.startClientAndServer()) {
+        var revocationPath = "/test/revoke/";
+        var linkedAccount =
+            TestUtils.createRandomLinkedAccount()
+                .withId(1)
+                .withProvider(Provider.FENCE)
+                .withExpires(Timestamp.from(Instant.now().minus(Duration.ofMinutes(5))));
+
+        var key =
+            TestUtils.createRandomFenceAccountKey()
+                .withLinkedAccountId(linkedAccount.getId().get());
+
+        var providerInfo =
+            TestUtils.createRandomProvider()
+                .setRevokeEndpoint(
+                    "http://localhost:" + mockServer.getPort() + revocationPath + "?token=%s");
+
+        var expectedParameters =
+            List.of(
+                new Parameter("token", linkedAccount.getRefreshToken()),
+                new Parameter("client_id", providerInfo.getClientId()),
+                new Parameter("client_secret", providerInfo.getClientSecret()));
+
+        when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+            .thenReturn(providerInfo);
+
+        when(linkedAccountServiceMock.getLinkedAccount(
+                linkedAccount.getUserId(), linkedAccount.getProvider()))
+            .thenReturn(Optional.of(linkedAccount));
+        when(linkedAccountServiceMock.deleteLinkedAccount(
+                linkedAccount.getUserId(), linkedAccount.getProvider()))
+            .thenReturn(true);
+
+        when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
+            .thenReturn(createClientRegistration(linkedAccount.getProvider()));
+
+        when(oAuth2ServiceMock.authorizeWithRefreshToken(
+                any(ClientRegistration.class), any(OAuth2RefreshToken.class), any(Set.class)))
+            .thenReturn(
+                OAuth2AccessTokenResponse.withToken("token").tokenType(TokenType.BEARER).build());
+        when(fenceAccountKeyServiceMock.getFenceAccountKey(linkedAccount))
+            .thenReturn(Optional.of(key));
+
+        //  Mock the server response
+        mockServer
+            .when(
+                HttpRequest.request(revocationPath)
+                    .withMethod("POST")
+                    .withQueryStringParameters(expectedParameters))
+            .respond(HttpResponse.response().withStatusCode(HttpStatus.OK.value()));
+
+        providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
+        verify(linkedAccountServiceMock)
+            .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProvider());
+      }
+    }
+
+    @Test
     void testDeleteFenceLinkNoKeyEndpoint() throws IOException {
       try (var mockServer = ClientAndServer.startClientAndServer()) {
         var revocationPath = "/test/revoke/";
