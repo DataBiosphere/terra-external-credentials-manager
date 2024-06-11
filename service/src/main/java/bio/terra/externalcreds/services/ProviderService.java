@@ -220,7 +220,7 @@ public class ProviderService {
             .getLinkedAccount(userId, provider)
             .orElseThrow(() -> new NotFoundException("Link not found for user"));
 
-    if (ProviderUtils.isFenceProvider(provider)) {
+    if (ProviderUtils.isFenceProvider(provider) && !linkedAccount.isExpired()) {
       revokeKey(providerInfo, linkedAccount);
     }
 
