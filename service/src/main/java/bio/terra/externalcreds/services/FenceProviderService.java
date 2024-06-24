@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 public class FenceProviderService extends ProviderService {
 
   private final FenceKeyRetriever fenceKeyRetriever;
+  private final AccessTokenCacheService accessTokenCacheService;
 
   public FenceProviderService(
       ExternalCredsConfig externalCredsConfig,
@@ -30,7 +31,8 @@ public class FenceProviderService extends ProviderService {
       AuditLogger auditLogger,
       ObjectMapper objectMapper,
       FenceAccountKeyService fenceAccountKeyService,
-      FenceKeyRetriever fenceKeyRetriever) {
+      FenceKeyRetriever fenceKeyRetriever,
+      AccessTokenCacheService accessTokenCacheService) {
     super(
         externalCredsConfig,
         providerOAuthClientCache,
@@ -41,6 +43,7 @@ public class FenceProviderService extends ProviderService {
         auditLogger,
         objectMapper);
     this.fenceKeyRetriever = fenceKeyRetriever;
+    this.accessTokenCacheService = accessTokenCacheService;
   }
 
   public Optional<FenceAccountKey> getFenceAccountKey(LinkedAccount linkedAccount) {
@@ -68,6 +71,7 @@ public class FenceProviderService extends ProviderService {
                   providerClient)
               .getLeft();
       var linkedAccount = linkedAccountService.upsertLinkedAccount(account);
+      accessTokenCacheService.deleteAccessTokenCacheEntry(linkedAccount.getId().get());
       logLinkCreation(Optional.of(linkedAccount), auditLogEventBuilder);
       return linkedAccount;
     } catch (OAuth2AuthorizationException oauthEx) {

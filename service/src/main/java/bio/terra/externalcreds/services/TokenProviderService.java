@@ -65,6 +65,7 @@ public class TokenProviderService extends ProviderService {
                   providerClient)
               .getLeft();
       var linkedAccount = linkedAccountService.upsertLinkedAccount(account);
+      accessTokenCacheService.deleteAccessTokenCacheEntry(linkedAccount.getId().get());
       logLinkCreation(Optional.of(linkedAccount), auditLogEventBuilder);
       return linkedAccount;
     } catch (OAuth2AuthorizationException oauthEx) {

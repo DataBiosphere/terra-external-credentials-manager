@@ -101,6 +101,11 @@ public class AccessTokenCacheService {
     return accessTokenCacheDAO.upsertAccessTokenCacheEntry(accessTokenCacheEntry);
   }
 
+  public boolean deleteAccessTokenCacheEntry(int linkedAccountId) {
+    return accessTokenCacheDAO.deleteAccessTokenCacheEntry(linkedAccountId);
+
+  }
+
   public void logGetProviderAccessToken(
       LinkedAccount linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
     auditLogger.logEvent(
