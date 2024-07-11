@@ -44,3 +44,6 @@ databaseChangeLog:
   - include:
         file: changesets/20240515_drop_ssh_key_pair.yaml
         relativeToChangelogFile: true
+  - include:
+        file: changesets/20240711_add_nih_account_table.yaml
+        relativeToChangelogFile: true

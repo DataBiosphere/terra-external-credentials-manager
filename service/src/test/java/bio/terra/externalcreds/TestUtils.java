@@ -7,6 +7,7 @@ import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.GA4GHVisa;
 import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.NihAccount;
 import bio.terra.externalcreds.models.TokenTypeEnum;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
 import java.security.NoSuchAlgorithmException;
@@ -106,6 +107,14 @@ public class TestUtils {
         .linkedAccountId(42)
         .provider(Provider.RAS)
         .visaJwt(UUID.randomUUID().toString())
+        .build();
+  }
+
+  public static NihAccount createRandomNihAccount() {
+    return new NihAccount.Builder()
+        .expires(getFutureTimestamp())
+        .userId(UUID.randomUUID().toString())
+        .nihUsername(UUID.randomUUID().toString())
         .build();
   }
 
