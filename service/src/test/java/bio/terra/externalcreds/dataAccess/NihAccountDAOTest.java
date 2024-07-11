@@ -94,7 +94,7 @@ class NihAccountDAOTest extends BaseTest {
       var savedExpiredNihAccount = nihAccountDAO.upsertNihAccount(expiredNihAccount);
 
       // Assert that only the expired nih account is returned
-      assertEquals(List.of(savedExpiredNihAccount), nihAccountDAO.getExpiringNihAccounts());
+      assertEquals(List.of(savedExpiredNihAccount), nihAccountDAO.getExpiredNihAccounts());
 
       assertEquals(List.of(savedNihAccount), nihAccountDAO.getActiveNihAccounts());
     }
@@ -109,10 +109,11 @@ class NihAccountDAOTest extends BaseTest {
       nihAccountDAO.upsertNihAccount(
           TestUtils.createRandomNihAccount()); // To make sure we get the right one.
       var savedNihAccount = nihAccountDAO.upsertNihAccount(nihAccount);
-      var loadedUserId = nihAccountDAO.getUserIdForNihUsername(savedNihAccount.getNihUsername());
+      var loadedNihAccount =
+          nihAccountDAO.getNihAccountForUsername(savedNihAccount.getNihUsername());
 
       // Assert that only the user_id for the username we supplied
-      assertEquals(nihAccount.getUserId(), loadedUserId.get());
+      assertEquals(nihAccount.getUserId(), loadedNihAccount.get().getUserId());
     }
 
     @Test

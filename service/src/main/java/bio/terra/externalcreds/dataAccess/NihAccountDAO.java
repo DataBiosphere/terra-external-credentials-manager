@@ -44,17 +44,16 @@ public class NihAccountDAO {
   }
 
   @WithSpan
-  public Optional<String> getUserIdForNihUsername(String nihUsername) {
+  public Optional<NihAccount> getNihAccountForUsername(String nihUsername) {
     var namedParameters = new MapSqlParameterSource().addValue("nihUsername", nihUsername);
     var query = "SELECT * FROM nih_account WHERE nih_username = :nihUsername";
     return Optional.ofNullable(
-            DataAccessUtils.singleResult(
-                jdbcTemplate.query(query, namedParameters, NIH_ACCOUNT_ROW_MAPPER)))
-        .map(NihAccount::getUserId);
+        DataAccessUtils.singleResult(
+            jdbcTemplate.query(query, namedParameters, NIH_ACCOUNT_ROW_MAPPER)));
   }
 
   @WithSpan
-  public List<NihAccount> getExpiringNihAccounts() {
+  public List<NihAccount> getExpiredNihAccounts() {
     var namedParameters =
         new MapSqlParameterSource("expirationCutoff", Timestamp.from(Instant.now()));
     var query =
