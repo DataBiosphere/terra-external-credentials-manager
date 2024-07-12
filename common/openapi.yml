@@ -306,19 +306,6 @@ paths:
           $ref: '#/components/responses/ServerError'
 components:
   parameters:
-    sshKeyPairTypeParam:
-      name: type
-      in: path
-      schema:
-        $ref: '#/components/schemas/SshKeyPairType'
-      required: true
-    includePrivateKey:
-      name: includePrivateKey
-      in: query
-      required: false
-      schema:
-        type: boolean
-        default: false
     passportProviderParam:
       name: provider
       in: path
@@ -384,12 +371,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/SystemStatusDetail'
-    SshKeyPairResponse:
-      description: A JSON object of the ssh key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/SshKeyPair'
 
     # Error Responses
     BadRequest:
@@ -428,31 +409,12 @@ components:
       type: string
       enum:
         - ras
+        - era-commons
         - github
         - fence
         - dcf-fence
         - kids-first
         - anvil
-    SshKeyPairType:
-      description: Enum containing valid ssh key types.
-      type: string
-      enum:
-        - github
-        - gitlab
-        - azure
-    SshKeyPair:
-      type: object
-      required: [ publicKey, externalUserEmail ]
-      properties:
-        privateKey:
-          type: string
-          description: private ssh key
-        publicKey:
-          type: string
-          description: public ssh key
-        externalUserEmail:
-          description: account email.
-          type: string
     LinkInfo:
       type: object
       required: [ externalUserId, expirationTimestamp ]
