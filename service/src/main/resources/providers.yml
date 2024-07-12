@@ -168,3 +168,7 @@ externalcreds:
     anvil:
       allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
                                     "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
+sentry:
+  dsn: "https://7faae828388bc09ba384f7b290dbcbf3@o54426.ingest.us.sentry.io/4507097154322432"
+  environment: production
+  logging.minimum-breadcrumb-level: info
