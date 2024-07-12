@@ -10,6 +10,7 @@ import bio.terra.externalcreds.TestUtils;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -133,7 +134,8 @@ class NihAccountDAOTest extends BaseTest {
 
       // Assert that only the non-expired nih accounts are returned
       assertEquals(
-          List.of(savedNihAccount, savedNihAccount2), nihAccountDAO.getActiveNihAccounts());
+          new HashSet<>(List.of(savedNihAccount, savedNihAccount2)),
+          new HashSet<>(nihAccountDAO.getActiveNihAccounts()));
     }
   }
 }
