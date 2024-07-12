@@ -57,7 +57,8 @@ public class NihAccountDAO {
     var namedParameters =
         new MapSqlParameterSource("expirationCutoff", Timestamp.from(Instant.now()));
     var query =
-        "SELECT DISTINCT na.* FROM nih_account na" + " WHERE na.expires < :expirationCutoff";
+        "SELECT DISTINCT na.* FROM nih_account na"
+            + " WHERE na.expires < :expirationCutoff ORDER BY id asc";
     return jdbcTemplate.query(query, namedParameters, NIH_ACCOUNT_ROW_MAPPER);
   }
 
@@ -66,7 +67,8 @@ public class NihAccountDAO {
     var namedParameters =
         new MapSqlParameterSource("expirationCutoff", Timestamp.from(Instant.now()));
     var query =
-        "SELECT DISTINCT na.* FROM nih_account na" + " WHERE na.expires > :expirationCutoff";
+        "SELECT DISTINCT na.* FROM nih_account na"
+            + " WHERE na.expires > :expirationCutoff ORDER BY id asc";
     return jdbcTemplate.query(query, namedParameters, NIH_ACCOUNT_ROW_MAPPER);
   }
 
