@@ -29,3 +29,10 @@ databaseChangeLog:
                   type: timestamp
                   constraints:
                     nullable: false
+        - createIndex:
+            columns:
+              - column:
+                  descending: true
+                  name: nih_username
+            indexName: idx_nih_username
+            tableName: nih_account
