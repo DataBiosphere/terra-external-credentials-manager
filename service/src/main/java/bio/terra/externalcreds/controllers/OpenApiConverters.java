@@ -3,14 +3,17 @@ package bio.terra.externalcreds.controllers;
 import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.generated.model.LinkInfo;
+import bio.terra.externalcreds.generated.model.NihAccountModel;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportResultMatchedCriterion;
 import bio.terra.externalcreds.generated.model.RASv1Dot1VisaCriterion;
 import bio.terra.externalcreds.generated.model.ValidatePassportResult;
 import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.NihAccount;
 import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
 import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
+import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -38,6 +41,14 @@ public class OpenApiConverters {
                 }
               })
           .collect(Collectors.toList());
+    }
+
+    public static NihAccount convert(NihAccountModel nihAccountModel) {
+      return new NihAccount.Builder()
+          .nihUsername(nihAccountModel.getLinkedNihUsername())
+          .userId(nihAccountModel.getUserId())
+          .expires(Timestamp.from(nihAccountModel.getLinkExpireTime().toInstant()))
+          .build();
     }
   }
 
@@ -70,6 +81,13 @@ public class OpenApiConverters {
           .externalUserId(linkedAccount.getExternalUserId())
           .expirationTimestamp(linkedAccount.getExpires())
           .authenticated(linkedAccount.isAuthenticated());
+    }
+
+    public static NihAccountModel convert(NihAccount nihAccount) {
+      return new NihAccountModel()
+          .linkedNihUsername(nihAccount.getNihUsername())
+          .linkExpireTime(nihAccount.getExpires())
+          .userId(nihAccount.getUserId());
     }
   }
 }

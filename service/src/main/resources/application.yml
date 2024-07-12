@@ -12,6 +12,8 @@ externalcreds:
   distributed-lock-configuration:
     lock-timeout: 30s
   access-token-expiration-buffer: 5m
+  authorized-admins:
+    - ${FIRECLOUD_ACCOUNT_EMAIL:firecloud-dev@broad-dsde-prod.iam.gserviceaccount.com}
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}

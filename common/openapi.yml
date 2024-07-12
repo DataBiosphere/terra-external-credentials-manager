@@ -4,6 +4,85 @@ info:
   description: A manager for external credentials
   version: 0.0.1
 paths:
+  /api/nih/v1/account:
+    get:
+      summary: Get the NIH account for the user
+      tags: [ nihAccount ]
+      operationId: getNihAccount
+      responses:
+        '200':
+          description: The user's NIH account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NihAccountModel'
+        '404':
+          description: User does not have a linked NIH account
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      summary: Link the user's NIH account
+      tags: [ nihAccount ]
+      operationId: linkNihAccount
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/NihAccountModel'
+      responses:
+          '202':
+            description: NIH account linked
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '403':
+            $ref: '#/components/responses/PermissionDenied'
+          '500':
+            $ref: '#/components/responses/ServerError'
+  /api/admin/nih/v1/userForUsername/{nih_username}:
+    parameters:
+      - name: nih_username
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get the NIH Account for the NIH username
+      tags: [ nihAccount ]
+      operationId: getNihAccountForUsername
+      responses:
+        '200':
+          description: The NIH Account for the NIH username
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NihAccountModel'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '404':
+          description: User not found for the NIH username
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/admin/nih/v1/activeAccounts:
+    get:
+      summary: Get all active NIH Accounts
+      tags: [ nihAccount ]
+      operationId: getActiveNihAccounts
+      responses:
+        '200':
+          description: The user for the NIH username
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NihAccountModel'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '404':
+          description: User not found for the NIH username
+        '500':
+          $ref: '#/components/responses/ServerError'
+
   /api/oauth/v1/providers:
     get:
       summary: Lists the available OAuth providers.
@@ -418,6 +497,18 @@ components:
             $ref: '#/components/schemas/ErrorReport'
 
   schemas:
+    NihAccountModel:
+        type: object
+        description: NIH account for a user
+        required: [ userId, linkedNihUsername, linkExpireTime ]
+        properties:
+            userId:
+              type: string
+            linkedNihUsername:
+              type: string
+            linkExpireTime:
+              type: string
+              format: date-time
     PassportProvider:
       description: Enum containing valid passport providers.
       type: string
