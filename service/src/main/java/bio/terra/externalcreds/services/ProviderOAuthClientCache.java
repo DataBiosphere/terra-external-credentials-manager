@@ -36,7 +36,8 @@ public class ProviderOAuthClientCache {
 
     ClientRegistration.Builder builder =
         switch (provider) {
-          case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+          case RAS, ERA_COMMONS -> ClientRegistrations.fromOidcIssuerLocation(
+                  providerInfo.getIssuer())
               .clientId(providerInfo.getClientId())
               .clientSecret(providerInfo.getClientSecret())
               .issuerUri(providerInfo.getIssuer());

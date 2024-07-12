@@ -89,7 +89,7 @@ public record OauthApiController(
               yield OpenApiConverters.Output.convert(
                   linkedAccountWithPassportAndVisas.getLinkedAccount());
             }
-            case GITHUB -> {
+            case GITHUB, ERA_COMMONS -> {
               var linkedAccount =
                   tokenProviderService.createLink(
                       provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);

@@ -75,6 +75,37 @@ class ProviderTokenClientCacheTest extends BaseTest {
   }
 
   @Test
+  void testEraCommonsBuildClientRegistration() {
+    try (var mockServer = ClientAndServer.startClientAndServer()) {
+      var issuerPath = "/does/not/exist";
+      var url = "http://localhost:" + mockServer.getPort() + issuerPath;
+      Provider provider = Provider.ERA_COMMONS;
+      when(externalCredsConfig.getProviderProperties(provider))
+          .thenReturn(TestUtils.createRandomProvider().setIssuer(url));
+
+      //  Mock the server response
+      mockServer
+          .when(
+              HttpRequest.request(issuerPath + "/.well-known/openid-configuration")
+                  .withMethod("GET"))
+          .respond(
+              HttpResponse.response()
+                  .withStatusCode(200)
+                  .withContentType(MediaType.APPLICATION_JSON)
+                  .withBody(ProviderTestUtil.wellKnownResponse(url)));
+
+      var providerInfo = externalCredsConfig.getProviderProperties(provider);
+
+      ClientRegistration eraCommonsClient = providerTokenClientCache.getProviderClient(provider);
+
+      assertEquals(
+          AuthorizationGrantType.AUTHORIZATION_CODE, eraCommonsClient.getAuthorizationGrantType());
+      assertEquals(providerInfo.getClientId(), eraCommonsClient.getClientId());
+      assertEquals(providerInfo.getClientSecret(), eraCommonsClient.getClientSecret());
+    }
+  }
+
+  @Test
   void testFenceBuildClientRegistration() {
     try (var mockServer = ClientAndServer.startClientAndServer()) {
       var issuerPath = "/does/not/exist";

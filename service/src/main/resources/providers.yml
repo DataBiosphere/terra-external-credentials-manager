@@ -76,6 +76,15 @@ externalcreds:
       revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
       userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
+    era-commons:
+      clientId: "${ERA_COMMONS_CLIENT_ID}"
+      clientSecret: "${ERA_COMMONS_CLIENT_SECRET}"
+      externalIdClaim: "preferred_username"
+      scopes: [ "openid", "email", "profile" ]
+      linkLifespan: "15d"
+      issuer: "https://stsstg.nih.gov"
+      revokeEndpoint: "${externalcreds.providers.era-commons.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
+      userInfoEndpoint: "${externalcreds.providers.era-commons.issuer}/openid/connect/v1.1/userinfo"
 
 ---
 spring.config.activate.on-profile: 'dev'
@@ -87,6 +96,8 @@ externalcreds:
                                     "https://dev.ukbiobank.terra.bio/ecm-callback",
                                     "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/ecm-callback",
                                     "https://terra.dsde-dev.broadinstitute.org/ecm-callback" ]
+    era-commons:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
     github:
       allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/oauth_callback",
                                     "http://localhost:3000/oauth_callback",
@@ -123,6 +134,8 @@ externalcreds:
   providers:
     ras:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback" ]
+    era-commons:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback" ]
     github:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/oauth_callback" ]
     fence:
@@ -155,7 +168,3 @@ externalcreds:
     anvil:
       allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
                                     "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
-sentry:
-  dsn: "https://7faae828388bc09ba384f7b290dbcbf3@o54426.ingest.us.sentry.io/4507097154322432"
-  environment: production
-  logging.minimum-breadcrumb-level: info
