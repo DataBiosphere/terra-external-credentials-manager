@@ -20,6 +20,12 @@ if ! [ -x "$(command -v vault)" ]; then
   VAULT_COMMAND="docker run --rm -e VAULT_TOKEN=$VAULT_TOKEN -e VAULT_ADDR=$VAULT_ADDR vault:1.7.3 $VAULT_COMMAND"
 fi
 
+if [ $ENV == 'prod' ]; then
+  gcloud container clusters get-credentials --zone us-central1 --project broad-dsde-prod terra-prod
+else
+  gcloud container clusters get-credentials --zone us-central1-a --project broad-dsde-$ENV terra-$ENV
+fi
+
 
 if [ -f "${SECRET_ENV_VARS_LOCATION}" ]; then
   rm "${SECRET_ENV_VARS_LOCATION}"
@@ -27,28 +33,26 @@ fi
 
 {
   if $LIVE_DB; then
-    echo export DATABASE_NAME="$(gcloud secrets versions access latest --secret=externalcreds-postgres-creds --project=broad-dsde-dev | jq -r '.db')"
-    echo export DATABASE_USER="$(gcloud secrets versions access latest --secret=externalcreds-postgres-creds --project=broad-dsde-dev | jq -r '.username')"
-    echo export DATABASE_USER_PASSWORD="$(gcloud secrets versions access latest --secret=externalcreds-postgres-creds --project=broad-dsde-dev | jq -r '.password')"
+    echo export DATABASE_NAME="$(kubectl -n terra-$ENV get secret externalcreds-postgres-db-creds -o 'go-template={{index .data "db"}}' | base64 -d)"
+    echo export DATABASE_USER="$(kubectl -n terra-$ENV get secret externalcreds-postgres-db-creds -o 'go-template={{index .data "username"}}' | base64 -d)"
+    echo export DATABASE_USER_PASSWORD="$(kubectl -n terra-$ENV get secret externalcreds-postgres-db-creds -o 'go-template={{index .data "password"}}' | base64 -d)"
   fi
 
   if [ $ENV != 'prod' ]; then
-      echo export RAS_CLIENT_ID="$(gcloud secrets versions access latest --secret=externalcreds-providers --project=broad-dsde-dev | jq -r '.ras_client_id')"
-      echo export RAS_CLIENT_SECRET="$(gcloud secrets versions access latest --secret=externalcreds-providers --project=broad-dsde-dev | jq -r '.ras_client_secret')"
-      echo export ERA_COMMONS_CLIENT_ID="$(gcloud secrets versions access latest --secret=externalcreds-providers --project=broad-dsde-dev | jq -r '.era_commons_client_id')"
-      echo export ERA_COMMONS_CLIENT_SECRET="$(gcloud secrets versions access latest --secret=externalcreds-providers --project=broad-dsde-dev | jq -r '.era_commons_client_secret')"
+      echo export RAS_CLIENT_ID="$(kubectl -n terra-$ENV get secret externalcreds-providers -o 'go-template={{index .data "ras-client-id"}}' | base64 -d)"
+      echo export RAS_CLIENT_SECRET="$(kubectl -n terra-$ENV get secret externalcreds-providers -o 'go-template={{index .data "ras-client-secret"}}' | base64 -d)"
   fi
 
-  echo export GITHUB_CLIENT_ID="$(gcloud secrets versions access latest --secret=externalcreds-providers --project=broad-dsde-dev | jq -r '.github_client_id')"
-  echo export GITHUB_CLIENT_SECRET="$(gcloud secrets versions access latest --secret=externalcreds-providers --project=broad-dsde-dev | jq -r '.github_client_secret')"
-  echo export ANVIL_CLIENT_ID="$(gcloud secrets versions access latest --secret=externalcreds-fence --project=broad-dsde-dev | jq -r '."anvil-client-id"')"
-  echo export ANVIL_CLIENT_SECRET="$(gcloud secrets versions access latest --secret=externalcreds-fence --project=broad-dsde-dev | jq -r '."anvil-client-secret"')"
-  echo export FENCE_CLIENT_ID="$(gcloud secrets versions access latest --secret=externalcreds-fence --project=broad-dsde-dev | jq -r '."client-id"')"
-  echo export FENCE_CLIENT_SECRET="$(gcloud secrets versions access latest --secret=externalcreds-fence --project=broad-dsde-dev | jq -r '."client-secret"')"
-  echo export DCF_FENCE_CLIENT_ID="$(gcloud secrets versions access latest --secret=externalcreds-fence --project=broad-dsde-dev | jq -r '."dcf-fence-client-id"')"
-  echo export DCF_FENCE_CLIENT_SECRET="$(gcloud secrets versions access latest --secret=externalcreds-fence --project=broad-dsde-dev | jq -r '."dcf-fence-client-secret"')"
-  echo export KIDS_FIRST_CLIENT_ID="$(gcloud secrets versions access latest --secret=externalcreds-fence --project=broad-dsde-dev | jq -r '."kids-first-client-id"')"
-  echo export KIDS_FIRST_CLIENT_SECRET="$(gcloud secrets versions access latest --secret=externalcreds-fence --project=broad-dsde-dev | jq -r '."kids-first-client-secret"')"
+  echo export GITHUB_CLIENT_ID="$(kubectl -n terra-$ENV get secret externalcreds-providers -o 'go-template={{index .data "github-client-id"}}' | base64 -d)"
+  echo export GITHUB_CLIENT_SECRET="$(kubectl -n terra-$ENV get secret externalcreds-providers -o 'go-template={{index .data "github-client-secret"}}' | base64 -d)"
+  echo export ANVIL_CLIENT_ID="$(kubectl -n terra-$ENV get secret externalcreds-fence -o 'go-template={{index .data "anvil-client-id"}}' | base64 -d)"
+  echo export ANVIL_CLIENT_SECRET="$(kubectl -n terra-$ENV get secret externalcreds-fence -o 'go-template={{index .data "anvil-client-secret"}}' | base64 -d)"
+  echo export FENCE_CLIENT_ID="$(kubectl -n terra-$ENV get secret externalcreds-fence -o 'go-template={{index .data "fence-client-id"}}' | base64 -d)"
+  echo export FENCE_CLIENT_SECRET="$(kubectl -n terra-$ENV get secret externalcreds-fence -o 'go-template={{index .data "fence-client-secret"}}' | base64 -d)"
+  echo export DCF_FENCE_CLIENT_ID="$(kubectl -n terra-$ENV get secret externalcreds-fence -o 'go-template={{index .data "dcf-fence-client-id"}}' | base64 -d)"
+  echo export DCF_FENCE_CLIENT_SECRET="$(kubectl -n terra-$ENV get secret externalcreds-fence -o 'go-template={{index .data "dcf-fence-client-secret"}}' | base64 -d)"
+  echo export KIDS_FIRST_CLIENT_ID="$(kubectl -n terra-$ENV get secret externalcreds-fence -o 'go-template={{index .data "kids-first-client-id"}}' | base64 -d)"
+  echo export KIDS_FIRST_CLIENT_SECRET="$(kubectl -n terra-$ENV get secret externalcreds-fence -o 'go-template={{index .data "kids-first-client-secret"}}' | base64 -d)"
 
   echo export DEPLOY_ENV=$ENV
   echo export SAM_ADDRESS=https://sam.dsde-${ENV}.broadinstitute.org
