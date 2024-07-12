@@ -37,7 +37,8 @@ public class NihAccountDAO {
   @WithSpan
   public Optional<NihAccount> getNihAccount(String userId) {
     var namedParameters = new MapSqlParameterSource().addValue("userId", userId);
-    var query = "SELECT * FROM nih_account WHERE user_id = :userId";
+    var query =
+        "SELECT na.id, na.user_id, na.nih_username, na.expires FROM nih_account na WHERE na.user_id = :userId";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, NIH_ACCOUNT_ROW_MAPPER)));
@@ -46,7 +47,8 @@ public class NihAccountDAO {
   @WithSpan
   public Optional<NihAccount> getNihAccountForUsername(String nihUsername) {
     var namedParameters = new MapSqlParameterSource().addValue("nihUsername", nihUsername);
-    var query = "SELECT * FROM nih_account WHERE nih_username = :nihUsername";
+    var query =
+        "SELECT na.id, na.user_id, na.nih_username, na.expires FROM nih_account na WHERE na.nih_username = :nihUsername";
     return Optional.ofNullable(
         DataAccessUtils.singleResult(
             jdbcTemplate.query(query, namedParameters, NIH_ACCOUNT_ROW_MAPPER)));
@@ -57,8 +59,9 @@ public class NihAccountDAO {
     var namedParameters =
         new MapSqlParameterSource("expirationCutoff", Timestamp.from(Instant.now()));
     var query =
-        "SELECT DISTINCT na.* FROM nih_account na"
-            + " WHERE na.expires < :expirationCutoff ORDER BY id asc";
+        "SELECT na.id, na.user_id, na.nih_username, na.expires FROM nih_account na"
+            + " WHERE na.expires < :expirationCutoff"
+            + " ORDER BY na.id asc";
     return jdbcTemplate.query(query, namedParameters, NIH_ACCOUNT_ROW_MAPPER);
   }
 
@@ -67,8 +70,9 @@ public class NihAccountDAO {
     var namedParameters =
         new MapSqlParameterSource("expirationCutoff", Timestamp.from(Instant.now()));
     var query =
-        "SELECT DISTINCT na.* FROM nih_account na"
-            + " WHERE na.expires > :expirationCutoff ORDER BY id asc";
+        "SELECT na.id, na.user_id, na.nih_username, na.expires FROM nih_account na"
+            + " WHERE na.expires > :expirationCutoff"
+            + " ORDER BY na.id asc";
     return jdbcTemplate.query(query, namedParameters, NIH_ACCOUNT_ROW_MAPPER);
   }
 
@@ -102,7 +106,7 @@ public class NihAccountDAO {
    */
   @WithSpan
   public boolean deleteNihAccountIfExists(String userId) {
-    var query = "DELETE FROM nih_account WHERE user_id = :userId";
+    var query = "DELETE FROM nih_account na WHERE na.user_id = :userId";
     var namedParameters = new MapSqlParameterSource().addValue("userId", userId);
 
     return jdbcTemplate.update(query, namedParameters) > 0;
