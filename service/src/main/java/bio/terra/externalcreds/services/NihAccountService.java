@@ -15,7 +15,7 @@ public class NihAccountService {
 
   private final NihAccountDAO nihAccountDAO;
 
-  public NihAccountService(NihAccountDAO nihAccountDAO, EventPublisher eventPublisher) {
+  public NihAccountService(NihAccountDAO nihAccountDAO) {
     this.nihAccountDAO = nihAccountDAO;
   }
 
