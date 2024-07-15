@@ -40,6 +40,15 @@ class LinkedAccountDAOTest extends BaseTest {
   }
 
   @Test
+  void testAllProvidersEnum() {
+    for (Provider provider : Provider.values()) {
+      // Tests if the provider enum in the DB values agrees with the provider enum in code
+      // If there's a disagreement, an exception will be thrown
+      linkedAccountDAO.getLinkedAccount("", provider);
+    }
+  }
+
+  @Test
   void testGetMissingLinkedAccount() {
     var shouldBeEmpty = linkedAccountDAO.getLinkedAccount("", Provider.GITHUB);
     assertEmpty(shouldBeEmpty);
