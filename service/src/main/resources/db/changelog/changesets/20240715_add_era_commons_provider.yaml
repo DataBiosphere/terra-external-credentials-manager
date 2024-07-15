@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: "20240715_add_era_commons_provider"
+      author: tlangs
+      changes:
+        - sql:
+            sql: >
+              ALTER TYPE provider_enum ADD VALUE 'ERA_COMMONS';
+
