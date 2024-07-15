@@ -409,6 +409,7 @@ components:
       type: string
       enum:
         - ras
+        - era-commons
         - github
         - fence
         - dcf-fence
