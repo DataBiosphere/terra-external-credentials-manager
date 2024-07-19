@@ -175,4 +175,13 @@ public class LinkedAccountService {
   private Optional<VisaComparator> getVisaComparator(GA4GHVisa visa) {
     return visaComparators.stream().filter(c -> c.visaTypeSupported(visa)).findFirst();
   }
+
+  public List<LinkedAccount> getActiveLinkedAccounts(Provider provider) {
+    return linkedAccountDAO.getActiveLinkedAccounts(provider);
+  }
+
+  public Optional<LinkedAccount> getLinkedAccountForExternalId(
+      Provider provider, String externalId) {
+    return linkedAccountDAO.getLinkedAccountForExternalId(provider, externalId);
+  }
 }

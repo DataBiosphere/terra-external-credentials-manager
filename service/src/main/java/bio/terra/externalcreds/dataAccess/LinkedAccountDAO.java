@@ -143,4 +143,34 @@ public class LinkedAccountDAO {
               return rhs;
             });
   }
+
+  public List<LinkedAccount> getActiveLinkedAccounts(Provider provider) {
+    var namedParameters =
+        new MapSqlParameterSource()
+            .addValue("expirationCutoff", new Timestamp(System.currentTimeMillis()))
+            .addValue("provider", provider.name());
+    var query =
+        "SELECT la.id, la.user_id, la.provider, la.refresh_token, la.expires, la.external_user_id, la.is_authenticated"
+            + " FROM linked_account la"
+            + " WHERE la.expires > :expirationCutoff"
+            + " AND la.provider = :provider::provider_enum"
+            + " AND la.is_authenticated = true";
+    return jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER);
+  }
+
+  public Optional<LinkedAccount> getLinkedAccountForExternalId(
+      Provider provider, String externalId) {
+    var namedParameters =
+        new MapSqlParameterSource()
+            .addValue("externalUserId", externalId)
+            .addValue("provider", provider.name());
+    var query =
+        "SELECT la.id, la.user_id, la.provider, la.refresh_token, la.expires, la.external_user_id, la.is_authenticated"
+            + " FROM linked_account la"
+            + " WHERE external_user_id = :externalUserId"
+            + " AND provider = :provider::provider_enum";
+    return Optional.ofNullable(
+        DataAccessUtils.singleResult(
+            jdbcTemplate.query(query, namedParameters, LINKED_ACCOUNT_ROW_MAPPER)));
+  }
 }

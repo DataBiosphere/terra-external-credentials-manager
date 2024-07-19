@@ -2,6 +2,7 @@ package bio.terra.externalcreds.controllers;
 
 import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.ExternalCredsException;
+import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
 import bio.terra.externalcreds.generated.model.OneOfValidatePassportResultMatchedCriterion;
@@ -70,6 +71,13 @@ public class OpenApiConverters {
           .externalUserId(linkedAccount.getExternalUserId())
           .expirationTimestamp(linkedAccount.getExpires())
           .authenticated(linkedAccount.isAuthenticated());
+    }
+
+    public static AdminLinkInfo convertAdmin(LinkedAccount linkedAccount) {
+      return new AdminLinkInfo()
+          .linkedExternalId(linkedAccount.getExternalUserId())
+          .linkExpireTime(linkedAccount.getExpires())
+          .userId(linkedAccount.getUserId());
     }
   }
 }

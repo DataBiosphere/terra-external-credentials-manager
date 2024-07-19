@@ -4,6 +4,48 @@ info:
   description: A manager for external credentials
   version: 0.0.1
 paths:
+  /api/admin/{provider}/v1/userForExternalId/{externalId}:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+      - $ref: '#/components/parameters/externalIdParam'
+    get:
+      summary: Get the Linked Account for the External ID
+      tags: [ admin ]
+      operationId: getLinkedAccountForExternalId
+      responses:
+        '200':
+          description: The Linked Account for the External ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminLinkInfo'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '404':
+          description: User not found for the External ID
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/admin/{provider}/v1/activeAccounts:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+    get:
+      summary: Get all active linked accounts for a provider
+      tags: [ admin ]
+      operationId: getActiveLinkedAccounts
+      responses:
+        '200':
+          description: All Linked Accounts for a given provider
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminLinkInfo'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
   /api/oauth/v1/providers:
     get:
       summary: Lists the available OAuth providers.
@@ -318,6 +360,12 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/Provider'
+    externalIdParam:
+      name: externalId
+      in: path
+      required: true
+      schema:
+        type: string
     userIdParam:
       name: userId
       description: the Sam User Id for a user
@@ -399,6 +447,18 @@ components:
             $ref: '#/components/schemas/ErrorReport'
 
   schemas:
+    AdminLinkInfo:
+        type: object
+        description: Linked Account for a user
+        required: [ userId, linkedExternalId, linkExpireTime ]
+        properties:
+            userId:
+              type: string
+            linkedExternalId:
+              type: string
+            linkExpireTime:
+              type: string
+              format: date-time
     PassportProvider:
       description: Enum containing valid passport providers.
       type: string
