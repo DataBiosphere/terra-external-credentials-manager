@@ -4,7 +4,29 @@ info:
   description: A manager for external credentials
   version: 0.0.1
 paths:
-  /api/admin/{provider}/v1/userForExternalId/{externalId}:
+  /api/admin/v1/{provider}:
+    parameters:
+      - $ref: '#/components/parameters/providerParam'
+    put:
+      summary: Link a user to an external account with a fake refresh token
+      tags: [ admin ]
+      operationId: putLinkedAccountWithFakeToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminLinkInfo'
+        required: true
+      responses:
+        '204':
+          description: Linked Account Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/admin/v1/{provider}/userForExternalId/{externalId}:
     parameters:
       - $ref: '#/components/parameters/providerParam'
       - $ref: '#/components/parameters/externalIdParam'
@@ -25,7 +47,7 @@ paths:
           description: User not found for the External ID
         '500':
           $ref: '#/components/responses/ServerError'
-  /api/admin/{provider}/v1/activeAccounts:
+  /api/admin/v1/{provider}/activeAccounts:
     parameters:
       - $ref: '#/components/parameters/providerParam'
     get:

@@ -36,8 +36,7 @@ public class ProviderOAuthClientCache {
 
     ClientRegistration.Builder builder =
         switch (provider) {
-          case RAS, ERA_COMMONS -> ClientRegistrations.fromOidcIssuerLocation(
-                  providerInfo.getIssuer())
+          case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
               .clientId(providerInfo.getClientId())
               .clientSecret(providerInfo.getClientSecret())
               .issuerUri(providerInfo.getIssuer());
@@ -61,6 +60,8 @@ public class ProviderOAuthClientCache {
               .clientSecret(providerInfo.getClientSecret())
               .issuerUri(providerInfo.getIssuer())
               .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS);
+          case ERA_COMMONS -> throw new UnsupportedOperationException(
+              "eRA Commons does not support OAuth (yet)");
         };
 
     // set optional overrides
