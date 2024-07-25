@@ -2,6 +2,7 @@ package bio.terra.externalcreds.controllers;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -62,6 +63,24 @@ class AdminApiControllerTest extends BaseTest {
     }
 
     @Test
+    void testPutLinkedAccountWithFakeTokenAdminNotEraCommons() throws Exception {
+      var accessToken = mockAdminSamUser();
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.GITHUB);
+      var inputAdminLinkInfo =
+          new AdminLinkInfo()
+              .linkedExternalId(inputLinkedAccount.getExternalUserId())
+              .linkExpireTime(inputLinkedAccount.getExpires())
+              .userId(inputLinkedAccount.getUserId());
+
+      mvc.perform(
+              put("/api/admin/v1/" + Provider.GITHUB)
+                  .header("authorization", "Bearer " + accessToken)
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(mapper.writeValueAsString(inputAdminLinkInfo)))
+          .andExpect(status().isForbidden());
+    }
+
+    @Test
     void testPutLinkedAccountWithFakeTokenNonAdmin() throws Exception {
       var accessToken = mockSamUser("userId");
       var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.ERA_COMMONS);
@@ -76,6 +95,56 @@ class AdminApiControllerTest extends BaseTest {
                   .header("authorization", "Bearer " + accessToken)
                   .contentType(MediaType.APPLICATION_JSON)
                   .content(mapper.writeValueAsString(inputAdminLinkInfo)))
+          .andExpect(status().isForbidden());
+    }
+  }
+
+  @Nested
+  class AdminDeleteLinkedAccount {
+    @Test
+    void testAdminLinkedAccountAdmin() throws Exception {
+      var accessToken = mockAdminSamUser();
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.ERA_COMMONS);
+
+      when(linkedAccountService.deleteLinkedAccount(
+              inputLinkedAccount.getUserId(), Provider.ERA_COMMONS))
+          .thenReturn(true);
+
+      mvc.perform(
+              delete("/api/admin/v1/" + Provider.ERA_COMMONS)
+                  .header("authorization", "Bearer " + accessToken)
+                  .contentType(MediaType.TEXT_PLAIN)
+                  .content(inputLinkedAccount.getUserId()))
+          .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void testAdminLinkedAccountAdminNotFound() throws Exception {
+      var accessToken = mockAdminSamUser();
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.ERA_COMMONS);
+
+      when(linkedAccountService.deleteLinkedAccount(
+              inputLinkedAccount.getUserId(), Provider.ERA_COMMONS))
+          .thenReturn(false);
+
+      mvc.perform(
+              delete("/api/admin/v1/" + Provider.ERA_COMMONS)
+                  .header("authorization", "Bearer " + accessToken)
+                  .contentType(MediaType.TEXT_PLAIN)
+                  .content(inputLinkedAccount.getUserId()))
+          .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testPutLinkedAccountWithFakeTokenNonAdmin() throws Exception {
+      var accessToken = mockSamUser("userId");
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.ERA_COMMONS);
+
+      mvc.perform(
+              delete("/api/admin/v1/" + Provider.ERA_COMMONS)
+                  .header("authorization", "Bearer " + accessToken)
+                  .contentType(MediaType.TEXT_PLAIN)
+                  .content(inputLinkedAccount.getUserId()))
           .andExpect(status().isForbidden());
     }
   }

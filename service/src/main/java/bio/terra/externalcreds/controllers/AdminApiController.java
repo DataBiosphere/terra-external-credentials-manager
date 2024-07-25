@@ -27,6 +27,7 @@ public record AdminApiController(
   public ResponseEntity<Void> putLinkedAccountWithFakeToken(
       Provider provider, AdminLinkInfo adminLinkInfo) {
     requireAdmin();
+    requireEraCommons(provider);
     var linkedAccount =
         new LinkedAccount.Builder()
             .isAuthenticated(true)
@@ -37,6 +38,16 @@ public record AdminApiController(
             .expires(Timestamp.from(adminLinkInfo.getLinkExpireTime().toInstant()))
             .build();
     linkedAccountService.upsertLinkedAccount(linkedAccount);
+    return ResponseEntity.noContent().build();
+  }
+
+  @Override
+  public ResponseEntity<Void> adminDeleteLinkedAccount(Provider provider, String userId) {
+    requireAdmin();
+    var deleted = linkedAccountService.deleteLinkedAccount(userId, provider);
+    if (!deleted) {
+      return ResponseEntity.notFound().build();
+    }
     return ResponseEntity.noContent().build();
   }
 
@@ -60,6 +71,12 @@ public record AdminApiController(
     var samUser = samUserFactory.from(request);
     if (!externalCredsConfig.getAuthorizedAdmins().contains(samUser.getEmail())) {
       throw new ForbiddenException("Admin permissions required");
+    }
+  }
+
+  private void requireEraCommons(Provider provider) {
+    if (provider != Provider.ERA_COMMONS) {
+      throw new ForbiddenException("Only eRA Commons is supported");
     }
   }
 }
