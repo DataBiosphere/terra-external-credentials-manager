@@ -5,9 +5,11 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.api.AdminApi;
 import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import java.sql.Timestamp;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -20,6 +22,23 @@ public record AdminApiController(
     ExternalCredsSamUserFactory samUserFactory,
     ExternalCredsConfig externalCredsConfig)
     implements AdminApi {
+
+  @Override
+  public ResponseEntity<Void> putLinkedAccountWithFakeToken(
+      Provider provider, AdminLinkInfo adminLinkInfo) {
+    requireAdmin();
+    var linkedAccount =
+        new LinkedAccount.Builder()
+            .isAuthenticated(true)
+            .provider(provider)
+            .userId(adminLinkInfo.getUserId())
+            .refreshToken("fake-refresh-token")
+            .externalUserId(adminLinkInfo.getLinkedExternalId())
+            .expires(Timestamp.from(adminLinkInfo.getLinkExpireTime().toInstant()))
+            .build();
+    linkedAccountService.upsertLinkedAccount(linkedAccount);
+    return ResponseEntity.noContent().build();
+  }
 
   @Override
   public ResponseEntity<List<AdminLinkInfo>> getActiveLinkedAccounts(Provider provider) {

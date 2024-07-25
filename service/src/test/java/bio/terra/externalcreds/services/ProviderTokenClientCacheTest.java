@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import bio.terra.externalcreds.BaseTest;
@@ -94,14 +95,9 @@ class ProviderTokenClientCacheTest extends BaseTest {
                   .withContentType(MediaType.APPLICATION_JSON)
                   .withBody(ProviderTestUtil.wellKnownResponse(url)));
 
-      var providerInfo = externalCredsConfig.getProviderProperties(provider);
-
-      ClientRegistration eraCommonsClient = providerTokenClientCache.getProviderClient(provider);
-
-      assertEquals(
-          AuthorizationGrantType.AUTHORIZATION_CODE, eraCommonsClient.getAuthorizationGrantType());
-      assertEquals(providerInfo.getClientId(), eraCommonsClient.getClientId());
-      assertEquals(providerInfo.getClientSecret(), eraCommonsClient.getClientSecret());
+      assertThrows(
+          UnsupportedOperationException.class,
+          () -> providerTokenClientCache.getProviderClient(provider));
     }
   }
 

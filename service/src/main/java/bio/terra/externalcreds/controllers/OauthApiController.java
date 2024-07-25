@@ -89,7 +89,7 @@ public record OauthApiController(
               yield OpenApiConverters.Output.convert(
                   linkedAccountWithPassportAndVisas.getLinkedAccount());
             }
-            case GITHUB, ERA_COMMONS -> {
+            case GITHUB -> {
               var linkedAccount =
                   tokenProviderService.createLink(
                       provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
@@ -101,6 +101,8 @@ public record OauthApiController(
                       provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
               yield OpenApiConverters.Output.convert(linkedAccount);
             }
+            case ERA_COMMONS -> throw new UnsupportedOperationException(
+                "eRA Commons is not supported for link creation (yet)");
           };
       return ResponseEntity.ok(linkInfo);
     } catch (Exception e) {
