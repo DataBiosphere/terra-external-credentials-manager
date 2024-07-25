@@ -8,7 +8,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/providerParam'
     put:
-      summary: Link a user to an external account with a fake refresh token
+      summary: Link a user to an external account with a fake refresh token. For eRA Commons only.
       tags: [ admin ]
       operationId: putLinkedAccountWithFakeToken
       requestBody:
@@ -26,6 +26,28 @@ paths:
           $ref: '#/components/responses/PermissionDenied'
         '500':
           $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Unlink a user from an external account
+      tags: [ admin ]
+      operationId: adminDeleteLinkedAccount
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+              description: The Sam User Id for a user
+
+        required: true
+      responses:
+        '204':
+          description: Linked Account Deleted
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
   /api/admin/v1/{provider}/userForExternalId/{externalId}:
     parameters:
       - $ref: '#/components/parameters/providerParam'
