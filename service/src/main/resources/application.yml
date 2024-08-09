@@ -14,6 +14,7 @@ externalcreds:
   access-token-expiration-buffer: 5m
   authorized-admins:
     - ${FIRECLOUD_ACCOUNT_EMAIL:firecloud-dev@broad-dsde-dev.iam.gserviceaccount.com}
+  era-commons-linking-enabled: true
 
 logging:
   level.bio.terra.externalcreds: ${EXTERNALCREDS_LOG_LEVEL:debug}
@@ -112,3 +113,5 @@ sentry:
   dsn: "https://7faae828388bc09ba384f7b290dbcbf3@o54426.ingest.us.sentry.io/4507097154322432"
   environment: production
   logging.minimum-breadcrumb-level: info
+externalcreds:
+  era-commons-linking-enabled: false
