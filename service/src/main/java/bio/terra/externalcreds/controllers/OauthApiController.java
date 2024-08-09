@@ -3,6 +3,7 @@ package bio.terra.externalcreds.controllers;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.api.OauthApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
@@ -25,7 +26,8 @@ public record OauthApiController(
     PassportProviderService passportProviderService,
     TokenProviderService tokenProviderService,
     FenceProviderService fenceProviderService,
-    ExternalCredsSamUserFactory samUserFactory)
+    ExternalCredsSamUserFactory samUserFactory,
+    ExternalCredsConfig externalCredsConfig)
     implements OauthApi {
 
   @Override
@@ -101,8 +103,17 @@ public record OauthApiController(
                       provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
               yield OpenApiConverters.Output.convert(linkedAccount);
             }
-            case ERA_COMMONS -> throw new UnsupportedOperationException(
-                "eRA Commons is not supported for link creation (yet)");
+            case ERA_COMMONS -> {
+              if (externalCredsConfig.getEraCommonsLinkingEnabled()) {
+                var linkedAccount =
+                    tokenProviderService.createLink(
+                        provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
+                yield OpenApiConverters.Output.convert(linkedAccount);
+              } else {
+                throw new UnsupportedOperationException(
+                    "eRA Commons is not supported for link creation (yet)");
+              }
+            }
           };
       return ResponseEntity.ok(linkInfo);
     } catch (Exception e) {

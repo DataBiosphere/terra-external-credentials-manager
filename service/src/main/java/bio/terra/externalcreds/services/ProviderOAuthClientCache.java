@@ -60,8 +60,16 @@ public class ProviderOAuthClientCache {
               .clientSecret(providerInfo.getClientSecret())
               .issuerUri(providerInfo.getIssuer())
               .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS);
-          case ERA_COMMONS -> throw new UnsupportedOperationException(
-              "eRA Commons does not support OAuth (yet)");
+          case ERA_COMMONS -> {
+            if (externalCredsConfig.getEraCommonsLinkingEnabled()) {
+              yield ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+                  .clientId(providerInfo.getClientId())
+                  .clientSecret(providerInfo.getClientSecret())
+                  .issuerUri(providerInfo.getIssuer());
+            } else {
+              throw new UnsupportedOperationException("eRA Commons does not support OAuth (yet)");
+            }
+          }
         };
 
     // set optional overrides
