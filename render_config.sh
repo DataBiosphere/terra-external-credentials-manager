@@ -54,7 +54,7 @@ fi
   echo export SAM_ADDRESS=https://sam.dsde-${ENV}.broadinstitute.org
 } >> "${SECRET_ENV_VARS_LOCATION}"
 
-$VAULT_COMMAND -field=swagger-client-id "$ECM_VAULT_PATH/swagger-client-id" >"$SERVICE_OUTPUT_LOCATION/swagger-client-id"
+gcloud secrets versions access latest --secret=externalcreds-swagger-client-id --project=broad-dsde-dev | jq -r '."swagger-client-id"' >"$SERVICE_OUTPUT_LOCATION/swagger-client-id"
 
 $VAULT_COMMAND -field=data -format=json "secret/dsde/firecloud/$ENV/common/firecloud-account.json" >"$INTEGRATION_OUTPUT_LOCATION/user-delegated-sa.json"
 
