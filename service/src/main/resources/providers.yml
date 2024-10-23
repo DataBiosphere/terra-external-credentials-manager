@@ -97,7 +97,9 @@ externalcreds:
                                     "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/ecm-callback",
                                     "https://terra.dsde-dev.broadinstitute.org/ecm-callback" ]
     era-commons:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback",
+                                    "https://localhost.dsde-dev.broadinstitute.org/",
+                                    "https://duos-k8s.dsde-dev.broadinstitute.org/"]
     github:
       allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/oauth_callback",
                                     "http://localhost:3000/oauth_callback",
@@ -135,7 +137,8 @@ externalcreds:
     ras:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback" ]
     era-commons:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback" ]
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback",
+                                    "https://duos-k8s.dsde-staging.broadinstitute.org/" ]
     github:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/oauth_callback" ]
     fence:
