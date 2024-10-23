@@ -96,6 +96,11 @@ public class ProviderService {
   }
 
   public String getProviderAuthorizationUrl(String userId, Provider provider, String redirectUri) {
+    return getProviderAuthorizationUrl(userId, provider, redirectUri, null);
+  }
+
+  public String getProviderAuthorizationUrl(
+      String userId, Provider provider, String redirectUri, Object additionalState) {
     var providerClient = providerOAuthClientCache.getProviderClient(provider);
 
     var providerInfo = externalCredsConfig.getProviderProperties(provider);
@@ -110,6 +115,7 @@ public class ProviderService {
             .provider(provider)
             .random(OAuth2State.generateRandomState(secureRandom))
             .redirectUri(redirectUri)
+            .additionalState(additionalState)
             .build();
     linkedAccountService.upsertOAuth2State(userId, oAuth2State);
 
