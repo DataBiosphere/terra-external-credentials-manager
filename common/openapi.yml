@@ -136,6 +136,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/providerParam'
       - $ref: '#/components/parameters/redirectUriParam'
+      - $ref: '#/components/parameters/additionalStateParam'
     get:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
       tags: [ oauth ]
@@ -246,6 +247,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/providerParam'
       - $ref: '#/components/parameters/redirectUriParam'
+      - $ref: '#/components/parameters/additionalStateParam'
     get:
       summary: Builds an OAuth authorization URL that a user must use to initiate the OAuth dance.
       tags: [ oidc ]
@@ -425,6 +427,15 @@ components:
       example: "http://localhost:9000/fence-callback"
       schema:
         type: string
+    additionalStateParam:
+      name: additionalState
+      description: Information to include in the oidc authorization state in the form of key/value pairs
+      in: query
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
     stateParam:
       name: state
       description: oidc authorization state, must be identical to state embedded in response from getAuthUrl

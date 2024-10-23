@@ -46,11 +46,13 @@ public record OauthApiController(
   }
 
   @Override
-  public ResponseEntity<String> getAuthorizationUrl(Provider provider, String redirectUri) {
+  public ResponseEntity<String> getAuthorizationUrl(
+      Provider provider, String redirectUri, Object additionalState) {
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(samUser.getSubjectId(), provider, redirectUri);
+        providerService.getProviderAuthorizationUrl(
+            samUser.getSubjectId(), provider, redirectUri, additionalState);
 
     return ResponseEntity.ok(authorizationUrl);
   }
