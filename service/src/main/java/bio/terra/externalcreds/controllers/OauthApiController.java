@@ -117,6 +117,11 @@ public record OauthApiController(
               }
             }
           };
+
+      Object additionalState = providerService.getAdditionalStateParams(state);
+      if (additionalState != null) {
+        linkInfo.additionalState(additionalState);
+      }
       return ResponseEntity.ok(linkInfo);
     } catch (Exception e) {
       auditLogger.logEvent(

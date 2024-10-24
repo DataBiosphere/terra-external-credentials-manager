@@ -541,6 +541,8 @@ components:
           format: date-time
         authenticated:
           type: boolean
+        additionalState:
+          type: object
     ErrorReport:
       type: object
       required: [ message, statusCode ]
