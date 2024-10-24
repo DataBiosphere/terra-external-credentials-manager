@@ -46,11 +46,13 @@ public record OauthApiController(
   }
 
   @Override
-  public ResponseEntity<String> getAuthorizationUrl(Provider provider, String redirectUri) {
+  public ResponseEntity<String> getAuthorizationUrl(
+      Provider provider, String redirectUri, Object additionalState) {
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(samUser.getSubjectId(), provider, redirectUri);
+        providerService.getProviderAuthorizationUrl(
+            samUser.getSubjectId(), provider, redirectUri, additionalState);
 
     return ResponseEntity.ok(authorizationUrl);
   }
@@ -115,6 +117,11 @@ public record OauthApiController(
               }
             }
           };
+
+      Object additionalState = providerService.getAdditionalStateParams(state);
+      if (additionalState != null) {
+        linkInfo.additionalState(additionalState);
+      }
       return ResponseEntity.ok(linkInfo);
     } catch (Exception e) {
       auditLogger.logEvent(

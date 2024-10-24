@@ -96,6 +96,11 @@ public class ProviderService {
   }
 
   public String getProviderAuthorizationUrl(String userId, Provider provider, String redirectUri) {
+    return getProviderAuthorizationUrl(userId, provider, redirectUri, null);
+  }
+
+  public String getProviderAuthorizationUrl(
+      String userId, Provider provider, String redirectUri, Object additionalState) {
     var providerClient = providerOAuthClientCache.getProviderClient(provider);
 
     var providerInfo = externalCredsConfig.getProviderProperties(provider);
@@ -105,12 +110,16 @@ public class ProviderService {
     // oAuth2State is used to prevent CRSF attacks
     // see https://auth0.com/docs/secure/attack-protection/state-parameters
     // a random value is generated and stored here then validated in createLink below
-    var oAuth2State =
+    var oAuth2StateBuilder =
         new OAuth2State.Builder()
             .provider(provider)
             .random(OAuth2State.generateRandomState(secureRandom))
-            .redirectUri(redirectUri)
-            .build();
+            .redirectUri(redirectUri);
+    if (additionalState != null) {
+      oAuth2StateBuilder.additionalState(additionalState);
+    }
+    var oAuth2State = oAuth2StateBuilder.build();
+
     linkedAccountService.upsertOAuth2State(userId, oAuth2State);
 
     return oAuth2Service.getAuthorizationRequestUri(
@@ -139,6 +148,11 @@ public class ProviderService {
     } catch (CannotDecodeOAuth2State e) {
       throw new InvalidOAuth2State(e);
     }
+  }
+
+  public Object getAdditionalStateParams(String state) {
+    OAuth2State decodedState = OAuth2State.decode(objectMapper, state);
+    return decodedState.getAdditionalState();
   }
 
   protected ImmutablePair<LinkedAccount, OAuth2User> createLinkedAccount(
