@@ -69,6 +69,11 @@ spring:
   application.name: externalcreds
   application.version: ${externalcreds.version.gitHash:unknown}
 
+  cloud:
+    gcp:
+      secretmanager:
+        enabled: false
+
   config.import: classpath:providers.yml,optional:classpath:rendered/version.properties;optional:classpath:rendered/allowed_jwks.yaml;optional:classpath:rendered/allowed_jwt_issuers.yaml
 
   datasource:
