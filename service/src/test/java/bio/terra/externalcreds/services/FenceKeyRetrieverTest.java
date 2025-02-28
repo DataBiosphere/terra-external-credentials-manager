@@ -30,7 +30,6 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -38,14 +37,15 @@ import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 class FenceKeyRetrieverTest extends BaseTest {
 
   @Autowired private FenceKeyRetriever fenceKeyRetriever;
   @Autowired private LinkedAccountService linkedAccountService;
 
-  @SpyBean private DistributedLockDAO distributedLockDAO;
-  @SpyBean private FenceAccountKeyService fenceAccountKeyService;
+  @MockitoSpyBean private DistributedLockDAO distributedLockDAO;
+  @MockitoSpyBean private FenceAccountKeyService fenceAccountKeyService;
 
   @MockitoBean private ExternalCredsConfig externalCredsConfig;
   @MockitoBean private ProviderOAuthClientCache providerOAuthClientCache;
