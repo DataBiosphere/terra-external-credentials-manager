@@ -15,8 +15,14 @@ jacocoTestReport {
 }
 
 spotbugs {
-	reportLevel = 'high'
-	effort = 'max'
+	// using a classloader here is ugly, but is the consensus solution from
+	// https://github.com/spotbugs/spotbugs-gradle-plugin/issues/972
+	def classLoader = plugins["com.github.spotbugs"].class.classLoader
+	def SpotBugsConfidence = classLoader.findLoadedClass("com.github.spotbugs.snom.Confidence")
+	def SpotBugsEffort = classLoader.findLoadedClass("com.github.spotbugs.snom.Effort")
+
+	reportLevel = SpotBugsConfidence.HIGH
+	effort = SpotBugsEffort.MAX
 	reportsDir = file("${project.reporting.baseDir}/spotbugs")
 	excludeFilter = file('../common/spotbugsExclude.xml')
 }
