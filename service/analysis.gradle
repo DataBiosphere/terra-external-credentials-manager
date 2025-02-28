@@ -15,8 +15,8 @@ jacocoTestReport {
 }
 
 spotbugs {
-	reportLevel = 'high'
-	effort = 'max'
+	reportLevel = "HIGH"
+	effort = "MAX"
 	reportsDir = file("${project.reporting.baseDir}/spotbugs")
 	excludeFilter = file('../common/spotbugsExclude.xml')
 }
