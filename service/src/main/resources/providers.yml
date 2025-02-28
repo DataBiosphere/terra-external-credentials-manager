@@ -76,6 +76,7 @@ externalcreds:
       revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
       userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
+      additionalAuthorizationParameters: { "prompt": "login" }
     era-commons:
       clientId: "${ERA_COMMONS_CLIENT_ID}"
       clientSecret: "${ERA_COMMONS_CLIENT_SECRET}"
@@ -85,6 +86,7 @@ externalcreds:
       issuer: "https://stsstg.nih.gov"
       revokeEndpoint: "${externalcreds.providers.era-commons.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
       userInfoEndpoint: "${externalcreds.providers.era-commons.issuer}/openid/connect/v1.1/userinfo"
+      additionalAuthorizationParameters: { "prompt": "login" }
 
 ---
 spring.config.activate.on-profile: 'dev'
