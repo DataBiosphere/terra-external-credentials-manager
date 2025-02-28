@@ -10,13 +10,13 @@ import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.generated.model.SubsystemStatusDetail;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class StatusServiceTest extends BaseTest {
 
   @Autowired private StatusService statusService;
-  @MockBean private StatusServiceCache statusServiceCache;
-  @MockBean private StatusDAO statusDAO;
+  @MockitoBean private StatusServiceCache statusServiceCache;
+  @MockitoBean private StatusDAO statusDAO;
 
   @Test
   void testgetSystemStatusDetail() {

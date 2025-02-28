@@ -15,15 +15,15 @@ import org.broadinstitute.dsde.workbench.client.sam.model.SystemStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class StatusServiceCacheTest extends BaseTest {
 
   @Autowired private StatusServiceCache statusServiceCache;
 
-  @MockBean private ProviderOAuthClientCache providerOAuthClientCache;
-  @MockBean private SamStatusDAO samStatusDAO;
+  @MockitoBean private ProviderOAuthClientCache providerOAuthClientCache;
+  @MockitoBean private SamStatusDAO samStatusDAO;
 
   @BeforeEach
   void setUp() {

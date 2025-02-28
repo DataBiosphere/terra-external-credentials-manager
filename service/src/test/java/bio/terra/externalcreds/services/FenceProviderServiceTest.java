@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -34,17 +33,18 @@ import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class FenceProviderServiceTest extends BaseTest {
 
   @Autowired private FenceProviderService fenceProviderService;
   @Autowired private ObjectMapper objectMapper;
 
-  @MockBean private LinkedAccountService linkedAccountService;
-  @MockBean private FenceAccountKeyService fenceAccountKeyService;
-  @MockBean private ProviderOAuthClientCache providerOAuthClientCache;
-  @MockBean private OAuth2Service oAuth2Service;
-  @MockBean private ExternalCredsConfig externalCredsConfig;
+  @MockitoBean private LinkedAccountService linkedAccountService;
+  @MockitoBean private FenceAccountKeyService fenceAccountKeyService;
+  @MockitoBean private ProviderOAuthClientCache providerOAuthClientCache;
+  @MockitoBean private OAuth2Service oAuth2Service;
+  @MockitoBean private ExternalCredsConfig externalCredsConfig;
 
   private static final Random random = new Random();
 

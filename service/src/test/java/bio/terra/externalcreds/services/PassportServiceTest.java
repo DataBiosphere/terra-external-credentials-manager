@@ -44,9 +44,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class PassportServiceTest extends BaseTest {
   private static final JwtSigningTestUtils jwtSigningTestUtils = new JwtSigningTestUtils();
@@ -110,8 +110,8 @@ class PassportServiceTest extends BaseTest {
     @Autowired LinkedAccountService linkedAccountService;
     @Autowired ObjectMapper objectMapper;
 
-    @MockBean ExternalCredsConfig externalCredsConfigMock;
-    @MockBean ProviderOAuthClientCache providerOAuthClientCacheMock;
+    @MockitoBean ExternalCredsConfig externalCredsConfigMock;
+    @MockitoBean ProviderOAuthClientCache providerOAuthClientCacheMock;
 
     @Test
     void testValidPassportMatchingCriteria() throws URISyntaxException {

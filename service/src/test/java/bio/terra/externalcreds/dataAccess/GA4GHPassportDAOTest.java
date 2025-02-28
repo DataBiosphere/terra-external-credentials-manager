@@ -16,8 +16,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class GA4GHPassportDAOTest extends BaseTest {
 
@@ -25,7 +25,7 @@ class GA4GHPassportDAOTest extends BaseTest {
   @Autowired private GA4GHPassportDAO passportDAO;
   @Autowired private GA4GHVisaDAO visaDAO;
 
-  @MockBean private ExternalCredsConfig externalCredsConfig;
+  @MockitoBean private ExternalCredsConfig externalCredsConfig;
 
   @Test
   void testGetMissingPassport() {

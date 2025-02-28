@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
@@ -38,9 +38,9 @@ class AdminApiControllerTest extends BaseTest {
   @Autowired private MockMvc mvc;
   @Autowired private ExternalCredsConfig externalCredsConfig;
 
-  @MockBean private LinkedAccountService linkedAccountService;
-  @MockBean private PassportService passportService;
-  @MockBean private ExternalCredsSamUserFactory samUserFactoryMock;
+  @MockitoBean private LinkedAccountService linkedAccountService;
+  @MockitoBean private PassportService passportService;
+  @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
 
   @Nested
   class PutLinkedAccountWithFakeToken {
