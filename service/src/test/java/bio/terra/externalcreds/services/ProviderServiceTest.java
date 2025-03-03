@@ -58,7 +58,6 @@ import org.mockserver.model.Parameter;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -68,6 +67,7 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 public class ProviderServiceTest extends BaseTest {
 
@@ -78,11 +78,11 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired private ProviderService providerService;
     @Autowired private ObjectMapper objectMapper;
 
-    @MockBean private LinkedAccountService linkedAccountServiceMock;
-    @MockBean private ExternalCredsConfig externalCredsConfigMock;
-    @MockBean private OAuth2Service oAuth2ServiceMock;
-    @MockBean private ProviderOAuthClientCache providerOAuthClientCacheMock;
-    @MockBean private FenceAccountKeyService fenceAccountKeyServiceMock;
+    @MockitoBean private LinkedAccountService linkedAccountServiceMock;
+    @MockitoBean private ExternalCredsConfig externalCredsConfigMock;
+    @MockitoBean private OAuth2Service oAuth2ServiceMock;
+    @MockitoBean private ProviderOAuthClientCache providerOAuthClientCacheMock;
+    @MockitoBean private FenceAccountKeyService fenceAccountKeyServiceMock;
 
     @Test
     void testGetProviders() {
@@ -370,10 +370,10 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired private LinkedAccountDAO linkedAccountDAO;
     @Autowired private GA4GHVisaDAO visaDAO;
 
-    @MockBean private ExternalCredsConfig externalCredsConfigMock;
-    @MockBean private ProviderOAuthClientCache providerOAuthClientCacheMock;
-    @MockBean private OAuth2Service oAuth2ServiceMock;
-    @MockBean private JwtUtils jwtUtilsMock;
+    @MockitoBean private ExternalCredsConfig externalCredsConfigMock;
+    @MockitoBean private ProviderOAuthClientCache providerOAuthClientCacheMock;
+    @MockitoBean private OAuth2Service oAuth2ServiceMock;
+    @MockitoBean private JwtUtils jwtUtilsMock;
 
     @Test
     void testExpiredLinkedAccountIsMarkedInvalid() {
@@ -685,7 +685,7 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired private LinkedAccountDAO linkedAccountDAO;
     @Autowired private PassportProviderService passportProviderService;
 
-    @MockBean private ExternalCredsConfig externalCredsConfigMock;
+    @MockitoBean private ExternalCredsConfig externalCredsConfigMock;
 
     @Test
     void testOnlyExpiringPassportsAreRefreshed() {
@@ -726,7 +726,7 @@ public class ProviderServiceTest extends BaseTest {
     @Autowired private LinkedAccountService linkedAccountService;
     @Autowired private GA4GHVisaDAO visaDAO;
 
-    @MockBean ExternalCredsConfig externalCredsConfigMock;
+    @MockitoBean ExternalCredsConfig externalCredsConfigMock;
 
     @Test
     void testSuccessfullyValidatePassportWithProvider() {
@@ -923,9 +923,9 @@ public class ProviderServiceTest extends BaseTest {
   @Nested
   @TestComponent
   class OAuth2StateTest {
-    @MockBean OAuth2Service oAuth2ServiceMock;
-    @MockBean ProviderOAuthClientCache providerOAuthClientCacheMock;
-    @MockBean ExternalCredsConfig externalCredsConfigMock;
+    @MockitoBean OAuth2Service oAuth2ServiceMock;
+    @MockitoBean ProviderOAuthClientCache providerOAuthClientCacheMock;
+    @MockitoBean ExternalCredsConfig externalCredsConfigMock;
 
     @Autowired ProviderService providerService;
     @Autowired PassportProviderService passportProviderService;
@@ -1149,9 +1149,9 @@ public class ProviderServiceTest extends BaseTest {
   @Nested
   @TestComponent
   class RedirectUriValidation {
-    @MockBean OAuth2Service oAuth2ServiceMock;
-    @MockBean ProviderOAuthClientCache providerOAuthClientCacheMock;
-    @MockBean ExternalCredsConfig externalCredsConfigMock;
+    @MockitoBean OAuth2Service oAuth2ServiceMock;
+    @MockitoBean ProviderOAuthClientCache providerOAuthClientCacheMock;
+    @MockitoBean ExternalCredsConfig externalCredsConfigMock;
 
     @Autowired ProviderService providerService;
 

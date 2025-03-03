@@ -37,13 +37,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.commons.util.StringUtils;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AccessToken.TokenType;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
@@ -71,12 +71,12 @@ public class VerifyServicePacts {
     }
   }
 
-  @MockBean StatusDAO statusDAO;
-  @MockBean LinkedAccountDAO linkedAccountDAO;
-  @MockBean AccessTokenCacheDAO accessTokenCacheDAO;
-  @MockBean SamUserFactory samUserFactory;
-  @MockBean OAuth2Service oAuth2Service;
-  @MockBean StatusServiceCache statusServiceCache;
+  @MockitoBean StatusDAO statusDAO;
+  @MockitoBean LinkedAccountDAO linkedAccountDAO;
+  @MockitoBean AccessTokenCacheDAO accessTokenCacheDAO;
+  @MockitoBean SamUserFactory samUserFactory;
+  @MockitoBean OAuth2Service oAuth2Service;
+  @MockitoBean StatusServiceCache statusServiceCache;
   @Mock private OAuth2AccessTokenResponse mockAccessTokenResponse;
 
   @BeforeEach

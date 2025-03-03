@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
@@ -33,12 +33,12 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
 
   @Autowired private MockMvc mvc;
 
-  @MockBean private LinkedAccountService linkedAccountServiceMock;
-  @MockBean private FenceProviderService fenceProviderServiceMock;
+  @MockitoBean private LinkedAccountService linkedAccountServiceMock;
+  @MockitoBean private FenceProviderService fenceProviderServiceMock;
 
-  @MockBean private ExternalCredsSamUserFactory samUserFactoryMock;
-  @MockBean private FenceAccountKeyService fenceAccountKeyServiceMock;
-  @MockBean private AuditLogger auditLoggerMock;
+  @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
+  @MockitoBean private FenceAccountKeyService fenceAccountKeyServiceMock;
+  @MockitoBean private AuditLogger auditLoggerMock;
   private Provider provider = Provider.FENCE;
 
   @Nested

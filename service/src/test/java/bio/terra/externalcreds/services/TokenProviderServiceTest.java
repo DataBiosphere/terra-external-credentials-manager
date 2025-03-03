@@ -24,16 +24,16 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.core.*;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 public class TokenProviderServiceTest extends BaseTest {
 
   @Autowired private TokenProviderService tokenProviderService;
-  @MockBean private AuditLogger auditLoggerMock;
-  @MockBean private LinkedAccountService linkedAccountService;
-  @MockBean private ProviderTokenClientCache providerTokenClientCacheMock;
-  @MockBean private OAuth2Service oAuth2ServiceMock;
+  @MockitoBean private AuditLogger auditLoggerMock;
+  @MockitoBean private LinkedAccountService linkedAccountService;
+  @MockitoBean private ProviderTokenClientCache providerTokenClientCacheMock;
+  @MockitoBean private OAuth2Service oAuth2ServiceMock;
 
   private final Provider provider = Provider.GITHUB;
   private final String userId = UUID.randomUUID().toString();

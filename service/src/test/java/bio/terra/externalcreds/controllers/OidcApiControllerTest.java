@@ -40,7 +40,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 
@@ -51,19 +51,19 @@ class OidcApiControllerTest extends BaseTest {
 
   @Autowired private MockMvc mvc;
 
-  @MockBean private LinkedAccountService linkedAccountServiceMock;
+  @MockitoBean private LinkedAccountService linkedAccountServiceMock;
 
-  @MockBean
+  @MockitoBean
   @Qualifier("providerService")
   private ProviderService providerServiceMock;
 
-  @MockBean
+  @MockitoBean
   @Qualifier("passportProviderService")
   private PassportProviderService passportProviderServiceMock;
 
-  @MockBean private ExternalCredsSamUserFactory samUserFactoryMock;
-  @MockBean private PassportService passportServiceMock;
-  @MockBean private AuditLogger auditLoggerMock;
+  @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
+  @MockitoBean private PassportService passportServiceMock;
+  @MockitoBean private AuditLogger auditLoggerMock;
   private Provider provider = Provider.RAS;
 
   @Test
@@ -72,7 +72,10 @@ class OidcApiControllerTest extends BaseTest {
         .thenReturn(Set.of("fake-provider2", "fake-provider1"));
 
     mvc.perform(get("/api/oidc/v1/providers"))
-        .andExpect(content().json("""
+        .andExpect(
+            content()
+                .json(
+                    """
             ["fake-provider1","fake-provider2"]"""));
   }
 

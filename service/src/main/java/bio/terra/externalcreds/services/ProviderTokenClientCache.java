@@ -37,11 +37,11 @@ public class ProviderTokenClientCache {
 
     ClientRegistration.Builder builder =
         switch (provider) {
-          case RAS, FENCE, DCF_FENCE, ANVIL, KIDS_FIRST -> ClientRegistrations
-              .fromOidcIssuerLocation(providerInfo.getIssuer())
-              .clientId(providerInfo.getClientId())
-              .clientSecret(providerInfo.getClientSecret())
-              .issuerUri(providerInfo.getIssuer());
+          case RAS, FENCE, DCF_FENCE, ANVIL, KIDS_FIRST ->
+              ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+                  .clientId(providerInfo.getClientId())
+                  .clientSecret(providerInfo.getClientSecret())
+                  .issuerUri(providerInfo.getIssuer());
           case GITHUB -> {
             String redirectUri =
                 providerInfo.getAllowedRedirectUriPatterns().stream()

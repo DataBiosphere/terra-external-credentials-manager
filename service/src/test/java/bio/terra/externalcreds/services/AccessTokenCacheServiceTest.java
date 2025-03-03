@@ -22,20 +22,20 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class AccessTokenCacheServiceTest extends BaseTest {
 
   @Autowired private AccessTokenCacheService accessTokenCacheService;
 
-  @MockBean private LinkedAccountService linkedAccountService;
-  @MockBean private ProviderTokenClientCache providerTokenClientCacheMock;
-  @MockBean private OAuth2Service oAuth2ServiceMock;
-  @MockBean private AccessTokenCacheDAO accessTokenCacheDAO;
-  @MockBean private AuditLogger auditLoggerMock;
+  @MockitoBean private LinkedAccountService linkedAccountService;
+  @MockitoBean private ProviderTokenClientCache providerTokenClientCacheMock;
+  @MockitoBean private OAuth2Service oAuth2ServiceMock;
+  @MockitoBean private AccessTokenCacheDAO accessTokenCacheDAO;
+  @MockitoBean private AuditLogger auditLoggerMock;
 
   private final String clientIP = "127.0.0.1";
   private final Random random = new Random();

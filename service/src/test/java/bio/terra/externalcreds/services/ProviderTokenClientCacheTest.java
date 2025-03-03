@@ -16,14 +16,14 @@ import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.*;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class ProviderTokenClientCacheTest extends BaseTest {
 
   @Autowired private ProviderTokenClientCache providerTokenClientCache;
-  @MockBean private ExternalCredsConfig externalCredsConfig;
+  @MockitoBean private ExternalCredsConfig externalCredsConfig;
 
   @Test
   void testGitHubBuildClientRegistration() {

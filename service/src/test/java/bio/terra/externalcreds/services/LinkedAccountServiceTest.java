@@ -30,7 +30,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 public class LinkedAccountServiceTest extends BaseTest {
 
@@ -58,15 +58,15 @@ public class LinkedAccountServiceTest extends BaseTest {
   @TestComponent
   class UpsertLinkedAccountWithPassportAndVisas {
 
-    @MockBean EventPublisher eventPublisherMock;
+    @MockitoBean EventPublisher eventPublisherMock;
     @Autowired private LinkedAccountService linkedAccountService;
     @Autowired private GA4GHPassportDAO passportDAO;
     @Autowired private GA4GHVisaDAO visaDAO;
 
-    @MockBean(name = "test1")
+    @MockitoBean(name = "test1")
     private VisaComparator visaComparatorMock1;
 
-    @MockBean(name = "test2")
+    @MockitoBean(name = "test2")
     private VisaComparator visaComparatorMock2;
 
     @Test
@@ -338,7 +338,7 @@ public class LinkedAccountServiceTest extends BaseTest {
     @Autowired private GA4GHPassportDAO passportDAO;
     @Autowired private GA4GHVisaDAO visaDAO;
 
-    @MockBean private EventPublisher eventPublisherMock;
+    @MockitoBean private EventPublisher eventPublisherMock;
 
     @Test
     void testDeleteNonExistingLinkedAccount() {

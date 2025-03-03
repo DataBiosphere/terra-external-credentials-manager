@@ -36,10 +36,11 @@ public class ProviderOAuthClientCache {
 
     ClientRegistration.Builder builder =
         switch (provider) {
-          case RAS -> ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
-              .clientId(providerInfo.getClientId())
-              .clientSecret(providerInfo.getClientSecret())
-              .issuerUri(providerInfo.getIssuer());
+          case RAS ->
+              ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+                  .clientId(providerInfo.getClientId())
+                  .clientSecret(providerInfo.getClientSecret())
+                  .issuerUri(providerInfo.getIssuer());
           case GITHUB -> {
             String redirectUri =
                 providerInfo.getAllowedRedirectUriPatterns().stream()
@@ -54,12 +55,12 @@ public class ProviderOAuthClientCache {
                 .redirectUri(redirectUri)
                 .userNameAttributeName(providerInfo.getUserNameAttributeName());
           }
-          case FENCE, DCF_FENCE, ANVIL, KIDS_FIRST -> ClientRegistrations.fromOidcIssuerLocation(
-                  providerInfo.getIssuer())
-              .clientId(providerInfo.getClientId())
-              .clientSecret(providerInfo.getClientSecret())
-              .issuerUri(providerInfo.getIssuer())
-              .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS);
+          case FENCE, DCF_FENCE, ANVIL, KIDS_FIRST ->
+              ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
+                  .clientId(providerInfo.getClientId())
+                  .clientSecret(providerInfo.getClientSecret())
+                  .issuerUri(providerInfo.getIssuer())
+                  .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS);
           case ERA_COMMONS -> {
             if (externalCredsConfig.getEraCommonsLinkingEnabled()) {
               yield ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())

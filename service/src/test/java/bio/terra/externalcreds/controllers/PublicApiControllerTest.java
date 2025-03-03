@@ -14,7 +14,7 @@ import bio.terra.externalcreds.services.StatusService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
@@ -22,15 +22,18 @@ public class PublicApiControllerTest extends BaseTest {
 
   @Autowired private MockMvc mvc;
 
-  @MockBean private ExternalCredsConfig externalCredsConfig;
-  @MockBean private StatusService statusService;
+  @MockitoBean private ExternalCredsConfig externalCredsConfig;
+  @MockitoBean private StatusService statusService;
 
   @Test
   void testGetStatus() throws Exception {
     when(statusService.getSystemStatus())
         .thenReturn(new SystemStatus().ok(true).putSystemsItem("postgres", true));
     mvc.perform(get("/status"))
-        .andExpect(content().json("""
+        .andExpect(
+            content()
+                .json(
+                    """
             {"ok": true,"systems": { "postgres": true }}"""));
   }
 
