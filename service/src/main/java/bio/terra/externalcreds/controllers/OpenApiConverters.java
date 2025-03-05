@@ -4,10 +4,9 @@ import bio.terra.common.exception.BadRequestException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.LinkInfo;
-import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
-import bio.terra.externalcreds.generated.model.OneOfValidatePassportResultMatchedCriterion;
 import bio.terra.externalcreds.generated.model.RASv1Dot1VisaCriterion;
 import bio.terra.externalcreds.generated.model.ValidatePassportResult;
+import bio.terra.externalcreds.generated.model.VisaCriterion;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
@@ -23,8 +22,7 @@ public class OpenApiConverters {
 
   /** Converts openapi inputs to internal ECM models */
   public static class Input {
-    public static Collection<VisaCriterionInternal> convert(
-        Collection<OneOfValidatePassportRequestCriteriaItems> criteria) {
+    public static Collection<VisaCriterionInternal> convert(Collection<VisaCriterion> criteria) {
       return criteria.stream()
           .map(
               c -> {
@@ -52,8 +50,7 @@ public class OpenApiConverters {
       return returnVal;
     }
 
-    public static OneOfValidatePassportResultMatchedCriterion convert(
-        VisaCriterionInternal visaCriterion) {
+    public static VisaCriterion convert(VisaCriterionInternal visaCriterion) {
       if (visaCriterion instanceof RASv1Dot1VisaCriterionInternal rasCrit) {
         var converted =
             new RASv1Dot1VisaCriterion()
