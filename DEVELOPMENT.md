@@ -34,8 +34,10 @@ Government data.
 
 
 ### Database Configuration
-ECM relies on a Postgresql database server. There are two options for running the Postgres server:
+ECM relies on a Postgresql database server. There are three options for running the Postgres server:
 
+- Containerized:
+  Execute `./local-dev/run_postgres.sh start`. If you do this, you should skip the "Initialize your database" step.
 - Manual setup:
   Setup Postgres using whatever method you like.
 - Convenient app setup:
@@ -75,8 +77,7 @@ Run in IntelliJ (recommended) or use the command line:
 ```sh
 ./render_config.sh # only when building ECM for the first time
 source ${PWD}/service/src/main/resources/rendered/secrets.env
-cd service
-../gradlew bootRun
+./gradlew bootRun
 ```
 
 Then navigate to the Swagger: `http://localhost:8080/`
