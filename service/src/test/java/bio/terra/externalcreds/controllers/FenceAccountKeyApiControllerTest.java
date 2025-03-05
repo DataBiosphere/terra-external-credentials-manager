@@ -68,46 +68,8 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
       mvc.perform(
               get("/api/fenceAccountKey/v1/{provider}", provider)
                   .header("authorization", "Bearer " + accessToken))
-          .andExpect(status().isOk())
-          .andExpect(content().string(fenceAccountKey.getKeyJson()));
-
-      // check that a log was recorded
-      verify(auditLoggerMock)
-          .logEvent(
-              new AuditLogEvent.Builder()
-                  .auditLogEventType(AuditLogEventType.GetServiceAccountKey)
-                  .provider(provider)
-                  .userId(userId)
-                  .clientIP("127.0.0.1")
-                  .externalUserId(externalUserId)
-                  .build());
-    }
-
-    @Test
-    void testGetServiceAccountKeyDoesNotReturnExpired() throws Exception {
-      var accessToken = "testToken";
-      var userId = UUID.randomUUID().toString();
-      var fenceAccountKey =
-          TestUtils.createRandomFenceAccountKey()
-              .withExpiresAt(new Timestamp(System.currentTimeMillis() - 1000).toInstant());
-      mockSamUser(userId, accessToken);
-      when(fenceAccountKeyServiceMock.getFenceAccountKey(userId, provider))
-          .thenReturn(Optional.of(fenceAccountKey));
-      mvc.perform(
-              get("/api/fenceAccountKey/v1/{provider}", provider)
-                  .header("authorization", "Bearer " + accessToken))
-          .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testGetServiceAccountKey404() throws Exception {
-      var accessToken = "testToken";
-      var userId = UUID.randomUUID().toString();
-      mockSamUser(userId, accessToken);
-      mvc.perform(
-              get("/api/fenceAccountKey/v1/{provider}", provider)
-                  .header("authorization", "Bearer " + accessToken))
-          .andExpect(status().isNotFound());
+          .andExpect(status().isNotFound())
+          .andExpect(content().string("Fence service accounts no longer supported"));
     }
   }
 

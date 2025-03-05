@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.controllers;
 
+import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
@@ -25,35 +26,6 @@ public record FenceAccountKeyController(
 
   @Override
   public ResponseEntity<String> getFenceAccountKey(Provider provider) {
-    var samUser = samUserFactory.from(request);
-    var auditLogEventBuilder =
-        new AuditLogEvent.Builder()
-            .auditLogEventType(AuditLogEventType.GetServiceAccountKey)
-            .clientIP(request.getRemoteAddr());
-    var maybeLinkedAccount =
-        linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
-    Optional<FenceAccountKey> maybeFenceAccountKey =
-        maybeLinkedAccount.flatMap(
-            linkedAccount -> {
-              auditLogEventBuilder
-                  .provider(linkedAccount.getProvider())
-                  .userId(linkedAccount.getUserId())
-                  .externalUserId(linkedAccount.getExternalUserId());
-              return fenceProviderService.getFenceAccountKey(linkedAccount);
-            });
-    var response =
-        maybeFenceAccountKey.flatMap(
-            fenceAccountKey -> {
-              // service account key should not be expired but if it is (due to some failure
-              // in ECM)
-              // don't pass that failure on to the caller
-              if (fenceAccountKey.getExpiresAt().isBefore(Instant.now())) {
-                return Optional.empty();
-              } else {
-                auditLogger.logEvent(auditLogEventBuilder.build());
-                return Optional.of(fenceAccountKey.getKeyJson());
-              }
-            });
-    return ResponseEntity.of(response);
+    throw new NotFoundException("Fence service accounts no longer supported");
   }
 }
