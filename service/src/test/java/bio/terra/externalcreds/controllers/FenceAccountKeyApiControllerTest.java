@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.controllers;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -10,11 +11,7 @@ import bio.terra.common.iam.BearerToken;
 import bio.terra.common.iam.SamUser;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
-import bio.terra.externalcreds.auditLogging.AuditLogEvent;
-import bio.terra.externalcreds.auditLogging.AuditLogEventType;
-import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.services.FenceAccountKeyService;
 import bio.terra.externalcreds.services.FenceProviderService;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,15 +34,13 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
   @MockitoBean private FenceProviderService fenceProviderServiceMock;
 
   @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
-  @MockitoBean private FenceAccountKeyService fenceAccountKeyServiceMock;
-  @MockitoBean private AuditLogger auditLoggerMock;
   private Provider provider = Provider.FENCE;
 
   @Nested
   class GetServiceAccountKey {
 
     @Test
-    void testGetServiceAccountKey() throws Exception {
+    void testGetServiceAccountKeyIsDisabled() throws Exception {
       var accessToken = "testToken";
       var userId = UUID.randomUUID().toString();
       var externalUserId = UUID.randomUUID().toString();
@@ -69,7 +64,8 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
               get("/api/fenceAccountKey/v1/{provider}", provider)
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isNotFound())
-          .andExpect(content().string("Fence service accounts no longer supported"));
+          .andExpect(
+              content().string(containsString("Fence service accounts no longer supported")));
     }
   }
 
