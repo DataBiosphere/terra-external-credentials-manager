@@ -373,7 +373,7 @@ paths:
       - $ref: '#/components/parameters/providerParam'
     get:
       deprecated: true
-      summary: Deprecated; always returns 404.
+      summary: No longer supported; always returns 404.
       tags: [ fenceAccountKey ]
       operationId: getFenceAccountKey
       responses:
