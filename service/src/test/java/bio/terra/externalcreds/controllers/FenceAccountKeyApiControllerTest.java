@@ -15,7 +15,6 @@ import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.services.FenceProviderService;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import jakarta.servlet.http.HttpServletRequest;
-import java.sql.Timestamp;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -44,9 +43,6 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
       var accessToken = "testToken";
       var userId = UUID.randomUUID().toString();
       var externalUserId = UUID.randomUUID().toString();
-      var fenceAccountKey =
-          TestUtils.createRandomFenceAccountKey()
-              .withExpiresAt(new Timestamp(System.currentTimeMillis() + 1000).toInstant());
 
       mockSamUser(userId, accessToken);
 
@@ -57,8 +53,6 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
 
       when(linkedAccountServiceMock.getLinkedAccount(userId, provider))
           .thenReturn(Optional.of(linkedAccount));
-      when(fenceProviderServiceMock.getFenceAccountKey(linkedAccount))
-          .thenReturn(Optional.of(fenceAccountKey));
 
       mvc.perform(
               get("/api/fenceAccountKey/v1/{provider}", provider)

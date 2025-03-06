@@ -6,7 +6,6 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.LinkedAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashSet;
@@ -19,8 +18,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class FenceProviderService extends ProviderService {
 
-  private final FenceKeyRetriever fenceKeyRetriever;
-
   public FenceProviderService(
       ExternalCredsConfig externalCredsConfig,
       ProviderOAuthClientCache providerOAuthClientCache,
@@ -29,8 +26,7 @@ public class FenceProviderService extends ProviderService {
       LinkedAccountService linkedAccountService,
       AuditLogger auditLogger,
       ObjectMapper objectMapper,
-      FenceAccountKeyService fenceAccountKeyService,
-      FenceKeyRetriever fenceKeyRetriever) {
+      FenceAccountKeyService fenceAccountKeyService) {
     super(
         externalCredsConfig,
         providerOAuthClientCache,
@@ -40,11 +36,6 @@ public class FenceProviderService extends ProviderService {
         fenceAccountKeyService,
         auditLogger,
         objectMapper);
-    this.fenceKeyRetriever = fenceKeyRetriever;
-  }
-
-  public Optional<FenceAccountKey> getFenceAccountKey(LinkedAccount linkedAccount) {
-    return fenceKeyRetriever.getOrCreateFenceAccountKey(linkedAccount);
   }
 
   public LinkedAccount createLink(

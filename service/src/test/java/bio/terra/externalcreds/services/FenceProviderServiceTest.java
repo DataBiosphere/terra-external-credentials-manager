@@ -12,15 +12,10 @@ import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.models.FenceAccountKey;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.OAuth2State;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -47,45 +42,6 @@ class FenceProviderServiceTest extends BaseTest {
   @MockitoBean private ExternalCredsConfig externalCredsConfig;
 
   private static final Random random = new Random();
-
-  @Test
-  void testGetLinkedFenceAccountKey() {
-    var linkedAccountId = random.nextInt();
-    var fenceKeyId = random.nextInt();
-    var issuedAt = Instant.now();
-    var token = "TestToken";
-    var userId = UUID.randomUUID().toString();
-    var userName = userId + "-name";
-    var keyJson = "{ \"name\": \"testKeyJson\"}";
-    var provider = Provider.FENCE;
-
-    var linkedAccount =
-        new LinkedAccount.Builder()
-            .provider(provider)
-            .expires(new Timestamp(issuedAt.plus(30, ChronoUnit.DAYS).toEpochMilli()))
-            .userId(userId)
-            .id(linkedAccountId)
-            .externalUserId(userName)
-            .refreshToken(token)
-            .isAuthenticated(true)
-            .build();
-    when(linkedAccountService.getLinkedAccount(userId, provider))
-        .thenReturn(Optional.of(linkedAccount));
-
-    var fenceAccountKey =
-        new FenceAccountKey.Builder()
-            .id(fenceKeyId)
-            .linkedAccountId(linkedAccountId)
-            .keyJson(keyJson)
-            .expiresAt(issuedAt.plus(30, ChronoUnit.DAYS))
-            .build();
-    when(fenceAccountKeyService.getFenceAccountKey(linkedAccount))
-        .thenReturn(Optional.of(fenceAccountKey));
-
-    var actualFenceAccountKey = fenceProviderService.getFenceAccountKey(linkedAccount);
-
-    assertPresent(actualFenceAccountKey);
-  }
 
   @Test
   void testCreateLink() {
