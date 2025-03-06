@@ -37,7 +37,7 @@ public class PassportApiControllerTest extends BaseTest {
   void testValidatePassport() throws Exception {
     var criteria = new ArrayList<VisaCriterion>();
     var criterion = new RASv1Dot1VisaCriterion().consentCode("c1").phsId("phs001234");
-    criterion.issuer("visa issuer");
+    criterion.issuer("visa issuer").type("RASv1Dot1VisaCriterion");
     criteria.add(criterion);
     var passportJwts = List.of("I am a passport");
     var req = new ValidatePassportRequest().passports(passportJwts).criteria(criteria);
@@ -47,6 +47,7 @@ public class PassportApiControllerTest extends BaseTest {
             .phsId(criterion.getPhsId())
             .consentCode(criterion.getConsentCode())
             .issuer(criterion.getIssuer())
+            .type(criterion.getType())
             .build();
 
     var resultInternal =

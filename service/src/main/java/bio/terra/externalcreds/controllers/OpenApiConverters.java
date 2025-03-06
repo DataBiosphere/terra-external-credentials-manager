@@ -28,6 +28,7 @@ public class OpenApiConverters {
               c -> {
                 if (c instanceof RASv1Dot1VisaCriterion rasCrit) {
                   return new RASv1Dot1VisaCriterionInternal.Builder()
+                      .type(rasCrit.getType())
                       .issuer(rasCrit.getIssuer())
                       .phsId(rasCrit.getPhsId())
                       .consentCode(rasCrit.getConsentCode())
@@ -57,6 +58,7 @@ public class OpenApiConverters {
                 .consentCode(rasCrit.getConsentCode())
                 .phsId(rasCrit.getPhsId());
         converted.issuer(rasCrit.getIssuer());
+        converted.type(rasCrit.getType());
         return converted;
       } else {
         throw new ExternalCredsException(String.format("unknown visa criterion %s", visaCriterion));
