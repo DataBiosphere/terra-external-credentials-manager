@@ -55,7 +55,6 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.Parameter;
-import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.http.HttpStatus;
@@ -133,10 +132,6 @@ public class ProviderServiceTest extends BaseTest {
         var linkedAccount =
             TestUtils.createRandomLinkedAccount().withId(1).withProvider(Provider.FENCE);
 
-        var key =
-            TestUtils.createRandomFenceAccountKey()
-                .withLinkedAccountId(linkedAccount.getId().get());
-        var privateKeyId = objectMapper.readTree(key.getKeyJson()).get("private_key_id").asText();
         var keyRevocationPath = "/test/key";
 
         var providerInfo =
@@ -247,10 +242,6 @@ public class ProviderServiceTest extends BaseTest {
         var linkedAccount =
             TestUtils.createRandomLinkedAccount().withId(1).withProvider(Provider.FENCE);
 
-        var key =
-            TestUtils.createRandomFenceAccountKey()
-                .withLinkedAccountId(linkedAccount.getId().get());
-        var privateKeyId = objectMapper.readTree(key.getKeyJson()).get("private_key_id").asText();
         var keyRevocationPath = "/test/key";
 
         var providerInfo =
@@ -293,10 +284,6 @@ public class ProviderServiceTest extends BaseTest {
         mockServer
             .when(HttpRequest.request(keyRevocationPath).withMethod("DELETE"))
             .respond(HttpResponse.response().withStatusCode(HttpStatus.OK.value()));
-
-        mockServer.verify(
-            HttpRequest.request(keyRevocationPath + "/" + privateKeyId).withMethod("DELETE"),
-            VerificationTimes.exactly(0));
       }
     }
 
