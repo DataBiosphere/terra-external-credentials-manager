@@ -197,10 +197,6 @@ public class ProviderServiceTest extends BaseTest {
                 .withProvider(Provider.FENCE)
                 .withExpires(Timestamp.from(Instant.now().minus(Duration.ofMinutes(5))));
 
-        var key =
-            TestUtils.createRandomFenceAccountKey()
-                .withLinkedAccountId(linkedAccount.getId().get());
-
         var providerInfo =
             TestUtils.createRandomProvider()
                 .setRevokeEndpoint(
