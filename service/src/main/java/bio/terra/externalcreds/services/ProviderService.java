@@ -13,9 +13,7 @@ import bio.terra.externalcreds.models.CannotDecodeOAuth2State;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.OAuth2State;
-import bio.terra.externalcreds.util.ProviderUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -23,7 +21,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -35,7 +32,6 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
-import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -231,10 +227,6 @@ public class ProviderService {
             .getLinkedAccount(userId, provider)
             .orElseThrow(() -> new NotFoundException("Link not found for user"));
 
-    if (ProviderUtils.isFenceProvider(provider) && !linkedAccount.isExpired()) {
-      revokeKey(providerInfo, linkedAccount);
-    }
-
     revokeAccessToken(providerInfo, linkedAccount);
 
     linkedAccountService.deleteLinkedAccount(userId, provider);
@@ -286,46 +278,5 @@ public class ProviderService {
         linkedAccount.getUserId(),
         linkedAccount.getProvider().toString(),
         responseBody);
-  }
-
-  private void revokeKey(ProviderProperties providerProperties, LinkedAccount linkedAccount) {
-    var providerClient = providerOAuthClientCache.getProviderClient(linkedAccount.getProvider());
-    var accessToken =
-        oAuth2Service.authorizeWithRefreshToken(
-            providerClient,
-            new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null),
-            Collections.emptySet());
-    var keyEndpoint = providerProperties.getKeyEndpoint();
-    if (keyEndpoint.isEmpty()) {
-      throw new IllegalArgumentException(
-          "Provider " + linkedAccount.getProvider() + " does not have a key endpoint");
-    }
-    var key = fenceAccountKeyService.getFenceAccountKey(linkedAccount);
-    key.ifPresent(
-        fenceAccountKey -> {
-          try {
-            var privateKeyJson = objectMapper.readTree(fenceAccountKey.getKeyJson());
-            var privateKeyId = privateKeyJson.get(PRIVATE_KEY_ID_FIELD).asText();
-            WebClient.ResponseSpec response =
-                WebClient.create(keyEndpoint.get() + "/" + privateKeyId)
-                    .delete()
-                    .header(
-                        "Authorization", "Bearer " + accessToken.getAccessToken().getTokenValue())
-                    .retrieve();
-            String responseBody =
-                response
-                    .onStatus(HttpStatusCode::isError, clientResponse -> Mono.empty())
-                    .bodyToMono(String.class)
-                    .block(Duration.of(11, ChronoUnit.SECONDS));
-            log.info(
-                "Key revocation request for user [{}], provider [{}] returned with the result: [{}]",
-                linkedAccount.getUserId(),
-                linkedAccount.getProvider().toString(),
-                responseBody);
-          } catch (IOException e) {
-            throw new ExternalCredsException(
-                "Failed to read key for key revocation for user " + linkedAccount.getUserId(), e);
-          }
-        });
   }
 }

@@ -187,9 +187,6 @@ public class ProviderServiceTest extends BaseTest {
         providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
         verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProvider());
-        mockServer.verify(
-            HttpRequest.request(keyRevocationPath + "/" + privateKeyId).withMethod("DELETE"),
-            VerificationTimes.exactly(1));
       }
     }
 
@@ -307,11 +304,6 @@ public class ProviderServiceTest extends BaseTest {
         mockServer
             .when(HttpRequest.request(keyRevocationPath).withMethod("DELETE"))
             .respond(HttpResponse.response().withStatusCode(HttpStatus.OK.value()));
-
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider()));
 
         mockServer.verify(
             HttpRequest.request(keyRevocationPath + "/" + privateKeyId).withMethod("DELETE"),
