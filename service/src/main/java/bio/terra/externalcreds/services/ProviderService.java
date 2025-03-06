@@ -45,7 +45,6 @@ public class ProviderService {
   public final ProviderTokenClientCache providerTokenClientCache;
   public final OAuth2Service oAuth2Service;
   public final LinkedAccountService linkedAccountService;
-  public final FenceAccountKeyService fenceAccountKeyService;
 
   public final AuditLogger auditLogger;
   public final SecureRandom secureRandom = new SecureRandom();
@@ -73,7 +72,6 @@ public class ProviderService {
       ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
-      FenceAccountKeyService fenceAccountKeyService,
       AuditLogger auditLogger,
       ObjectMapper objectMapper) {
     this.externalCredsConfig = externalCredsConfig;
@@ -81,7 +79,6 @@ public class ProviderService {
     this.providerTokenClientCache = providerTokenClientCache;
     this.oAuth2Service = oAuth2Service;
     this.linkedAccountService = linkedAccountService;
-    this.fenceAccountKeyService = fenceAccountKeyService;
     this.auditLogger = auditLogger;
     this.objectMapper = objectMapper;
   }

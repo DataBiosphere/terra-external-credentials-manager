@@ -25,15 +25,13 @@ public class FenceProviderService extends ProviderService {
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
       AuditLogger auditLogger,
-      ObjectMapper objectMapper,
-      FenceAccountKeyService fenceAccountKeyService) {
+      ObjectMapper objectMapper) {
     super(
         externalCredsConfig,
         providerOAuthClientCache,
         providerTokenClientCache,
         oAuth2Service,
         linkedAccountService,
-        fenceAccountKeyService,
         auditLogger,
         objectMapper);
   }

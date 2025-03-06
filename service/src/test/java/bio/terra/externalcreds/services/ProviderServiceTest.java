@@ -82,7 +82,6 @@ public class ProviderServiceTest extends BaseTest {
     @MockitoBean private ExternalCredsConfig externalCredsConfigMock;
     @MockitoBean private OAuth2Service oAuth2ServiceMock;
     @MockitoBean private ProviderOAuthClientCache providerOAuthClientCacheMock;
-    @MockitoBean private FenceAccountKeyService fenceAccountKeyServiceMock;
 
     @Test
     void testGetProviders() {
@@ -169,8 +168,6 @@ public class ProviderServiceTest extends BaseTest {
                 any(ClientRegistration.class), any(OAuth2RefreshToken.class), any(Set.class)))
             .thenReturn(
                 OAuth2AccessTokenResponse.withToken("token").tokenType(TokenType.BEARER).build());
-        when(fenceAccountKeyServiceMock.getFenceAccountKey(linkedAccount))
-            .thenReturn(Optional.of(key));
 
         //  Mock the server response
         mockServer
@@ -232,8 +229,6 @@ public class ProviderServiceTest extends BaseTest {
                 any(ClientRegistration.class), any(OAuth2RefreshToken.class), any(Set.class)))
             .thenReturn(
                 OAuth2AccessTokenResponse.withToken("token").tokenType(TokenType.BEARER).build());
-        when(fenceAccountKeyServiceMock.getFenceAccountKey(linkedAccount))
-            .thenReturn(Optional.of(key));
 
         //  Mock the server response
         mockServer
@@ -290,8 +285,6 @@ public class ProviderServiceTest extends BaseTest {
                 any(ClientRegistration.class), any(OAuth2RefreshToken.class), any(Set.class)))
             .thenReturn(
                 OAuth2AccessTokenResponse.withToken("token").tokenType(TokenType.BEARER).build());
-        when(fenceAccountKeyServiceMock.getFenceAccountKey(linkedAccount))
-            .thenReturn(Optional.of(key));
 
         //  Mock the server response
         mockServer

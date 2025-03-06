@@ -36,7 +36,6 @@ class FenceProviderServiceTest extends BaseTest {
   @Autowired private ObjectMapper objectMapper;
 
   @MockitoBean private LinkedAccountService linkedAccountService;
-  @MockitoBean private FenceAccountKeyService fenceAccountKeyService;
   @MockitoBean private ProviderOAuthClientCache providerOAuthClientCache;
   @MockitoBean private OAuth2Service oAuth2Service;
   @MockitoBean private ExternalCredsConfig externalCredsConfig;
