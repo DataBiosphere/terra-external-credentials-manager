@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.core.*;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-public class PassportProviderServiceTest extends BaseTest {
+class PassportProviderServiceTest extends BaseTest {
   @Autowired private PassportProviderService passportProviderService;
   @MockitoBean private AuditLogger auditLoggerMock;
   @MockitoBean private LinkedAccountService linkedAccountService;
@@ -42,7 +42,6 @@ public class PassportProviderServiceTest extends BaseTest {
   private final AuditLogEvent.Builder auditLogEventBuilder =
       new Builder().provider(provider).userId(userId).clientIP(clientIP);
 
-  // TODO CORE-332: different tests for passport vs. non-passport logging?
   @Test
   void testLogLinkCreatePassportSuccess() {
     when(jwtUtilsMock.getJwtTransactionClaim(anyString()))
@@ -104,7 +103,6 @@ public class PassportProviderServiceTest extends BaseTest {
 
   @Test
   void testGetProviderAccessTokenNoLinkedAccount() {
-    var userId = "fakeUserId";
     var provider = Provider.GITHUB;
 
     var auditLogEventBuilder =
@@ -125,17 +123,6 @@ public class PassportProviderServiceTest extends BaseTest {
 
   @Test
   void testGetProviderAccessTokenExpiredLinkedAccount() {
-    var userId = "fakeUserId";
-    var provider = Provider.GITHUB;
-
-    var auditLogEventBuilder =
-        new AuditLogEvent.Builder()
-            .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
-            .provider(provider)
-            .userId(userId)
-            .externalUserId(Optional.empty())
-            .clientIP(clientIP);
-
     var expiredLinkedAccount =
         TestUtils.createRandomLinkedAccount(provider)
             .withExpires(Timestamp.from(Instant.now().minusSeconds(60)));
@@ -164,10 +151,12 @@ public class PassportProviderServiceTest extends BaseTest {
         .thenThrow(
             new OAuth2AuthorizationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_TOKEN)));
 
+    var linkedAccountUserId = linkedAccount.getUserId();
+
     assertThrows(
         OAuth2AuthorizationException.class,
         () ->
             passportProviderService.getProviderAccessToken(
-                linkedAccount.getUserId(), provider, auditLogEventBuilder));
+                linkedAccountUserId, provider, auditLogEventBuilder));
   }
 }

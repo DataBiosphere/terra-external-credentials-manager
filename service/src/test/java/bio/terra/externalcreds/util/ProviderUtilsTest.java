@@ -9,7 +9,7 @@ import bio.terra.externalcreds.config.ProviderProperties;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-public class ProviderUtilsTest extends BaseTest {
+class ProviderUtilsTest extends BaseTest {
 
   @Test
   void testPassportProvider() {

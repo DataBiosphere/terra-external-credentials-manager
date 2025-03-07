@@ -103,8 +103,6 @@ public class PassportProviderService extends ProviderService {
       // returns a LinkedAccountWithPassportAndVisas with empty passports and visas
       return new LinkedAccountWithPassportAndVisas.Builder()
           .linkedAccount(linkedAccount.getLeft())
-          .passport(Optional.empty()) // should passport and visa be null instead?
-          .visas(Set.of())
           .build();
     }
   }
