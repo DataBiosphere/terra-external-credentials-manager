@@ -44,7 +44,7 @@ public class PassportProviderServiceTest extends BaseTest {
 
   // TODO CORE-332: different tests for passport vs. non-passport logging?
   @Test
-  void testLogLinkCreateSuccess() {
+  void testLogLinkCreatePassportSuccess() {
     when(jwtUtilsMock.getJwtTransactionClaim(anyString()))
         .thenReturn(Optional.of("unit-test-claim"));
 
@@ -64,6 +64,25 @@ public class PassportProviderServiceTest extends BaseTest {
                 .provider(provider)
                 .userId(userId)
                 .transactionClaim("unit-test-claim")
+                .externalUserId(linkedAccount.getExternalUserId())
+                .clientIP(clientIP)
+                .build());
+  }
+
+  @Test
+  void testLogLinkNonPassportSuccess() {
+    LinkedAccount linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+    LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas =
+        new LinkedAccountWithPassportAndVisas.Builder().linkedAccount(linkedAccount).build();
+
+    passportProviderService.logLinkCreation(
+        Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
+    verify(auditLoggerMock)
+        .logEvent(
+            new AuditLogEvent.Builder()
+                .auditLogEventType(AuditLogEventType.LinkCreated)
+                .provider(provider)
+                .userId(userId)
                 .externalUserId(linkedAccount.getExternalUserId())
                 .clientIP(clientIP)
                 .build());
