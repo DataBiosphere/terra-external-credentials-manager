@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.common.exception.BadRequestException;
+import bio.terra.common.exception.ForbiddenException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
@@ -34,6 +35,7 @@ import reactor.core.publisher.Mono;
 public class PassportProviderService extends ProviderService {
   private final PassportService passportService;
   private final JwtUtils jwtUtils;
+  private final AccessTokenCacheService accessTokenCacheService;
 
   public PassportProviderService(
       ExternalCredsConfig externalCredsConfig,
@@ -44,7 +46,8 @@ public class PassportProviderService extends ProviderService {
       PassportService passportService,
       JwtUtils jwtUtils,
       AuditLogger auditLogger,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      AccessTokenCacheService accessTokenCacheService) {
     super(
         externalCredsConfig,
         providerOAuthClientCache,
@@ -55,6 +58,7 @@ public class PassportProviderService extends ProviderService {
         objectMapper);
     this.passportService = passportService;
     this.jwtUtils = jwtUtils;
+    this.accessTokenCacheService = accessTokenCacheService;
   }
 
   public LinkedAccountWithPassportAndVisas createLink(
@@ -187,6 +191,32 @@ public class PassportProviderService extends ProviderService {
     }
 
     return expiringLinkedAccounts.size();
+  }
+
+  public String getProviderAccessToken(
+      String userId, Provider provider, AuditLogEvent.Builder auditLogEventBuilder) {
+    var linkedAccount =
+        linkedAccountService
+            .getLinkedAccount(userId, provider)
+            .orElseThrow(
+                () ->
+                    new NotFoundException(
+                        String.format(
+                            "No linked account found for user ID: %s and provider: %s. "
+                                + "Please go to the Terra Profile page External Identities tab "
+                                + "to link your account for this provider.",
+                            userId, provider)));
+    if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
+      throw new ForbiddenException(
+          String.format(
+              "The linked account found for user ID: %s and provider: %s has expired. "
+                  + "Please go to the Terra Profile page External Identities tab "
+                  + "to re-link your account for this provider.",
+              userId, provider));
+    }
+    var providerProperties = externalCredsConfig.getProviderProperties(provider);
+    return accessTokenCacheService.getLinkedAccountAccessToken(
+        linkedAccount, new HashSet<>(providerProperties.getScopes()), auditLogEventBuilder);
   }
 
   @VisibleForTesting

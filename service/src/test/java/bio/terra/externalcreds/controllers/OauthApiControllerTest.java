@@ -24,7 +24,6 @@ import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.ProviderService;
-import bio.terra.externalcreds.services.TokenProviderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
@@ -60,10 +59,6 @@ class OauthApiControllerTest extends BaseTest {
   @MockitoBean
   @Qualifier("passportProviderService")
   private PassportProviderService passportProviderServiceMock;
-
-  @MockitoBean
-  @Qualifier("tokenProviderService")
-  private TokenProviderService tokenProviderServiceMock;
 
   @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
   @MockitoBean private AuditLogger auditLoggerMock;
@@ -450,7 +445,7 @@ class OauthApiControllerTest extends BaseTest {
       var provider = Provider.GITHUB;
       mockSamUser(userId, accessToken);
 
-      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+      when(passportProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
           .thenReturn(githubAccessToken);
 
       mvc.perform(
@@ -467,7 +462,7 @@ class OauthApiControllerTest extends BaseTest {
       var provider = Provider.GITHUB;
       mockSamUser(userId, accessToken);
 
-      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+      when(passportProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
           .thenThrow(new NotFoundException("not found"));
 
       mvc.perform(

@@ -28,7 +28,6 @@ public record OauthApiController(
     LinkedAccountService linkedAccountService,
     ProviderService providerService,
     PassportProviderService passportProviderService,
-    TokenProviderService tokenProviderService,
     ExternalCredsSamUserFactory samUserFactory,
     ExternalCredsConfig externalCredsConfig)
     implements OauthApi {
@@ -82,7 +81,7 @@ public record OauthApiController(
             .clientIP(request.getRemoteAddr());
 
     var accessToken =
-        tokenProviderService.getProviderAccessToken(
+        passportProviderService.getProviderAccessToken(
             samUser.getSubjectId(), provider, auditLogEventBuilder);
     return ResponseEntity.ok(accessToken);
   }
