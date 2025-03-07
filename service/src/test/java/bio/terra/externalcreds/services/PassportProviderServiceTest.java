@@ -103,16 +103,6 @@ class PassportProviderServiceTest extends BaseTest {
 
   @Test
   void testGetProviderAccessTokenNoLinkedAccount() {
-    var provider = Provider.GITHUB;
-
-    var auditLogEventBuilder =
-        new AuditLogEvent.Builder()
-            .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
-            .provider(provider)
-            .userId(userId)
-            .externalUserId(Optional.empty())
-            .clientIP(clientIP);
-
     when(linkedAccountService.getLinkedAccount(userId, provider)).thenReturn(Optional.empty());
 
     assertThrows(
