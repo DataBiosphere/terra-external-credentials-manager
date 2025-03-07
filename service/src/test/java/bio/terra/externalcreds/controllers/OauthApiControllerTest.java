@@ -172,13 +172,18 @@ class OauthApiControllerTest extends BaseTest {
       var state = UUID.randomUUID().toString();
       var oauthcode = UUID.randomUUID().toString();
 
-      when(tokenProviderServiceMock.createLink(
+      var linkedAccountWithPassportAndVisas =
+          new LinkedAccountWithPassportAndVisas.Builder()
+              .linkedAccount(inputLinkedAccount)
+              .passport(TestUtils.createRandomPassport())
+              .build();
+      when(passportProviderServiceMock.createLink(
               eq(inputLinkedAccount.getProvider()),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
               eq(state),
               any(AuditLogEvent.Builder.class)))
-          .thenReturn(inputLinkedAccount);
+          .thenReturn(linkedAccountWithPassportAndVisas);
       testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode, false);
     }
 
@@ -222,13 +227,18 @@ class OauthApiControllerTest extends BaseTest {
       when(providerServiceMock.getAdditionalStateParams(state))
           .thenReturn(Optional.of(additionalStateParam));
 
-      when(tokenProviderServiceMock.createLink(
+      var linkedAccountWithPassportAndVisas =
+          new LinkedAccountWithPassportAndVisas.Builder()
+              .linkedAccount(inputLinkedAccount)
+              .passport(TestUtils.createRandomPassport())
+              .build();
+      when(passportProviderServiceMock.createLink(
               eq(inputLinkedAccount.getProvider()),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
               eq(state),
               any(AuditLogEvent.Builder.class)))
-          .thenReturn(inputLinkedAccount);
+          .thenReturn(linkedAccountWithPassportAndVisas);
       testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode, true);
     }
 
