@@ -27,7 +27,6 @@ public record OauthApiController(
     ProviderService providerService,
     PassportProviderService passportProviderService,
     TokenProviderService tokenProviderService,
-    FenceProviderService fenceProviderService,
     ExternalCredsSamUserFactory samUserFactory,
     ExternalCredsConfig externalCredsConfig)
     implements OauthApi {
@@ -106,15 +105,9 @@ public record OauthApiController(
               yield OpenApiConverters.Output.convert(
                   linkedAccountWithPassportAndVisas.getLinkedAccount());
             }
-            case GITHUB -> {
+            case GITHUB, FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> {
               var linkedAccount =
                   tokenProviderService.createLink(
-                      provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
-              yield OpenApiConverters.Output.convert(linkedAccount);
-            }
-            case FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> {
-              var linkedAccount =
-                  fenceProviderService.createLink(
                       provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
               yield OpenApiConverters.Output.convert(linkedAccount);
             }

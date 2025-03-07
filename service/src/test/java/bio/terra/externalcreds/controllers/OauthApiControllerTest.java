@@ -21,7 +21,6 @@ import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.OAuth2State;
-import bio.terra.externalcreds.services.FenceProviderService;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.ProviderService;
@@ -36,6 +35,8 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -63,10 +64,6 @@ class OauthApiControllerTest extends BaseTest {
   @MockitoBean
   @Qualifier("tokenProviderService")
   private TokenProviderService tokenProviderServiceMock;
-
-  @MockitoBean
-  @Qualifier("fenceProviderService")
-  private FenceProviderService fenceProviderServiceMock;
 
   @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
   @MockitoBean private AuditLogger auditLoggerMock;
@@ -165,9 +162,12 @@ class OauthApiControllerTest extends BaseTest {
   @Nested
   class CreateLink {
 
-    @Test
-    void testCreatesTokenProviderLinkSuccessfully() throws Exception {
-      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.GITHUB);
+    @ParameterizedTest
+    @EnumSource(
+        value = Provider.class,
+        names = {"GITHUB", "FENCE", "DCF_FENCE", "KIDS_FIRST", "ANVIL"})
+    void testCreatesTokenProviderLinkSuccessfully(Provider provider) throws Exception {
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(provider);
 
       var state = UUID.randomUUID().toString();
       var oauthcode = UUID.randomUUID().toString();
@@ -201,23 +201,6 @@ class OauthApiControllerTest extends BaseTest {
               any(AuditLogEvent.Builder.class)))
           .thenReturn(linkedAccountWithPassportAndVisas);
 
-      testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode, false);
-    }
-
-    @Test
-    void testCreateFenceLink() throws Exception {
-      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.FENCE);
-
-      var state = UUID.randomUUID().toString();
-      var oauthcode = UUID.randomUUID().toString();
-
-      when(fenceProviderServiceMock.createLink(
-              eq(inputLinkedAccount.getProvider()),
-              eq(inputLinkedAccount.getUserId()),
-              eq(oauthcode),
-              eq(state),
-              any(AuditLogEvent.Builder.class)))
-          .thenReturn(inputLinkedAccount);
       testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode, false);
     }
 

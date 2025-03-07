@@ -372,7 +372,8 @@ paths:
     parameters:
       - $ref: '#/components/parameters/providerParam'
     get:
-      summary: Returns a service account json key to use to access objects for the fence account provider as the linked account.
+      deprecated: true
+      summary: No longer supported; always returns 404.
       tags: [ fenceAccountKey ]
       operationId: getFenceAccountKey
       responses:
