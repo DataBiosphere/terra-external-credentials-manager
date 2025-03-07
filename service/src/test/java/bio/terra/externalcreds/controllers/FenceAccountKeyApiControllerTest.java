@@ -12,7 +12,6 @@ import bio.terra.common.iam.SamUser;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.generated.model.Provider;
-import bio.terra.externalcreds.services.FenceProviderService;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
@@ -30,7 +29,6 @@ class FenceAccountKeyApiControllerTest extends BaseTest {
   @Autowired private MockMvc mvc;
 
   @MockitoBean private LinkedAccountService linkedAccountServiceMock;
-  @MockitoBean private FenceProviderService fenceProviderServiceMock;
 
   @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
   private Provider provider = Provider.FENCE;
