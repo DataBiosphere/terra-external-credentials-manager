@@ -586,6 +586,7 @@ components:
         - dcf-fence
         - kids-first
         - anvil
+        - sage
     LinkInfo:
       type: object
       required: [ externalUserId, expirationTimestamp ]

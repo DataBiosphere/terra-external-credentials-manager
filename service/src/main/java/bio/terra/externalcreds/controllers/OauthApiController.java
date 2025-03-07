@@ -105,7 +105,7 @@ public record OauthApiController(
               yield OpenApiConverters.Output.convert(
                   linkedAccountWithPassportAndVisas.getLinkedAccount());
             }
-            case GITHUB, FENCE, DCF_FENCE, KIDS_FIRST, ANVIL -> {
+            case GITHUB, FENCE, DCF_FENCE, KIDS_FIRST, ANVIL, SAGE -> {
               var linkedAccount =
                   tokenProviderService.createLink(
                       provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
