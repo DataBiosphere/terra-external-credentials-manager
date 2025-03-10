@@ -175,7 +175,12 @@ class PassportServiceTest extends BaseTest {
     @Test
     void testInvalidPassportThrows() {
       var criterion =
-          new RASv1Dot1VisaCriterionInternal.Builder().phsId("").consentCode("").issuer("").build();
+          new RASv1Dot1VisaCriterionInternal.Builder()
+              .phsId("")
+              .consentCode("")
+              .issuer("")
+              .type("")
+              .build();
 
       assertThrows(
           BadRequestException.class,
@@ -203,7 +208,12 @@ class PassportServiceTest extends BaseTest {
               .build());
 
       var criterion =
-          new RASv1Dot1VisaCriterionInternal.Builder().phsId("").consentCode("").issuer("").build();
+          new RASv1Dot1VisaCriterionInternal.Builder()
+              .phsId("")
+              .consentCode("")
+              .issuer("")
+              .type("")
+              .build();
 
       assertThrows(
           BadRequestException.class,
@@ -273,6 +283,7 @@ class PassportServiceTest extends BaseTest {
               .phsId(params.criterionPhsId)
               .consentCode(matchingPermission.getConsentGroup())
               .issuer(params.issuer)
+              .type("RASv1Dot1VisaCriterion")
               .build();
 
       var result =

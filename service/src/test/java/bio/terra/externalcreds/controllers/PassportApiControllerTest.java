@@ -6,10 +6,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bio.terra.externalcreds.BaseTest;
-import bio.terra.externalcreds.generated.model.OneOfValidatePassportRequestCriteriaItems;
 import bio.terra.externalcreds.generated.model.RASv1Dot1VisaCriterion;
 import bio.terra.externalcreds.generated.model.ValidatePassportRequest;
 import bio.terra.externalcreds.generated.model.ValidatePassportResult;
+import bio.terra.externalcreds.generated.model.VisaCriterion;
 import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal.Builder;
@@ -35,9 +35,9 @@ public class PassportApiControllerTest extends BaseTest {
 
   @Test
   void testValidatePassport() throws Exception {
-    var criteria = new ArrayList<OneOfValidatePassportRequestCriteriaItems>();
+    var criteria = new ArrayList<VisaCriterion>();
     var criterion = new RASv1Dot1VisaCriterion().consentCode("c1").phsId("phs001234");
-    criterion.issuer("visa issuer");
+    criterion.issuer("visa issuer").type("RASv1Dot1VisaCriterion");
     criteria.add(criterion);
     var passportJwts = List.of("I am a passport");
     var req = new ValidatePassportRequest().passports(passportJwts).criteria(criteria);
@@ -47,6 +47,7 @@ public class PassportApiControllerTest extends BaseTest {
             .phsId(criterion.getPhsId())
             .consentCode(criterion.getConsentCode())
             .issuer(criterion.getIssuer())
+            .type(criterion.getType())
             .build();
 
     var resultInternal =
