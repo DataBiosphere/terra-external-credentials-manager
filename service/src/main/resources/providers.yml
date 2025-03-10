@@ -87,6 +87,13 @@ externalcreds:
       revokeEndpoint: "${externalcreds.providers.era-commons.issuer}/auth/oauth/v2/token/revoke?token_type_hint=refresh_token&token=%s"
       userInfoEndpoint: "${externalcreds.providers.era-commons.issuer}/openid/connect/v1.1/userinfo"
       additionalAuthorizationParameters: { "prompt": "login" }
+    sage:
+      clientId: "${SAGE_CLIENT_ID}"
+      clientSecret: "${SAGE_CLIENT_SECRET}"
+      linkLifespan: "30d"
+      scopes: [ "openid", "profile", "offline_access" ]
+      externalIdClaim: "user_name"
+      issuer: "${SAGE_BASE_URL:https://repo-dev.dev.sagebase.org/auth/v1}"
 
 ---
 spring.config.activate.on-profile: 'dev'
@@ -136,6 +143,9 @@ externalcreds:
                                     "https://dev.ukbiobank.terra.bio/#fence-callback",
                                     "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback",
                                     "https://terra.dsde-dev.broadinstitute.org/#fence-callback" ]
+    sage:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
+      authorizationEndpoint: "https://dev-signin.synapse.org/"
 ---
 spring.config.activate.on-profile: 'staging'
 externalcreds:
@@ -156,6 +166,9 @@ externalcreds:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
     anvil:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
+    sage:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback" ]
+      authorizationEndpoint: "https://dev-signin.synapse.org/"
 ---
 spring.config.activate.on-profile: 'prod'
 externalcreds:

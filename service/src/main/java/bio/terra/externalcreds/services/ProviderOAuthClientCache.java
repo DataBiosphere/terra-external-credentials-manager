@@ -36,7 +36,7 @@ public class ProviderOAuthClientCache {
 
     ClientRegistration.Builder builder =
         switch (provider) {
-          case RAS ->
+          case RAS, SAGE ->
               ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
                   .clientId(providerInfo.getClientId())
                   .clientSecret(providerInfo.getClientSecret())
