@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -160,7 +161,8 @@ class OauthApiControllerTest extends BaseTest {
     @ParameterizedTest
     @EnumSource(
         value = Provider.class,
-        names = {"GITHUB", "FENCE", "DCF_FENCE", "KIDS_FIRST", "ANVIL"})
+        names = {"RAS", "ERA_COMMONS"}, // run for all providers except these
+        mode = Mode.EXCLUDE)
     void testCreatesTokenProviderLinkSuccessfully(Provider provider) throws Exception {
       var inputLinkedAccount = TestUtils.createRandomLinkedAccount(provider);
 
