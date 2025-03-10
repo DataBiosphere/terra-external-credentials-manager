@@ -37,7 +37,7 @@ public class ProviderTokenClientCache {
 
     ClientRegistration.Builder builder =
         switch (provider) {
-          case RAS, FENCE, DCF_FENCE, ANVIL, KIDS_FIRST ->
+          case RAS, FENCE, DCF_FENCE, ANVIL, KIDS_FIRST, SAGE ->
               ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
                   .clientId(providerInfo.getClientId())
                   .clientSecret(providerInfo.getClientSecret())

@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: "20250307_add_sage_provider"
+      author: dvoet
+      changes:
+        - sql:
+            sql: >
+              ALTER TYPE provider_enum ADD VALUE 'SAGE';
+

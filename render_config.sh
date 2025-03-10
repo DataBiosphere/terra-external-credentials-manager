@@ -39,6 +39,8 @@ GOOGLE_PROJECT=broad-dsde-${ENV}
       echo export RAS_CLIENT_SECRET="$(gcloud secrets versions access latest --secret=externalcreds-providers --project="${GOOGLE_PROJECT}" | jq -r '.ras_client_secret')"
       echo export ERA_COMMONS_CLIENT_ID="$(gcloud secrets versions access latest --secret=externalcreds-providers --project="${GOOGLE_PROJECT}" | jq -r '.era_commons_client_id')"
       echo export ERA_COMMONS_CLIENT_SECRET="$(gcloud secrets versions access latest --secret=externalcreds-providers --project="${GOOGLE_PROJECT}" | jq -r '.era_commons_client_secret')"
+      echo export SAGE_CLIENT_ID="$(gcloud secrets versions access latest --secret=externalcreds-providers --project="${GOOGLE_PROJECT}" | jq -r '.sage_client_id')"
+      echo export SAGE_CLIENT_SECRET="$(gcloud secrets versions access latest --secret=externalcreds-providers --project="${GOOGLE_PROJECT}" | jq -r '.sage_client_secret')"
   fi
 
   echo export GITHUB_CLIENT_ID="$(gcloud secrets versions access latest --secret=externalcreds-providers --project="${GOOGLE_PROJECT}" | jq -r '.github_client_id')"
