@@ -91,7 +91,7 @@ externalcreds:
       clientId: "${SAGE_CLIENT_ID}"
       clientSecret: "${SAGE_CLIENT_SECRET}"
       linkLifespan: "30d"
-      scopes: [ "openid", "profile", "offline_access" ]
+      scopes: [ "openid", "profile", "offline_access", "download", "view" ]
       externalIdClaim: "user_name"
       issuer: "${SAGE_BASE_URL:https://repo-dev.dev.sagebase.org/auth/v1}"
 
