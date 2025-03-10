@@ -672,8 +672,7 @@ components:
         criteria:
           type: array
           items:
-            oneOf:
-              - $ref: '#/components/schemas/RASv1Dot1VisaCriterion'
+            $ref: '#/components/schemas/VisaCriterion'
 
     ValidatePassportResult:
       type: object
@@ -682,8 +681,7 @@ components:
         valid:
           type: boolean
         matchedCriterion:
-          oneOf:
-            - $ref: '#/components/schemas/RASv1Dot1VisaCriterion'
+          $ref: '#/components/schemas/VisaCriterion'
         auditInfo:
           type: object
           additionalProperties:
@@ -697,6 +695,12 @@ components:
           type: string
         issuer:
           type: string
+      discriminator:
+        propertyName: type
+        mapping:
+          RASv1Dot1VisaCriterion: '#/components/schemas/RASv1Dot1VisaCriterion'
+      oneOf:
+        - $ref: '#/components/schemas/RASv1Dot1VisaCriterion'
 
     RASv1Dot1VisaCriterion:
       allOf:
