@@ -65,7 +65,13 @@ public class GlobalExceptionHandler {
 
   private ResponseEntity<ErrorReport> buildErrorReport(
       @NotNull Throwable ex, HttpStatus statusCode) {
-    log.error("Global exception handler:", ex);
+    // only log server errors at error level, which will alert sentry; log other
+    // errors at warn
+    if (statusCode.is5xxServerError() || statusCode.value() == 0) {
+      log.error("Global exception handler:", ex);
+    } else {
+      log.warn("Global exception handler:", ex);
+    }
 
     var errorReport = new ErrorReport().message(ex.getMessage()).statusCode(statusCode.value());
     return ResponseEntity.status(statusCode).body(errorReport);
