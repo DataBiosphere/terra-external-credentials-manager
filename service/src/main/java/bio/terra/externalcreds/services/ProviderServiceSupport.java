@@ -64,7 +64,7 @@ public abstract class ProviderServiceSupport {
           OAuth2ErrorCodes.UNSUPPORTED_RESPONSE_TYPE,
           OAuth2ErrorCodes.UNSUPPORTED_TOKEN_TYPE);
 
-  public ProviderServiceSupport(
+  protected ProviderServiceSupport(
       ExternalCredsConfig externalCredsConfig,
       ProviderOAuthClientCache providerOAuthClientCache,
       ProviderTokenClientCache providerTokenClientCache,
