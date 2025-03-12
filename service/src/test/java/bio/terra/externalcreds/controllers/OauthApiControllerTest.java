@@ -22,7 +22,6 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.services.LinkedAccountService;
-import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.ProviderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -56,10 +55,6 @@ class OauthApiControllerTest extends BaseTest {
   @MockitoBean
   @Qualifier("providerService")
   private ProviderService providerServiceMock;
-
-  @MockitoBean
-  @Qualifier("passportProviderService")
-  private PassportProviderService passportProviderServiceMock;
 
   @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
   @MockitoBean private AuditLogger auditLoggerMock;
@@ -174,7 +169,7 @@ class OauthApiControllerTest extends BaseTest {
               .linkedAccount(inputLinkedAccount)
               .passport(TestUtils.createRandomPassport())
               .build();
-      when(passportProviderServiceMock.createLink(
+      when(providerServiceMock.createLink(
               eq(inputLinkedAccount.getProvider()),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
@@ -195,7 +190,7 @@ class OauthApiControllerTest extends BaseTest {
               .linkedAccount(inputLinkedAccount)
               .passport(TestUtils.createRandomPassport())
               .build();
-      when(passportProviderServiceMock.createLink(
+      when(providerServiceMock.createLink(
               eq(inputLinkedAccount.getProvider()),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
@@ -229,7 +224,7 @@ class OauthApiControllerTest extends BaseTest {
               .linkedAccount(inputLinkedAccount)
               .passport(TestUtils.createRandomPassport())
               .build();
-      when(passportProviderServiceMock.createLink(
+      when(providerServiceMock.createLink(
               eq(inputLinkedAccount.getProvider()),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
@@ -246,7 +241,7 @@ class OauthApiControllerTest extends BaseTest {
       var userId = "userId";
       mockSamUser(userId, accessToken);
 
-      when(passportProviderServiceMock.createLink(any(), any(), any(), any(), any()))
+      when(providerServiceMock.createLink(any(), any(), any(), any(), any()))
           .thenThrow(new ExternalCredsException("This is a drill!"));
 
       // check that an internal server error code is returned
@@ -447,7 +442,7 @@ class OauthApiControllerTest extends BaseTest {
       var provider = Provider.GITHUB;
       mockSamUser(userId, accessToken);
 
-      when(passportProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+      when(providerServiceMock.getProviderAccessToken(any(), eq(provider), any()))
           .thenReturn(githubAccessToken);
 
       mvc.perform(
@@ -464,7 +459,7 @@ class OauthApiControllerTest extends BaseTest {
       var provider = Provider.GITHUB;
       mockSamUser(userId, accessToken);
 
-      when(passportProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+      when(providerServiceMock.getProviderAccessToken(any(), eq(provider), any()))
           .thenThrow(new NotFoundException("not found"));
 
       mvc.perform(

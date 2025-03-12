@@ -1,7 +1,7 @@
 package bio.terra.externalcreds;
 
 import bio.terra.common.logging.LoggingInitializer;
-import bio.terra.externalcreds.services.PassportProviderService;
+import bio.terra.externalcreds.services.ProviderService;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringBootConfiguration;
@@ -32,31 +32,30 @@ public class ExternalCredsCronApplication {
         .run(args);
   }
 
-  private final PassportProviderService passportProviderService;
+  private final ProviderService providerService;
 
-  public ExternalCredsCronApplication(PassportProviderService passportProviderService) {
-    this.passportProviderService = passportProviderService;
+  public ExternalCredsCronApplication(ProviderService providerService) {
+    this.providerService = providerService;
   }
 
   @Scheduled(fixedRateString = "#{${externalcreds.background-job-interval-mins} * 60 * 1000}")
   public void checkForExpiringCredentials() {
     log.info("beginning check for expired linked accounts with passports");
-    var expiredLinkedAccountCount =
-        passportProviderService.invalidateExpiredLinkedAccountsWithPassports();
+    var expiredLinkedAccountCount = providerService.invalidateExpiredLinkedAccountsWithPassports();
     log.info(
         "completed check for expired linked accounts with passports",
         Map.of("expired_linked_account_count", expiredLinkedAccountCount));
 
     // check and refresh expiring visas and passports
     log.info("beginning check for expiring passports and visas");
-    var expiringPassportCount = passportProviderService.refreshExpiringPassports();
+    var expiringPassportCount = providerService.refreshExpiringPassports();
     log.info(
         "complete check for expiring passports and visas",
         Map.of("expiring_passport_count", expiringPassportCount));
 
     // check and validate visas not validated since job was last run
     log.info("beginning validateVisas");
-    var checkedPassportCount = passportProviderService.validateAccessTokenVisas();
+    var checkedPassportCount = providerService.validateAccessTokenVisas();
     log.info("completed validateVisas", Map.of("checked_passport_count", checkedPassportCount));
   }
 }

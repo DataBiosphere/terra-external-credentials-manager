@@ -27,7 +27,6 @@ public record OauthApiController(
     ObjectMapper mapper,
     LinkedAccountService linkedAccountService,
     ProviderService providerService,
-    PassportProviderService passportProviderService,
     ExternalCredsSamUserFactory samUserFactory,
     ExternalCredsConfig externalCredsConfig)
     implements OauthApi {
@@ -81,7 +80,7 @@ public record OauthApiController(
             .clientIP(request.getRemoteAddr());
 
     var accessToken =
-        passportProviderService.getProviderAccessToken(
+        providerService.getProviderAccessToken(
             samUser.getSubjectId(), provider, auditLogEventBuilder);
     return ResponseEntity.ok(accessToken);
   }
@@ -104,7 +103,7 @@ public record OauthApiController(
     try {
 
       var linkedAccountWithPassportAndVisas =
-          passportProviderService.createLink(
+          providerService.createLink(
               provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
       LinkInfo linkInfo =
           OpenApiConverters.Output.convert(linkedAccountWithPassportAndVisas.getLinkedAccount());

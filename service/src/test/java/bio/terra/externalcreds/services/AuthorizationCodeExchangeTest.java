@@ -51,7 +51,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   @MockitoBean ProviderOAuthClientCache providerOAuthClientCacheMock;
   @MockitoBean ExternalCredsConfig externalCredsConfigMock;
 
-  @Autowired PassportProviderService passportProviderService;
+  @Autowired ProviderService providerService;
   @Autowired PassportService passportService;
   @Autowired LinkedAccountService linkedAccountService;
   @Autowired JwtUtils jwtUtils;
@@ -156,7 +156,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
         assertThrows(
             BadRequestException.class,
             () ->
-                passportProviderService.createLink(
+                providerService.createLink(
                     linkedAccount.getProvider(),
                     linkedAccount.getUserId(),
                     authorizationCode,
@@ -204,7 +204,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     assertThrows(
         ExternalCredsException.class,
         () ->
-            passportProviderService.createLink(
+            providerService.createLink(
                 linkedAccount.getProvider(),
                 linkedAccount.getUserId(),
                 authorizationCode,
@@ -254,7 +254,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     assertThrows(
         ExternalCredsException.class,
         () ->
-            passportProviderService.createLink(
+            providerService.createLink(
                 linkedAccount.getProvider(),
                 linkedAccount.getUserId(),
                 authorizationCode,
@@ -339,7 +339,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             .userId(expectedLinkedAccount.getUserId())
             .clientIP("127.0.0.1");
     var linkedAccountWithPassportAndVisas =
-        passportProviderService.createLink(
+        providerService.createLink(
             expectedLinkedAccount.getProvider(),
             expectedLinkedAccount.getUserId(),
             authorizationCode,
