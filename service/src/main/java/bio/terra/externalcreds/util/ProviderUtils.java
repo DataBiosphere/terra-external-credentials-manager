@@ -1,15 +1,14 @@
 package bio.terra.externalcreds.util;
 
-import bio.terra.externalcreds.generated.model.Provider;
-import java.util.Set;
+import static bio.terra.externalcreds.services.JwtUtils.GA4GH_PASSPORT_V1_CLAIM;
+
+import bio.terra.externalcreds.config.ProviderProperties;
 
 public class ProviderUtils {
-  private static Set<Provider> fenceProviders =
-      Set.of(Provider.FENCE, Provider.DCF_FENCE, Provider.KIDS_FIRST, Provider.ANVIL);
 
   private ProviderUtils() {}
 
-  public static boolean isFenceProvider(Provider provider) {
-    return fenceProviders.contains(provider);
+  public static boolean isPassportProvider(ProviderProperties providerProperties) {
+    return providerProperties.getScopes().contains(GA4GH_PASSPORT_V1_CLAIM);
   }
 }

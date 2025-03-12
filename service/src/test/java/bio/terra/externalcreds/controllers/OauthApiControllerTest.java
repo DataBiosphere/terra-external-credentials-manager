@@ -24,7 +24,6 @@ import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.ProviderService;
-import bio.terra.externalcreds.services.TokenProviderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
@@ -37,6 +36,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -60,10 +60,6 @@ class OauthApiControllerTest extends BaseTest {
   @MockitoBean
   @Qualifier("passportProviderService")
   private PassportProviderService passportProviderServiceMock;
-
-  @MockitoBean
-  @Qualifier("tokenProviderService")
-  private TokenProviderService tokenProviderServiceMock;
 
   @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
   @MockitoBean private AuditLogger auditLoggerMock;
@@ -165,20 +161,26 @@ class OauthApiControllerTest extends BaseTest {
     @ParameterizedTest
     @EnumSource(
         value = Provider.class,
-        names = {"GITHUB", "FENCE", "DCF_FENCE", "KIDS_FIRST", "ANVIL"})
+        names = {"RAS", "ERA_COMMONS"}, // run for all providers except these
+        mode = Mode.EXCLUDE)
     void testCreatesTokenProviderLinkSuccessfully(Provider provider) throws Exception {
       var inputLinkedAccount = TestUtils.createRandomLinkedAccount(provider);
 
       var state = UUID.randomUUID().toString();
       var oauthcode = UUID.randomUUID().toString();
 
-      when(tokenProviderServiceMock.createLink(
+      var linkedAccountWithPassportAndVisas =
+          new LinkedAccountWithPassportAndVisas.Builder()
+              .linkedAccount(inputLinkedAccount)
+              .passport(TestUtils.createRandomPassport())
+              .build();
+      when(passportProviderServiceMock.createLink(
               eq(inputLinkedAccount.getProvider()),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
               eq(state),
               any(AuditLogEvent.Builder.class)))
-          .thenReturn(inputLinkedAccount);
+          .thenReturn(linkedAccountWithPassportAndVisas);
       testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode, false);
     }
 
@@ -222,13 +224,18 @@ class OauthApiControllerTest extends BaseTest {
       when(providerServiceMock.getAdditionalStateParams(state))
           .thenReturn(Optional.of(additionalStateParam));
 
-      when(tokenProviderServiceMock.createLink(
+      var linkedAccountWithPassportAndVisas =
+          new LinkedAccountWithPassportAndVisas.Builder()
+              .linkedAccount(inputLinkedAccount)
+              .passport(TestUtils.createRandomPassport())
+              .build();
+      when(passportProviderServiceMock.createLink(
               eq(inputLinkedAccount.getProvider()),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
               eq(state),
               any(AuditLogEvent.Builder.class)))
-          .thenReturn(inputLinkedAccount);
+          .thenReturn(linkedAccountWithPassportAndVisas);
       testCreatesLinkSuccessfully(inputLinkedAccount, state, oauthcode, true);
     }
 
@@ -440,7 +447,7 @@ class OauthApiControllerTest extends BaseTest {
       var provider = Provider.GITHUB;
       mockSamUser(userId, accessToken);
 
-      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+      when(passportProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
           .thenReturn(githubAccessToken);
 
       mvc.perform(
@@ -457,7 +464,7 @@ class OauthApiControllerTest extends BaseTest {
       var provider = Provider.GITHUB;
       mockSamUser(userId, accessToken);
 
-      when(tokenProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
+      when(passportProviderServiceMock.getProviderAccessToken(any(), eq(provider), any()))
           .thenThrow(new NotFoundException("not found"));
 
       mvc.perform(

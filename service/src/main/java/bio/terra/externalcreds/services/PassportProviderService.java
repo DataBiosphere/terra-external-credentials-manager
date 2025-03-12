@@ -1,14 +1,17 @@
 package bio.terra.externalcreds.services;
 
 import bio.terra.common.exception.BadRequestException;
+import bio.terra.common.exception.ForbiddenException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.*;
+import bio.terra.externalcreds.util.ProviderUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.Timestamp;
@@ -18,9 +21,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -30,6 +35,7 @@ import reactor.core.publisher.Mono;
 public class PassportProviderService extends ProviderService {
   private final PassportService passportService;
   private final JwtUtils jwtUtils;
+  private final AccessTokenCacheService accessTokenCacheService;
 
   public PassportProviderService(
       ExternalCredsConfig externalCredsConfig,
@@ -40,7 +46,8 @@ public class PassportProviderService extends ProviderService {
       PassportService passportService,
       JwtUtils jwtUtils,
       AuditLogger auditLogger,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      AccessTokenCacheService accessTokenCacheService) {
     super(
         externalCredsConfig,
         providerOAuthClientCache,
@@ -51,6 +58,7 @@ public class PassportProviderService extends ProviderService {
         objectMapper);
     this.passportService = passportService;
     this.jwtUtils = jwtUtils;
+    this.accessTokenCacheService = accessTokenCacheService;
   }
 
   public LinkedAccountWithPassportAndVisas createLink(
@@ -73,15 +81,29 @@ public class PassportProviderService extends ProviderService {
               new HashSet<>(providerInfo.getScopes()),
               encodedState,
               providerClient);
-      var linkedAccountWithPassportAndVisas =
-          linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
-              jwtUtils.enrichAccountWithPassportAndVisas(
-                  linkedAccount.getLeft(), linkedAccount.getRight()));
+
+      var linkedAccountWithPassportAndVisas = upsertLinkedAccount(providerInfo, linkedAccount);
+
       logLinkCreation(Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
       return linkedAccountWithPassportAndVisas;
     } catch (OAuth2AuthorizationException oauthEx) {
       logLinkCreation(Optional.empty(), auditLogEventBuilder);
       throw new BadRequestException(oauthEx);
+    }
+  }
+
+  private LinkedAccountWithPassportAndVisas upsertLinkedAccount(
+      ProviderProperties providerInfo, ImmutablePair<LinkedAccount, OAuth2User> linkedAccount) {
+    if (ProviderUtils.isPassportProvider(providerInfo)) {
+      return linkedAccountService.upsertLinkedAccountWithPassportAndVisas(
+          jwtUtils.enrichAccountWithPassportAndVisas(
+              linkedAccount.getLeft(), linkedAccount.getRight()));
+    } else {
+      linkedAccountService.upsertLinkedAccount(linkedAccount.getLeft());
+      // returns a LinkedAccountWithPassportAndVisas with empty passports and visas
+      return new LinkedAccountWithPassportAndVisas.Builder()
+          .linkedAccount(linkedAccount.getLeft())
+          .build();
     }
   }
 
@@ -99,7 +121,8 @@ public class PassportProviderService extends ProviderService {
     return expiredLinkedAccountsWithPassports.size();
   }
 
-  private void logLinkCreation(
+  @VisibleForTesting
+  public void logLinkCreation(
       Optional<LinkedAccountWithPassportAndVisas> linkedAccountWithPassportAndVisas,
       AuditLogEvent.Builder auditLogEventBuilder) {
     var passport =
@@ -166,6 +189,32 @@ public class PassportProviderService extends ProviderService {
     }
 
     return expiringLinkedAccounts.size();
+  }
+
+  public String getProviderAccessToken(
+      String userId, Provider provider, AuditLogEvent.Builder auditLogEventBuilder) {
+    var linkedAccount =
+        linkedAccountService
+            .getLinkedAccount(userId, provider)
+            .orElseThrow(
+                () ->
+                    new NotFoundException(
+                        String.format(
+                            "No linked account found for user ID: %s and provider: %s. "
+                                + "Please go to the Terra Profile page External Identities tab "
+                                + "to link your account for this provider.",
+                            userId, provider)));
+    if (linkedAccount.getExpires().before(Timestamp.from(Instant.now()))) {
+      throw new ForbiddenException(
+          String.format(
+              "The linked account found for user ID: %s and provider: %s has expired. "
+                  + "Please go to the Terra Profile page External Identities tab "
+                  + "to re-link your account for this provider.",
+              userId, provider));
+    }
+    var providerProperties = externalCredsConfig.getProviderProperties(provider);
+    return accessTokenCacheService.getLinkedAccountAccessToken(
+        linkedAccount, new HashSet<>(providerProperties.getScopes()), auditLogEventBuilder);
   }
 
   @VisibleForTesting

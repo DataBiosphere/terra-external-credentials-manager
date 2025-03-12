@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.services;
 
+import static bio.terra.externalcreds.services.JwtUtils.GA4GH_PASSPORT_V1_CLAIM;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -60,7 +61,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
   private final String authorizationCode = UUID.randomUUID().toString();
   private final String redirectUri = "https://test/redirect/uri";
-  private final Set<String> scopes = Set.of("email", "ga4gh");
+  private final Set<String> scopes = Set.of("email", GA4GH_PASSPORT_V1_CLAIM);
   private final String userEmail = "test@user.com";
 
   @BeforeAll

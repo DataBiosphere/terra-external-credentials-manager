@@ -2,6 +2,7 @@ package bio.terra.externalcreds.services;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -16,10 +17,10 @@ import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
+import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -27,13 +28,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.core.*;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-public class TokenProviderServiceTest extends BaseTest {
-
-  @Autowired private TokenProviderService tokenProviderService;
+class PassportProviderServiceTest extends BaseTest {
+  @Autowired private PassportProviderService passportProviderService;
   @MockitoBean private AuditLogger auditLoggerMock;
   @MockitoBean private LinkedAccountService linkedAccountService;
   @MockitoBean private ProviderTokenClientCache providerTokenClientCacheMock;
   @MockitoBean private OAuth2Service oAuth2ServiceMock;
+  @MockitoBean private JwtUtils jwtUtilsMock;
 
   private final Provider provider = Provider.GITHUB;
   private final String userId = UUID.randomUUID().toString();
@@ -41,27 +42,54 @@ public class TokenProviderServiceTest extends BaseTest {
   private final AuditLogEvent.Builder auditLogEventBuilder =
       new Builder().provider(provider).userId(userId).clientIP(clientIP);
 
-  private Random random = new Random();
-
   @Test
-  void testLogLinkCreateSuccess() {
-    Optional<LinkedAccount> linkedAccount =
-        Optional.ofNullable(TestUtils.createRandomLinkedAccount(provider));
-    tokenProviderService.logLinkCreation(linkedAccount, auditLogEventBuilder);
+  void testLogLinkCreatePassportSuccess() {
+    when(jwtUtilsMock.getJwtTransactionClaim(anyString()))
+        .thenReturn(Optional.of("unit-test-claim"));
+
+    LinkedAccount linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+    LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas =
+        new LinkedAccountWithPassportAndVisas.Builder()
+            .linkedAccount(linkedAccount)
+            .passport(TestUtils.createRandomPassport())
+            .build();
+
+    passportProviderService.logLinkCreation(
+        Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
     verify(auditLoggerMock)
         .logEvent(
             new AuditLogEvent.Builder()
                 .auditLogEventType(AuditLogEventType.LinkCreated)
                 .provider(provider)
                 .userId(userId)
-                .externalUserId(linkedAccount.map(LinkedAccount::getExternalUserId))
+                .transactionClaim("unit-test-claim")
+                .externalUserId(linkedAccount.getExternalUserId())
+                .clientIP(clientIP)
+                .build());
+  }
+
+  @Test
+  void testLogLinkNonPassportSuccess() {
+    LinkedAccount linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+    LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas =
+        new LinkedAccountWithPassportAndVisas.Builder().linkedAccount(linkedAccount).build();
+
+    passportProviderService.logLinkCreation(
+        Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
+    verify(auditLoggerMock)
+        .logEvent(
+            new AuditLogEvent.Builder()
+                .auditLogEventType(AuditLogEventType.LinkCreated)
+                .provider(provider)
+                .userId(userId)
+                .externalUserId(linkedAccount.getExternalUserId())
                 .clientIP(clientIP)
                 .build());
   }
 
   @Test
   void testLogLinkCreateFailure() {
-    tokenProviderService.logLinkCreation(Optional.empty(), auditLogEventBuilder);
+    passportProviderService.logLinkCreation(Optional.empty(), auditLogEventBuilder);
     verify(auditLoggerMock)
         .logEvent(
             new AuditLogEvent.Builder()
@@ -75,37 +103,16 @@ public class TokenProviderServiceTest extends BaseTest {
 
   @Test
   void testGetProviderAccessTokenNoLinkedAccount() {
-    var userId = "fakeUserId";
-    var provider = Provider.GITHUB;
-
-    var auditLogEventBuilder =
-        new AuditLogEvent.Builder()
-            .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
-            .provider(provider)
-            .userId(userId)
-            .externalUserId(Optional.empty())
-            .clientIP(clientIP);
-
     when(linkedAccountService.getLinkedAccount(userId, provider)).thenReturn(Optional.empty());
 
     assertThrows(
         NotFoundException.class,
-        () -> tokenProviderService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
+        () ->
+            passportProviderService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
   }
 
   @Test
   void testGetProviderAccessTokenExpiredLinkedAccount() {
-    var userId = "fakeUserId";
-    var provider = Provider.GITHUB;
-
-    var auditLogEventBuilder =
-        new AuditLogEvent.Builder()
-            .auditLogEventType(AuditLogEventType.GetProviderAccessToken)
-            .provider(provider)
-            .userId(userId)
-            .externalUserId(Optional.empty())
-            .clientIP(clientIP);
-
     var expiredLinkedAccount =
         TestUtils.createRandomLinkedAccount(provider)
             .withExpires(Timestamp.from(Instant.now().minusSeconds(60)));
@@ -114,7 +121,8 @@ public class TokenProviderServiceTest extends BaseTest {
 
     assertThrows(
         ForbiddenException.class,
-        () -> tokenProviderService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
+        () ->
+            passportProviderService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
   }
 
   @Test
@@ -133,10 +141,12 @@ public class TokenProviderServiceTest extends BaseTest {
         .thenThrow(
             new OAuth2AuthorizationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_TOKEN)));
 
+    var linkedAccountUserId = linkedAccount.getUserId();
+
     assertThrows(
         OAuth2AuthorizationException.class,
         () ->
-            tokenProviderService.getProviderAccessToken(
-                linkedAccount.getUserId(), provider, auditLogEventBuilder));
+            passportProviderService.getProviderAccessToken(
+                linkedAccountUserId, provider, auditLogEventBuilder));
   }
 }
