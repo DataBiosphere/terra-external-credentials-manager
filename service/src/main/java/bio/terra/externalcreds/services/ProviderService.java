@@ -48,19 +48,18 @@ import reactor.core.publisher.Mono;
 @Service
 @Slf4j
 public class ProviderService {
-  public final ExternalCredsConfig externalCredsConfig;
-  public final ProviderOAuthClientCache providerOAuthClientCache;
-  public final ProviderTokenClientCache providerTokenClientCache;
-  public final OAuth2Service oAuth2Service;
-  public final LinkedAccountService linkedAccountService;
+  private final ExternalCredsConfig externalCredsConfig;
+  private final ProviderOAuthClientCache providerOAuthClientCache;
+  private final OAuth2Service oAuth2Service;
+  private final LinkedAccountService linkedAccountService;
   private final PassportService passportService;
   private final JwtUtils jwtUtils;
   private final AccessTokenCacheService accessTokenCacheService;
 
-  public final AuditLogger auditLogger;
-  public final SecureRandom secureRandom = new SecureRandom();
-  public final ObjectMapper objectMapper;
-  public static final Collection<String> unrecoverableOAuth2ErrorCodes =
+  private final AuditLogger auditLogger;
+  private final SecureRandom secureRandom = new SecureRandom();
+  private final ObjectMapper objectMapper;
+  private static final Collection<String> unrecoverableOAuth2ErrorCodes =
       Set.of(
           OAuth2ErrorCodes.ACCESS_DENIED,
           OAuth2ErrorCodes.INSUFFICIENT_SCOPE,
@@ -78,7 +77,6 @@ public class ProviderService {
   public ProviderService(
       ExternalCredsConfig externalCredsConfig,
       ProviderOAuthClientCache providerOAuthClientCache,
-      ProviderTokenClientCache providerTokenClientCache,
       OAuth2Service oAuth2Service,
       LinkedAccountService linkedAccountService,
       AuditLogger auditLogger,
@@ -88,7 +86,6 @@ public class ProviderService {
       AccessTokenCacheService accessTokenCacheService) {
     this.externalCredsConfig = externalCredsConfig;
     this.providerOAuthClientCache = providerOAuthClientCache;
-    this.providerTokenClientCache = providerTokenClientCache;
     this.oAuth2Service = oAuth2Service;
     this.linkedAccountService = linkedAccountService;
     this.auditLogger = auditLogger;

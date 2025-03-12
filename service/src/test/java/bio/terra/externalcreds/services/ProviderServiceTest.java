@@ -840,7 +840,6 @@ public class ProviderServiceTest extends BaseTest {
     @MockitoBean ExternalCredsConfig externalCredsConfigMock;
 
     @Autowired ProviderService providerService;
-    ;
     @Autowired OAuth2StateDAO oAuth2StateDAO;
     @Autowired ObjectMapper objectMapper;
 
