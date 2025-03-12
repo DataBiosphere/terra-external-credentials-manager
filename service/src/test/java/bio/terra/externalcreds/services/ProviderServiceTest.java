@@ -178,6 +178,7 @@ public class ProviderServiceTest extends BaseTest {
         providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
         verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProvider());
+        verify(oAuth2ServiceMock).revokeRefreshToken(providerInfo, linkedAccount);
       }
     }
 
@@ -231,6 +232,7 @@ public class ProviderServiceTest extends BaseTest {
         providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
         verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProvider());
+        verify(oAuth2ServiceMock).revokeRefreshToken(providerInfo, linkedAccount);
       }
     }
 
@@ -271,6 +273,7 @@ public class ProviderServiceTest extends BaseTest {
         providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
         verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProvider());
+        verify(oAuth2ServiceMock).revokeRefreshToken(providerInfo, linkedAccount);
       }
     }
   }

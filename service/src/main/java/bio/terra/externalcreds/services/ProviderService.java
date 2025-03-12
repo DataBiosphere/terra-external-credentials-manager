@@ -16,9 +16,7 @@ import bio.terra.externalcreds.models.OAuth2State;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -28,14 +26,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
@@ -222,7 +217,7 @@ public class ProviderService {
             .getLinkedAccount(userId, provider)
             .orElseThrow(() -> new NotFoundException("Link not found for user"));
 
-    revokeAccessToken(providerInfo, linkedAccount);
+    oAuth2Service.revokeRefreshToken(providerInfo, linkedAccount);
 
     linkedAccountService.deleteLinkedAccount(userId, provider);
 
@@ -243,35 +238,5 @@ public class ProviderService {
             .linkedAccount(linkedAccount.withIsAuthenticated(false))
             .passport(Optional.empty()) // explicitly set to empty to be clear about intent
             .build());
-  }
-
-  private void revokeAccessToken(
-      ProviderProperties providerProperties, LinkedAccount linkedAccount) {
-    // Get the endpoint URL and insert the token
-    String revokeEndpoint =
-        String.format(providerProperties.getRevokeEndpoint(), linkedAccount.getRefreshToken());
-    // Add authorization information and make request
-    WebClient.ResponseSpec response =
-        WebClient.create(revokeEndpoint)
-            .post()
-            .uri(
-                uriBuilder ->
-                    uriBuilder
-                        .queryParam("client_id", providerProperties.getClientId())
-                        .queryParam("client_secret", providerProperties.getClientSecret())
-                        .build())
-            .retrieve();
-
-    String responseBody =
-        response
-            .onStatus(HttpStatusCode::isError, clientResponse -> Mono.empty())
-            .bodyToMono(String.class)
-            .block(Duration.of(1000, ChronoUnit.MILLIS));
-
-    log.info(
-        "Token revocation request for user [{}], provider [{}] returned with the result: [{}]",
-        linkedAccount.getUserId(),
-        linkedAccount.getProvider().toString(),
-        responseBody);
   }
 }
