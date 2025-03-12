@@ -26,15 +26,15 @@ public record OauthApiController(
     HttpServletRequest request,
     ObjectMapper mapper,
     LinkedAccountService linkedAccountService,
-    ProviderServiceSupport providerServiceSupport,
-    PassportProviderService passportProviderService,
+    //    ProviderServiceSupport providerServiceSupport,
+    ProviderService providerService,
     ExternalCredsSamUserFactory samUserFactory,
     ExternalCredsConfig externalCredsConfig)
     implements OauthApi {
 
   @Override
   public ResponseEntity<List<String>> listProviders() {
-    var providerNames = new ArrayList<>(providerServiceSupport.getProviderList());
+    var providerNames = new ArrayList<>(providerService.getProviderList());
     Collections.sort(providerNames);
 
     return ResponseEntity.ok(providerNames);
@@ -52,7 +52,7 @@ public record OauthApiController(
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerServiceSupport.getProviderAuthorizationUrl(
+        providerService.getProviderAuthorizationUrl(
             samUser.getSubjectId(), provider, redirectUri, null);
 
     return ResponseEntity.ok(authorizationUrl);
@@ -64,7 +64,7 @@ public record OauthApiController(
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerServiceSupport.getProviderAuthorizationUrl(
+        providerService.getProviderAuthorizationUrl(
             samUser.getSubjectId(), provider, redirectUri, body);
 
     return ResponseEntity.ok(authorizationUrl);
@@ -81,7 +81,7 @@ public record OauthApiController(
             .clientIP(request.getRemoteAddr());
 
     var accessToken =
-        passportProviderService.getProviderAccessToken(
+        providerService.getProviderAccessToken(
             samUser.getSubjectId(), provider, auditLogEventBuilder);
     return ResponseEntity.ok(accessToken);
   }
@@ -104,13 +104,13 @@ public record OauthApiController(
     try {
 
       var linkedAccountWithPassportAndVisas =
-          passportProviderService.createLink(
+          providerService.createLink(
               provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
       LinkInfo linkInfo =
           OpenApiConverters.Output.convert(linkedAccountWithPassportAndVisas.getLinkedAccount());
 
       Optional<Map<String, String>> additionalState =
-          providerServiceSupport.getAdditionalStateParams(state);
+          providerService.getAdditionalStateParams(state);
       additionalState.ifPresent(linkInfo::additionalState);
       return ResponseEntity.ok(linkInfo);
     } catch (Exception e) {
@@ -123,7 +123,7 @@ public record OauthApiController(
   @Override
   public ResponseEntity<Void> deleteLink(Provider provider) {
     var samUser = samUserFactory.from(request);
-    var deletedLink = providerServiceSupport.deleteLink(samUser.getSubjectId(), provider);
+    var deletedLink = providerService.deleteLink(samUser.getSubjectId(), provider);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()

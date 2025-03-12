@@ -28,8 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.core.*;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-class PassportProviderServiceTest extends BaseTest {
-  @Autowired private PassportProviderService passportProviderService;
+class ProviderServiceTest extends BaseTest {
+  @Autowired private ProviderService providerService;
   @MockitoBean private AuditLogger auditLoggerMock;
   @MockitoBean private LinkedAccountService linkedAccountService;
   @MockitoBean private ProviderTokenClientCache providerTokenClientCacheMock;
@@ -54,7 +54,7 @@ class PassportProviderServiceTest extends BaseTest {
             .passport(TestUtils.createRandomPassport())
             .build();
 
-    passportProviderService.logLinkCreation(
+    providerService.logLinkCreation(
         Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
     verify(auditLoggerMock)
         .logEvent(
@@ -74,7 +74,7 @@ class PassportProviderServiceTest extends BaseTest {
     LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas =
         new LinkedAccountWithPassportAndVisas.Builder().linkedAccount(linkedAccount).build();
 
-    passportProviderService.logLinkCreation(
+    providerService.logLinkCreation(
         Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
     verify(auditLoggerMock)
         .logEvent(
@@ -89,7 +89,7 @@ class PassportProviderServiceTest extends BaseTest {
 
   @Test
   void testLogLinkCreateFailure() {
-    passportProviderService.logLinkCreation(Optional.empty(), auditLogEventBuilder);
+    providerService.logLinkCreation(Optional.empty(), auditLogEventBuilder);
     verify(auditLoggerMock)
         .logEvent(
             new AuditLogEvent.Builder()
@@ -107,8 +107,7 @@ class PassportProviderServiceTest extends BaseTest {
 
     assertThrows(
         NotFoundException.class,
-        () ->
-            passportProviderService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
+        () -> providerService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
   }
 
   @Test
@@ -121,8 +120,7 @@ class PassportProviderServiceTest extends BaseTest {
 
     assertThrows(
         ForbiddenException.class,
-        () ->
-            passportProviderService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
+        () -> providerService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
   }
 
   @Test
@@ -146,7 +144,7 @@ class PassportProviderServiceTest extends BaseTest {
     assertThrows(
         OAuth2AuthorizationException.class,
         () ->
-            passportProviderService.getProviderAccessToken(
+            providerService.getProviderAccessToken(
                 linkedAccountUserId, provider, auditLogEventBuilder));
   }
 }

@@ -26,9 +26,8 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccount.Builder;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.services.LinkedAccountService;
-import bio.terra.externalcreds.services.PassportProviderService;
 import bio.terra.externalcreds.services.PassportService;
-import bio.terra.externalcreds.services.ProviderServiceSupport;
+import bio.terra.externalcreds.services.ProviderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
@@ -54,12 +53,8 @@ class OidcApiControllerTest extends BaseTest {
   @MockitoBean private LinkedAccountService linkedAccountServiceMock;
 
   @MockitoBean
-  @Qualifier("providerServiceSupport")
-  private ProviderServiceSupport providerServiceSupportMock;
-
-  @MockitoBean
-  @Qualifier("passportProviderService")
-  private PassportProviderService passportProviderServiceMock;
+  @Qualifier("providerService")
+  private ProviderService providerServiceMock;
 
   @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
   @MockitoBean private PassportService passportServiceMock;
@@ -68,7 +63,7 @@ class OidcApiControllerTest extends BaseTest {
 
   @Test
   void testListProviders() throws Exception {
-    when(providerServiceSupportMock.getProviderList())
+    when(providerServiceMock.getProviderList())
         .thenReturn(Set.of("fake-provider2", "fake-provider1"));
 
     mvc.perform(get("/api/oidc/v1/providers"))
@@ -91,8 +86,7 @@ class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(
-          providerServiceSupportMock.getProviderAuthorizationUrl(userId, provider, redirectUri, null))
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri, null))
           .thenReturn(result);
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -112,8 +106,7 @@ class OidcApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(
-          providerServiceSupportMock.getProviderAuthorizationUrl(userId, provider, redirectUri, null))
+      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri, null))
           .thenThrow(new BadRequestException("Invalid redirectUri"));
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -199,7 +192,7 @@ class OidcApiControllerTest extends BaseTest {
               .linkedAccount(inputLinkedAccount)
               .passport(TestUtils.createRandomPassport())
               .build();
-      when(passportProviderServiceMock.createLink(
+      when(providerServiceMock.createLink(
               eq(inputLinkedAccount.getProvider()),
               eq(inputLinkedAccount.getUserId()),
               eq(oauthcode),
@@ -227,7 +220,7 @@ class OidcApiControllerTest extends BaseTest {
       var userId = "userId";
       mockSamUser(userId, accessToken);
 
-      when(passportProviderServiceMock.createLink(any(), any(), any(), any(), any()))
+      when(providerServiceMock.createLink(any(), any(), any(), any(), any()))
           .thenThrow(new ExternalCredsException("This is a drill!"));
 
       // check that an internal server error code is returned
@@ -262,7 +255,7 @@ class OidcApiControllerTest extends BaseTest {
       var externalId = UUID.randomUUID().toString();
       mockSamUser(userId, accessToken);
 
-      when(providerServiceSupportMock.deleteLink(userId, provider))
+      when(providerServiceMock.deleteLink(userId, provider))
           .thenReturn(
               new Builder()
                   .provider(provider)
@@ -278,7 +271,7 @@ class OidcApiControllerTest extends BaseTest {
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isOk());
 
-      verify(providerServiceSupportMock).deleteLink(userId, provider);
+      verify(providerServiceMock).deleteLink(userId, provider);
 
       // check that a log was recorded
       verify(auditLoggerMock)
@@ -299,7 +292,7 @@ class OidcApiControllerTest extends BaseTest {
       mockSamUser(userId, accessToken);
 
       doThrow(new NotFoundException("not found"))
-          .when(providerServiceSupportMock)
+          .when(providerServiceMock)
           .deleteLink(userId, provider);
 
       mvc.perform(
