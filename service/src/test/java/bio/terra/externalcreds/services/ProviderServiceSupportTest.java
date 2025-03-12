@@ -67,13 +67,13 @@ import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-public class ProviderServiceTest extends BaseTest {
+public class ProviderServiceSupportTest extends BaseTest {
 
   @Nested
   @TestComponent
   class DeleteLink {
 
-    @Autowired private ProviderService providerService;
+    @Autowired private ProviderServiceSupport providerServiceSupport;
     @Autowired private ObjectMapper objectMapper;
 
     @MockitoBean private LinkedAccountService linkedAccountServiceMock;
@@ -85,7 +85,7 @@ public class ProviderServiceTest extends BaseTest {
     void testGetProviders() {
       when(externalCredsConfigMock.getProviders())
           .thenReturn(new EnumMap<>(Map.of(Provider.GITHUB, TestUtils.createRandomProvider())));
-      var providers = providerService.getProviderList();
+      var providers = providerServiceSupport.getProviderList();
       assertEquals(Set.of(Provider.GITHUB.toString()), providers);
     }
 
@@ -106,7 +106,7 @@ public class ProviderServiceTest extends BaseTest {
 
       assertThrows(
           NotFoundException.class,
-          () -> providerService.deleteLink(UUID.randomUUID().toString(), Provider.GITHUB));
+          () -> providerServiceSupport.deleteLink(UUID.randomUUID().toString(), Provider.GITHUB));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class ProviderServiceTest extends BaseTest {
 
       assertThrows(
           NotFoundException.class,
-          () -> providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider()));
+          () -> providerServiceSupport.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider()));
     }
 
     @Test
@@ -175,7 +175,7 @@ public class ProviderServiceTest extends BaseTest {
             .when(HttpRequest.request(keyRevocationPath).withMethod("DELETE"))
             .respond(HttpResponse.response().withStatusCode(HttpStatus.OK.value()));
 
-        providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
+        providerServiceSupport.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
         verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProvider());
       }
@@ -228,7 +228,7 @@ public class ProviderServiceTest extends BaseTest {
                     .withQueryStringParameters(expectedParameters))
             .respond(HttpResponse.response().withStatusCode(HttpStatus.OK.value()));
 
-        providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
+        providerServiceSupport.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
         verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProvider());
       }
@@ -268,7 +268,7 @@ public class ProviderServiceTest extends BaseTest {
                     .withQueryStringParameters(expectedParameters))
             .respond(HttpResponse.response().withStatusCode(httpStatus.value()));
 
-        providerService.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
+        providerServiceSupport.deleteLink(linkedAccount.getUserId(), linkedAccount.getProvider());
         verify(linkedAccountServiceMock)
             .deleteLinkedAccount(linkedAccount.getUserId(), linkedAccount.getProvider());
       }
@@ -279,7 +279,7 @@ public class ProviderServiceTest extends BaseTest {
   @TestComponent
   class AuthAndRefreshPassport {
 
-    @Autowired private ProviderService providerService;
+    @Autowired private ProviderServiceSupport providerServiceSupport;
     @Autowired private PassportProviderService passportProviderService;
     @Autowired private GA4GHPassportDAO passportDAO;
     @Autowired private LinkedAccountDAO linkedAccountDAO;
@@ -842,7 +842,8 @@ public class ProviderServiceTest extends BaseTest {
     @MockitoBean ProviderOAuthClientCache providerOAuthClientCacheMock;
     @MockitoBean ExternalCredsConfig externalCredsConfigMock;
 
-    @Autowired ProviderService providerService;
+    @Autowired
+    ProviderServiceSupport providerServiceSupport;
     @Autowired PassportProviderService passportProviderService;
     @Autowired OAuth2StateDAO oAuth2StateDAO;
     @Autowired ObjectMapper objectMapper;
@@ -876,7 +877,7 @@ public class ProviderServiceTest extends BaseTest {
           .thenAnswer((Answer<String>) invocation -> (String) invocation.getArgument(3));
 
       var result =
-          providerService.getProviderAuthorizationUrl(
+          providerServiceSupport.getProviderAuthorizationUrl(
               linkedAccount.getUserId(), linkedAccount.getProvider(), redirectUri, null);
       assertNotNull(result);
       // the result here should be only the state because of the mock above
@@ -916,7 +917,7 @@ public class ProviderServiceTest extends BaseTest {
       Map<String, String> additionalStateParam = new HashMap<>();
       additionalStateParam.put("redirectTo", "http://foo.org");
       var result =
-          providerService.getProviderAuthorizationUrl(
+          providerServiceSupport.getProviderAuthorizationUrl(
               linkedAccount.getUserId(),
               linkedAccount.getProvider(),
               redirectUri,
@@ -944,7 +945,7 @@ public class ProviderServiceTest extends BaseTest {
               .additionalState(additionalStateParam)
               .build();
       String encoded = oAuth2State.encode(objectMapper);
-      Optional<Map<String, String>> decoded = providerService.getAdditionalStateParams(encoded);
+      Optional<Map<String, String>> decoded = providerServiceSupport.getAdditionalStateParams(encoded);
       assertEquals(Optional.of(additionalStateParam), decoded);
     }
 
@@ -1068,7 +1069,8 @@ public class ProviderServiceTest extends BaseTest {
     @MockitoBean ProviderOAuthClientCache providerOAuthClientCacheMock;
     @MockitoBean ExternalCredsConfig externalCredsConfigMock;
 
-    @Autowired ProviderService providerService;
+    @Autowired
+    ProviderServiceSupport providerServiceSupport;
 
     private final String redirectUri = "https://foo.bar.com";
     private final Set<String> scopes = Set.of("email", "profile");
@@ -1104,7 +1106,7 @@ public class ProviderServiceTest extends BaseTest {
               eq(providerProperties.getAdditionalAuthorizationParameters())))
           .thenReturn("");
 
-      return providerService.getProviderAuthorizationUrl(
+      return providerServiceSupport.getProviderAuthorizationUrl(
           linkedAccount.getUserId(), linkedAccount.getProvider(), redirectUri, null);
     }
   }

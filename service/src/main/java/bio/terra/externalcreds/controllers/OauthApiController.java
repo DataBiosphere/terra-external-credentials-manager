@@ -26,7 +26,7 @@ public record OauthApiController(
     HttpServletRequest request,
     ObjectMapper mapper,
     LinkedAccountService linkedAccountService,
-    ProviderService providerService,
+    ProviderServiceSupport providerServiceSupport,
     PassportProviderService passportProviderService,
     ExternalCredsSamUserFactory samUserFactory,
     ExternalCredsConfig externalCredsConfig)
@@ -34,7 +34,7 @@ public record OauthApiController(
 
   @Override
   public ResponseEntity<List<String>> listProviders() {
-    var providerNames = new ArrayList<>(providerService.getProviderList());
+    var providerNames = new ArrayList<>(providerServiceSupport.getProviderList());
     Collections.sort(providerNames);
 
     return ResponseEntity.ok(providerNames);
@@ -52,7 +52,7 @@ public record OauthApiController(
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(
+        providerServiceSupport.getProviderAuthorizationUrl(
             samUser.getSubjectId(), provider, redirectUri, null);
 
     return ResponseEntity.ok(authorizationUrl);
@@ -64,7 +64,7 @@ public record OauthApiController(
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(
+        providerServiceSupport.getProviderAuthorizationUrl(
             samUser.getSubjectId(), provider, redirectUri, body);
 
     return ResponseEntity.ok(authorizationUrl);
@@ -110,7 +110,7 @@ public record OauthApiController(
           OpenApiConverters.Output.convert(linkedAccountWithPassportAndVisas.getLinkedAccount());
 
       Optional<Map<String, String>> additionalState =
-          providerService.getAdditionalStateParams(state);
+          providerServiceSupport.getAdditionalStateParams(state);
       additionalState.ifPresent(linkInfo::additionalState);
       return ResponseEntity.ok(linkInfo);
     } catch (Exception e) {
@@ -123,7 +123,7 @@ public record OauthApiController(
   @Override
   public ResponseEntity<Void> deleteLink(Provider provider) {
     var samUser = samUserFactory.from(request);
-    var deletedLink = providerService.deleteLink(samUser.getSubjectId(), provider);
+    var deletedLink = providerServiceSupport.deleteLink(samUser.getSubjectId(), provider);
 
     auditLogger.logEvent(
         new AuditLogEvent.Builder()

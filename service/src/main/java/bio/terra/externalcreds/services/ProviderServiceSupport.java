@@ -39,7 +39,7 @@ import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
-public class ProviderService {
+public class ProviderServiceSupport {
   public final ExternalCredsConfig externalCredsConfig;
   public final ProviderOAuthClientCache providerOAuthClientCache;
   public final ProviderTokenClientCache providerTokenClientCache;
@@ -64,7 +64,7 @@ public class ProviderService {
           OAuth2ErrorCodes.UNSUPPORTED_RESPONSE_TYPE,
           OAuth2ErrorCodes.UNSUPPORTED_TOKEN_TYPE);
 
-  public ProviderService(
+  public ProviderServiceSupport(
       ExternalCredsConfig externalCredsConfig,
       ProviderOAuthClientCache providerOAuthClientCache,
       ProviderTokenClientCache providerTokenClientCache,

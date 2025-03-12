@@ -23,7 +23,7 @@ import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportProviderService;
-import bio.terra.externalcreds.services.ProviderService;
+import bio.terra.externalcreds.services.ProviderServiceSupport;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
@@ -54,8 +54,8 @@ class OauthApiControllerTest extends BaseTest {
   @MockitoBean private LinkedAccountService linkedAccountServiceMock;
 
   @MockitoBean
-  @Qualifier("providerService")
-  private ProviderService providerServiceMock;
+  @Qualifier("providerServiceSupport")
+  private ProviderServiceSupport providerServiceSupportMock;
 
   @MockitoBean
   @Qualifier("passportProviderService")
@@ -68,7 +68,7 @@ class OauthApiControllerTest extends BaseTest {
 
   @Test
   void testListProviders() throws Exception {
-    when(providerServiceMock.getProviderList())
+    when(providerServiceSupportMock.getProviderList())
         .thenReturn(Set.of("fake-provider2", "fake-provider1"));
 
     mvc.perform(get("/api/oidc/v1/providers"))
@@ -221,7 +221,7 @@ class OauthApiControllerTest extends BaseTest {
               .additionalState(additionalStateParam)
               .build();
       var state = oAuth2State.encode(mapper);
-      when(providerServiceMock.getAdditionalStateParams(state))
+      when(providerServiceSupportMock.getAdditionalStateParams(state))
           .thenReturn(Optional.of(additionalStateParam));
 
       var linkedAccountWithPassportAndVisas =
@@ -281,7 +281,7 @@ class OauthApiControllerTest extends BaseTest {
       var externalId = UUID.randomUUID().toString();
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.deleteLink(userId, provider))
+      when(providerServiceSupportMock.deleteLink(userId, provider))
           .thenReturn(
               new LinkedAccount.Builder()
                   .provider(provider)
@@ -297,7 +297,7 @@ class OauthApiControllerTest extends BaseTest {
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isOk());
 
-      verify(providerServiceMock).deleteLink(userId, provider);
+      verify(providerServiceSupportMock).deleteLink(userId, provider);
 
       // check that a log was recorded
       verify(auditLoggerMock)
@@ -318,7 +318,7 @@ class OauthApiControllerTest extends BaseTest {
       mockSamUser(userId, accessToken);
 
       doThrow(new NotFoundException("not found"))
-          .when(providerServiceMock)
+          .when(providerServiceSupportMock)
           .deleteLink(userId, provider);
 
       mvc.perform(
@@ -334,7 +334,7 @@ class OauthApiControllerTest extends BaseTest {
       var externalId = UUID.randomUUID().toString();
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.deleteLink(userId, Provider.FENCE))
+      when(providerServiceSupportMock.deleteLink(userId, Provider.FENCE))
           .thenReturn(
               new LinkedAccount.Builder()
                   .provider(Provider.FENCE)
@@ -350,7 +350,7 @@ class OauthApiControllerTest extends BaseTest {
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isOk());
 
-      verify(providerServiceMock).deleteLink(userId, Provider.FENCE);
+      verify(providerServiceSupportMock).deleteLink(userId, Provider.FENCE);
 
       // check that a log was recorded
       verify(auditLoggerMock)
@@ -377,7 +377,8 @@ class OauthApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri, null))
+      when(
+          providerServiceSupportMock.getProviderAuthorizationUrl(userId, provider, redirectUri, null))
           .thenReturn(result);
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -400,7 +401,7 @@ class OauthApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(
+      when(providerServiceSupportMock.getProviderAuthorizationUrl(
               userId, provider, redirectUri, additionalStateParam))
           .thenReturn(result);
 
@@ -423,7 +424,8 @@ class OauthApiControllerTest extends BaseTest {
 
       mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri, null))
+      when(
+          providerServiceSupportMock.getProviderAuthorizationUrl(userId, provider, redirectUri, null))
           .thenThrow(new BadRequestException("Invalid redirectUri"));
 
       var queryParams = new LinkedMultiValueMap<String, String>();

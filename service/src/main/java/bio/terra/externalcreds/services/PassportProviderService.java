@@ -32,7 +32,7 @@ import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
-public class PassportProviderService extends ProviderService {
+public class PassportProviderService extends ProviderServiceSupport {
   private final PassportService passportService;
   private final JwtUtils jwtUtils;
   private final AccessTokenCacheService accessTokenCacheService;
