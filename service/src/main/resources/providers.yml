@@ -1,5 +1,4 @@
 externalcreds:
-  allowed-jwt-issuers: [https://stsstg.nih.gov]
   providers:
     github:
       clientId: "${GITHUB_CLIENT_ID}"
