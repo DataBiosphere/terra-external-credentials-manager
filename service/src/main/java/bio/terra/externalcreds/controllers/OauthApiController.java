@@ -26,7 +26,6 @@ public record OauthApiController(
     HttpServletRequest request,
     ObjectMapper mapper,
     LinkedAccountService linkedAccountService,
-    //    ProviderServiceSupport providerServiceSupport,
     ProviderService providerService,
     ExternalCredsSamUserFactory samUserFactory,
     ExternalCredsConfig externalCredsConfig)

@@ -39,7 +39,7 @@ import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
-public class ProviderServiceSupport {
+public abstract class ProviderServiceSupport {
   public final ExternalCredsConfig externalCredsConfig;
   public final ProviderOAuthClientCache providerOAuthClientCache;
   public final ProviderTokenClientCache providerTokenClientCache;
