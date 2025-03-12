@@ -65,6 +65,10 @@ dependencies {
 
 }
 
+gitProperties {
+	dotGitDirectory = project.rootProject.layout.projectDirectory.dir(".git")
+}
+
 sonarqube {
 	properties {
 		property "sonar.projectName", "terra-external-credentials-manager-service"
