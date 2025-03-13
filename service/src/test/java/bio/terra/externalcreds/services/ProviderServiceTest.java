@@ -16,11 +16,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import bio.terra.common.exception.BadRequestException;
+import bio.terra.common.exception.ForbiddenException;
 import bio.terra.common.exception.NotFoundException;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
+import bio.terra.externalcreds.auditLogging.AuditLogEvent.Builder;
+import bio.terra.externalcreds.auditLogging.AuditLogEventType;
+import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
@@ -280,7 +284,6 @@ public class ProviderServiceTest extends BaseTest {
   class AuthAndRefreshPassport {
 
     @Autowired private ProviderService providerService;
-    @Autowired private PassportProviderService passportProviderService;
     @Autowired private GA4GHPassportDAO passportDAO;
     @Autowired private LinkedAccountDAO linkedAccountDAO;
     @Autowired private GA4GHVisaDAO visaDAO;
@@ -302,7 +305,7 @@ public class ProviderServiceTest extends BaseTest {
           TestUtils.createRandomPassport().withLinkedAccountId(expiredLinkedAccount.getId()));
 
       // since the LinkedAccount itself is expired, it should be marked as invalid
-      passportProviderService.authAndRefreshPassport(expiredLinkedAccount);
+      providerService.authAndRefreshPassport(expiredLinkedAccount);
 
       // check that the passport was deleted and the linked account was marked as invalid
       assertEmpty(
@@ -340,7 +343,7 @@ public class ProviderServiceTest extends BaseTest {
       // check that an exception is thrown
       assertThrows(
           ExternalCredsException.class,
-          () -> passportProviderService.authAndRefreshPassport(savedLinkedAccount));
+          () -> providerService.authAndRefreshPassport(savedLinkedAccount));
     }
 
     @Test
@@ -374,7 +377,7 @@ public class ProviderServiceTest extends BaseTest {
                   new OAuth2Error(OAuth2ErrorCodes.INSUFFICIENT_SCOPE)));
 
       // attempt to auth and refresh
-      passportProviderService.authAndRefreshPassport(savedLinkedAccount);
+      providerService.authAndRefreshPassport(savedLinkedAccount);
 
       // check that the passport was deleted and the linked account was marked as invalid
       assertEmpty(
@@ -418,7 +421,7 @@ public class ProviderServiceTest extends BaseTest {
       // check that the expected exception is thrown
       assertThrows(
           ExternalCredsException.class,
-          () -> passportProviderService.authAndRefreshPassport(savedLinkedAccount));
+          () -> providerService.authAndRefreshPassport(savedLinkedAccount));
     }
 
     @Test
@@ -453,7 +456,7 @@ public class ProviderServiceTest extends BaseTest {
                   new OAuth2AuthorizationException(
                       new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT))));
 
-      passportProviderService.authAndRefreshPassport(savedLinkedAccount);
+      providerService.authAndRefreshPassport(savedLinkedAccount);
       var updatedLinkedAccount =
           linkedAccountDAO.getLinkedAccount(
               savedLinkedAccount.getUserId(), savedLinkedAccount.getProvider());
@@ -511,7 +514,7 @@ public class ProviderServiceTest extends BaseTest {
                   .build());
 
       // attempt to auth and refresh
-      passportProviderService.authAndRefreshPassport(savedLinkedAccount);
+      providerService.authAndRefreshPassport(savedLinkedAccount);
 
       // check that the passport and visa were updated in the DB
       var actualUpdatedPassport =
@@ -548,7 +551,7 @@ public class ProviderServiceTest extends BaseTest {
       // check that ExternalCredsException is thrown
       assertThrows(
           ExternalCredsException.class,
-          () -> passportProviderService.authAndRefreshPassport(linkedAccount));
+          () -> providerService.authAndRefreshPassport(linkedAccount));
     }
 
     private void mockProviderConfigs(Provider provider) {
@@ -562,7 +565,7 @@ public class ProviderServiceTest extends BaseTest {
   class InvalidateExpiredLinkedAccounts {
     @Autowired private GA4GHPassportDAO passportDAO;
     @Autowired private LinkedAccountDAO linkedAccountDAO;
-    @Autowired private PassportProviderService passportProviderService;
+    @Autowired private ProviderService providerService;
 
     @Test
     void testOnlyExpiredLinkedAccountsAreInvalidated() {
@@ -580,7 +583,7 @@ public class ProviderServiceTest extends BaseTest {
           TestUtils.createRandomPassport()
               .withLinkedAccountId(savedNonExpiredLinkedAccount.getId()));
 
-      passportProviderService.invalidateExpiredLinkedAccountsWithPassports();
+      providerService.invalidateExpiredLinkedAccountsWithPassports();
       assertTrue(
           passportDAO
               .getPassport(expiredLinkedAccount.getUserId(), expiredLinkedAccount.getProvider())
@@ -598,7 +601,7 @@ public class ProviderServiceTest extends BaseTest {
   class RefreshExpiringPassports {
     @Autowired private GA4GHPassportDAO passportDAO;
     @Autowired private LinkedAccountDAO linkedAccountDAO;
-    @Autowired private PassportProviderService passportProviderService;
+    @Autowired private ProviderService providerService;
 
     @MockitoBean private ExternalCredsConfig externalCredsConfigMock;
 
@@ -627,7 +630,7 @@ public class ProviderServiceTest extends BaseTest {
           .thenReturn(Duration.ofMinutes(30));
 
       // check that authAndRefreshPassport is called exactly once with the expiring linked account
-      var providerServiceSpy = Mockito.spy(passportProviderService);
+      var providerServiceSpy = Mockito.spy(providerService);
       providerServiceSpy.refreshExpiringPassports();
       verify(providerServiceSpy).authAndRefreshPassport(any());
       verify(providerServiceSpy).authAndRefreshPassport(savedExpiringLinkedAccount);
@@ -637,7 +640,7 @@ public class ProviderServiceTest extends BaseTest {
   @Nested
   @TestComponent
   class ValidateVisaWithProvider {
-    @Autowired private PassportProviderService passportProviderService;
+    @Autowired private ProviderService providerService;
     @Autowired private LinkedAccountService linkedAccountService;
     @Autowired private GA4GHVisaDAO visaDAO;
 
@@ -655,8 +658,7 @@ public class ProviderServiceTest extends BaseTest {
           mockValidationEndpointConfigsAndResponse(
               visaVerificationDetails, HttpStatus.OK, "Valid")) {
 
-        var responseBody =
-            passportProviderService.validateVisaWithProvider(visaVerificationDetails);
+        var responseBody = providerService.validateVisaWithProvider(visaVerificationDetails);
         assertEquals(true, responseBody);
 
         // verify that visa last validated has been updated
@@ -687,8 +689,7 @@ public class ProviderServiceTest extends BaseTest {
           mockValidationEndpointConfigsAndResponse(
               visaVerificationDetails, HttpStatus.BAD_REQUEST, "Invalid Passport")) {
 
-        var responseBody =
-            passportProviderService.validateVisaWithProvider(visaVerificationDetails);
+        var responseBody = providerService.validateVisaWithProvider(visaVerificationDetails);
         assertEquals(false, responseBody);
 
         // verify that visa last validated has NOT been updated
@@ -712,7 +713,7 @@ public class ProviderServiceTest extends BaseTest {
 
       assertThrows(
           NotFoundException.class,
-          () -> passportProviderService.validateVisaWithProvider(visaVerificationDetails));
+          () -> providerService.validateVisaWithProvider(visaVerificationDetails));
     }
 
     @Test
@@ -725,7 +726,7 @@ public class ProviderServiceTest extends BaseTest {
 
       assertThrows(
           NotFoundException.class,
-          () -> passportProviderService.validateVisaWithProvider(visaVerificationDetails));
+          () -> providerService.validateVisaWithProvider(visaVerificationDetails));
     }
 
     private ClientAndServer mockValidationEndpointConfigsAndResponse(
@@ -762,12 +763,12 @@ public class ProviderServiceTest extends BaseTest {
   @Nested
   @TestComponent
   class ValidateAccessTokenVisas {
-    @Autowired private PassportProviderService passportProviderService;
+    @Autowired private ProviderService providerService;
     @Autowired private LinkedAccountService linkedAccountService;
 
     @Test
     void testValidResponse() {
-      var providerServiceSpy = spy(passportProviderService);
+      var providerServiceSpy = spy(providerService);
       LinkedAccountWithPassportAndVisas savedLinkedAccountWithPassportAndVisa =
           createLinkedAccountWithOldVisa(linkedAccountService);
 
@@ -783,7 +784,7 @@ public class ProviderServiceTest extends BaseTest {
 
     @Test
     void testInvalidResponse() {
-      var providerServiceSpy = spy(passportProviderService);
+      var providerServiceSpy = spy(providerService);
       LinkedAccountWithPassportAndVisas savedLinkedAccountWithPassportAndVisa =
           createLinkedAccountWithOldVisa(linkedAccountService);
 
@@ -843,7 +844,6 @@ public class ProviderServiceTest extends BaseTest {
     @MockitoBean ExternalCredsConfig externalCredsConfigMock;
 
     @Autowired ProviderService providerService;
-    @Autowired PassportProviderService passportProviderService;
     @Autowired OAuth2StateDAO oAuth2StateDAO;
     @Autowired ObjectMapper objectMapper;
 
@@ -965,7 +965,7 @@ public class ProviderServiceTest extends BaseTest {
       assertThrows(
           BadRequestException.class,
           () ->
-              passportProviderService.createLink(
+              providerService.createLink(
                   expectedLinkedAccount.getProvider(),
                   expectedLinkedAccount.getUserId(),
                   UUID.randomUUID().toString(),
@@ -990,7 +990,7 @@ public class ProviderServiceTest extends BaseTest {
       assertThrows(
           BadRequestException.class,
           () ->
-              passportProviderService.createLink(
+              providerService.createLink(
                   expectedLinkedAccount.getProvider(),
                   expectedLinkedAccount.getUserId(),
                   UUID.randomUUID().toString(),
@@ -1006,7 +1006,7 @@ public class ProviderServiceTest extends BaseTest {
           assertThrows(
               BadRequestException.class,
               () ->
-                  passportProviderService.createLink(
+                  providerService.createLink(
                       expectedLinkedAccount.getProvider(),
                       expectedLinkedAccount.getUserId(),
                       UUID.randomUUID().toString(),
@@ -1025,7 +1025,7 @@ public class ProviderServiceTest extends BaseTest {
           assertThrows(
               BadRequestException.class,
               () ->
-                  passportProviderService.createLink(
+                  providerService.createLink(
                       expectedLinkedAccount.getProvider(),
                       expectedLinkedAccount.getUserId(),
                       UUID.randomUUID().toString(),
@@ -1044,7 +1044,7 @@ public class ProviderServiceTest extends BaseTest {
           assertThrows(
               BadRequestException.class,
               () ->
-                  passportProviderService.createLink(
+                  providerService.createLink(
                       expectedLinkedAccount.getProvider(),
                       expectedLinkedAccount.getUserId(),
                       UUID.randomUUID().toString(),
@@ -1113,5 +1113,128 @@ public class ProviderServiceTest extends BaseTest {
     return ClientRegistration.withRegistrationId(provider.toString())
         .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
         .build();
+  }
+
+  @Nested
+  @TestComponent
+  class LinkedAccountTest {
+    @Autowired private ProviderService providerService;
+    @MockitoBean private AuditLogger auditLoggerMock;
+    @MockitoBean private LinkedAccountService linkedAccountService;
+    @MockitoBean private ProviderTokenClientCache providerTokenClientCacheMock;
+    @MockitoBean private OAuth2Service oAuth2ServiceMock;
+    @MockitoBean private JwtUtils jwtUtilsMock;
+
+    private final Provider provider = Provider.GITHUB;
+    private final String userId = UUID.randomUUID().toString();
+    private final String clientIP = "127.0.0.1";
+    private final AuditLogEvent.Builder auditLogEventBuilder =
+        new Builder().provider(provider).userId(userId).clientIP(clientIP);
+
+    @Test
+    void testLogLinkCreatePassportSuccess() {
+      when(jwtUtilsMock.getJwtTransactionClaim(anyString()))
+          .thenReturn(Optional.of("unit-test-claim"));
+
+      LinkedAccount linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+      LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas =
+          new LinkedAccountWithPassportAndVisas.Builder()
+              .linkedAccount(linkedAccount)
+              .passport(TestUtils.createRandomPassport())
+              .build();
+
+      providerService.logLinkCreation(
+          Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
+      verify(auditLoggerMock)
+          .logEvent(
+              new AuditLogEvent.Builder()
+                  .auditLogEventType(AuditLogEventType.LinkCreated)
+                  .provider(provider)
+                  .userId(userId)
+                  .transactionClaim("unit-test-claim")
+                  .externalUserId(linkedAccount.getExternalUserId())
+                  .clientIP(clientIP)
+                  .build());
+    }
+
+    @Test
+    void testLogLinkNonPassportSuccess() {
+      LinkedAccount linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+      LinkedAccountWithPassportAndVisas linkedAccountWithPassportAndVisas =
+          new LinkedAccountWithPassportAndVisas.Builder().linkedAccount(linkedAccount).build();
+
+      providerService.logLinkCreation(
+          Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
+      verify(auditLoggerMock)
+          .logEvent(
+              new AuditLogEvent.Builder()
+                  .auditLogEventType(AuditLogEventType.LinkCreated)
+                  .provider(provider)
+                  .userId(userId)
+                  .externalUserId(linkedAccount.getExternalUserId())
+                  .clientIP(clientIP)
+                  .build());
+    }
+
+    @Test
+    void testLogLinkCreateFailure() {
+      providerService.logLinkCreation(Optional.empty(), auditLogEventBuilder);
+      verify(auditLoggerMock)
+          .logEvent(
+              new AuditLogEvent.Builder()
+                  .auditLogEventType(AuditLogEventType.LinkCreationFailed)
+                  .provider(provider)
+                  .userId(userId)
+                  .externalUserId(Optional.empty())
+                  .clientIP(clientIP)
+                  .build());
+    }
+
+    @Test
+    void testGetProviderAccessTokenNoLinkedAccount() {
+      when(linkedAccountService.getLinkedAccount(userId, provider)).thenReturn(Optional.empty());
+
+      assertThrows(
+          NotFoundException.class,
+          () -> providerService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
+    }
+
+    @Test
+    void testGetProviderAccessTokenExpiredLinkedAccount() {
+      var expiredLinkedAccount =
+          TestUtils.createRandomLinkedAccount(provider)
+              .withExpires(Timestamp.from(Instant.now().minusSeconds(60)));
+      when(linkedAccountService.getLinkedAccount(userId, provider))
+          .thenReturn(Optional.of(expiredLinkedAccount));
+
+      assertThrows(
+          ForbiddenException.class,
+          () -> providerService.getProviderAccessToken(userId, provider, auditLogEventBuilder));
+    }
+
+    @Test
+    void testGetProviderAccessTokenUnauthorized() {
+      var linkedAccount = TestUtils.createRandomLinkedAccount(provider);
+      var clientRegistration = TestUtils.createClientRegistration(linkedAccount.getProvider());
+
+      when(linkedAccountService.getLinkedAccount(linkedAccount.getUserId(), provider))
+          .thenReturn(Optional.of(linkedAccount));
+      when(providerTokenClientCacheMock.getProviderClient(linkedAccount.getProvider()))
+          .thenReturn(clientRegistration);
+      when(oAuth2ServiceMock.authorizeWithRefreshToken(
+              eq(clientRegistration),
+              eq(new OAuth2RefreshToken(linkedAccount.getRefreshToken(), null)),
+              any(Set.class)))
+          .thenThrow(
+              new OAuth2AuthorizationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_TOKEN)));
+
+      var linkedAccountUserId = linkedAccount.getUserId();
+
+      assertThrows(
+          OAuth2AuthorizationException.class,
+          () ->
+              providerService.getProviderAccessToken(
+                  linkedAccountUserId, provider, auditLogEventBuilder));
+    }
   }
 }
