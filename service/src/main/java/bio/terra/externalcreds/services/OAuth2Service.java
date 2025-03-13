@@ -1,8 +1,18 @@
 package bio.terra.externalcreds.services;
 
+import bio.terra.externalcreds.config.ProviderProperties;
+import bio.terra.externalcreds.models.LinkedAccount;
+import com.nimbusds.oauth2.sdk.TokenRevocationRequest;
+import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
+import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.id.ClientID;
+import com.nimbusds.oauth2.sdk.token.RefreshToken;
+import java.io.IOException;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.DefaultRefreshTokenTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
@@ -32,6 +42,7 @@ import org.springframework.stereotype.Service;
  * </ol>
  */
 @Service
+@Slf4j
 public class OAuth2Service {
   /**
    * Construct authorization uri user should visit to authenticate
@@ -135,5 +146,37 @@ public class OAuth2Service {
   public OAuth2User getUserInfo(ClientRegistration providerClient, OAuth2AccessToken accessToken) {
     var userRequest = new OAuth2UserRequest(providerClient, accessToken);
     return new DefaultOAuth2UserService().loadUser(userRequest);
+  }
+
+  /**
+   * Revoke the refresh token associated with the linked account. This is a best attempt and will
+   * not throw an exception if it fails.
+   *
+   * @param providerProperties provider properties
+   * @param linkedAccount linked account
+   */
+  public void revokeRefreshToken(
+      ProviderProperties providerProperties, LinkedAccount linkedAccount) {
+    String revokeEndpoint = providerProperties.getRevokeEndpoint();
+
+    // spring security does not seem to have a revocation client so use nimbus
+    var req =
+        new TokenRevocationRequest(
+            URI.create(revokeEndpoint),
+            new ClientSecretBasic(
+                new ClientID(providerProperties.getClientId()),
+                new Secret(providerProperties.getClientSecret())),
+            new RefreshToken(linkedAccount.getRefreshToken()));
+    try {
+      var response = req.toHTTPRequest().send();
+      log.info(
+          "Token revocation request for user [{}], provider [{}] returned status [{}] with the result: [{}]",
+          linkedAccount.getUserId(),
+          linkedAccount.getProvider().toString(),
+          response.getStatusCode(),
+          response.getContent());
+    } catch (IOException e) {
+      log.error("revoke refresh token failure", e);
+    }
   }
 }

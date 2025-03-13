@@ -236,7 +236,7 @@ public class ProviderService {
             .getLinkedAccount(userId, provider)
             .orElseThrow(() -> new NotFoundException("Link not found for user"));
 
-    revokeAccessToken(providerInfo, linkedAccount);
+    oAuth2Service.revokeRefreshToken(providerInfo, linkedAccount);
 
     linkedAccountService.deleteLinkedAccount(userId, provider);
 
@@ -257,36 +257,6 @@ public class ProviderService {
             .linkedAccount(linkedAccount.withIsAuthenticated(false))
             .passport(Optional.empty()) // explicitly set to empty to be clear about intent
             .build());
-  }
-
-  private void revokeAccessToken(
-      ProviderProperties providerProperties, LinkedAccount linkedAccount) {
-    // Get the endpoint URL and insert the token
-    String revokeEndpoint =
-        String.format(providerProperties.getRevokeEndpoint(), linkedAccount.getRefreshToken());
-    // Add authorization information and make request
-    WebClient.ResponseSpec response =
-        WebClient.create(revokeEndpoint)
-            .post()
-            .uri(
-                uriBuilder ->
-                    uriBuilder
-                        .queryParam("client_id", providerProperties.getClientId())
-                        .queryParam("client_secret", providerProperties.getClientSecret())
-                        .build())
-            .retrieve();
-
-    String responseBody =
-        response
-            .onStatus(HttpStatusCode::isError, clientResponse -> Mono.empty())
-            .bodyToMono(String.class)
-            .block(Duration.of(1000, ChronoUnit.MILLIS));
-
-    log.info(
-        "Token revocation request for user [{}], provider [{}] returned with the result: [{}]",
-        linkedAccount.getUserId(),
-        linkedAccount.getProvider().toString(),
-        responseBody);
   }
 
   public LinkedAccountWithPassportAndVisas createLink(
