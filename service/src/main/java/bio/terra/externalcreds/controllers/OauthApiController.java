@@ -1,5 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
+import static bio.terra.externalcreds.generated.model.Provider.ERA_COMMONS;
+
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
@@ -25,8 +27,6 @@ public record OauthApiController(
     ObjectMapper mapper,
     LinkedAccountService linkedAccountService,
     ProviderService providerService,
-    PassportProviderService passportProviderService,
-    TokenProviderService tokenProviderService,
     ExternalCredsSamUserFactory samUserFactory,
     ExternalCredsConfig externalCredsConfig)
     implements OauthApi {
@@ -80,13 +80,18 @@ public record OauthApiController(
             .clientIP(request.getRemoteAddr());
 
     var accessToken =
-        tokenProviderService.getProviderAccessToken(
+        providerService.getProviderAccessToken(
             samUser.getSubjectId(), provider, auditLogEventBuilder);
     return ResponseEntity.ok(accessToken);
   }
 
   @Override
   public ResponseEntity<LinkInfo> createLink(Provider provider, String state, String oauthcode) {
+    if (!externalCredsConfig.getEraCommonsLinkingEnabled() && provider.equals(ERA_COMMONS)) {
+      throw new UnsupportedOperationException(
+          "eRA Commons is not supported for link creation (yet)");
+    }
+
     var samUser = samUserFactory.from(request);
 
     var auditLogEventBuilder =
@@ -96,33 +101,12 @@ public record OauthApiController(
             .clientIP(request.getRemoteAddr());
 
     try {
+
+      var linkedAccountWithPassportAndVisas =
+          providerService.createLink(
+              provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
       LinkInfo linkInfo =
-          switch (provider) {
-            case RAS -> {
-              var linkedAccountWithPassportAndVisas =
-                  passportProviderService.createLink(
-                      provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
-              yield OpenApiConverters.Output.convert(
-                  linkedAccountWithPassportAndVisas.getLinkedAccount());
-            }
-            case GITHUB, FENCE, DCF_FENCE, KIDS_FIRST, ANVIL, SAGE -> {
-              var linkedAccount =
-                  tokenProviderService.createLink(
-                      provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
-              yield OpenApiConverters.Output.convert(linkedAccount);
-            }
-            case ERA_COMMONS -> {
-              if (externalCredsConfig.getEraCommonsLinkingEnabled()) {
-                var linkedAccount =
-                    tokenProviderService.createLink(
-                        provider, samUser.getSubjectId(), oauthcode, state, auditLogEventBuilder);
-                yield OpenApiConverters.Output.convert(linkedAccount);
-              } else {
-                throw new UnsupportedOperationException(
-                    "eRA Commons is not supported for link creation (yet)");
-              }
-            }
-          };
+          OpenApiConverters.Output.convert(linkedAccountWithPassportAndVisas.getLinkedAccount());
 
       Optional<Map<String, String>> additionalState =
           providerService.getAdditionalStateParams(state);

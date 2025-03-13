@@ -1,5 +1,6 @@
 package bio.terra.externalcreds.services;
 
+import static bio.terra.externalcreds.services.JwtUtils.GA4GH_PASSPORT_V1_CLAIM;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -50,7 +51,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
   @MockitoBean ProviderOAuthClientCache providerOAuthClientCacheMock;
   @MockitoBean ExternalCredsConfig externalCredsConfigMock;
 
-  @Autowired PassportProviderService passportProviderService;
+  @Autowired ProviderService providerService;
   @Autowired PassportService passportService;
   @Autowired LinkedAccountService linkedAccountService;
   @Autowired JwtUtils jwtUtils;
@@ -60,7 +61,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
 
   private final String authorizationCode = UUID.randomUUID().toString();
   private final String redirectUri = "https://test/redirect/uri";
-  private final Set<String> scopes = Set.of("email", "ga4gh");
+  private final Set<String> scopes = Set.of("email", GA4GH_PASSPORT_V1_CLAIM);
   private final String userEmail = "test@user.com";
 
   @BeforeAll
@@ -155,7 +156,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
         assertThrows(
             BadRequestException.class,
             () ->
-                passportProviderService.createLink(
+                providerService.createLink(
                     linkedAccount.getProvider(),
                     linkedAccount.getUserId(),
                     authorizationCode,
@@ -203,7 +204,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     assertThrows(
         ExternalCredsException.class,
         () ->
-            passportProviderService.createLink(
+            providerService.createLink(
                 linkedAccount.getProvider(),
                 linkedAccount.getUserId(),
                 authorizationCode,
@@ -253,7 +254,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
     assertThrows(
         ExternalCredsException.class,
         () ->
-            passportProviderService.createLink(
+            providerService.createLink(
                 linkedAccount.getProvider(),
                 linkedAccount.getUserId(),
                 authorizationCode,
@@ -338,7 +339,7 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             .userId(expectedLinkedAccount.getUserId())
             .clientIP("127.0.0.1");
     var linkedAccountWithPassportAndVisas =
-        passportProviderService.createLink(
+        providerService.createLink(
             expectedLinkedAccount.getProvider(),
             expectedLinkedAccount.getUserId(),
             authorizationCode,
