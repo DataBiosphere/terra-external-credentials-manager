@@ -30,10 +30,10 @@ dependencies {
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.208'
 
 	// google
-	implementation platform('com.google.cloud:libraries-bom:26.56.0')
+	implementation platform('com.google.cloud:libraries-bom:26.57.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 	implementation 'com.google.cloud:google-cloud-datastore'
-	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:6.1.0'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:6.1.1'
 
 	annotationProcessor 'org.immutables:value:2.10.1'
 	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
@@ -56,7 +56,7 @@ dependencies {
 	testImplementation project(':client-resttemplate')
 
 	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.14.0"
-	implementation "com.google.cloud.opentelemetry:exporter-trace:0.33.0"
+	implementation "com.google.cloud.opentelemetry:exporter-trace:0.34.0"
 
 	// For Micrometer metrics gathering
 	implementation 'io.micrometer:micrometer-registry-prometheus'
