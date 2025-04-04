@@ -94,6 +94,19 @@ externalcreds:
       tokenEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/token"
       keyEndpoint: "${externalcreds.providers.kids-first.issuer}/credentials/google"
       deniedEmailPatterns: ${shared.deniedEmailPatterns}
+    anvil:
+      clientId: "${ANVIL_CLIENT_ID}"
+      clientSecret: "${ANVIL_CLIENT_SECRET}"
+      linkLifespan: "30d"
+      scopes: [ "openid", "user" ]
+      externalIdClaim: "username"
+      issuer: "${ANVIL_BASE_URL:https://staging.theanvil.io/user}"
+      revokeEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/revoke"
+      userInfoEndpoint: "${externalcreds.providers.anvil.issuer}/user"
+      authorizationEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/authorize"
+      tokenEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/token"
+      keyEndpoint: "${externalcreds.providers.anvil.issuer}/credentials/google"
+      deniedEmailPatterns: ${shared.deniedEmailPatterns}
 
 ---
 #non-prod environments
@@ -173,6 +186,12 @@ externalcreds:
                                     "https://dev.ukbiobank.terra.bio/#fence-callback",
                                     "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback",
                                     "https://terra.dsde-dev.broadinstitute.org/#fence-callback" ]
+    anvil:
+      allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/#fence-callback",
+                                    "http://localhost:3000/#fence-callback",
+                                    "https://dev.ukbiobank.terra.bio/#fence-callback",
+                                    "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback",
+                                    "https://terra.dsde-dev.broadinstitute.org/#fence-callback" ]
     sage:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
       authorizationEndpoint: "https://dev-signin.synapse.org/"
@@ -193,6 +212,8 @@ externalcreds:
     dcf-fence:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
     kids-first:
+      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
+    anvil:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
     sage:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback" ]
@@ -217,5 +238,8 @@ externalcreds:
       allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
                                     "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
     kids-first:
+      allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
+                                    "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
+    anvil:
       allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
                                     "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
