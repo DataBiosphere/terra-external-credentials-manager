@@ -51,8 +51,7 @@ public record OauthApiController(
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(
-            samUser.getSubjectId(), provider, redirectUri, null);
+        providerService.getProviderAuthorizationUrl(samUser, provider, redirectUri, null);
 
     return ResponseEntity.ok(authorizationUrl);
   }
@@ -63,8 +62,7 @@ public record OauthApiController(
     var samUser = samUserFactory.from(request);
 
     var authorizationUrl =
-        providerService.getProviderAuthorizationUrl(
-            samUser.getSubjectId(), provider, redirectUri, body);
+        providerService.getProviderAuthorizationUrl(samUser, provider, redirectUri, body);
 
     return ResponseEntity.ok(authorizationUrl);
   }

@@ -3,6 +3,7 @@ package bio.terra.externalcreds.services;
 import bio.terra.common.exception.BadRequestException;
 import bio.terra.common.exception.ForbiddenException;
 import bio.terra.common.exception.NotFoundException;
+import bio.terra.common.iam.SamUser;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
@@ -102,11 +103,10 @@ public class ProviderService {
   }
 
   public String getProviderAuthorizationUrl(
-      String userId, Provider provider, String redirectUri, Map<String, String> additionalState) {
-    var providerClient = providerOAuthClientCache.getProviderClient(provider);
-
+      SamUser user, Provider provider, String redirectUri, Map<String, String> additionalState) {
     var providerInfo = externalCredsConfig.getProviderProperties(provider);
 
+    validateUserEmail(user, providerInfo);
     validateRedirectUri(redirectUri, providerInfo);
 
     // oAuth2State is used to prevent CRSF attacks
@@ -122,14 +122,23 @@ public class ProviderService {
     }
     var oAuth2State = oAuth2StateBuilder.build();
 
-    linkedAccountService.upsertOAuth2State(userId, oAuth2State);
+    linkedAccountService.upsertOAuth2State(user.getSubjectId(), oAuth2State);
 
     return oAuth2Service.getAuthorizationRequestUri(
-        providerClient,
+        providerOAuthClientCache.getProviderClient(provider),
         redirectUri,
         new HashSet<>(providerInfo.getScopes()),
         oAuth2State.encode(objectMapper),
         providerInfo.getAdditionalAuthorizationParameters());
+  }
+
+  private void validateUserEmail(SamUser user, ProviderProperties providerInfo) {
+    if (providerInfo.getDeniedEmailPatterns().stream()
+        .anyMatch(pattern -> pattern.matcher(user.getEmail()).matches())) {
+      log.info(
+          "User email {} is not allowed for issuer {}", user.getEmail(), providerInfo.getIssuer());
+      throw new ForbiddenException("user email not allowed");
+    }
   }
 
   private void validateRedirectUri(String redirectUri, ProviderProperties providerInfo) {

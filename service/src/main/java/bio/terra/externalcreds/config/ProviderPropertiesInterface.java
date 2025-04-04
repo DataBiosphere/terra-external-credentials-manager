@@ -2,6 +2,7 @@ package bio.terra.externalcreds.config;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -23,6 +24,11 @@ public interface ProviderPropertiesInterface {
   Map<String, Object> getAdditionalAuthorizationParameters();
 
   Collection<Pattern> getAllowedRedirectUriPatterns();
+
+  @Value.Default
+  default Collection<Pattern> getDeniedEmailPatterns() {
+    return List.of();
+  }
 
   Collection<String> getScopes();
 

@@ -370,9 +370,9 @@ class OauthApiControllerTest extends BaseTest {
       var result = "https://test/authorization/uri";
       var redirectUri = "fakeuri";
 
-      mockSamUser(userId, accessToken);
+      var samUser = mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri, null))
+      when(providerServiceMock.getProviderAuthorizationUrl(samUser, provider, redirectUri, null))
           .thenReturn(result);
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -393,10 +393,10 @@ class OauthApiControllerTest extends BaseTest {
       Map<String, String> additionalStateParam = new HashMap<>();
       additionalStateParam.put("redirectTo", "http://foo.org");
 
-      mockSamUser(userId, accessToken);
+      var samUser = mockSamUser(userId, accessToken);
 
       when(providerServiceMock.getProviderAuthorizationUrl(
-              userId, provider, redirectUri, additionalStateParam))
+              samUser, provider, redirectUri, additionalStateParam))
           .thenReturn(result);
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -416,9 +416,9 @@ class OauthApiControllerTest extends BaseTest {
       var accessToken = "fakeAccessToken";
       var redirectUri = "fakeuri";
 
-      mockSamUser(userId, accessToken);
+      var samUser = mockSamUser(userId, accessToken);
 
-      when(providerServiceMock.getProviderAuthorizationUrl(userId, provider, redirectUri, null))
+      when(providerServiceMock.getProviderAuthorizationUrl(samUser, provider, redirectUri, null))
           .thenThrow(new BadRequestException("Invalid redirectUri"));
 
       var queryParams = new LinkedMultiValueMap<String, String>();
@@ -489,8 +489,9 @@ class OauthApiControllerTest extends BaseTest {
         .andExpect(content().json(mapper.writeValueAsString(linkInfo)));
   }
 
-  private void mockSamUser(String userId, String accessToken) {
-    when(samUserFactoryMock.from(any(HttpServletRequest.class)))
-        .thenReturn(new SamUser("email", userId, new BearerToken(accessToken)));
+  private SamUser mockSamUser(String userId, String accessToken) {
+    var samUser = new SamUser("email", userId, new BearerToken(accessToken));
+    when(samUserFactoryMock.from(any(HttpServletRequest.class))).thenReturn(samUser);
+    return samUser;
   }
 }

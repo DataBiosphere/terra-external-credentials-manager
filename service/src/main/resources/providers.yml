@@ -1,3 +1,46 @@
+shared:
+  deniedEmailPatterns:
+    (?i).+@(.+\.)*126\.[^.]+,
+    (?i).+@(.+\.)*163\.[^.]+,
+    (?i).+@(.+\.)*aol\.[^.]+,
+    (?i).+@(.+\.)*bk\.[^.]+,
+    (?i).+@(.+\.)*foxmail\.[^.]+,
+    (?i).+@(.+\.)*gmail\.[^.]+,
+    (?i).+@(.+\.)*hotmail\.[^.]+,
+    (?i).+@(.+\.)*icloud\.[^.]+,
+    (?i).+@(.+\.)*inbox\.[^.]+,
+    (?i).+@(.+\.)*live\.[^.]+,
+    (?i).+@(.+\.)*mail\.[^.]+,
+    (?i).+@(.+\.)*mailinator\.[^.]+,
+    (?i).+@(.+\.)*outlook\.[^.]+,
+    (?i).+@(.+\.)*proton\.[^.]+,
+    (?i).+@(.+\.)*qq\.[^.]+,
+    (?i).+@(.+\.)*rambler\.[^.]+,
+    (?i).+@(.+\.)*sina\.[^.]+,
+    (?i).+@(.+\.)*yeah\.[^.]+,
+    (?i).+@(.+\.)*yahoo\.[^.]+,
+    (?i).+@(.+\.)*yandex\.[^.]+,
+    (?i).+@(.+\.)*ecohealthalliance\.org,
+    (?i).+@(.+\.)+cn,
+    (?i).+@(.+\.)+hk,
+    (?i).+@(.+\.)+mo,
+    (?i).+@(.+\.)+ru,
+    (?i).+@(.+\.)+ir,
+    (?i).+@(.+\.)+nk,
+    (?i).+@(.+\.)+cu,
+    (?i).+@(.+\.)+ve,
+    (?i)ahuff@msu\.edu,
+    (?i)judite.salencia@ins\.gov\.mz,
+    (?i)kinleypenjor@fnph\.edu\.bt,
+    (?i)Nitish.debnath@cvasu\.ac\.bd,
+    (?i)peter.thompson@up\.ac\.za,
+    (?i)rostal@onehealthresearch\.net,
+    (?i)S.dorjee@kgumsb\.edu\.bt,
+    (?i)SharminChowdhury@cvasu\.ac\.bd,
+    (?i)supaporn.wac@chula\.ac\.th,
+    (?i)thegroke@mac\.com,
+    (?i)ydu@mrn\.org
+
 externalcreds:
   providers:
     github:
@@ -24,6 +67,7 @@ externalcreds:
       authorizationEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/authorize"
       tokenEndpoint: "${externalcreds.providers.fence.issuer}/oauth2/token"
       keyEndpoint: "${externalcreds.providers.fence.issuer}/credentials/google"
+      deniedEmailPatterns: ${shared.deniedEmailPatterns}
     dcf-fence:
       clientId: "${DCF_FENCE_CLIENT_ID}"
       clientSecret: "${DCF_FENCE_CLIENT_SECRET}"
@@ -36,6 +80,7 @@ externalcreds:
       authorizationEndpoint: "${externalcreds.providers.dcf-fence.issuer}/oauth2/authorize"
       tokenEndpoint: "${externalcreds.providers.dcf-fence.issuer}/oauth2/token"
       keyEndpoint: "${externalcreds.providers.dcf-fence.issuer}/credentials/google"
+      deniedEmailPatterns: ${shared.deniedEmailPatterns}
     kids-first:
       clientId: "${KIDS_FIRST_CLIENT_ID}"
       clientSecret: "${KIDS_FIRST_CLIENT_SECRET}"
@@ -48,6 +93,7 @@ externalcreds:
       authorizationEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/authorize"
       tokenEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/token"
       keyEndpoint: "${externalcreds.providers.kids-first.issuer}/credentials/google"
+      deniedEmailPatterns: ${shared.deniedEmailPatterns}
     anvil:
       clientId: "${ANVIL_CLIENT_ID}"
       clientSecret: "${ANVIL_CLIENT_SECRET}"
@@ -60,6 +106,7 @@ externalcreds:
       authorizationEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/authorize"
       tokenEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/token"
       keyEndpoint: "${externalcreds.providers.anvil.issuer}/credentials/google"
+      deniedEmailPatterns: ${shared.deniedEmailPatterns}
 
 ---
 #non-prod environments
@@ -77,6 +124,7 @@ externalcreds:
       userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
       additionalAuthorizationParameters: { "prompt": "login" }
+      deniedEmailPatterns: ${shared.deniedEmailPatterns}
     era-commons:
       clientId: "${ERA_COMMONS_CLIENT_ID}"
       clientSecret: "${ERA_COMMONS_CLIENT_SECRET}"
