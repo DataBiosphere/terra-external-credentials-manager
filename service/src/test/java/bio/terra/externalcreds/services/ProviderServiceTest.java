@@ -1149,6 +1149,7 @@ public class ProviderServiceTest extends BaseTest {
           ProviderProperties.create()
               .setDeniedEmailPatterns(List.of(Pattern.compile(uriPattern)))
               .setAllowedRedirectUriPatterns(List.of(Pattern.compile(redirectUri)))
+              .setIssuer("issuer")
               .setScopes(scopes);
 
       when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
