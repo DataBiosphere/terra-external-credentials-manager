@@ -18,6 +18,8 @@ import static org.mockito.Mockito.when;
 import bio.terra.common.exception.BadRequestException;
 import bio.terra.common.exception.ForbiddenException;
 import bio.terra.common.exception.NotFoundException;
+import bio.terra.common.iam.BearerToken;
+import bio.terra.common.iam.SamUser;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.TestUtils;
@@ -880,7 +882,10 @@ public class ProviderServiceTest extends BaseTest {
 
       var result =
           providerService.getProviderAuthorizationUrl(
-              linkedAccount.getUserId(), linkedAccount.getProvider(), redirectUri, null);
+              new SamUser("email", linkedAccount.getUserId(), new BearerToken("accessToken")),
+              linkedAccount.getProvider(),
+              redirectUri,
+              null);
       assertNotNull(result);
       // the result here should be only the state because of the mock above
       var savedState = bio.terra.externalcreds.models.OAuth2State.decode(objectMapper, result);
@@ -920,7 +925,7 @@ public class ProviderServiceTest extends BaseTest {
       additionalStateParam.put("redirectTo", "http://foo.org");
       var result =
           providerService.getProviderAuthorizationUrl(
-              linkedAccount.getUserId(),
+              new SamUser("email", linkedAccount.getUserId(), new BearerToken("accessToken")),
               linkedAccount.getProvider(),
               redirectUri,
               additionalStateParam);
@@ -1108,7 +1113,62 @@ public class ProviderServiceTest extends BaseTest {
           .thenReturn("");
 
       return providerService.getProviderAuthorizationUrl(
-          linkedAccount.getUserId(), linkedAccount.getProvider(), redirectUri, null);
+          new SamUser("email", linkedAccount.getUserId(), new BearerToken("accessToken")),
+          linkedAccount.getProvider(),
+          redirectUri,
+          null);
+    }
+  }
+
+  @Nested
+  @TestComponent
+  class EmailValidation {
+    @MockitoBean OAuth2Service oAuth2ServiceMock;
+    @MockitoBean ProviderOAuthClientCache providerOAuthClientCacheMock;
+    @MockitoBean ExternalCredsConfig externalCredsConfigMock;
+
+    @Autowired ProviderService providerService;
+
+    private final String redirectUri = "https://foo.bar.com";
+    private final Set<String> scopes = Set.of("email", "profile");
+
+    @Test
+    void testValidEmail() {
+      assertNotNull(testGetAuthorizationUrl("^$"));
+    }
+
+    @Test
+    void testInvalidEmail() {
+      assertThrows(ForbiddenException.class, () -> testGetAuthorizationUrl(".+"));
+    }
+
+    private String testGetAuthorizationUrl(String uriPattern) {
+      var linkedAccount = TestUtils.createRandomLinkedAccount();
+      var clientRegistration = createClientRegistration(linkedAccount.getProvider());
+      var providerProperties =
+          ProviderProperties.create()
+              .setDeniedEmailPatterns(List.of(Pattern.compile(uriPattern)))
+              .setAllowedRedirectUriPatterns(List.of(Pattern.compile(redirectUri)))
+              .setScopes(scopes);
+
+      when(externalCredsConfigMock.getProviderProperties(linkedAccount.getProvider()))
+          .thenReturn(providerProperties);
+      when(providerOAuthClientCacheMock.getProviderClient(linkedAccount.getProvider()))
+          .thenReturn(clientRegistration);
+
+      when(oAuth2ServiceMock.getAuthorizationRequestUri(
+              eq(clientRegistration),
+              eq(redirectUri),
+              eq(scopes),
+              anyString(),
+              eq(providerProperties.getAdditionalAuthorizationParameters())))
+          .thenReturn("");
+
+      return providerService.getProviderAuthorizationUrl(
+          new SamUser("email", linkedAccount.getUserId(), new BearerToken("accessToken")),
+          linkedAccount.getProvider(),
+          redirectUri,
+          null);
     }
   }
 
