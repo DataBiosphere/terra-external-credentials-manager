@@ -107,6 +107,14 @@ externalcreds:
       tokenEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/token"
       keyEndpoint: "${externalcreds.providers.anvil.issuer}/credentials/google"
       deniedEmailPatterns: ${shared.deniedEmailPatterns}
+    sage:
+      clientId: "${SAGE_CLIENT_ID}"
+      clientSecret: "${SAGE_CLIENT_SECRET}"
+      linkLifespan: "15d"
+      scopes: [ "openid", "profile", "offline_access", "download", "view" ]
+      externalIdClaim: "user_name"
+      issuer: "${SAGE_BASE_URL:https://repo-dev.dev.sagebase.org/auth/v1}"
+      revokeEndpoint: "${externalcreds.providers.sage.issuer}/oauth2/revoke"
 
 ---
 #non-prod environments
@@ -135,14 +143,6 @@ externalcreds:
       revokeEndpoint: "${externalcreds.providers.era-commons.issuer}/auth/oauth/v2/token/revoke"
       userInfoEndpoint: "${externalcreds.providers.era-commons.issuer}/openid/connect/v1.1/userinfo"
       additionalAuthorizationParameters: { "prompt": "login" }
-    sage:
-      clientId: "${SAGE_CLIENT_ID}"
-      clientSecret: "${SAGE_CLIENT_SECRET}"
-      linkLifespan: "30d"
-      scopes: [ "openid", "profile", "offline_access", "download", "view" ]
-      externalIdClaim: "user_name"
-      issuer: "${SAGE_BASE_URL:https://repo-dev.dev.sagebase.org/auth/v1}"
-      revokeEndpoint: "${externalcreds.providers.sage.issuer}/oauth2/revoke"
 
 ---
 spring.config.activate.on-profile: 'dev'
@@ -243,3 +243,6 @@ externalcreds:
     anvil:
       allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
                                     "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
+    sage:
+      allowedRedirectUriPatterns: [ "https://app.terra.bio/ecm-callback" ]
+      authorizationEndpoint: "https://signin.synapse.org/"
