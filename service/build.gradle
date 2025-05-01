@@ -5,13 +5,13 @@ plugins {
 
 	id 'com.diffplug.spotless'
 	id 'com.github.ben-manes.versions' version '0.52.0'
-	id 'com.github.spotbugs' version '6.1.7'
+	id 'com.github.spotbugs' version '6.1.10'
 	id 'com.google.cloud.tools.jib'
 	id 'com.gorylenko.gradle-git-properties' version '2.5.0'
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
 	id 'org.sonarqube'
-	id "io.sentry.jvm.gradle" version "5.3.0"
+	id "io.sentry.jvm.gradle" version "5.4.0"
 }
 
 repositories {
@@ -49,13 +49,13 @@ dependencies {
 		exclude group: 'com.nimbusds', module: 'nimbus-jose-jwt'
 	}
 	// https://mvnrepository.com/artifact/org.mockito/mockito-core
-	testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.16.1'
+	testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.17.0'
 
 	testImplementation("au.com.dius.pact.provider:junit5:4.6.17")
 	testImplementation('au.com.dius.pact.provider:junit5spring:4.6.17')
 	testImplementation project(':client-resttemplate')
 
-	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.14.0"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.15.0"
 	implementation "com.google.cloud.opentelemetry:exporter-trace:0.34.0"
 
 	// For Micrometer metrics gathering
