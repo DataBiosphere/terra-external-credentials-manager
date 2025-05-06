@@ -291,6 +291,11 @@ public class ProviderService {
 
       var linkedAccountWithPassportAndVisas = upsertLinkedAccount(providerInfo, linkedAccount);
 
+      var federatedIdentities =
+          Optional.ofNullable(linkedAccount.getRight().getAttribute("federated_identities"));
+      federatedIdentities.ifPresent(
+          fi -> auditLogEventBuilder.additionalInfo(Map.of("federated_identities", fi)));
+
       logLinkCreation(Optional.of(linkedAccountWithPassportAndVisas), auditLogEventBuilder);
       return linkedAccountWithPassportAndVisas;
     } catch (OAuth2AuthorizationException oauthEx) {

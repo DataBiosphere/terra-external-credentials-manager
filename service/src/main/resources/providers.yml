@@ -120,12 +120,14 @@ externalcreds:
 #non-prod environments
 spring.config.activate.on-profile: '!prod'
 externalcreds:
+  allowed-jwt-issuers:
+    - ${externalcreds.providers.ras.issuer}
   providers:
     ras:
       clientId: "${RAS_CLIENT_ID}"
       clientSecret: "${RAS_CLIENT_SECRET}"
       externalIdClaim: "preferred_username"
-      scopes: [ "openid","email","ga4gh_passport_v1","profile" ]
+      scopes: [ "openid","email","ga4gh_passport_v1","profile", "federated_identities" ]
       linkLifespan: "15d"
       issuer: "https://stsstg.nih.gov"
       revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke"

@@ -4,6 +4,7 @@ import bio.terra.externalcreds.generated.model.Provider;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Map;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -31,6 +32,9 @@ public interface AuditLogEvent extends WithAuditLogEvent {
 
   @JsonInclude(Include.NON_EMPTY)
   Optional<String> getTransactionClaim();
+
+  @JsonInclude(Include.NON_EMPTY)
+  Optional<Map<String, Object>> getAdditionalInfo();
 
   AuditLogEventType getAuditLogEventType();
 
