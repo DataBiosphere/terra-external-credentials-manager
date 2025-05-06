@@ -48,4 +48,9 @@ public interface ProviderPropertiesInterface {
   Optional<String> getJwksUri();
 
   Optional<String> getValidationEndpoint();
+
+  @Value.Default
+  default Collection<String> getLoggedUserInfoFields() {
+    return List.of();
+  }
 }

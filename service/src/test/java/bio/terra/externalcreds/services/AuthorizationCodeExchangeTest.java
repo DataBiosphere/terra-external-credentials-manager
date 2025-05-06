@@ -248,7 +248,11 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             encodedState,
             providerInfo.getAdditionalAuthorizationParameters()))
         .thenReturn(tokenResponse);
-    when(oAuth2ServiceMock.getUserInfo(providerClient, tokenResponse.getAccessToken()))
+    when(oAuth2ServiceMock.getUserInfo(
+            linkedAccount.getUserId(),
+            providerClient,
+            linkedAccount.getProvider(),
+            tokenResponse.getAccessToken()))
         .thenReturn(new DefaultOAuth2User(null, Map.of("foo", "bar"), "foo"));
 
     assertThrows(
@@ -305,7 +309,11 @@ class AuthorizationCodeExchangeTest extends BaseTest {
             state,
             providerInfo.getAdditionalAuthorizationParameters()))
         .thenReturn(accessTokenResponse);
-    when(oAuth2ServiceMock.getUserInfo(providerClient, accessTokenResponse.getAccessToken()))
+    when(oAuth2ServiceMock.getUserInfo(
+            linkedAccount.getUserId(),
+            providerClient,
+            linkedAccount.getProvider(),
+            accessTokenResponse.getAccessToken()))
         .thenReturn(user);
   }
 

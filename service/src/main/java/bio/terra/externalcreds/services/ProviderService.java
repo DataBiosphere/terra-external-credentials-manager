@@ -193,7 +193,8 @@ public class ProviderService {
 
     var expires = new Timestamp(Instant.now().plus(providerInfo.getLinkLifespan()).toEpochMilli());
 
-    var userInfo = oAuth2Service.getUserInfo(providerClient, tokenResponse.getAccessToken());
+    var userInfo =
+        oAuth2Service.getUserInfo(userId, providerClient, provider, tokenResponse.getAccessToken());
 
     String externalUserId = userInfo.getAttribute(providerInfo.getExternalIdClaim());
     if (externalUserId == null) {
@@ -491,7 +492,11 @@ public class ProviderService {
 
     // update the passport and visas
     var userInfo =
-        oAuth2Service.getUserInfo(clientRegistration, accessTokenResponse.getAccessToken());
+        oAuth2Service.getUserInfo(
+            linkedAccount.getUserId(),
+            clientRegistration,
+            linkedAccount.getProvider(),
+            accessTokenResponse.getAccessToken());
     return jwtUtils.enrichAccountWithPassportAndVisas(linkedAccountWithRefreshToken, userInfo);
   }
 

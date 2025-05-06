@@ -69,7 +69,9 @@ public class OAuth2ServiceTest {
         "refresh token:__________" + tokenResponse.getRefreshToken().getTokenValue());
 
     // 4) test getUserInfo
-    var oAuth2User = oAuth2Service.getUserInfo(providerClient, tokenResponse.getAccessToken());
+    var oAuth2User =
+        oAuth2Service.getUserInfo(
+            "doesn't matter", providerClient, provider, tokenResponse.getAccessToken());
 
     // oAuth2User should have the user's passport and email address in the attributes
     System.out.println(oAuth2User.toString());
