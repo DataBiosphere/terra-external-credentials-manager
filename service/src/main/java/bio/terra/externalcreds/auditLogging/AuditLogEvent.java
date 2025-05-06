@@ -19,9 +19,10 @@ public interface AuditLogEvent extends WithAuditLogEvent {
   @JsonInclude(Include.NON_EMPTY)
   @Value.Derived
   default Optional<String> getProviderName() {
-    return Optional.of(provider().toString());
+    return provider().map(Provider::toString);
   }
 
+  @JsonInclude(Include.NON_EMPTY)
   Optional<Provider> provider();
 
   @JsonInclude(Include.NON_EMPTY)

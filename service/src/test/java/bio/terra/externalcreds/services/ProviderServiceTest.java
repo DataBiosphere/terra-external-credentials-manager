@@ -503,7 +503,12 @@ public class ProviderServiceTest extends BaseTest {
           .thenReturn(oAuth2TokenResponse);
 
       // returning null here because it's passed to another mocked function and isn't worth mocking
-      when(oAuth2ServiceMock.getUserInfo(eq(clientRegistration), Mockito.any())).thenReturn(null);
+      when(oAuth2ServiceMock.getUserInfo(
+              eq(savedLinkedAccount.getUserId()),
+              eq(clientRegistration),
+              eq(savedLinkedAccount.getProvider()),
+              Mockito.any()))
+          .thenReturn(null);
 
       // mock the LinkedAccountWithPassportAndVisas that would normally be read from a JWT
       var refreshedPassport =

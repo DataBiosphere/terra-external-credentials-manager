@@ -1,6 +1,11 @@
 package bio.terra.externalcreds.services;
 
+import bio.terra.externalcreds.auditLogging.AuditLogEvent.Builder;
+import bio.terra.externalcreds.auditLogging.AuditLogEventType;
+import bio.terra.externalcreds.auditLogging.AuditLogger;
+import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.config.ProviderProperties;
+import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.models.LinkedAccount;
 import com.nimbusds.oauth2.sdk.TokenRevocationRequest;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
@@ -11,7 +16,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.DefaultRefreshTokenTokenResponseClient;
@@ -44,6 +51,14 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class OAuth2Service {
+  private final ExternalCredsConfig externalCredsConfig;
+  private final AuditLogger auditLogger;
+
+  public OAuth2Service(ExternalCredsConfig externalCredsConfig, AuditLogger auditLogger) {
+    this.externalCredsConfig = externalCredsConfig;
+    this.auditLogger = auditLogger;
+  }
+
   /**
    * Construct authorization uri user should visit to authenticate
    *
@@ -143,9 +158,30 @@ public class OAuth2Service {
     return refreshTokenTokenResponseClient.getTokenResponse(refreshTokenGrantRequest);
   }
 
-  public OAuth2User getUserInfo(ClientRegistration providerClient, OAuth2AccessToken accessToken) {
+  public OAuth2User getUserInfo(
+      String userId,
+      ClientRegistration providerClient,
+      Provider provider,
+      OAuth2AccessToken accessToken) {
     var userRequest = new OAuth2UserRequest(providerClient, accessToken);
-    return new DefaultOAuth2UserService().loadUser(userRequest);
+    var oAuth2User = new DefaultOAuth2UserService().loadUser(userRequest);
+
+    var additionalAuditInfo =
+        externalCredsConfig.getProviderProperties(provider).getLoggedUserInfoFields().stream()
+            .flatMap(
+                field ->
+                    Optional.ofNullable(oAuth2User.getAttribute(field)).stream()
+                        .map(value -> Map.entry(field, value)))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    var auditLogBuilder =
+        new Builder()
+            .userId(userId)
+            .provider(provider)
+            .auditLogEventType(AuditLogEventType.GetUserInfo)
+            .additionalInfo(additionalAuditInfo);
+    auditLogger.logEvent(auditLogBuilder.build());
+
+    return oAuth2User;
   }
 
   /**

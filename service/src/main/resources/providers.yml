@@ -135,6 +135,7 @@ externalcreds:
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
       additionalAuthorizationParameters: { "prompt": "login" }
       deniedEmailPatterns: ${shared.deniedEmailPatterns}
+      loggedUserInfoFields: [ "preferred_username", "txn", "federated_identities" ]
     era-commons:
       clientId: "${ERA_COMMONS_CLIENT_ID}"
       clientSecret: "${ERA_COMMONS_CLIENT_SECRET}"
