@@ -14,6 +14,7 @@ import java.net.URI;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -60,7 +61,13 @@ public record JwtUtils(ExternalCredsConfig externalCredsConfig, JwtDecoderCache 
             passportJwt.getClaimAsStringList(GA4GH_PASSPORT_V1_CLAIM), Collections.emptyList());
 
     var visas =
-        visaJwtStrings.stream().map(this::decodeAndValidateJwt).map(JwtUtils::buildVisa).toList();
+        visaJwtStrings.stream()
+            // this split is here because RAS prefers to encode the visa list as a single comma
+            // delimited string instead of a json array as the spec requires
+            .flatMap(s -> Arrays.stream(s.split(",")))
+            .map(this::decodeAndValidateJwt)
+            .map(JwtUtils::buildVisa)
+            .toList();
 
     return new PassportWithVisas.Builder()
         .passport(buildPassport(passportJwt))
