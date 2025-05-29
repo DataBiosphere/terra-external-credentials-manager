@@ -126,7 +126,7 @@ externalcreds:
     ras:
       clientId: "${RAS_CLIENT_ID}"
       clientSecret: "${RAS_CLIENT_SECRET}"
-      externalIdClaim: "preferred_username"
+      externalIdClaim: "email"
       scopes: [ "openid","email","ga4gh_passport_v1","profile", "federated_identities" ]
       linkLifespan: "15d"
       issuer: "https://stsstg.nih.gov"
@@ -135,7 +135,7 @@ externalcreds:
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
       additionalAuthorizationParameters: { "prompt": "login" }
       deniedEmailPatterns: ${shared.deniedEmailPatterns}
-      loggedUserInfoFields: [ "preferred_username", "txn", "federated_identities" ]
+      loggedUserInfoFields: [ "email", "txn", "federated_identities" ]
     era-commons:
       clientId: "${ERA_COMMONS_CLIENT_ID}"
       clientSecret: "${ERA_COMMONS_CLIENT_SECRET}"
