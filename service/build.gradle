@@ -16,8 +16,8 @@ plugins {
 
 repositories {
 	mavenCentral()
-	maven { url 'https://broadinstitute.jfrog.io/artifactory/libs-snapshot' }
-	maven { url 'https://broadinstitute.jfrog.io/artifactory/libs-release' }
+	maven { url 'https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-snapshot/' }
+	maven { url 'https://us-central1-maven.pkg.dev/dsp-artifact-registry/libs-release/' }
 }
 
 apply from: 'publishing.gradle'
