@@ -1,7 +1,12 @@
 package bio.terra.externalcreds.services;
 
+import static bio.terra.externalcreds.services.JwtUtils.GA4GH_PASSPORT_V1_CLAIM;
+
 import bio.terra.common.db.ReadTransaction;
 import bio.terra.common.db.WriteTransaction;
+import bio.terra.externalcreds.auditLogging.AuditLogEvent;
+import bio.terra.externalcreds.auditLogging.AuditLogEventType;
+import bio.terra.externalcreds.auditLogging.AuditLogger;
 import bio.terra.externalcreds.dataAccess.GA4GHPassportDAO;
 import bio.terra.externalcreds.dataAccess.GA4GHVisaDAO;
 import bio.terra.externalcreds.dataAccess.LinkedAccountDAO;
@@ -13,9 +18,12 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.LinkedAccountWithPassportAndVisas;
 import bio.terra.externalcreds.models.OAuth2State;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
+import com.nimbusds.jwt.JWTParser;
 import java.sql.Timestamp;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +38,8 @@ public class LinkedAccountService {
   private final Collection<VisaComparator> visaComparators;
   private final EventPublisher eventPublisher;
   private final OAuth2StateDAO oAuth2StateDAO;
+  private final AuditLogger auditLogger;
+  private final JwtUtils jwtUtils;
 
   public LinkedAccountService(
       LinkedAccountDAO linkedAccountDAO,
@@ -37,13 +47,17 @@ public class LinkedAccountService {
       GA4GHVisaDAO ga4ghVisaDAO,
       Collection<VisaComparator> visaComparators,
       EventPublisher eventPublisher,
-      OAuth2StateDAO oAuth2StateDAO) {
+      OAuth2StateDAO oAuth2StateDAO,
+      AuditLogger auditLogger,
+      JwtUtils jwtUtils) {
     this.linkedAccountDAO = linkedAccountDAO;
     this.ga4ghPassportDAO = ga4ghPassportDAO;
     this.ga4ghVisaDAO = ga4ghVisaDAO;
     this.visaComparators = visaComparators;
     this.eventPublisher = eventPublisher;
     this.oAuth2StateDAO = oAuth2StateDAO;
+    this.auditLogger = auditLogger;
+    this.jwtUtils = jwtUtils;
   }
 
   @ReadTransaction
@@ -71,7 +85,12 @@ public class LinkedAccountService {
         savePassportAndVisasIfPresent(
             linkedAccountWithPassportAndVisas.withLinkedAccount(savedLinkedAccount));
 
-    if (authorizationsDiffer(existingVisas, savedLinkedAccountWithPassportAndVisas.getVisas())) {
+    boolean authorizationsChanged =
+        authorizationsDiffer(existingVisas, savedLinkedAccountWithPassportAndVisas.getVisas());
+
+    auditLogSavedPassport(savedLinkedAccountWithPassportAndVisas, authorizationsChanged);
+
+    if (authorizationsChanged) {
       eventPublisher.publishAuthorizationChangeEvent(
           new AuthorizationChangeEvent.Builder()
               .provider(savedLinkedAccount.getProvider())
@@ -80,6 +99,66 @@ public class LinkedAccountService {
     }
 
     return savedLinkedAccountWithPassportAndVisas;
+  }
+
+  private void auditLogSavedPassport(
+      LinkedAccountWithPassportAndVisas savedLinkedAccountWithPassportAndVisas,
+      boolean authorizationsChanged) {
+    var savedLinkedAccount = savedLinkedAccountWithPassportAndVisas.getLinkedAccount();
+    auditLogger.logEvent(
+        new AuditLogEvent.Builder()
+            .auditLogEventType(AuditLogEventType.SavedNewPassport)
+            .provider(savedLinkedAccount.getProvider())
+            .userId(savedLinkedAccount.getUserId())
+            .externalUserId(savedLinkedAccount.getExternalUserId())
+            .transactionClaim(
+                savedLinkedAccountWithPassportAndVisas
+                    .getPassport()
+                    .flatMap(
+                        p -> {
+                          try {
+                            return jwtUtils.getJwtTransactionClaim(p.getJwt());
+                          } catch (Exception e) {
+                            log.warn("Failed to get transaction claim from passport JWT", e);
+                            return Optional.of("Failed to get transaction claim from passport JWT");
+                          }
+                        }))
+            .additionalInfo(
+                Map.of(
+                    "authorizationsChanged",
+                    authorizationsChanged,
+                    "passport",
+                    savedLinkedAccountWithPassportAndVisas
+                        .getPassport()
+                        .map(
+                            p -> {
+                              try {
+                                var claims =
+                                    new HashMap<>(
+                                        JWTParser.parse(p.getJwt()).getJWTClaimsSet().getClaims());
+                                // Remove the GA4GH passport claim because they contain visa JWTs
+                                // which may be sensitive. The decoded visas are included below.
+                                claims.remove(GA4GH_PASSPORT_V1_CLAIM);
+                                return claims;
+                              } catch (Exception e) {
+                                log.warn("Failed to parse passport JWT", e);
+                                return Map.of("error", "Failed to parse passport JWT");
+                              }
+                            })
+                        .orElse(Map.of()),
+                    "visas",
+                    savedLinkedAccountWithPassportAndVisas.getVisas().stream()
+                        .map(
+                            visa -> {
+                              try {
+                                return JWTParser.parse(visa.getJwt()).getJWTClaimsSet().getClaims();
+                              } catch (Exception e) {
+                                log.warn("Failed to parse visa JWT", e);
+                                return Map.of("error", "Failed to parse visa JWT");
+                              }
+                            })
+                        .toList()))
+            .build());
   }
 
   @WriteTransaction
