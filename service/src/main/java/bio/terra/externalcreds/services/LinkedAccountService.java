@@ -114,7 +114,15 @@ public class LinkedAccountService {
             .transactionClaim(
                 savedLinkedAccountWithPassportAndVisas
                     .getPassport()
-                    .flatMap(p -> jwtUtils.getJwtTransactionClaim(p.getJwt())))
+                    .flatMap(
+                        p -> {
+                          try {
+                            return jwtUtils.getJwtTransactionClaim(p.getJwt());
+                          } catch (Exception e) {
+                            log.warn("Failed to get transaction claim from passport JWT", e);
+                            return Optional.of("Failed to get transaction claim from passport JWT");
+                          }
+                        }))
             .additionalInfo(
                 Map.of(
                     "authorizationsChanged",
