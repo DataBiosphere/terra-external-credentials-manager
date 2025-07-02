@@ -11,7 +11,7 @@ plugins {
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
 	id 'org.sonarqube'
-	id "io.sentry.jvm.gradle" version "5.7.0"
+	id "io.sentry.jvm.gradle" version "5.8.0"
 }
 
 repositories {
@@ -30,17 +30,17 @@ dependencies {
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.208'
 
 	// google
-	implementation platform('com.google.cloud:libraries-bom:26.61.0')
+	implementation platform('com.google.cloud:libraries-bom:26.62.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 	implementation 'com.google.cloud:google-cloud-datastore'
-	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:6.2.1'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:6.2.2'
 
-	annotationProcessor 'org.immutables:value:2.10.1'
+	annotationProcessor 'org.immutables:value:2.11.0'
 	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
 		exclude group: 'io.kubernetes', module: 'client-java'
 	}
 	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
-	implementation 'org.bouncycastle:bcprov-jdk18on:1.80'
+	implementation 'org.bouncycastle:bcprov-jdk18on:1.81'
 	implementation 'org.codehaus.janino:janino:3.1.12' // Provides if/else xml parsing for logback config
 
 	// for testing with mock web server
@@ -55,8 +55,8 @@ dependencies {
 	testImplementation('au.com.dius.pact.provider:junit5spring:4.6.17')
 	testImplementation project(':client-resttemplate')
 
-	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.16.0"
-	implementation "com.google.cloud.opentelemetry:exporter-trace:0.35.0"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.17.0"
+	implementation "com.google.cloud.opentelemetry:exporter-trace:0.36.0"
 
 	// For Micrometer metrics gathering
 	implementation 'io.micrometer:micrometer-registry-prometheus'
