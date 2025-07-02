@@ -37,7 +37,7 @@ subprojects {
 
 		dependencies {
 			dependency 'io.swagger.core.v3:swagger-annotations:2.2.34'
-			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.69'
+			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.70'
 		}
 	}
 

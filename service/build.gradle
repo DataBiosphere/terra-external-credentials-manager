@@ -5,7 +5,7 @@ plugins {
 
 	id 'com.diffplug.spotless'
 	id 'com.github.ben-manes.versions' version '0.52.0'
-	id 'com.github.spotbugs' version '6.1.13'
+	id 'com.github.spotbugs' version '6.2.1'
 	id 'com.google.cloud.tools.jib'
 	id 'com.gorylenko.gradle-git-properties' version '2.5.0'
 	id 'io.freefair.lombok'
@@ -30,10 +30,10 @@ dependencies {
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.208'
 
 	// google
-	implementation platform('com.google.cloud:libraries-bom:26.62.0')
+	implementation platform('com.google.cloud:libraries-bom:26.63.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 	implementation 'com.google.cloud:google-cloud-datastore'
-	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:6.2.2'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:6.2.3'
 
 	annotationProcessor 'org.immutables:value:2.11.0'
 	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
