@@ -5,7 +5,7 @@ plugins {
 
 	id 'com.diffplug.spotless'
 	id 'com.github.ben-manes.versions' version '0.52.0'
-	id 'com.github.spotbugs' version '6.1.13'
+	id 'com.github.spotbugs' version '6.2.1'
 	id 'com.google.cloud.tools.jib'
 	id 'com.gorylenko.gradle-git-properties' version '2.5.0'
 	id 'io.freefair.lombok'
@@ -63,6 +63,13 @@ dependencies {
 
 	implementation 'org.apache.commons:commons-compress:1.27.1'
 
+}
+
+dependencyManagement {
+	dependencies {
+		// required by SpotBugs 6.2
+		dependency ("com.github.spotbugs:spotbugs-annotations:4.9.3")
+	}
 }
 
 gitProperties {
