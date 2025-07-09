@@ -42,6 +42,8 @@ shared:
     (?i)ydu@mrn\.org
 
 externalcreds:
+  allowed-jwt-issuers:
+    - ${externalcreds.providers.ras.issuer}
   providers:
     github:
       clientId: "${GITHUB_CLIENT_ID}"
@@ -115,14 +117,6 @@ externalcreds:
       externalIdClaim: "user_name"
       issuer: "${SAGE_BASE_URL:https://repo-dev.dev.sagebase.org/auth/v1}"
       revokeEndpoint: "${externalcreds.providers.sage.issuer}/oauth2/revoke"
-
----
-#non-prod environments
-spring.config.activate.on-profile: '!prod'
-externalcreds:
-  allowed-jwt-issuers:
-    - ${externalcreds.providers.ras.issuer}
-  providers:
     ras:
       clientId: "${RAS_CLIENT_ID}"
       clientSecret: "${RAS_CLIENT_SECRET}"
@@ -136,6 +130,11 @@ externalcreds:
       additionalAuthorizationParameters: { "prompt": "login" }
       deniedEmailPatterns: ${shared.deniedEmailPatterns}
       loggedUserInfoFields: [ "email", "txn", "federated_identities" ]
+---
+#non-prod environments
+spring.config.activate.on-profile: '!prod'
+externalcreds:
+  providers:
     era-commons:
       clientId: "${ERA_COMMONS_CLIENT_ID}"
       clientSecret: "${ERA_COMMONS_CLIENT_SECRET}"
