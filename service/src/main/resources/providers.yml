@@ -123,7 +123,6 @@ externalcreds:
       externalIdClaim: "email"
       scopes: [ "openid","email","ga4gh_passport_v1","profile", "federated_identities" ]
       linkLifespan: "15d"
-      issuer: "https://stsstg.nih.gov"
       revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke"
       userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
@@ -151,6 +150,7 @@ spring.config.activate.on-profile: 'dev'
 externalcreds:
   providers:
     ras:
+      issuer: "https://stsstg.nih.gov"
       allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/ecm-callback",
                                     "http://localhost:3000/ecm-callback",
                                     "https://dev.ukbiobank.terra.bio/ecm-callback",
@@ -202,6 +202,7 @@ spring.config.activate.on-profile: 'staging'
 externalcreds:
   providers:
     ras:
+      issuer: "https://stsstg.nih.gov"
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback",
                                     "https://duos-k8s.dsde-staging.broadinstitute.org"]
     era-commons:
@@ -225,6 +226,7 @@ spring.config.activate.on-profile: 'prod'
 externalcreds:
   providers:
     ras:
+      issuer: "https://sts.nih.gov"
       allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/ecm-callback",
                                     "https://terra.biodatacatalyst.nhlbi.nih.gov/ecm-callback",
                                     "https://duos-k8s.dsde-prod.broadinstitute.org",
