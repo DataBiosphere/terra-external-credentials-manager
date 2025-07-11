@@ -9,5 +9,5 @@ plugins {
 
 repositories { mavenCentral() }
 
-apply from: 'artifactory.gradle'
+apply from: 'publishing.gradle'
 apply from: 'swagger.gradle'

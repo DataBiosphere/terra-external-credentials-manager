@@ -1,0 +1,28 @@
+def garProjectId = System.getenv("GOOGLE_CLOUD_PROJECT")
+def garLocation = System.getenv("GAR_LOCATION")
+def garRepoId = System.getenv("GAR_REPOSITORY_ID")
+
+java {
+	// Builds sources into the published package as part of the 'assemble' task.
+	withSourcesJar()
+}
+
+
+publishing {
+	publications {
+		externalcredsResttemplateClientLibrary(MavenPublication) {
+			artifactId = 'externalcreds-client-resttemplate'
+			from components.java
+			versionMapping {
+				usage('java-runtime') {
+					fromResolutionResult()
+				}
+			}
+		}
+	}
+	repositories {
+		maven {
+			url = uri("artifactregistry://${garLocation}-maven.pkg.dev/${garProjectId}/${garRepoId}")
+		}
+	}
+}
