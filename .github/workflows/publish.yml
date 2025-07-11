@@ -1,5 +1,9 @@
 name: Publish and deploy
-on: create
+on: 
+  create:
+  push:
+    branches:
+      - '**'
 
 env:
   SERVICE_NAME: ${{ github.event.repository.name }}
