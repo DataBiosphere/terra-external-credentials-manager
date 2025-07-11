@@ -1,9 +1,5 @@
 name: Publish and deploy
-on: 
-  create:
-  push:
-    branches:
-      - '**'
+on: create
 
 env:
   SERVICE_NAME: ${{ github.event.repository.name }}
@@ -11,7 +7,7 @@ env:
 
 jobs:
   publish-job:
-#    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -38,13 +34,6 @@ jobs:
         id: tag
         run: echo tag=$(git describe --tags) >> $GITHUB_OUTPUT
 
-#      - name: Publish jakarta-based client library to Artifactory
-#        run: ./gradlew --build-cache :client-resttemplate:artifactoryPublish
-#        env:
-#          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
-#          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-#          ARTIFACTORY_REPO_KEY: libs-snapshot-local
-#
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
@@ -57,8 +46,7 @@ jobs:
         env:
           GOOGLE_CLOUD_PROJECT: dsp-artifact-registry
           GAR_LOCATION: us-central1
-          GAR_REPOSITORY_ID: libs-snapshot-standard
-        # temporarily snapshot for testing
+          GAR_REPOSITORY_ID: libs-release-standard
 
       - name: Auth to GCR
         uses: google-github-actions/auth@v1
