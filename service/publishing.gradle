@@ -1,5 +1,8 @@
 jib {
 	container {
+		to {
+        	image = "gcr.io/broad-dsp-gcr-public/terra-external-credentials-manager:${project.version}"
+	    }
 		filesModificationTime = ZonedDateTime.now().toString() // to prevent ui caching
 		mainClass = 'bio.terra.externalcreds.ExternalCredsWebApplication'
 		jvmFlags = [
