@@ -7,7 +7,10 @@ env:
 
 jobs:
   publish-job:
-    if: startsWith(github.ref, 'refs/tags/')
+#    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
@@ -31,12 +34,27 @@ jobs:
         id: tag
         run: echo tag=$(git describe --tags) >> $GITHUB_OUTPUT
 
-      - name: Publish jakarta-based client library to Artifactory
-        run: ./gradlew --build-cache :client-resttemplate:artifactoryPublish
+#      - name: Publish jakarta-based client library to Artifactory
+#        run: ./gradlew --build-cache :client-resttemplate:artifactoryPublish
+#        env:
+#          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+#          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+#          ARTIFACTORY_REPO_KEY: libs-snapshot-local
+#
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          workload_identity_provider: 'projects/1038484894585/locations/global/workloadIdentityPools/github-wi-pool/providers/github-wi-provider'
+          service_account: 'dsp-artifact-registry-push@dsp-artifact-registry.iam.gserviceaccount.com'
+
+      - name: Publish client to GAR
+        run: ./gradlew publish
         env:
-          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
-          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-          ARTIFACTORY_REPO_KEY: libs-snapshot-local
+          GOOGLE_CLOUD_PROJECT: dsp-artifact-registry
+          GAR_LOCATION: us-central1
+          GAR_REPOSITORY_ID: libs-snapshot-standard
+        # temporarily snapshot for testing
 
       - name: Auth to GCR
         uses: google-github-actions/auth@v1
