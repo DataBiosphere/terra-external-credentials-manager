@@ -203,15 +203,21 @@ public class ProviderService {
               "user info from provider %s did not contain external id claim %s",
               provider, providerInfo.getExternalIdClaim()));
     }
-    LinkedAccount linkedAccount =
+    LinkedAccount.Builder linkedAccountBuilder =
         new LinkedAccount.Builder()
             .provider(provider)
             .userId(userId)
             .expires(expires)
             .externalUserId(externalUserId)
             .refreshToken(refreshToken.getTokenValue())
-            .isAuthenticated(true)
-            .build();
+            .isAuthenticated(true);
+
+    if (provider == Provider.RAS) {
+      var federatedIdentities = userInfo.getAttribute("federated_identities");
+      var eraUserId = ProviderUtils.getLinkedEraIdentity(federatedIdentities);
+      linkedAccountBuilder.additionalProperties(Map.of("era_user_id", eraUserId));
+    }
+    LinkedAccount linkedAccount = linkedAccountBuilder.build();
     return new ImmutablePair<>(linkedAccount, userInfo);
   }
 

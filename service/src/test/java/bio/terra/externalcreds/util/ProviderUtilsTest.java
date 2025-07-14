@@ -1,7 +1,9 @@
 package bio.terra.externalcreds.util;
 
 import static bio.terra.externalcreds.services.JwtUtils.GA4GH_PASSPORT_V1_CLAIM;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
@@ -30,5 +32,20 @@ class ProviderUtilsTest extends BaseTest {
   void testNoScopeProvider() {
     var providerProperties = ProviderProperties.create().setScopes(Set.of());
     assertFalse(ProviderUtils.isPassportProvider(providerProperties));
+  }
+
+  @Test
+  void testGetLinkedEraIdentity() {
+    String federatedIdentities =
+        "{\"identities\": [{\"login.gov\": {\"userid\": \"12345\"}}, {\"era\": {\"userid\": \"test-era-id\"}}]}";
+    String linkedEraIdentity = ProviderUtils.getLinkedEraIdentity(federatedIdentities);
+    assertEquals("test-era-id", linkedEraIdentity);
+  }
+
+  @Test
+  void testGetLinkedEraIdentityReturnsNull() {
+    assertNull(ProviderUtils.getLinkedEraIdentity(null));
+    assertNull(ProviderUtils.getLinkedEraIdentity("{}"));
+    assertNull(ProviderUtils.getLinkedEraIdentity("{\"identities\": []}"));
   }
 }

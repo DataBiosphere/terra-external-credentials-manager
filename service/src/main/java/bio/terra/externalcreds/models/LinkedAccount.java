@@ -3,6 +3,7 @@ package bio.terra.externalcreds.models;
 import bio.terra.externalcreds.generated.model.Provider;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -25,6 +26,8 @@ public interface LinkedAccount extends WithLinkedAccount {
   default boolean isExpired() {
     return getExpires().toInstant().isBefore(Instant.now());
   }
+
+  Map<String, String> getAdditionalProperties();
 
   class Builder extends ImmutableLinkedAccount.Builder {}
 }
