@@ -29,9 +29,13 @@ public class ProviderUtils {
     if (federatedIdentities != null) {
       try {
         if (federatedIdentities instanceof String) {
+          logger.info("Found federated identities String");
           identitiesMap = objectMapper.readValue((String) federatedIdentities, Map.class);
         } else if (federatedIdentities instanceof Map<?, ?>) {
+          logger.info("Found federated identities map");
           identitiesMap = (Map<String, Object>) federatedIdentities;
+        } else {
+          logger.info("Found federated identities of unknown type: {}", federatedIdentities.getClass());
         }
 
         if (identitiesMap != null
