@@ -81,13 +81,14 @@ public class LinkedAccountDAO {
   @WithSpan
   public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
     var query =
-        "INSERT INTO linked_account (user_id, provider, refresh_token, expires, external_user_id, is_authenticated)"
-            + " VALUES (:userId, :provider::provider_enum, :refreshToken, :expires, :externalUserId, :isAuthenticated)"
+        "INSERT INTO linked_account (user_id, provider, refresh_token, expires, external_user_id, is_authenticated, additional_properties)"
+            + " VALUES (:userId, :provider::provider_enum, :refreshToken, :expires, :externalUserId, :isAuthenticated, :additionalProperties)"
             + " ON CONFLICT (user_id, provider) DO UPDATE SET"
             + " refresh_token = excluded.refresh_token,"
             + " expires = excluded.expires,"
             + " external_user_id = excluded.external_user_id,"
-            + " is_authenticated = excluded.is_authenticated"
+            + " is_authenticated = excluded.is_authenticated,"
+            + " additional_properties = jsonb_set(excluded.additional_properties, '{}', '{}'::jsonb, true)"
             + " RETURNING id";
 
     var namedParameters =
@@ -97,7 +98,8 @@ public class LinkedAccountDAO {
             .addValue("refreshToken", linkedAccount.getRefreshToken())
             .addValue("expires", linkedAccount.getExpires())
             .addValue("externalUserId", linkedAccount.getExternalUserId())
-            .addValue("isAuthenticated", linkedAccount.isAuthenticated());
+            .addValue("isAuthenticated", linkedAccount.isAuthenticated())
+            .addValue("additionalProperties", linkedAccount.getAdditionalProperties());
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause
