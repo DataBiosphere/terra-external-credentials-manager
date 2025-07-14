@@ -11,7 +11,7 @@ env:
 
 jobs:
   publish-job:
-    if: startsWith(github.ref, 'refs/tags/')
+    # if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -95,6 +95,7 @@ jobs:
   report-to-sherlock:
     # Report new ECM version to Broad DevOps
     uses: broadinstitute/sherlock/.github/workflows/client-report-app-version.yaml@main
+    if: false
     needs: publish-job
     with:
       new-version: ${{ needs.publish-job.outputs.tag }}
