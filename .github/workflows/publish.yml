@@ -1,9 +1,5 @@
 name: Publish and deploy
-on:
-  create:
-  push:
-    branches:
-      - '**'
+on: create
 
 env:
   SERVICE_NAME: ${{ github.event.repository.name }}
@@ -11,7 +7,7 @@ env:
 
 jobs:
   publish-job:
-    # if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -50,7 +46,7 @@ jobs:
         env:
           GOOGLE_CLOUD_PROJECT: dsp-artifact-registry
           GAR_LOCATION: us-central1
-          GAR_REPOSITORY_ID: libs-snapshot-standard
+          GAR_REPOSITORY_ID: libs-release-standard
 
       - name: Auth to GCR
         uses: google-github-actions/auth@v1
@@ -95,7 +91,6 @@ jobs:
   report-to-sherlock:
     # Report new ECM version to Broad DevOps
     uses: broadinstitute/sherlock/.github/workflows/client-report-app-version.yaml@main
-    if: false
     needs: publish-job
     with:
       new-version: ${{ needs.publish-job.outputs.tag }}
