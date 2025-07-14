@@ -8,6 +8,6 @@ databaseChangeLog:
             columns:
               - column:
                   name: additional_properties
-                  type: json
+                  type: jsonb
                   constraints:
                     nullable: true

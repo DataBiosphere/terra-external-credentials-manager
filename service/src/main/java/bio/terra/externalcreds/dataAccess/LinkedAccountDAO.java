@@ -100,13 +100,13 @@ public class LinkedAccountDAO {
   public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
     var query =
         "INSERT INTO linked_account (user_id, provider, refresh_token, expires, external_user_id, is_authenticated, additional_properties)"
-            + " VALUES (:userId, :provider::provider_enum, :refreshToken, :expires, :externalUserId, :isAuthenticated, CAST(:additionalProperties AS json))"
+            + " VALUES (:userId, :provider::provider_enum, :refreshToken, :expires, :externalUserId, :isAuthenticated, CAST(:additionalProperties AS jsonb))"
             + " ON CONFLICT (user_id, provider) DO UPDATE SET"
             + " refresh_token = excluded.refresh_token,"
             + " expires = excluded.expires,"
             + " external_user_id = excluded.external_user_id,"
             + " is_authenticated = excluded.is_authenticated,"
-            + " additional_properties = CAST(:additionalProperties AS json)"
+            + " additional_properties = CAST(excluded.additional_properties AS jsonb)"
             + " RETURNING id";
 
     var namedParameters =
@@ -120,13 +120,13 @@ public class LinkedAccountDAO {
 
     try {
       org.postgresql.util.PGobject jsonObject = new org.postgresql.util.PGobject();
-      jsonObject.setType("json");
+      jsonObject.setType("jsonb");
       jsonObject.setValue(
           new com.fasterxml.jackson.databind.ObjectMapper()
               .writeValueAsString(linkedAccount.getAdditionalProperties()));
       namedParameters.addValue("additionalProperties", jsonObject);
     } catch (Exception e) {
-      throw new RuntimeException("Error converting additional properties to JSON", e);
+      throw new RuntimeException("Error converting additional properties to JSONB", e);
     }
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
