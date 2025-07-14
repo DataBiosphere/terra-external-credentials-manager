@@ -63,6 +63,8 @@ dependencies {
 
 	implementation 'org.apache.commons:commons-compress:1.27.1'
 
+	implementation 'org.postgresql:postgresql:42.6.0'
+
 }
 
 dependencyManagement {

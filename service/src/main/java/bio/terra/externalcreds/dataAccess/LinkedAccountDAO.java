@@ -23,16 +23,34 @@ import org.springframework.stereotype.Repository;
 public class LinkedAccountDAO {
 
   private static final RowMapper<LinkedAccount> LINKED_ACCOUNT_ROW_MAPPER =
-      ((rs, rowNum) ->
-          new LinkedAccount.Builder()
-              .id(rs.getInt("id"))
-              .userId(rs.getString("user_id"))
-              .provider(Provider.valueOf(rs.getString("provider")))
-              .refreshToken(rs.getString("refresh_token"))
-              .expires(rs.getTimestamp("expires"))
-              .externalUserId(rs.getString("external_user_id"))
-              .isAuthenticated(rs.getBoolean("is_authenticated"))
-              .build());
+      ((rs, rowNum) -> {
+        Map<String, String> additionalProperties;
+        try {
+          String jsonStr = rs.getString("additional_properties");
+          additionalProperties =
+              jsonStr != null
+                  ? new com.fasterxml.jackson.databind.ObjectMapper()
+                      .readValue(
+                          jsonStr,
+                          new com.fasterxml.jackson.core.type.TypeReference<
+                              Map<String, String>>() {})
+                  : new HashMap<>();
+        } catch (Exception e) {
+          log.error("Error parsing additional_properties JSON", e);
+          additionalProperties = new HashMap<>();
+        }
+
+        return new LinkedAccount.Builder()
+            .id(rs.getInt("id"))
+            .userId(rs.getString("user_id"))
+            .provider(Provider.valueOf(rs.getString("provider")))
+            .refreshToken(rs.getString("refresh_token"))
+            .expires(rs.getTimestamp("expires"))
+            .externalUserId(rs.getString("external_user_id"))
+            .isAuthenticated(rs.getBoolean("is_authenticated"))
+            .additionalProperties(additionalProperties)
+            .build();
+      });
 
   final NamedParameterJdbcTemplate jdbcTemplate;
 
@@ -82,13 +100,13 @@ public class LinkedAccountDAO {
   public LinkedAccount upsertLinkedAccount(LinkedAccount linkedAccount) {
     var query =
         "INSERT INTO linked_account (user_id, provider, refresh_token, expires, external_user_id, is_authenticated, additional_properties)"
-            + " VALUES (:userId, :provider::provider_enum, :refreshToken, :expires, :externalUserId, :isAuthenticated, :additionalProperties)"
+            + " VALUES (:userId, :provider::provider_enum, :refreshToken, :expires, :externalUserId, :isAuthenticated, CAST(:additionalProperties AS json))"
             + " ON CONFLICT (user_id, provider) DO UPDATE SET"
             + " refresh_token = excluded.refresh_token,"
             + " expires = excluded.expires,"
             + " external_user_id = excluded.external_user_id,"
             + " is_authenticated = excluded.is_authenticated,"
-            + " additional_properties = jsonb_set(excluded.additional_properties, '{}', '{}'::jsonb, true)"
+            + " additional_properties = CAST(:additionalProperties AS json)"
             + " RETURNING id";
 
     var namedParameters =
@@ -98,8 +116,18 @@ public class LinkedAccountDAO {
             .addValue("refreshToken", linkedAccount.getRefreshToken())
             .addValue("expires", linkedAccount.getExpires())
             .addValue("externalUserId", linkedAccount.getExternalUserId())
-            .addValue("isAuthenticated", linkedAccount.isAuthenticated())
-            .addValue("additionalProperties", linkedAccount.getAdditionalProperties());
+            .addValue("isAuthenticated", linkedAccount.isAuthenticated());
+
+    try {
+      org.postgresql.util.PGobject jsonObject = new org.postgresql.util.PGobject();
+      jsonObject.setType("json");
+      jsonObject.setValue(
+          new com.fasterxml.jackson.databind.ObjectMapper()
+              .writeValueAsString(linkedAccount.getAdditionalProperties()));
+      namedParameters.addValue("additionalProperties", jsonObject);
+    } catch (Exception e) {
+      throw new RuntimeException("Error converting additional properties to JSON", e);
+    }
 
     // generatedKeyHolder will hold the id returned by the query as specified by the RETURNING
     // clause

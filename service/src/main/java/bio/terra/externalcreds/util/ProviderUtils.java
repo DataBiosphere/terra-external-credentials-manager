@@ -35,7 +35,8 @@ public class ProviderUtils {
           logger.info("Found federated identities map");
           identitiesMap = (Map<String, Object>) federatedIdentities;
         } else {
-          logger.info("Found federated identities of unknown type: {}", federatedIdentities.getClass());
+          logger.info(
+              "Found federated identities of unknown type: {}", federatedIdentities.getClass());
         }
 
         if (identitiesMap != null
