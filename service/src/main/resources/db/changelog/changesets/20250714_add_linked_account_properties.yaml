@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: "202530714_add_linked_account_properties"
+      author: sehsan
+      changes:
+        - addColumn:
+            tableName: linked_account
+            columns:
+              - column:
+                  name: additional_properties
+                  type: json
+                  constraints:
+                    nullable: true
