@@ -90,7 +90,6 @@ public class AccessTokenCacheService {
         new AccessTokenCacheEntry.Builder()
             .linkedAccountId(linkedAccount.getId().orElseThrow())
             .accessToken(accessTokenResponse.getAccessToken().getTokenValue())
-            .issuedAt(accessTokenResponse.getAccessToken().getIssuedAt())
             .expiresAt(accessTokenResponse.getAccessToken().getExpiresAt())
             .build());
   }

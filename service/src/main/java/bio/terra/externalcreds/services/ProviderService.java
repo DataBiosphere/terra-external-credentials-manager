@@ -184,7 +184,7 @@ public class ProviderService {
             new OAuth2AccessToken(
                 TokenType.BEARER,
                 accessTokenCacheEntry.getAccessToken(),
-                accessTokenCacheEntry.getIssuedAt(),
+                Instant.now(),
                 accessTokenCacheEntry.getExpiresAt()));
     var federatedIdentities = userInfo.getAttribute("federated_identities");
     return ProviderUtils.getLinkedEraIdentity(federatedIdentities);
