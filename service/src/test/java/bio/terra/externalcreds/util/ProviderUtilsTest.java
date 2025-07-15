@@ -1,11 +1,15 @@
 package bio.terra.externalcreds.util;
 
 import static bio.terra.externalcreds.services.JwtUtils.GA4GH_PASSPORT_V1_CLAIM;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.config.ProviderProperties;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -30,5 +34,26 @@ class ProviderUtilsTest extends BaseTest {
   void testNoScopeProvider() {
     var providerProperties = ProviderProperties.create().setScopes(Set.of());
     assertFalse(ProviderUtils.isPassportProvider(providerProperties));
+  }
+
+  @Test
+  void testGetLinkedEraIdentity() {
+    String federatedIdentitiesJSON =
+        "{\"identities\": [{\"login.gov\": {\"userid\": \"12345\"}}, {\"era\": {\"userid\": \"test-era-id\"}}]}";
+    assertEquals("test-era-id", ProviderUtils.getLinkedEraIdentity(federatedIdentitiesJSON));
+
+    Map<String, Object> loginGovIdentity = Map.of("login.gov", Map.of("userid", "12345"));
+    Map<String, Object> era_identity = Map.of("era", Map.of("userid", "test-era-id"));
+    Map<String, Object> federatedIdentities =
+        Map.of("identities", List.of(loginGovIdentity, era_identity));
+    assertEquals("test-era-id", ProviderUtils.getLinkedEraIdentity(federatedIdentities));
+  }
+
+  @Test
+  void testGetLinkedEraIdentityReturnsNull() {
+    assertNull(ProviderUtils.getLinkedEraIdentity(null));
+    assertNull(ProviderUtils.getLinkedEraIdentity(Map.of("identities", List.of())));
+    assertNull(ProviderUtils.getLinkedEraIdentity("{}"));
+    assertNull(ProviderUtils.getLinkedEraIdentity("{\"identities\": []}"));
   }
 }

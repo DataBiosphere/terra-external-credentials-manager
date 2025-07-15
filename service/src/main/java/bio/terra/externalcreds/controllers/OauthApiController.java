@@ -43,7 +43,20 @@ public record OauthApiController(
   public ResponseEntity<LinkInfo> getLink(Provider provider) {
     var samUser = samUserFactory.from(request);
     var linkedAccount = linkedAccountService.getLinkedAccount(samUser.getSubjectId(), provider);
-    return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convert));
+    Optional<LinkInfo> linkInfo = linkedAccount.map(OpenApiConverters.Output::convert);
+    if (linkInfo.isPresent() && provider == Provider.RAS) {
+      var auditLogEventBuilder =
+          new AuditLogEvent.Builder()
+              .provider(provider)
+              .userId(samUser.getSubjectId())
+              .clientIP(request.getRemoteAddr());
+      var era_user_id =
+          providerService.getLinkedEraIdentity(provider, linkedAccount.get(), auditLogEventBuilder);
+      if (era_user_id != null) {
+        linkInfo.get().additionalProperties(Map.of("era_user_id", era_user_id));
+      }
+    }
+    return ResponseEntity.of(linkInfo);
   }
 
   @Override

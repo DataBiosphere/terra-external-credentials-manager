@@ -44,25 +44,29 @@ public class AccessTokenCacheService {
   @WriteTransaction
   public String getLinkedAccountAccessToken(
       LinkedAccount linkedAccount, Set<String> scopes, AuditLogEvent.Builder auditLogEventBuilder) {
-    var tokenCacheEntry =
-        getAccessTokenCacheEntry(linkedAccount)
-            .flatMap(
-                tokenEntry -> {
-                  if (tokenEntry
-                      .getExpiresAt()
-                      .isAfter(
-                          Instant.now()
-                              .plus(externalCredsConfig.getAccessTokenExpirationBuffer()))) {
-                    return Optional.of(tokenEntry.getAccessToken());
-                  }
-                  return Optional.empty();
-                });
-
-    return tokenCacheEntry.orElseGet(
-        () -> getNewProviderAccessToken(linkedAccount, scopes, auditLogEventBuilder));
+    return getOrCreateTokenCacheEntry(linkedAccount, scopes, auditLogEventBuilder).getAccessToken();
   }
 
-  private String getNewProviderAccessToken(
+  @WriteTransaction
+  public AccessTokenCacheEntry getOrCreateTokenCacheEntry(
+      LinkedAccount linkedAccount, Set<String> scopes, AuditLogEvent.Builder auditLogEventBuilder) {
+
+    // Try to get a valid token from the cache
+    Optional<AccessTokenCacheEntry> cachedToken = getAccessTokenCacheEntry(linkedAccount);
+
+    // Check if token exists and is not close to expiration
+    if (cachedToken.isPresent()
+        && cachedToken
+            .get()
+            .getExpiresAt()
+            .isAfter(Instant.now().plus(externalCredsConfig.getAccessTokenExpirationBuffer()))) {
+      return cachedToken.get();
+    }
+
+    return getNewProviderAccessToken(linkedAccount, scopes, auditLogEventBuilder);
+  }
+
+  private AccessTokenCacheEntry getNewProviderAccessToken(
       LinkedAccount linkedAccount, Set<String> scopes, AuditLogEvent.Builder auditLogEventBuilder) {
     // get client registration from provider client cache
     var clientRegistration =
@@ -84,12 +88,11 @@ public class AccessTokenCacheService {
     logGetProviderAccessToken(linkedAccount, auditLogEventBuilder);
 
     return upsertAccessTokenCacheEntry(
-            new AccessTokenCacheEntry.Builder()
-                .linkedAccountId(linkedAccount.getId().orElseThrow())
-                .accessToken(accessTokenResponse.getAccessToken().getTokenValue())
-                .expiresAt(accessTokenResponse.getAccessToken().getExpiresAt())
-                .build())
-        .getAccessToken();
+        new AccessTokenCacheEntry.Builder()
+            .linkedAccountId(linkedAccount.getId().orElseThrow())
+            .accessToken(accessTokenResponse.getAccessToken().getTokenValue())
+            .expiresAt(accessTokenResponse.getAccessToken().getExpiresAt())
+            .build());
   }
 
   private Optional<AccessTokenCacheEntry> getAccessTokenCacheEntry(LinkedAccount linkedAccount) {

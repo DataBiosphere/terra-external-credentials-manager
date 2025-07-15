@@ -38,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.OAuth2AccessToken.TokenType;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -164,6 +166,33 @@ public class ProviderService {
   public Optional<Map<String, String>> getAdditionalStateParams(String state) {
     OAuth2State decodedState = OAuth2State.decode(objectMapper, state);
     return decodedState.getAdditionalState();
+  }
+
+  public String getLinkedEraIdentity(
+      Provider provider, LinkedAccount linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
+    var userId = linkedAccount.getUserId();
+    var providerProperties = externalCredsConfig.getProviderProperties(provider);
+    Object federatedIdentities = null;
+    try {
+      var providerClient = providerOAuthClientCache.getProviderClient(provider);
+      var accessTokenCacheEntry =
+          accessTokenCacheService.getOrCreateTokenCacheEntry(
+              linkedAccount, new HashSet<>(providerProperties.getScopes()), auditLogEventBuilder);
+      var userInfo =
+          oAuth2Service.getUserInfo(
+              userId,
+              providerClient,
+              provider,
+              new OAuth2AccessToken(
+                  TokenType.BEARER,
+                  accessTokenCacheEntry.getAccessToken(),
+                  Instant.now(),
+                  accessTokenCacheEntry.getExpiresAt()));
+      federatedIdentities = userInfo.getAttribute("federated_identities");
+    } catch (Exception ex) {
+      log.info("Error getting userInfo from provider {}", provider, ex);
+    }
+    return ProviderUtils.getLinkedEraIdentity(federatedIdentities);
   }
 
   protected ImmutablePair<LinkedAccount, OAuth2User> createLinkedAccount(
