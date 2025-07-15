@@ -41,9 +41,10 @@ public class AccessTokenCacheService {
     this.auditLogger = auditLogger;
   }
 
+  @WriteTransaction
   public String getLinkedAccountAccessToken(
       LinkedAccount linkedAccount, Set<String> scopes, AuditLogEvent.Builder auditLogEventBuilder) {
-    return getOrCreateTokenCacheEntry(linkedAccount, scopes, auditLogEventBuilder).toString();
+    return getOrCreateTokenCacheEntry(linkedAccount, scopes, auditLogEventBuilder).getAccessToken();
   }
 
   @WriteTransaction
