@@ -1354,7 +1354,6 @@ public class ProviderServiceTest extends BaseTest {
       var userInfo = mock(OAuth2User.class);
       when(userInfo.getAttribute("federated_identities")).thenReturn(federatedIdentities);
 
-      // Mock the OAuth2Service getUserInfo method
       when(oAuth2ServiceMock.getUserInfo(
               eq(linkedAccount.getUserId()),
               eq(clientRegistration),
@@ -1362,12 +1361,10 @@ public class ProviderServiceTest extends BaseTest {
               any()))
           .thenReturn(userInfo);
 
-      // Call the method under test
       var result =
           providerService.getLinkedEraIdentity(
               linkedAccount.getProvider(), linkedAccount, auditLogEventBuilder);
 
-      // Verify the result
       assertEquals("test-era-id", result);
     }
 
@@ -1381,7 +1378,6 @@ public class ProviderServiceTest extends BaseTest {
       mockProvider(linkedAccount.getProvider(), clientRegistration);
       mockAccessTokenCacheService(linkedAccount, auditLogEventBuilder);
 
-      // Make getUserInfo throw an IllegalArgumentException
       when(oAuth2ServiceMock.getUserInfo(
               eq(linkedAccount.getUserId()),
               eq(clientRegistration),
@@ -1389,12 +1385,10 @@ public class ProviderServiceTest extends BaseTest {
               any()))
           .thenThrow(new IllegalArgumentException("Unable to resolve Configuration"));
 
-      // Call the method under test - this should handle the exception gracefully
       var result =
           providerService.getLinkedEraIdentity(
               linkedAccount.getProvider(), linkedAccount, auditLogEventBuilder);
 
-      // Verify the result is null since we couldn't get the user info
       assertNull(result);
     }
   }

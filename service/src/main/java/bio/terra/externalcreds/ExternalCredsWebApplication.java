@@ -4,12 +4,14 @@ import bio.terra.common.logging.LoggingInitializer;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
 
 @SpringBootConfiguration
 @EnableAutoConfiguration
+@EnableCaching
 @ComponentScan(
     basePackages = {
       "bio.terra.externalcreds",
