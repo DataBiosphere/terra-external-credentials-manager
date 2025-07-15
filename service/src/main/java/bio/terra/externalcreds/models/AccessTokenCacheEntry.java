@@ -10,6 +10,8 @@ public interface AccessTokenCacheEntry extends WithAccessTokenCacheEntry {
 
   String getAccessToken();
 
+  Instant getIssuedAt();
+
   Instant getExpiresAt();
 
   class Builder extends ImmutableAccessTokenCacheEntry.Builder {}

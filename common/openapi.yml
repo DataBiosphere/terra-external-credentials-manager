@@ -598,6 +598,10 @@ components:
           format: date-time
         authenticated:
           type: boolean
+        additionalProperties:
+          type: object
+          additionalProperties:
+            type: string
         additionalState:
           type: object
           additionalProperties:

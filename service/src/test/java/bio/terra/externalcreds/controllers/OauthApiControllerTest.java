@@ -99,6 +99,31 @@ class OauthApiControllerTest extends BaseTest {
     }
 
     @Test
+    void testGetLinkWithAdditionalProperties() throws Exception {
+      var accessToken = "testToken";
+      var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.RAS);
+
+      mockSamUser(inputLinkedAccount.getUserId(), accessToken);
+
+      when(linkedAccountServiceMock.getLinkedAccount(
+              inputLinkedAccount.getUserId(), inputLinkedAccount.getProvider()))
+          .thenReturn(Optional.of(inputLinkedAccount));
+
+      when(providerServiceMock.getLinkedEraIdentity(any(), any(), any())).thenReturn("test-era-id");
+
+      var outputLinkedAccount =
+          inputLinkedAccount.withAdditionalProperties(Map.of("era_user_id", "test-era-id"));
+      mvc.perform(
+              get("/api/oauth/v1/" + inputLinkedAccount.getProvider().toString())
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(
+              content()
+                  .json(
+                      mapper.writeValueAsString(
+                          OpenApiConverters.Output.convert(outputLinkedAccount))));
+    }
+
+    @Test
     void testGetFenceLink() throws Exception {
       var accessToken = "testToken";
       var inputLinkedAccount = TestUtils.createRandomLinkedAccount(Provider.FENCE);
