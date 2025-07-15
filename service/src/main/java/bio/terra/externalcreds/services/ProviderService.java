@@ -171,22 +171,27 @@ public class ProviderService {
   public String getLinkedEraIdentity(
       Provider provider, LinkedAccount linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
     var userId = linkedAccount.getUserId();
-    var providerClient = providerOAuthClientCache.getProviderClient(provider);
     var providerProperties = externalCredsConfig.getProviderProperties(provider);
-    var accessTokenCacheEntry =
-        accessTokenCacheService.getOrCreateTokenCacheEntry(
-            linkedAccount, new HashSet<>(providerProperties.getScopes()), auditLogEventBuilder);
-    var userInfo =
-        oAuth2Service.getUserInfo(
-            userId,
-            providerClient,
-            provider,
-            new OAuth2AccessToken(
-                TokenType.BEARER,
-                accessTokenCacheEntry.getAccessToken(),
-                Instant.now(),
-                accessTokenCacheEntry.getExpiresAt()));
-    var federatedIdentities = userInfo.getAttribute("federated_identities");
+    Object federatedIdentities = null;
+    try {
+      var providerClient = providerOAuthClientCache.getProviderClient(provider);
+      var accessTokenCacheEntry =
+          accessTokenCacheService.getOrCreateTokenCacheEntry(
+              linkedAccount, new HashSet<>(providerProperties.getScopes()), auditLogEventBuilder);
+      var userInfo =
+          oAuth2Service.getUserInfo(
+              userId,
+              providerClient,
+              provider,
+              new OAuth2AccessToken(
+                  TokenType.BEARER,
+                  accessTokenCacheEntry.getAccessToken(),
+                  Instant.now(),
+                  accessTokenCacheEntry.getExpiresAt()));
+      federatedIdentities = userInfo.getAttribute("federated_identities");
+    } catch (Exception ex) {
+      log.info("Error getting userInfo from provider {}", provider, ex);
+    }
     return ProviderUtils.getLinkedEraIdentity(federatedIdentities);
   }
 

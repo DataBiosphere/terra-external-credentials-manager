@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,6 +12,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -71,6 +73,7 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 public class ProviderServiceTest extends BaseTest {
@@ -1304,6 +1307,95 @@ public class ProviderServiceTest extends BaseTest {
           () ->
               providerService.getProviderAccessToken(
                   linkedAccountUserId, provider, auditLogEventBuilder));
+    }
+  }
+
+  @Nested
+  @TestComponent
+  class LinkedEraIdentityTest {
+    @Autowired private ProviderService providerService;
+    @MockitoBean private AuditLogger auditLoggerMock;
+    @MockitoBean private ProviderOAuthClientCache providerOAuthClientCacheMock;
+    @MockitoBean private OAuth2Service oAuth2ServiceMock;
+    @MockitoBean private AccessTokenCacheService accessTokenCacheServiceMock;
+    @MockitoBean private ExternalCredsConfig externalCredsConfigMock;
+
+    private void mockProvider(Provider provider, ClientRegistration clientRegistration) {
+      when(externalCredsConfigMock.getProviderProperties(provider))
+          .thenReturn(TestUtils.createRandomProvider());
+      when(providerOAuthClientCacheMock.getProviderClient(provider)).thenReturn(clientRegistration);
+    }
+
+    private void mockAccessTokenCacheService(
+        LinkedAccount linkedAccount, AuditLogEvent.Builder auditLogEventBuilder) {
+      var accessTokenCacheEntry =
+          new AccessTokenCacheEntry.Builder()
+              .linkedAccountId(linkedAccount.getId().orElse(1))
+              .accessToken("mock-access-token")
+              .expiresAt(Instant.now().plusSeconds(3600))
+              .build();
+      when(accessTokenCacheServiceMock.getOrCreateTokenCacheEntry(
+              eq(linkedAccount), any(), eq(auditLogEventBuilder)))
+          .thenReturn(accessTokenCacheEntry);
+    }
+
+    @Test
+    void testGetLinkedEraIdentity() {
+      var linkedAccount = TestUtils.createRandomLinkedAccount(Provider.RAS);
+      var clientRegistration = TestUtils.createClientRegistration(linkedAccount.getProvider());
+      var auditLogEventBuilder =
+          new AuditLogEvent.Builder().provider(Provider.RAS).userId(linkedAccount.getUserId());
+
+      mockProvider(linkedAccount.getProvider(), clientRegistration);
+      mockAccessTokenCacheService(linkedAccount, auditLogEventBuilder);
+
+      Map<String, Object> era_identity = Map.of("era", Map.of("userid", "test-era-id"));
+      Map<String, Object> federatedIdentities = Map.of("identities", List.of(era_identity));
+      var userInfo = mock(OAuth2User.class);
+      when(userInfo.getAttribute("federated_identities")).thenReturn(federatedIdentities);
+
+      // Mock the OAuth2Service getUserInfo method
+      when(oAuth2ServiceMock.getUserInfo(
+              eq(linkedAccount.getUserId()),
+              eq(clientRegistration),
+              eq(linkedAccount.getProvider()),
+              any()))
+          .thenReturn(userInfo);
+
+      // Call the method under test
+      var result =
+          providerService.getLinkedEraIdentity(
+              linkedAccount.getProvider(), linkedAccount, auditLogEventBuilder);
+
+      // Verify the result
+      assertEquals("test-era-id", result);
+    }
+
+    @Test
+    void testGetLinkedEraIdentityHandlesException() {
+      var linkedAccount = TestUtils.createRandomLinkedAccount(Provider.RAS);
+      var clientRegistration = TestUtils.createClientRegistration(linkedAccount.getProvider());
+      var auditLogEventBuilder =
+          new AuditLogEvent.Builder().provider(Provider.RAS).userId(linkedAccount.getUserId());
+
+      mockProvider(linkedAccount.getProvider(), clientRegistration);
+      mockAccessTokenCacheService(linkedAccount, auditLogEventBuilder);
+
+      // Make getUserInfo throw an IllegalArgumentException
+      when(oAuth2ServiceMock.getUserInfo(
+              eq(linkedAccount.getUserId()),
+              eq(clientRegistration),
+              eq(linkedAccount.getProvider()),
+              any()))
+          .thenThrow(new IllegalArgumentException("Unable to resolve Configuration"));
+
+      // Call the method under test - this should handle the exception gracefully
+      var result =
+          providerService.getLinkedEraIdentity(
+              linkedAccount.getProvider(), linkedAccount, auditLogEventBuilder);
+
+      // Verify the result is null since we couldn't get the user info
+      assertNull(result);
     }
   }
 }
