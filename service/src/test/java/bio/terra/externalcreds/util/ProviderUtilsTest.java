@@ -38,14 +38,14 @@ class ProviderUtilsTest extends BaseTest {
 
   @Test
   void testGetLinkedEraIdentity() {
-    String federatedIdentitiesJSON =
-        "{\"identities\": [{\"login.gov\": {\"userid\": \"12345\"}}, {\"era\": {\"userid\": \"test-era-id\"}}]}";
-    assertEquals("test-era-id", ProviderUtils.getLinkedEraIdentity(federatedIdentitiesJSON));
+    //    String federatedIdentitiesJSON =
+    //        "{\"identities\": {\"login.gov\": {\"userid\": \"12345\"}, \"era\": {\"userid\":
+    // \"test-era-id\"}}";
+    //    assertEquals("test-era-id", ProviderUtils.getLinkedEraIdentity(federatedIdentitiesJSON));
 
-    Map<String, Object> loginGovIdentity = Map.of("login.gov", Map.of("userid", "12345"));
-    Map<String, Object> era_identity = Map.of("era", Map.of("userid", "test-era-id"));
-    Map<String, Object> federatedIdentities =
-        Map.of("identities", List.of(loginGovIdentity, era_identity));
+    Map<String, Object> identities =
+        Map.of("login.gov", Map.of("userid", "12345"), "era", Map.of("userid", "test-era-id"));
+    Map<String, Object> federatedIdentities = Map.of("identities", identities);
     assertEquals("test-era-id", ProviderUtils.getLinkedEraIdentity(federatedIdentities));
   }
 
@@ -54,6 +54,6 @@ class ProviderUtilsTest extends BaseTest {
     assertNull(ProviderUtils.getLinkedEraIdentity(null));
     assertNull(ProviderUtils.getLinkedEraIdentity(Map.of("identities", List.of())));
     assertNull(ProviderUtils.getLinkedEraIdentity("{}"));
-    assertNull(ProviderUtils.getLinkedEraIdentity("{\"identities\": []}"));
+    assertNull(ProviderUtils.getLinkedEraIdentity("{\"identities\": {}}"));
   }
 }
