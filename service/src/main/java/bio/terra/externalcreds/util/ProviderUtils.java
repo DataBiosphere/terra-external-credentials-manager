@@ -22,22 +22,11 @@ public class ProviderUtils {
 
   public static String getLinkedEraIdentity(Object federatedIdentities) {
     logger.info("Federated Identities: {}", federatedIdentities);
-
-    Map<String, Object> identitiesMap = null;
     String eraUserId = null;
+
     if (federatedIdentities != null) {
       try {
-        if (federatedIdentities instanceof String) {
-          logger.info("Found federated identities String");
-          identitiesMap = objectMapper.readValue((String) federatedIdentities, Map.class);
-        } else if (federatedIdentities instanceof Map<?, ?>) {
-          logger.info("Found federated identities map");
-          identitiesMap = (Map<String, Object>) federatedIdentities;
-        } else {
-          logger.info(
-              "Found federated identities of unknown type: {}", federatedIdentities.getClass());
-        }
-
+        Map<String, Object> identitiesMap = (Map<String, Object>) federatedIdentities;
         if (identitiesMap != null && identitiesMap.containsKey("identities")) {
           @SuppressWarnings("unchecked")
           Map<String, Object> identities = (Map<String, Object>) identitiesMap.get("identities");
@@ -48,8 +37,6 @@ public class ProviderUtils {
             eraUserId = (String) eraInfo.get("userid");
           }
         }
-      } catch (IOException e) {
-        logger.info("Error parseing federated identities: {}", e.getMessage());
       } catch (Exception e) {
         logger.info("Error extracting linked ERA identity: {}", e.getMessage());
       }
