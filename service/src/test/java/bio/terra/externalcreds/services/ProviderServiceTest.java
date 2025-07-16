@@ -1350,7 +1350,7 @@ public class ProviderServiceTest extends BaseTest {
       mockAccessTokenCacheService(linkedAccount, auditLogEventBuilder);
 
       Map<String, Object> era_identity = Map.of("era", Map.of("userid", "test-era-id"));
-      Map<String, Object> federatedIdentities = Map.of("identities", List.of(era_identity));
+      Map<String, Object> federatedIdentities = Map.of("identities", era_identity);
       var userInfo = mock(OAuth2User.class);
       when(userInfo.getAttribute("federated_identities")).thenReturn(federatedIdentities);
 
