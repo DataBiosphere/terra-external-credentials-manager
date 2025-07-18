@@ -82,19 +82,6 @@ source ${PWD}/service/src/main/resources/rendered/secrets.env
 
 Then navigate to the Swagger: `http://localhost:8080/`
 
-### Run Pact Tests
-To run the Pact tests, run the following:
-
-```shell
-export PACT_BROKER_URL="pact-broker.dsp-eng-tools.broadinstitute.org"
-export PACT_PROVIDER_COMMIT="$(git rev-parse HEAD)"
-export PACT_PROVIDER_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-export PACT_BROKER_USERNAME="$(vault read -field=basic_auth_read_only_username secret/dsp/pact-broker/users/read-only)"
-export PACT_BROKER_PASSWORD="$(vault read -field=basic_auth_read_only_password secret/dsp/pact-broker/users/read-only)"
-
-./gradlew verifyPacts
-```
-
 ## Tips
 - Check out [gdub](https://github.com/gdubw/gdub), it'll save you typing `./gradlew` over
   and over, and also takes care of knowing when you're not in the root directory so you
