@@ -15,6 +15,7 @@ See instructions on how to do that in the README at `client-resttemplate/README.
 
 package bio.terra.externalcreds.pact;
 
+@Deprecated(forRemoval = true, since = "2025-07-18")
 public class ProviderStates {
   public static final String USER_IS_REGISTERED = "a user is registered";
   public static final String ECM_IS_OK = "ECM is ok";
