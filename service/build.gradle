@@ -33,7 +33,7 @@ dependencies {
 	implementation platform('com.google.cloud:libraries-bom:26.62.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 	implementation 'com.google.cloud:google-cloud-datastore'
-	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:6.2.2'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:7.0.0'
 
 	annotationProcessor 'org.immutables:value:2.11.0'
 	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
