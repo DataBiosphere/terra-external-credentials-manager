@@ -5,13 +5,13 @@ plugins {
 	id 'idea'
 
 	id 'io.spring.dependency-management' version '1.1.7' apply false
-	id 'org.springframework.boot' version '3.5.4' apply false
+	id 'org.springframework.boot' version '3.5.5' apply false
 	id 'com.diffplug.spotless' version '7.2.1' apply false
 	// ^^ for some reason, can't use spotless in multiple subprojects without this ^^
 	id 'com.google.cloud.tools.jib' version '3.4.5' apply false
 	// ^^ see https://github.com/GoogleContainerTools/jib/blob/master/docs/faq.md#i-am-seeing-method-not-found-or-class-not-found-errors-when-building
-  	id 'org.sonarqube' version '6.2.0.5505' apply false
-	id 'io.freefair.lombok' version '8.14' apply false
+  	id 'org.sonarqube' version '6.3.1.5724' apply false
+	id 'io.freefair.lombok' version '8.14.2' apply false
 	id 'org.hidetake.swagger.generator' version '2.19.2' apply false
 }
 
@@ -36,7 +36,7 @@ subprojects {
 		}
 
 		dependencies {
-			dependency 'io.swagger.core.v3:swagger-annotations:2.2.35'
+			dependency 'io.swagger.core.v3:swagger-annotations:2.2.36'
 			dependency 'io.swagger.codegen.v3:swagger-codegen-cli:3.0.71'
 		}
 	}

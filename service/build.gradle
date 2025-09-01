@@ -5,13 +5,13 @@ plugins {
 
 	id 'com.diffplug.spotless'
 	id 'com.github.ben-manes.versions' version '0.52.0'
-	id 'com.github.spotbugs' version '6.2.2'
+	id 'com.github.spotbugs' version '6.2.6'
 	id 'com.google.cloud.tools.jib'
 	id 'com.gorylenko.gradle-git-properties' version '2.5.2'
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
 	id 'org.sonarqube'
-	id "io.sentry.jvm.gradle" version "5.8.0"
+	id "io.sentry.jvm.gradle" version "5.9.0"
 }
 
 repositories {
@@ -30,12 +30,12 @@ dependencies {
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.208'
 
 	// google
-	implementation platform('com.google.cloud:libraries-bom:26.65.0')
+	implementation platform('com.google.cloud:libraries-bom:26.67.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 	implementation 'com.google.cloud:google-cloud-datastore'
-	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:7.0.0'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:7.3.0'
 
-	annotationProcessor 'org.immutables:value:2.11.1'
+	annotationProcessor 'org.immutables:value:2.11.3'
 	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
 		exclude group: 'io.kubernetes', module: 'client-java'
 	}
@@ -49,11 +49,11 @@ dependencies {
 		exclude group: 'com.nimbusds', module: 'nimbus-jose-jwt'
 	}
 	// https://mvnrepository.com/artifact/org.mockito/mockito-core
-	testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.18.0'
+	testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.19.0'
 
 	testImplementation project(':client-resttemplate')
 
-	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.18.1"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.19.0"
 	implementation "com.google.cloud.opentelemetry:exporter-trace:0.36.0"
 
 	// For Micrometer metrics gathering
@@ -66,7 +66,7 @@ dependencies {
 dependencyManagement {
 	dependencies {
 		// required by SpotBugs 6.2
-		dependency ("com.github.spotbugs:spotbugs-annotations:4.9.3")
+		dependency ("com.github.spotbugs:spotbugs-annotations:4.9.4")
 	}
 }
 
