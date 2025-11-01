@@ -5,13 +5,13 @@ plugins {
 
 	id 'com.diffplug.spotless'
 	id 'com.github.ben-manes.versions' version '0.53.0'
-	id 'com.github.spotbugs' version '6.4.2'
+	id 'com.github.spotbugs' version '6.4.4'
 	id 'com.google.cloud.tools.jib'
 	id 'com.gorylenko.gradle-git-properties' version '2.5.3'
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
 	id 'org.sonarqube'
-	id "io.sentry.jvm.gradle" version "5.12.0"
+	id "io.sentry.jvm.gradle" version "5.12.1"
 }
 
 repositories {
@@ -30,12 +30,12 @@ dependencies {
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.208'
 
 	// google
-	implementation platform('com.google.cloud:libraries-bom:26.69.0')
+	implementation platform('com.google.cloud:libraries-bom:26.71.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 	implementation 'com.google.cloud:google-cloud-datastore'
-	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:7.3.2'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:7.4.1'
 
-	annotationProcessor 'org.immutables:value:2.11.4'
+	annotationProcessor 'org.immutables:value:2.11.6'
 	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
 		exclude group: 'io.kubernetes', module: 'client-java'
 	}
@@ -53,7 +53,7 @@ dependencies {
 
 	testImplementation project(':client-resttemplate')
 
-	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.20.1"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.21.0"
 	implementation "com.google.cloud.opentelemetry:exporter-trace:0.36.0"
 
 	// For Micrometer metrics gathering
@@ -66,7 +66,7 @@ dependencies {
 dependencyManagement {
 	dependencies {
 		// required by SpotBugs 6.2
-		dependency ("com.github.spotbugs:spotbugs-annotations:4.9.6")
+		dependency ("com.github.spotbugs:spotbugs-annotations:4.9.8")
 	}
 }
 
