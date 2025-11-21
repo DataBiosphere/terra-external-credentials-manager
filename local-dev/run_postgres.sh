@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Start up a postgres container with initial user/database setup.
-POSTGRES_VERSION=14
+POSTGRES_VERSION=17.7
 
 start() {
     echo "attempting to remove old $CONTAINER container..."
@@ -9,7 +9,7 @@ start() {
     # start up postgres
     echo "starting up postgres container..."
     BASEDIR=$(dirname "$0")
-    docker create --name $CONTAINER --rm -e POSTGRES_PASSWORD=password -p "$POSTGRES_PORT:5432" postgres:$POSTGRES_VERSION -c listen_addresses='*'
+    docker create --name $CONTAINER --rm -e POSTGRES_PASSWORD=password -p "$POSTGRES_PORT:5432" postgres:${POSTGRES_VERSION} -c listen_addresses='*'
     docker cp $BASEDIR/../common/postgres-init.sql $CONTAINER:/docker-entrypoint-initdb.d/docker_postgres_init.sql
     docker start $CONTAINER
 
