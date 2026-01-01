@@ -5,13 +5,13 @@ plugins {
 
 	id 'com.diffplug.spotless'
 	id 'com.github.ben-manes.versions' version '0.53.0'
-	id 'com.github.spotbugs' version '6.4.4'
+	id 'com.github.spotbugs' version '6.4.8'
 	id 'com.google.cloud.tools.jib'
-	id 'com.gorylenko.gradle-git-properties' version '2.5.3'
+	id 'com.gorylenko.gradle-git-properties' version '2.5.4'
 	id 'io.freefair.lombok'
 	id 'org.hidetake.swagger.generator'
 	id 'org.sonarqube'
-	id "io.sentry.jvm.gradle" version "5.12.1"
+	id "io.sentry.jvm.gradle" version "5.12.2"
 }
 
 repositories {
@@ -30,17 +30,17 @@ dependencies {
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.208'
 
 	// google
-	implementation platform('com.google.cloud:libraries-bom:26.71.0')
+	implementation platform('com.google.cloud:libraries-bom:26.73.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 	implementation 'com.google.cloud:google-cloud-datastore'
-	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:7.4.1'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:7.4.2'
 
-	annotationProcessor 'org.immutables:value:2.11.6'
+	annotationProcessor 'org.immutables:value:2.12.0'
 	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
 		exclude group: 'io.kubernetes', module: 'client-java'
 	}
 	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
-	implementation 'org.bouncycastle:bcprov-jdk18on:1.82'
+	implementation 'org.bouncycastle:bcprov-jdk18on:1.83'
 	implementation 'org.codehaus.janino:janino:3.1.12' // Provides if/else xml parsing for logback config
 
 	// for testing with mock web server
@@ -49,11 +49,11 @@ dependencies {
 		exclude group: 'com.nimbusds', module: 'nimbus-jose-jwt'
 	}
 	// https://mvnrepository.com/artifact/org.mockito/mockito-core
-	testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.20.0'
+	testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.21.0'
 
 	testImplementation project(':client-resttemplate')
 
-	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.21.0"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.23.0"
 	implementation "com.google.cloud.opentelemetry:exporter-trace:0.36.0"
 
 	// For Micrometer metrics gathering
