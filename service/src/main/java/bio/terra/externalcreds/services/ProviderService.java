@@ -188,7 +188,7 @@ public class ProviderService {
                   accessTokenCacheEntry.getAccessToken(),
                   Instant.now(),
                   accessTokenCacheEntry.getExpiresAt()));
-      federatedIdentities = userInfo.getAttribute("federated_identities");
+      federatedIdentities = userInfo.getAttribute("federated_identities_ial2");
     } catch (Exception ex) {
       log.info("Error getting userInfo from provider {}", provider, ex);
     }

@@ -128,7 +128,7 @@ externalcreds:
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
       additionalAuthorizationParameters: { "prompt": "login" }
       deniedEmailPatterns: ${shared.deniedEmailPatterns}
-      loggedUserInfoFields: [ "email", "txn", "federated_identities" ]
+      loggedUserInfoFields: [ "email", "txn", "federated_identities_ial2" ]
 ---
 #non-prod environments
 spring.config.activate.on-profile: '!prod'
