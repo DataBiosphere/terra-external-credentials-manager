@@ -1352,7 +1352,7 @@ public class ProviderServiceTest extends BaseTest {
       Map<String, Object> era_identity = Map.of("era", Map.of("userid", "test-era-id"));
       Map<String, Object> federatedIdentities = Map.of("identities", era_identity);
       var userInfo = mock(OAuth2User.class);
-      when(userInfo.getAttribute("federated_identities")).thenReturn(federatedIdentities);
+      when(userInfo.getAttribute("federated_identities_ial2")).thenReturn(federatedIdentities);
 
       when(oAuth2ServiceMock.getUserInfo(
               eq(linkedAccount.getUserId()),
