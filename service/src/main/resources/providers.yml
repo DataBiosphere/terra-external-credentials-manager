@@ -122,12 +122,13 @@ externalcreds:
       clientSecret: "${RAS_CLIENT_SECRET}"
       externalIdClaim: "email"
       linkLifespan: "15d"
+      scopes: [ "openid","email","ga4gh_passport_v1","profile", "federated_identities_ial2" ]
       revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke"
       userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
       additionalAuthorizationParameters: { "prompt": "login" }
       deniedEmailPatterns: ${shared.deniedEmailPatterns}
-      loggedUserInfoFields: [ "email", "txn", "federated_identities" ]
+      loggedUserInfoFields: [ "email", "txn", "federated_identities_ial2" ]
 ---
 #non-prod environments
 spring.config.activate.on-profile: '!prod'
@@ -149,7 +150,6 @@ spring.config.activate.on-profile: 'dev'
 externalcreds:
   providers:
     ras:
-      scopes: [ "openid","email","ga4gh_passport_v1","profile", "federated_identities_ial2" ]
       issuer: "https://stsstg.nih.gov"
       allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/ecm-callback",
                                     "http://localhost:3000/ecm-callback",
@@ -202,7 +202,6 @@ spring.config.activate.on-profile: 'staging'
 externalcreds:
   providers:
     ras:
-      scopes: [ "openid","email","ga4gh_passport_v1","profile", "federated_identities_ial2" ]
       issuer: "https://stsstg.nih.gov"
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback",
                                     "https://duos-k8s.dsde-staging.broadinstitute.org"]
@@ -227,7 +226,6 @@ spring.config.activate.on-profile: 'prod'
 externalcreds:
   providers:
     ras:
-      scopes: [ "openid","email","ga4gh_passport_v1","profile", "federated_identities" ]
       issuer: "https://sts.nih.gov"
       allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/ecm-callback",
                                     "https://terra.biodatacatalyst.nhlbi.nih.gov/ecm-callback",
