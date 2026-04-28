@@ -36,7 +36,7 @@ dependencies {
 	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:7.4.3'
 
 	annotationProcessor 'org.immutables:value:2.12.1'
-	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
+	implementation('bio.terra:terra-common-lib:1.1.72-SNAPSHOT') {
 		exclude group: 'io.kubernetes', module: 'client-java'
 	}
 	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
