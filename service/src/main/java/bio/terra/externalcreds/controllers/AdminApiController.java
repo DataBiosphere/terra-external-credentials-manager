@@ -5,9 +5,11 @@ import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.api.AdminApi;
 import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.generated.model.RasSupportInfo;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
+import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
@@ -77,6 +79,23 @@ public record AdminApiController(
         passportService.getVisaClaims(provider, userId, issuer, visaType).stream()
             .map(mapper::valueToTree)
             .toList());
+  }
+
+  @Override
+  public ResponseEntity<RasSupportInfo> getRasSupportInfo(String userId) {
+    requireAdmin();
+    var maybeLink = linkedAccountService.getLinkedAccount(userId, Provider.RAS);
+    if (maybeLink.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+    var maybePassport = passportService.getPassport(userId, Provider.RAS);
+    var permissions =
+        maybePassport.isPresent()
+            ? passportService.getRasDbgapPermissions(userId)
+            : List.<RASv1Dot1VisaComparator.DbGapPermission>of();
+    return ResponseEntity.ok(
+        OpenApiConverters.Output.convertRasSupportInfo(
+            maybeLink.get(), maybePassport, permissions));
   }
 
   private void requireAdmin() {

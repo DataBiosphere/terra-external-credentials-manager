@@ -17,6 +17,7 @@ import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
+import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -267,6 +268,83 @@ class AdminApiControllerTest extends BaseTest {
                       + inputLinkedAccount.getExternalUserId())
                   .queryParam("issuer", issuer)
                   .queryParam("visaType", visaType)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isForbidden());
+    }
+  }
+
+  @Nested
+  class GetRasSupportInfo {
+    @Test
+    void testGetRasSupportInfoAdmin() throws Exception {
+      var accessToken = mockAdminSamUser();
+      var link = TestUtils.createRandomLinkedAccount(Provider.RAS);
+      var passport = TestUtils.createRandomPassport();
+      var permission =
+          new RASv1Dot1VisaComparator.DbGapPermission.Builder()
+              .phsId("phs000001")
+              .consentGroup("c1")
+              .role("pi")
+              .build();
+
+      when(linkedAccountService.getLinkedAccount(link.getUserId(), Provider.RAS))
+          .thenReturn(Optional.of(link));
+      when(passportService.getPassport(link.getUserId(), Provider.RAS))
+          .thenReturn(Optional.of(passport));
+      when(passportService.getRasDbgapPermissions(link.getUserId()))
+          .thenReturn(List.of(permission));
+
+      var expected =
+          OpenApiConverters.Output.convertRasSupportInfo(
+              link, Optional.of(passport), List.of(permission));
+
+      mvc.perform(
+              get("/api/admin/v1/ras/user/" + link.getUserId())
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isOk())
+          .andExpect(content().json(mapper.writeValueAsString(expected)));
+    }
+
+    @Test
+    void testGetRasSupportInfoNoPassport() throws Exception {
+      var accessToken = mockAdminSamUser();
+      var link = TestUtils.createRandomLinkedAccount(Provider.RAS);
+
+      when(linkedAccountService.getLinkedAccount(link.getUserId(), Provider.RAS))
+          .thenReturn(Optional.of(link));
+      when(passportService.getPassport(link.getUserId(), Provider.RAS))
+          .thenReturn(Optional.empty());
+
+      var expected =
+          OpenApiConverters.Output.convertRasSupportInfo(link, Optional.empty(), List.of());
+
+      mvc.perform(
+              get("/api/admin/v1/ras/user/" + link.getUserId())
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isOk())
+          .andExpect(content().json(mapper.writeValueAsString(expected)));
+    }
+
+    @Test
+    void testGetRasSupportInfoNoLink() throws Exception {
+      var accessToken = mockAdminSamUser();
+      var userId = UUID.randomUUID().toString();
+
+      when(linkedAccountService.getLinkedAccount(userId, Provider.RAS))
+          .thenReturn(Optional.empty());
+
+      mvc.perform(
+              get("/api/admin/v1/ras/user/" + userId)
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testGetRasSupportInfoNonAdmin() throws Exception {
+      var accessToken = mockSamUser("userId");
+
+      mvc.perform(
+              get("/api/admin/v1/ras/user/someUserId")
                   .header("authorization", "Bearer " + accessToken))
           .andExpect(status().isForbidden());
     }

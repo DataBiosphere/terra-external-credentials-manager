@@ -5,13 +5,22 @@ import bio.terra.externalcreds.ExternalCredsException;
 import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.generated.model.RASv1Dot1VisaCriterion;
+import bio.terra.externalcreds.generated.model.RasDbGapPermission;
+import bio.terra.externalcreds.generated.model.RasLinkInfo;
+import bio.terra.externalcreds.generated.model.RasPassportInfo;
+import bio.terra.externalcreds.generated.model.RasSupportInfo;
 import bio.terra.externalcreds.generated.model.ValidatePassportResult;
 import bio.terra.externalcreds.generated.model.VisaCriterion;
+import bio.terra.externalcreds.models.GA4GHPassport;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.ValidatePassportResultInternal;
+import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaCriterionInternal;
 import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
+import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -77,6 +86,36 @@ public class OpenApiConverters {
           .linkedExternalId(linkedAccount.getExternalUserId())
           .linkExpireTime(linkedAccount.getExpires())
           .userId(linkedAccount.getUserId());
+    }
+
+    public static RasSupportInfo convertRasSupportInfo(
+        LinkedAccount link,
+        Optional<GA4GHPassport> passport,
+        List<RASv1Dot1VisaComparator.DbGapPermission> permissions) {
+      var linkInfo =
+          new RasLinkInfo()
+              .externalUserId(link.getExternalUserId())
+              .linkExpires(link.getExpires())
+              .authenticated(link.isAuthenticated())
+              .expired(link.isExpired());
+      var supportInfo = new RasSupportInfo().link(linkInfo);
+      passport.ifPresent(
+          p -> {
+            supportInfo.passport(
+                new RasPassportInfo()
+                    .passportExpires(p.getExpires())
+                    .expired(p.getExpires().toInstant().isBefore(Instant.now())));
+            supportInfo.dbgapPermissions(
+                permissions.stream()
+                    .map(
+                        perm ->
+                            new RasDbGapPermission()
+                                .phsId(perm.getPhsId())
+                                .consentGroup(perm.getConsentGroup())
+                                .role(perm.getRole()))
+                    .toList());
+          });
+      return supportInfo;
     }
   }
 }
