@@ -121,14 +121,14 @@ externalcreds:
       clientId: "${RAS_CLIENT_ID}"
       clientSecret: "${RAS_CLIENT_SECRET}"
       externalIdClaim: "email"
-      scopes: [ "openid","email","ga4gh_passport_v1","profile", "federated_identities" ]
       linkLifespan: "15d"
+      scopes: [ "openid","email","ga4gh_passport_v1","profile", "federated_identities_ial2" ]
       revokeEndpoint: "${externalcreds.providers.ras.issuer}/auth/oauth/v2/token/revoke"
       userInfoEndpoint: "${externalcreds.providers.ras.issuer}/openid/connect/v1.1/userinfo"
       validationEndpoint: "${externalcreds.providers.ras.issuer}/passport/validate"
       additionalAuthorizationParameters: { "prompt": "login" }
       deniedEmailPatterns: ${shared.deniedEmailPatterns}
-      loggedUserInfoFields: [ "email", "txn", "federated_identities" ]
+      loggedUserInfoFields: [ "email", "txn", "federated_identities_ial2" ]
 ---
 #non-prod environments
 spring.config.activate.on-profile: '!prod'
