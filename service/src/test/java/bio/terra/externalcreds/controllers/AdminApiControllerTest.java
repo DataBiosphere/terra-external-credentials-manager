@@ -1,6 +1,7 @@
 package bio.terra.externalcreds.controllers;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -13,6 +14,7 @@ import bio.terra.common.iam.SamUser;
 import bio.terra.externalcreds.BaseTest;
 import bio.terra.externalcreds.TestUtils;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.dataAccess.SamAdminDAO;
 import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.services.LinkedAccountService;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +45,7 @@ class AdminApiControllerTest extends BaseTest {
   @MockitoBean private LinkedAccountService linkedAccountService;
   @MockitoBean private PassportService passportService;
   @MockitoBean private ExternalCredsSamUserFactory samUserFactoryMock;
+  @MockitoBean private SamAdminDAO samAdminDAO;
 
   @Nested
   class PutLinkedAccountWithFakeToken {
@@ -342,6 +346,56 @@ class AdminApiControllerTest extends BaseTest {
     @Test
     void testGetRasSupportInfoNonAdmin() throws Exception {
       var accessToken = mockSamUser("userId");
+
+      mvc.perform(
+              get("/api/admin/v1/ras/user/someUserId")
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isForbidden());
+    }
+  }
+
+  @Nested
+  class RequireAdminSamFallback {
+    @Test
+    void testSamResourceTypeAdminPermissionAllows() throws Exception {
+      var accessToken = mockSamUser("userId");
+      var link = TestUtils.createRandomLinkedAccount(Provider.RAS);
+
+      when(samAdminDAO.resourceTypeAdminPermission(
+              eq(accessToken), eq("user"), eq("admin_read_summary_information")))
+          .thenReturn(true);
+      when(linkedAccountService.getLinkedAccount(link.getUserId(), Provider.RAS))
+          .thenReturn(Optional.of(link));
+      when(passportService.getPassport(link.getUserId(), Provider.RAS))
+          .thenReturn(Optional.empty());
+
+      mvc.perform(
+              get("/api/admin/v1/ras/user/" + link.getUserId())
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isOk());
+    }
+
+    @Test
+    void testSamResourceTypeAdminPermissionDenies() throws Exception {
+      var accessToken = mockSamUser("userId");
+
+      when(samAdminDAO.resourceTypeAdminPermission(
+              eq(accessToken), eq("user"), eq("admin_read_summary_information")))
+          .thenReturn(false);
+
+      mvc.perform(
+              get("/api/admin/v1/ras/user/someUserId")
+                  .header("authorization", "Bearer " + accessToken))
+          .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testSamResourceTypeAdminPermissionThrows() throws Exception {
+      var accessToken = mockSamUser("userId");
+
+      when(samAdminDAO.resourceTypeAdminPermission(
+              eq(accessToken), eq("user"), eq("admin_read_summary_information")))
+          .thenThrow(new ApiException("Sam unavailable"));
 
       mvc.perform(
               get("/api/admin/v1/ras/user/someUserId")

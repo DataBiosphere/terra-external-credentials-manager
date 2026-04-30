@@ -2,6 +2,7 @@ package bio.terra.externalcreds.controllers;
 
 import bio.terra.common.exception.ForbiddenException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.dataAccess.SamAdminDAO;
 import bio.terra.externalcreds.generated.api.AdminApi;
 import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
@@ -14,17 +15,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 @Controller
+@Slf4j
 public record AdminApiController(
     HttpServletRequest request,
     ObjectMapper mapper,
     LinkedAccountService linkedAccountService,
     PassportService passportService,
     ExternalCredsSamUserFactory samUserFactory,
-    ExternalCredsConfig externalCredsConfig)
+    ExternalCredsConfig externalCredsConfig,
+    SamAdminDAO samAdminDAO)
     implements AdminApi {
 
   @Override
@@ -100,9 +104,18 @@ public record AdminApiController(
 
   private void requireAdmin() {
     var samUser = samUserFactory.from(request);
-    if (!externalCredsConfig.getAuthorizedAdmins().contains(samUser.getEmail())) {
-      throw new ForbiddenException("Admin permissions required");
+    if (externalCredsConfig.getAuthorizedAdmins().contains(samUser.getEmail())) {
+      return;
     }
+    try {
+      if (samAdminDAO.resourceTypeAdminPermission(
+          samUser.getBearerToken().getToken(), "user", "admin_read_summary_information")) {
+        return;
+      }
+    } catch (Exception e) {
+      log.warn("Sam resourceTypeAdminPermission check failed", e);
+    }
+    throw new ForbiddenException("Admin permissions required");
   }
 
   private void requireEraCommons(Provider provider) {
