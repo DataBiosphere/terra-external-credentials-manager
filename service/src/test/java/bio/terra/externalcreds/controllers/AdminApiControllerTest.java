@@ -362,7 +362,7 @@ class AdminApiControllerTest extends BaseTest {
       var link = TestUtils.createRandomLinkedAccount(Provider.RAS);
 
       when(samAdminDAO.resourceTypeAdminPermission(
-              eq(accessToken), eq("user"), eq("admin_read_summary_information")))
+              accessToken, "user", "admin_read_summary_information"))
           .thenReturn(true);
       when(linkedAccountService.getLinkedAccount(link.getUserId(), Provider.RAS))
           .thenReturn(Optional.of(link));
@@ -380,7 +380,7 @@ class AdminApiControllerTest extends BaseTest {
       var accessToken = mockSamUser("userId");
 
       when(samAdminDAO.resourceTypeAdminPermission(
-              eq(accessToken), eq("user"), eq("admin_read_summary_information")))
+              accessToken, "user", "admin_read_summary_information"))
           .thenReturn(false);
 
       mvc.perform(
@@ -394,7 +394,7 @@ class AdminApiControllerTest extends BaseTest {
       var accessToken = mockSamUser("userId");
 
       when(samAdminDAO.resourceTypeAdminPermission(
-              eq(accessToken), eq("user"), eq("admin_read_summary_information")))
+              accessToken, "user", "admin_read_summary_information"))
           .thenThrow(new ApiException("Sam unavailable"));
 
       mvc.perform(
