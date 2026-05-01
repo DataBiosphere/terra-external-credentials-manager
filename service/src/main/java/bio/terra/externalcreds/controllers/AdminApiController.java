@@ -34,7 +34,7 @@ public record AdminApiController(
   @Override
   public ResponseEntity<Void> putLinkedAccountWithFakeToken(
       Provider provider, AdminLinkInfo adminLinkInfo) {
-    requireAdmin();
+    requireWriteAdmin();
     requireEraCommons(provider);
     var linkedAccount =
         new LinkedAccount.Builder()
@@ -51,7 +51,7 @@ public record AdminApiController(
 
   @Override
   public ResponseEntity<Void> adminDeleteLinkedAccount(Provider provider, String userId) {
-    requireAdmin();
+    requireWriteAdmin();
     var deleted = linkedAccountService.deleteLinkedAccount(userId, provider);
     if (!deleted) {
       return ResponseEntity.notFound().build();
@@ -61,7 +61,7 @@ public record AdminApiController(
 
   @Override
   public ResponseEntity<List<AdminLinkInfo>> getActiveLinkedAccounts(Provider provider) {
-    requireAdmin();
+    requireReadAdmin();
     var activeLinkedAccounts = linkedAccountService.getActiveLinkedAccounts(provider);
     return ResponseEntity.ok(
         activeLinkedAccounts.stream().map(OpenApiConverters.Output::convertAdmin).toList());
@@ -70,7 +70,7 @@ public record AdminApiController(
   @Override
   public ResponseEntity<AdminLinkInfo> getLinkedAccountForExternalId(
       Provider provider, String externalId) {
-    requireAdmin();
+    requireReadAdmin();
     var linkedAccount = linkedAccountService.getLinkedAccountForExternalId(provider, externalId);
     return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convertAdmin));
   }
@@ -78,7 +78,7 @@ public record AdminApiController(
   @Override
   public ResponseEntity<List<Object>> getVisas(
       Provider provider, String userId, String issuer, String visaType) {
-    requireAdmin();
+    requireReadAdmin();
     return ResponseEntity.ok(
         passportService.getVisaClaims(provider, userId, issuer, visaType).stream()
             .map(mapper::valueToTree)
@@ -87,7 +87,7 @@ public record AdminApiController(
 
   @Override
   public ResponseEntity<RasSupportInfo> getRasSupportInfo(String userId) {
-    requireAdmin();
+    requireReadAdmin();
     var maybeLink = linkedAccountService.getLinkedAccount(userId, Provider.RAS);
     if (maybeLink.isEmpty()) {
       return ResponseEntity.notFound().build();
@@ -102,11 +102,20 @@ public record AdminApiController(
             maybeLink.get(), maybePassport, permissions));
   }
 
-  private void requireAdmin() {
+  private void requireWriteAdmin() {
     var samUser = samUserFactory.from(request);
-    if (externalCredsConfig.getAuthorizedAdmins().contains(samUser.getEmail())) {
-      return;
+    if (!externalCredsConfig.getAuthorizedAdmins().contains(samUser.getEmail())) {
+      throw new ForbiddenException("Admin permissions required");
     }
+  }
+
+  private void requireReadAdmin() {
+    try {
+      requireWriteAdmin();
+      return;
+    } catch (ForbiddenException ignored) {
+    }
+    var samUser = samUserFactory.from(request);
     try {
       if (samAdminDAO.resourceTypeAdminPermission(
           samUser.getBearerToken().getToken(), "user", "admin_read_summary_information")) {
