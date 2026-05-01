@@ -73,6 +73,25 @@ public class GA4GHVisaDAO {
   }
 
   @WithSpan
+  public List<GA4GHVisa> listUnexpiredVisasByType(
+      Provider provider, String userId, String visaType) {
+    var namedParameters =
+        new MapSqlParameterSource()
+            .addValue("provider", provider.name())
+            .addValue("userId", userId)
+            .addValue("visaType", visaType);
+    var query =
+        "SELECT v.* FROM ga4gh_visa v"
+            + " INNER JOIN ga4gh_passport p ON p.id = v.passport_id"
+            + " INNER JOIN linked_account la ON la.id = p.linked_account_id"
+            + " WHERE la.user_id = :userId"
+            + " AND la.provider = :provider::provider_enum"
+            + " AND v.visa_type = :visaType"
+            + " AND v.expires > now()";
+    return jdbcTemplate.query(query, namedParameters, new GA4GHVisaRowMapper());
+  }
+
+  @WithSpan
   public List<GA4GHVisa> listUnexpiredVisas(
       Provider provider, String userId, String issuer, String visaType) {
     var namedParameters =

@@ -15,8 +15,10 @@ import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.models.PassportWithVisas;
 import bio.terra.externalcreds.models.ValidatePassportResultInternal;
 import bio.terra.externalcreds.models.VisaVerificationDetails;
+import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator;
 import bio.terra.externalcreds.visaComparators.VisaComparator;
 import bio.terra.externalcreds.visaComparators.VisaCriterionInternal;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,6 +27,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +44,7 @@ public class PassportService {
   private final GA4GHVisaDAO visaDAO;
   private final JwtUtils jwtUtils;
   private final Collection<VisaComparator> visaComparators;
+  private final ObjectMapper objectMapper;
 
   private static final Duration VISA_VALIDITY_TIME = Duration.of(1, ChronoUnit.HOURS);
 
@@ -50,13 +54,15 @@ public class PassportService {
       ExternalCredsConfig externalCredsConfig,
       GA4GHVisaDAO visaDAO,
       Collection<VisaComparator> visaComparators,
-      JwtUtils jwtUtils) {
+      JwtUtils jwtUtils,
+      ObjectMapper objectMapper) {
     this.linkedAccountDAO = linkedAccountDAO;
     this.passportDAO = passportDAO;
     this.externalCredsConfig = externalCredsConfig;
     this.visaDAO = visaDAO;
     this.jwtUtils = jwtUtils;
     this.visaComparators = visaComparators;
+    this.objectMapper = objectMapper;
   }
 
   @ReadTransaction
@@ -151,6 +157,20 @@ public class PassportService {
         .map(GA4GHVisa::getJwt)
         .map(jwtUtils::decodeAndValidateJwt)
         .map(Jwt::getClaims)
+        .toList();
+  }
+
+  @ReadTransaction
+  public List<RASv1Dot1VisaComparator.DbGapPermission> getRasDbgapPermissions(String userId) {
+    return visaDAO
+        .listUnexpiredVisasByType(Provider.RAS, userId, RASv1Dot1VisaComparator.RAS_VISAS_V_1_1)
+        .stream()
+        .map(GA4GHVisa::getJwt)
+        .map(jwtUtils::decodeAndValidateJwt)
+        .map(jwt -> jwt.<List<Object>>getClaim(RASv1Dot1VisaComparator.DBGAP_CLAIM))
+        .filter(Objects::nonNull)
+        .flatMap(Collection::stream)
+        .map(p -> objectMapper.convertValue(p, RASv1Dot1VisaComparator.DbGapPermission.class))
         .toList();
   }
 

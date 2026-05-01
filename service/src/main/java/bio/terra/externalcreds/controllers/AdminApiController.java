@@ -2,33 +2,39 @@ package bio.terra.externalcreds.controllers;
 
 import bio.terra.common.exception.ForbiddenException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
+import bio.terra.externalcreds.dataAccess.SamAdminDAO;
 import bio.terra.externalcreds.generated.api.AdminApi;
 import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
+import bio.terra.externalcreds.generated.model.RasSupportInfo;
 import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
+import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 @Controller
+@Slf4j
 public record AdminApiController(
     HttpServletRequest request,
     ObjectMapper mapper,
     LinkedAccountService linkedAccountService,
     PassportService passportService,
     ExternalCredsSamUserFactory samUserFactory,
-    ExternalCredsConfig externalCredsConfig)
+    ExternalCredsConfig externalCredsConfig,
+    SamAdminDAO samAdminDAO)
     implements AdminApi {
 
   @Override
   public ResponseEntity<Void> putLinkedAccountWithFakeToken(
       Provider provider, AdminLinkInfo adminLinkInfo) {
-    requireAdmin();
+    requireWriteAdmin();
     requireEraCommons(provider);
     var linkedAccount =
         new LinkedAccount.Builder()
@@ -45,7 +51,7 @@ public record AdminApiController(
 
   @Override
   public ResponseEntity<Void> adminDeleteLinkedAccount(Provider provider, String userId) {
-    requireAdmin();
+    requireWriteAdmin();
     var deleted = linkedAccountService.deleteLinkedAccount(userId, provider);
     if (!deleted) {
       return ResponseEntity.notFound().build();
@@ -55,7 +61,7 @@ public record AdminApiController(
 
   @Override
   public ResponseEntity<List<AdminLinkInfo>> getActiveLinkedAccounts(Provider provider) {
-    requireAdmin();
+    requireReadAdmin();
     var activeLinkedAccounts = linkedAccountService.getActiveLinkedAccounts(provider);
     return ResponseEntity.ok(
         activeLinkedAccounts.stream().map(OpenApiConverters.Output::convertAdmin).toList());
@@ -64,7 +70,7 @@ public record AdminApiController(
   @Override
   public ResponseEntity<AdminLinkInfo> getLinkedAccountForExternalId(
       Provider provider, String externalId) {
-    requireAdmin();
+    requireReadAdmin();
     var linkedAccount = linkedAccountService.getLinkedAccountForExternalId(provider, externalId);
     return ResponseEntity.of(linkedAccount.map(OpenApiConverters.Output::convertAdmin));
   }
@@ -72,18 +78,53 @@ public record AdminApiController(
   @Override
   public ResponseEntity<List<Object>> getVisas(
       Provider provider, String userId, String issuer, String visaType) {
-    requireAdmin();
+    requireReadAdmin();
     return ResponseEntity.ok(
         passportService.getVisaClaims(provider, userId, issuer, visaType).stream()
             .map(mapper::valueToTree)
             .toList());
   }
 
-  private void requireAdmin() {
+  @Override
+  public ResponseEntity<RasSupportInfo> getRasSupportInfo(String userId) {
+    requireReadAdmin();
+    var maybeLink = linkedAccountService.getLinkedAccount(userId, Provider.RAS);
+    if (maybeLink.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+    var maybePassport = passportService.getPassport(userId, Provider.RAS);
+    var permissions =
+        maybePassport.isPresent()
+            ? passportService.getRasDbgapPermissions(userId)
+            : List.<RASv1Dot1VisaComparator.DbGapPermission>of();
+    return ResponseEntity.ok(
+        OpenApiConverters.Output.convertRasSupportInfo(
+            maybeLink.get(), maybePassport, permissions));
+  }
+
+  private void requireWriteAdmin() {
     var samUser = samUserFactory.from(request);
     if (!externalCredsConfig.getAuthorizedAdmins().contains(samUser.getEmail())) {
       throw new ForbiddenException("Admin permissions required");
     }
+  }
+
+  private void requireReadAdmin() {
+    try {
+      requireWriteAdmin();
+      return;
+    } catch (ForbiddenException ignored) {
+    }
+    var samUser = samUserFactory.from(request);
+    try {
+      if (samAdminDAO.resourceTypeAdminPermission(
+          samUser.getBearerToken().getToken(), "user", "admin_read_summary_information")) {
+        return;
+      }
+    } catch (Exception e) {
+      log.warn("Sam resourceTypeAdminPermission check failed", e);
+    }
+    throw new ForbiddenException("Admin permissions required");
   }
 
   private void requireEraCommons(Provider provider) {

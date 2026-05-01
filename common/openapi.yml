@@ -90,6 +90,32 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
 
+  /api/admin/v1/ras/user/{userId}:
+    get:
+      summary: Get RAS link status and dbGaP permissions for a user
+      tags: [ admin ]
+      operationId: getRasSupportInfo
+      parameters:
+        - name: userId
+          in: path
+          description: The Sam User Id for a user
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: RAS link status and dbGaP permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RasSupportInfo'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '404':
+          description: No RAS link found for userId
+        '500':
+          $ref: '#/components/responses/ServerError'
+
   /api/admin/v1/{provider}/visas/{userId}:
     get:
       summary: Gets the visas a user has for a provider with the given type and issuer
@@ -552,6 +578,54 @@ components:
             $ref: '#/components/schemas/ErrorReport'
 
   schemas:
+    RasSupportInfo:
+      type: object
+      required: [ link ]
+      properties:
+        link:
+          $ref: '#/components/schemas/RasLinkInfo'
+        passport:
+          $ref: '#/components/schemas/RasPassportInfo'
+        dbgapPermissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RasDbGapPermission'
+
+    RasLinkInfo:
+      type: object
+      required: [ externalUserId, linkExpires, authenticated, expired ]
+      properties:
+        externalUserId:
+          type: string
+        linkExpires:
+          type: string
+          format: date-time
+        authenticated:
+          type: boolean
+        expired:
+          type: boolean
+
+    RasPassportInfo:
+      type: object
+      required: [ passportExpires, expired ]
+      properties:
+        passportExpires:
+          type: string
+          format: date-time
+        expired:
+          type: boolean
+
+    RasDbGapPermission:
+      type: object
+      required: [ phsId, consentGroup, role ]
+      properties:
+        phsId:
+          type: string
+        consentGroup:
+          type: string
+        role:
+          type: string
+
     AdminLinkInfo:
         type: object
         description: Linked Account for a user
