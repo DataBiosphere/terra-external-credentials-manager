@@ -69,6 +69,4 @@ public interface ExternalCredsConfigInterface {
   }
 
   Collection<String> getAuthorizedAdmins();
-
-  boolean getEraCommonsLinkingEnabled();
 }

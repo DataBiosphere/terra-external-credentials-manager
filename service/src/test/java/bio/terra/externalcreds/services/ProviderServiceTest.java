@@ -954,7 +954,7 @@ public class ProviderServiceTest extends BaseTest {
       additionalStateParam.put("redirectTo", "http://foo.org");
       OAuth2State oAuth2State =
           new OAuth2State.Builder()
-              .provider(Provider.ERA_COMMONS)
+              .provider(Provider.RAS)
               .random(OAuth2State.generateRandomState(new SecureRandom()))
               .redirectUri(redirectUri)
               .additionalState(additionalStateParam)

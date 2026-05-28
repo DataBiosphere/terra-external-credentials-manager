@@ -7,25 +7,6 @@ paths:
   /api/admin/v1/{provider}:
     parameters:
       - $ref: '#/components/parameters/providerParam'
-    put:
-      summary: Link a user to an external account with a fake refresh token. For eRA Commons only.
-      tags: [ admin ]
-      operationId: putLinkedAccountWithFakeToken
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AdminLinkInfo'
-        required: true
-      responses:
-        '204':
-          description: Linked Account Created
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '403':
-          $ref: '#/components/responses/PermissionDenied'
-        '500':
-          $ref: '#/components/responses/ServerError'
     delete:
       summary: Unlink a user from an external account
       tags: [ admin ]
@@ -654,12 +635,10 @@ components:
       type: string
       enum:
         - ras
-        - era-commons
         - github
         - fence
         - dcf-fence
         - kids-first
-        - anvil
         - sage
     LinkInfo:
       type: object

@@ -17,5 +17,3 @@ retry:
     maxAttempts: 3
     delay: 100
 
-externalcreds:
-  era-commons-linking-enabled: false

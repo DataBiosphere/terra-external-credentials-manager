@@ -4,16 +4,13 @@ import bio.terra.common.exception.ForbiddenException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.SamAdminDAO;
 import bio.terra.externalcreds.generated.api.AdminApi;
-import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.generated.model.RasSupportInfo;
-import bio.terra.externalcreds.models.LinkedAccount;
 import bio.terra.externalcreds.services.LinkedAccountService;
 import bio.terra.externalcreds.services.PassportService;
 import bio.terra.externalcreds.visaComparators.RASv1Dot1VisaComparator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
-import java.sql.Timestamp;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -30,24 +27,6 @@ public record AdminApiController(
     ExternalCredsConfig externalCredsConfig,
     SamAdminDAO samAdminDAO)
     implements AdminApi {
-
-  @Override
-  public ResponseEntity<Void> putLinkedAccountWithFakeToken(
-      Provider provider, AdminLinkInfo adminLinkInfo) {
-    requireWriteAdmin();
-    requireEraCommons(provider);
-    var linkedAccount =
-        new LinkedAccount.Builder()
-            .isAuthenticated(true)
-            .provider(provider)
-            .userId(adminLinkInfo.getUserId())
-            .refreshToken("fake-refresh-token")
-            .externalUserId(adminLinkInfo.getLinkedExternalId())
-            .expires(Timestamp.from(adminLinkInfo.getLinkExpireTime().toInstant()))
-            .build();
-    linkedAccountService.upsertLinkedAccount(linkedAccount);
-    return ResponseEntity.noContent().build();
-  }
 
   @Override
   public ResponseEntity<Void> adminDeleteLinkedAccount(Provider provider, String userId) {
@@ -125,11 +104,5 @@ public record AdminApiController(
       log.warn("Sam resourceTypeAdminPermission check failed", e);
     }
     throw new ForbiddenException("Admin permissions required");
-  }
-
-  private void requireEraCommons(Provider provider) {
-    if (provider != Provider.ERA_COMMONS) {
-      throw new ForbiddenException("Only eRA Commons is supported");
-    }
   }
 }
