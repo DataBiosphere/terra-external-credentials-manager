@@ -4,6 +4,7 @@ import bio.terra.common.exception.ForbiddenException;
 import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.dataAccess.SamAdminDAO;
 import bio.terra.externalcreds.generated.api.AdminApi;
+import bio.terra.externalcreds.generated.model.AdminLinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
 import bio.terra.externalcreds.generated.model.RasSupportInfo;
 import bio.terra.externalcreds.services.LinkedAccountService;
