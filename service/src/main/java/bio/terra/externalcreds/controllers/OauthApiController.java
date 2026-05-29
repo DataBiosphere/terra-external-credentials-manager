@@ -1,11 +1,8 @@
 package bio.terra.externalcreds.controllers;
 
-import static bio.terra.externalcreds.generated.model.Provider.ERA_COMMONS;
-
 import bio.terra.externalcreds.auditLogging.AuditLogEvent;
 import bio.terra.externalcreds.auditLogging.AuditLogEventType;
 import bio.terra.externalcreds.auditLogging.AuditLogger;
-import bio.terra.externalcreds.config.ExternalCredsConfig;
 import bio.terra.externalcreds.generated.api.OauthApi;
 import bio.terra.externalcreds.generated.model.LinkInfo;
 import bio.terra.externalcreds.generated.model.Provider;
@@ -27,8 +24,7 @@ public record OauthApiController(
     ObjectMapper mapper,
     LinkedAccountService linkedAccountService,
     ProviderService providerService,
-    ExternalCredsSamUserFactory samUserFactory,
-    ExternalCredsConfig externalCredsConfig)
+    ExternalCredsSamUserFactory samUserFactory)
     implements OauthApi {
 
   @Override
@@ -98,11 +94,6 @@ public record OauthApiController(
 
   @Override
   public ResponseEntity<LinkInfo> createLink(Provider provider, String state, String oauthcode) {
-    if (!externalCredsConfig.getEraCommonsLinkingEnabled() && provider.equals(ERA_COMMONS)) {
-      throw new UnsupportedOperationException(
-          "eRA Commons is not supported for link creation (yet)");
-    }
-
     var samUser = samUserFactory.from(request);
 
     var auditLogEventBuilder =

@@ -37,7 +37,7 @@ public class ProviderTokenClientCache {
 
     ClientRegistration.Builder builder =
         switch (provider) {
-          case RAS, FENCE, DCF_FENCE, ANVIL, KIDS_FIRST, SAGE ->
+          case RAS, FENCE, DCF_FENCE, KIDS_FIRST, SAGE ->
               ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
                   .clientId(providerInfo.getClientId())
                   .clientSecret(providerInfo.getClientSecret())
@@ -55,16 +55,6 @@ public class ProviderTokenClientCache {
                 .issuerUri(providerInfo.getIssuer())
                 .redirectUri(redirectUri)
                 .userNameAttributeName(providerInfo.getUserNameAttributeName());
-          }
-          case ERA_COMMONS -> {
-            if (externalCredsConfig.getEraCommonsLinkingEnabled()) {
-              yield ClientRegistrations.fromOidcIssuerLocation(providerInfo.getIssuer())
-                  .clientId(providerInfo.getClientId())
-                  .clientSecret(providerInfo.getClientSecret())
-                  .issuerUri(providerInfo.getIssuer());
-            } else {
-              throw new UnsupportedOperationException("eRA Commons does not support OAuth (yet)");
-            }
           }
         };
 

@@ -77,32 +77,6 @@ class ProviderOAuthClientCacheTest extends BaseTest {
   }
 
   @Test
-  void testEraCommonsBuildClientRegistration() {
-    try (var mockServer = ClientAndServer.startClientAndServer()) {
-      var issuerPath = "/does/not/exist";
-      var url = "http://localhost:" + mockServer.getPort() + issuerPath;
-      Provider provider = Provider.ERA_COMMONS;
-      when(externalCredsConfig.getProviderProperties(provider))
-          .thenReturn(TestUtils.createRandomProvider().setIssuer(url));
-
-      //  Mock the server response
-      mockServer
-          .when(
-              HttpRequest.request(issuerPath + "/.well-known/openid-configuration")
-                  .withMethod("GET"))
-          .respond(
-              HttpResponse.response()
-                  .withStatusCode(200)
-                  .withContentType(MediaType.APPLICATION_JSON)
-                  .withBody(ProviderTestUtil.wellKnownResponse(url)));
-
-      assertThrows(
-          UnsupportedOperationException.class,
-          () -> providerOAuthClientCache.getProviderClient(provider));
-    }
-  }
-
-  @Test
   void testFenceBuildClientRegistration() {
     try (var mockServer = ClientAndServer.startClientAndServer()) {
       var issuerPath = "/does/not/exist";

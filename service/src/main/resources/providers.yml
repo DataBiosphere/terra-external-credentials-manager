@@ -96,19 +96,6 @@ externalcreds:
       tokenEndpoint: "${externalcreds.providers.kids-first.issuer}/oauth2/token"
       keyEndpoint: "${externalcreds.providers.kids-first.issuer}/credentials/google"
       deniedEmailPatterns: ${shared.deniedEmailPatterns}
-    anvil:
-      clientId: "${ANVIL_CLIENT_ID}"
-      clientSecret: "${ANVIL_CLIENT_SECRET}"
-      linkLifespan: "30d"
-      scopes: [ "openid", "user" ]
-      externalIdClaim: "username"
-      issuer: "${ANVIL_BASE_URL:https://staging.theanvil.io/user}"
-      revokeEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/revoke"
-      userInfoEndpoint: "${externalcreds.providers.anvil.issuer}/user"
-      authorizationEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/authorize"
-      tokenEndpoint: "${externalcreds.providers.anvil.issuer}/oauth2/token"
-      keyEndpoint: "${externalcreds.providers.anvil.issuer}/credentials/google"
-      deniedEmailPatterns: ${shared.deniedEmailPatterns}
     sage:
       clientId: "${SAGE_CLIENT_ID}"
       clientSecret: "${SAGE_CLIENT_SECRET}"
@@ -130,22 +117,6 @@ externalcreds:
       deniedEmailPatterns: ${shared.deniedEmailPatterns}
       loggedUserInfoFields: [ "email", "txn", "federated_identities_ial2" ]
 ---
-#non-prod environments
-spring.config.activate.on-profile: '!prod'
-externalcreds:
-  providers:
-    era-commons:
-      clientId: "${ERA_COMMONS_CLIENT_ID}"
-      clientSecret: "${ERA_COMMONS_CLIENT_SECRET}"
-      externalIdClaim: "preferred_username"
-      scopes: [ "openid", "email", "profile" ]
-      linkLifespan: "15d"
-      issuer: "https://stsstg.nih.gov"
-      revokeEndpoint: "${externalcreds.providers.era-commons.issuer}/auth/oauth/v2/token/revoke"
-      userInfoEndpoint: "${externalcreds.providers.era-commons.issuer}/openid/connect/v1.1/userinfo"
-      additionalAuthorizationParameters: { "prompt": "login" }
-
----
 spring.config.activate.on-profile: 'dev'
 externalcreds:
   providers:
@@ -156,11 +127,6 @@ externalcreds:
                                     "https://dev.ukbiobank.terra.bio/ecm-callback",
                                     "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/ecm-callback",
                                     "https://terra.dsde-dev.broadinstitute.org/ecm-callback",
-                                    "https://local.dsde-dev.broadinstitute.org",
-                                    "https://local.dsde-dev.broadinstitute.org:3000",
-                                    "https://duos-k8s.dsde-dev.broadinstitute.org"]
-    era-commons:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback",
                                     "https://local.dsde-dev.broadinstitute.org",
                                     "https://local.dsde-dev.broadinstitute.org:3000",
                                     "https://duos-k8s.dsde-dev.broadinstitute.org"]
@@ -188,12 +154,6 @@ externalcreds:
                                     "https://dev.ukbiobank.terra.bio/#fence-callback",
                                     "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback",
                                     "https://terra.dsde-dev.broadinstitute.org/#fence-callback" ]
-    anvil:
-      allowedRedirectUriPatterns: [ "https://[A-Za-z0-9-]*bvdp-saturn-dev.appspot.com/#fence-callback",
-                                    "http://localhost:3000/#fence-callback",
-                                    "https://dev.ukbiobank.terra.bio/#fence-callback",
-                                    "https://dev.terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback",
-                                    "https://terra.dsde-dev.broadinstitute.org/#fence-callback" ]
     sage:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-dev.appspot.com/ecm-callback" ]
       authorizationEndpoint: "https://dev-signin.synapse.org/"
@@ -205,9 +165,6 @@ externalcreds:
       issuer: "https://stsstg.nih.gov"
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback",
                                     "https://duos-k8s.dsde-staging.broadinstitute.org"]
-    era-commons:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback",
-                                    "https://duos-k8s.dsde-staging.broadinstitute.org" ]
     github:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/oauth_callback" ]
     fence:
@@ -215,8 +172,6 @@ externalcreds:
     dcf-fence:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
     kids-first:
-      allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
-    anvil:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/#fence-callback" ]
     sage:
       allowedRedirectUriPatterns: [ "https://bvdp-saturn-staging.appspot.com/ecm-callback" ]
@@ -242,9 +197,6 @@ externalcreds:
       allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
                                     "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
     kids-first:
-      allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
-                                    "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
-    anvil:
       allowedRedirectUriPatterns: [ "https://[A-Za-z-]+.terra.bio/#fence-callback",
                                     "https://terra.biodatacatalyst.nhlbi.nih.gov/#fence-callback" ]
     sage:

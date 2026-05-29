@@ -181,7 +181,7 @@ class OauthApiControllerTest extends BaseTest {
     @ParameterizedTest
     @EnumSource(
         value = Provider.class,
-        names = {"RAS", "ERA_COMMONS"}, // run for all providers except these
+        names = {"RAS"}, // run for all providers except these
         mode = Mode.EXCLUDE)
     void testCreatesTokenProviderLinkSuccessfully(Provider provider) throws Exception {
       var inputLinkedAccount = TestUtils.createRandomLinkedAccount(provider);

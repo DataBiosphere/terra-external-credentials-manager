@@ -306,14 +306,14 @@ class LinkedAccountDAOTest extends BaseTest {
 
     @Test
     void testGetsLinkedAccountByExternalId() {
-      var linkedAccount = TestUtils.createRandomLinkedAccount(Provider.ERA_COMMONS);
+      var linkedAccount = TestUtils.createRandomLinkedAccount(Provider.RAS);
       linkedAccountDAO.upsertLinkedAccount(
           TestUtils.createRandomLinkedAccount(
-              Provider.ERA_COMMONS)); // To make sure we get the right one.
+              Provider.RAS)); // To make sure we get the right one.
       var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
       var loadedLinkedAccount =
           linkedAccountDAO.getLinkedAccountForExternalId(
-              Provider.ERA_COMMONS, savedLinkedAccount.getExternalUserId());
+              Provider.RAS, savedLinkedAccount.getExternalUserId());
 
       // Assert that only the user_id for the username we supplied
       assertEquals(linkedAccount.getUserId(), loadedLinkedAccount.get().getUserId());
@@ -322,21 +322,21 @@ class LinkedAccountDAOTest extends BaseTest {
     @Test
     void testGetsAllActiveLinkedAccounts() {
       // Create a non-expired linked account
-      var linkedAccount = TestUtils.createRandomLinkedAccount(Provider.ERA_COMMONS);
-      var linkedAccount2 = TestUtils.createRandomLinkedAccount(Provider.ERA_COMMONS);
+      var linkedAccount = TestUtils.createRandomLinkedAccount(Provider.RAS);
+      var linkedAccount2 = TestUtils.createRandomLinkedAccount(Provider.RAS);
 
       var savedLinkedAccount = linkedAccountDAO.upsertLinkedAccount(linkedAccount);
       var savedLinkedAccount2 = linkedAccountDAO.upsertLinkedAccount(linkedAccount2);
 
       // Create an expired linked account
       var expiredLinkedAccount =
-          TestUtils.createRandomLinkedAccount(Provider.ERA_COMMONS)
+          TestUtils.createRandomLinkedAccount(Provider.RAS)
               .withExpires(Timestamp.from(Instant.now().minus(Duration.ofMinutes(1))));
       linkedAccountDAO.upsertLinkedAccount(expiredLinkedAccount);
 
       // Create an unauthenticated linked account
       var unauthenticatedLinkedAccount =
-          TestUtils.createRandomLinkedAccount(Provider.ERA_COMMONS).withIsAuthenticated(false);
+          TestUtils.createRandomLinkedAccount(Provider.RAS).withIsAuthenticated(false);
       linkedAccountDAO.upsertLinkedAccount(unauthenticatedLinkedAccount);
 
       // Create a linked account with a different provider
@@ -347,7 +347,7 @@ class LinkedAccountDAOTest extends BaseTest {
       // of the requested provider are returned
       assertEquals(
           List.of(savedLinkedAccount, savedLinkedAccount2),
-          linkedAccountDAO.getActiveLinkedAccounts(Provider.ERA_COMMONS));
+          linkedAccountDAO.getActiveLinkedAccounts(Provider.RAS));
     }
   }
 }
