@@ -4,8 +4,8 @@ plugins {
 	id 'org.springframework.boot'
 
 	id 'com.diffplug.spotless'
-	id 'com.github.ben-manes.versions' version '0.53.0'
-	id 'com.github.spotbugs' version '6.4.8'
+	id 'com.github.ben-manes.versions' version '0.54.0'
+	id 'com.github.spotbugs' version '6.5.5'
 	id 'com.google.cloud.tools.jib'
 	id 'com.gorylenko.gradle-git-properties' version '2.5.4'
 	id 'io.freefair.lombok'
@@ -30,17 +30,17 @@ dependencies {
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.440'
 
 	// google
-	implementation platform('com.google.cloud:libraries-bom:26.75.0')
+	implementation platform('com.google.cloud:libraries-bom:26.83.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
 	implementation 'com.google.cloud:google-cloud-datastore'
 	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:7.4.3'
 
-	annotationProcessor 'org.immutables:value:2.12.1'
+	annotationProcessor 'org.immutables:value:2.12.2'
 	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
 		exclude group: 'io.kubernetes', module: 'client-java'
 	}
 	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
-	implementation 'org.bouncycastle:bcprov-jdk18on:1.83'
+	implementation 'org.bouncycastle:bcprov-jdk18on:1.84'
 	implementation 'org.codehaus.janino:janino:3.1.12' // Provides if/else xml parsing for logback config
 
 	// for testing with mock web server
@@ -49,11 +49,11 @@ dependencies {
 		exclude group: 'com.nimbusds', module: 'nimbus-jose-jwt'
 	}
 	// https://mvnrepository.com/artifact/org.mockito/mockito-core
-	testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.21.0'
+	testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.23.0'
 
 	testImplementation project(':client-resttemplate')
 
-	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.24.0"
+	implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.28.1"
 	implementation "com.google.cloud.opentelemetry:exporter-trace:0.36.0"
 
 	// For Micrometer metrics gathering
