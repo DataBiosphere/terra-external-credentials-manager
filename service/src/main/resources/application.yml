@@ -53,6 +53,8 @@ server:
     enabled: true
     mime-types: text/css,application/javascript
   port: 8080
+  # Raised from the 8KB default for large oauthcode request lines + bearer tokens.
+  max-http-request-header-size: 32KB
   error:
     whitelabel:
       enabled: false # error management fallback on Tomcat default error page
