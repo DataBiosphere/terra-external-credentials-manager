@@ -70,9 +70,6 @@ dependencies {
 
 	// For Micrometer metrics gathering
 	implementation 'io.micrometer:micrometer-registry-prometheus'
-
-	implementation 'org.apache.commons:commons-compress:1.28.0'
-
 }
 
 dependencyManagement {
