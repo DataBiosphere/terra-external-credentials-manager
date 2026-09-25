@@ -27,20 +27,34 @@ apply from: 'tooling.gradle'
 apply from: 'analysis.gradle'
 
 dependencies {
-	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.440'
+	implementation('org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.440') {
+		exclude group: 'org.scala-lang', module: 'scala-library'
+	}
 
 	// google
 	implementation platform('com.google.cloud:libraries-bom:26.75.0')
 	implementation 'com.google.cloud:google-cloud-pubsub'
-	implementation 'com.google.cloud:google-cloud-datastore'
 	implementation 'com.google.cloud:spring-cloud-gcp-starter-logging:7.4.3'
 
 	annotationProcessor 'org.immutables:value:2.12.1'
 	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
 		exclude group: 'io.kubernetes', module: 'client-java'
+		exclude group: 'org.scala-lang', module: 'scala-library'
+		exclude group: 'bio.terra', module: 'stairway'
+		exclude group: 'bio.terra', module: 'stairway-gcp'
+		exclude group: 'bio.terra', module: 'stairway-azure'
+		exclude group: 'com.google.cloud.opentelemetry', module: 'exporter-metrics'
+		exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
+		exclude group: 'io.prometheus', module: 'simpleclient_httpserver'
+		exclude group: 'io.opentelemetry', module: 'opentelemetry-exporter-prometheus'
+		exclude group: 'org.apache.commons', module: 'commons-dbcp2'
+		exclude group: 'org.apache.commons', module: 'commons-pool2'
+		exclude group: 'io.opentelemetry.instrumentation', module: 'opentelemetry-kafka-clients-2.6'
+		exclude group: 'io.opentelemetry.instrumentation', module: 'opentelemetry-kafka-clients-common'
+		exclude group: 'io.opentelemetry.instrumentation', module: 'opentelemetry-spring-kafka-2.7'
+		exclude group: 'io.opentelemetry.instrumentation', module: 'opentelemetry-mongo-3.1'
+		exclude group: 'javax.validation', module: 'validation-api'
 	}
-	// https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
-	implementation 'org.bouncycastle:bcprov-jdk18on:1.83'
 	implementation 'org.codehaus.janino:janino:3.1.12' // Provides if/else xml parsing for logback config
 
 	// for testing with mock web server
@@ -58,9 +72,6 @@ dependencies {
 
 	// For Micrometer metrics gathering
 	implementation 'io.micrometer:micrometer-registry-prometheus'
-
-	implementation 'org.apache.commons:commons-compress:1.28.0'
-
 }
 
 dependencyManagement {
