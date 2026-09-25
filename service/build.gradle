@@ -27,7 +27,9 @@ apply from: 'tooling.gradle'
 apply from: 'analysis.gradle'
 
 dependencies {
-	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.440'
+	implementation('org.broadinstitute.dsde.workbench:sam-client_2.13:v0.0.440') {
+		exclude group: 'org.scala-lang', module: 'scala-library'
+	}
 
 	// google
 	implementation platform('com.google.cloud:libraries-bom:26.75.0')
@@ -37,6 +39,7 @@ dependencies {
 	annotationProcessor 'org.immutables:value:2.12.1'
 	implementation('bio.terra:terra-common-lib:1.1.39-SNAPSHOT') {
 		exclude group: 'io.kubernetes', module: 'client-java'
+		exclude group: 'org.scala-lang', module: 'scala-library'
 		exclude group: 'bio.terra', module: 'stairway'
 		exclude group: 'bio.terra', module: 'stairway-gcp'
 		exclude group: 'bio.terra', module: 'stairway-azure'
