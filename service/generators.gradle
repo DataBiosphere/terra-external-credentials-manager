@@ -3,7 +3,7 @@ dependencies {
 	implementation 'io.swagger.core.v3:swagger-annotations'
 	swaggerCodegen 'io.swagger.codegen.v3:swagger-codegen-cli'
 
-	runtimeOnly 'org.webjars.npm:swagger-ui-dist:5.17.14'
+	runtimeOnly 'org.webjars.npm:swagger-ui-dist:5.33.1'
 
 	// Versioned by Spring:
 	implementation 'jakarta.validation:jakarta.validation-api'
