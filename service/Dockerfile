@@ -1,6 +1,7 @@
 # Set the base/parent image
 # see https://github.com/broadinstitute/dsp-appsec-blessed-images/tree/main/jre
 # Google's distroless images are openjdk, this is the simplest with adoptopenjdk
+# 2026-11-02: this comment forces a full rebuild on the latest blessed base image (CTM-739).
 FROM us.gcr.io/broad-dsp-gcr-public/base/jre:17-debian
 
 # download and untar the cloud profiler
