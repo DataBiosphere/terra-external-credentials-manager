@@ -28,9 +28,6 @@ subprojects {
 		artifactGroup = "${group}.${rootProject.name}"
 	}
 
-	// Override via Spring Boot property so logback-classic and logback-core stay in sync
-	ext['logback.version'] = '1.6.6'
-
 	apply plugin: 'io.spring.dependency-management'
 
 	dependencyManagement {
